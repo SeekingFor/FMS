@@ -1,0 +1,38 @@
+#ifndef _identityintroductioninserter_
+#define _identityintroductioninserter_
+
+#include "../idatabase.h"
+#include "../datetime.h"
+#include "../ilogger.h"
+#include "ifreenetregistrable.h"
+#include "ifcpconnected.h"
+#include "ifcpmessagehandler.h"
+#include "iperiodicprocessor.h"
+
+class IdentityIntroductionInserter:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
+{
+public:
+	IdentityIntroductionInserter();
+	IdentityIntroductionInserter(FCPv2 *fcp);
+
+	void FCPConnected();
+	void FCPDisconnected();
+
+	const bool HandleMessage(FCPMessage &message);
+
+	void Process();
+
+	void RegisterWithThread(FreenetMasterThread *thread);
+
+private:
+	void Initialize();
+	void CheckForNewInserts();
+	void StartInsert(const long localidentityid, const std::string &day, const std::string &UUID, const std::string &solution);
+
+	std::string m_messagebase;
+	DateTime m_lastchecked;
+	bool m_inserting;
+	
+};
+
+#endif	// _identityintroductioninserter_
