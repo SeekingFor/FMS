@@ -53,7 +53,7 @@ function content()
 	print "<br>Type answers for a few puzzles and submit<br>";
 	
 	
-	$st=$db->prepare("SELECT UUID,Day FROM tblIntroductionPuzzleRequests  WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND Day>='".gmdate('Y-m-d',strtotime('-1 day'))."' AND Found='true';");
+	$st=$db->prepare("SELECT UUID,Day FROM tblIntroductionPuzzleRequests WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND Day>='".gmdate('Y-m-d',strtotime('-1 day'))."' AND Found='true';");
 	$st->execute();
 	
 	while($record=$st->fetch())

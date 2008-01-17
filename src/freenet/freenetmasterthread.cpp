@@ -1,5 +1,6 @@
 #include "../../include/freenet/freenetmasterthread.h"
 #include "../../include/option.h"
+#include "../../include/uuidgenerator.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/freenet/unkeyedidcreator.h"
 #include "../../include/freenet/identityinserter.h"
@@ -9,6 +10,7 @@
 #include "../../include/freenet/introductionpuzzlerequester.h"
 #include "../../include/freenet/introductionpuzzleremover.h"
 #include "../../include/freenet/identityintroductioninserter.h"
+#include "../../include/freenet/trustlistinserter.h"
 
 #include <zthread/Thread.h>
 
@@ -63,8 +65,10 @@ const bool FreenetMasterThread::FCPConnect()
 
 	if(m_fcp.Connect(m_fcphost.c_str(),m_fcpport)==true)
 	{
+		UUIDGenerator uuid;
+		std::string clientname="FMSClient-"+uuid.Generate();
 		// send ClientHello message to node
-		m_fcp.SendMessage("ClientHello",2,"Name","FMSClient","ExpectedVersion","2.0");
+		m_fcp.SendMessage("ClientHello",2,"Name",clientname.c_str(),"ExpectedVersion","2.0");
 
 		m_log->WriteLog(LogFile::LOGLEVEL_INFO,__FUNCTION__" connected to node");
 
@@ -228,6 +232,7 @@ void FreenetMasterThread::Setup()
 	m_registrables.push_back(new IntroductionPuzzleRequester(&m_fcp));
 	m_registrables.push_back(new IntroductionPuzzleRemover());
 	m_registrables.push_back(new IdentityIntroductionInserter(&m_fcp));
+	m_registrables.push_back(new TrustListInserter(&m_fcp));
 
 	for(std::vector<IFreenetRegistrable *>::iterator i=m_registrables.begin(); i!=m_registrables.end(); i++)
 	{

@@ -36,19 +36,11 @@ void DateTime::Add(const int seconds, const int minutes, const int hours, const 
 
 std::string DateTime::Format(const std::string &formatstring) const
 {
-	std::string returnval="";
-	char *str=new char[512];
-	memset(str,0,512);
+	std::vector<char> str(256,0);
 
-	strftime(str,511,formatstring.c_str(),&m_tm);
+	size_t len=strftime(&str[0],str.size()-1,formatstring.c_str(),&m_tm);
 
-	if(str)
-	{
-		returnval=str;
-		delete [] str;
-	}
-
-	return returnval;
+	return std::string(str.begin(),str.begin()+len);
 }
 
 void DateTime::Normalize()

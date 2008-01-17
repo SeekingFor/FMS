@@ -1,42 +1,41 @@
-#include "../../include/freenet/identityrequester.h"
-#include "../../include/freenet/identityxml.h"
-#include "../../include/stringfunctions.h"
+#include "../../include/freenet/trustlistrequester.h"
 #include "../../include/option.h"
-#include "../../include/datetime.h"
+#include "../../include/stringfunctions.h"
+#include "../../include/freenet/trustlistxml.h"
 
 #ifdef XMEM
 	#include <xmem.h>
 #endif
 
-IdentityRequester::IdentityRequester()
+TrustListRequester::TrustListRequester()
 {
 	Initialize();
 }
 
-IdentityRequester::IdentityRequester(FCPv2 *fcp):IFCPConnected(fcp)
+TrustListRequester::TrustListRequester(FCPv2 *fcp):IFCPConnected(fcp)
 {
 	Initialize();
 }
 
-void IdentityRequester::FCPConnected()
+void TrustListRequester::FCPConnected()
 {
 	m_requesting.clear();
 	PopulateIDList();
 }
 
-void IdentityRequester::FCPDisconnected()
+void TrustListRequester::FCPDisconnected()
 {
 	
 }
 
-const bool IdentityRequester::HandleAllData(FCPMessage &message)
+const bool TrustListRequester::HandleAllData(FCPMessage &message)
 {
 	DateTime now;
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
 	long datalength;
 	std::vector<char> data;
-	IdentityXML xml;
+	TrustListXML xml;
 	long identityid;
 	long index;
 
@@ -65,39 +64,25 @@ const bool IdentityRequester::HandleAllData(FCPMessage &message)
 	// parse file into xml and update the database
 	if(xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
+		st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
+		// loop through all trust entries in xml and add to database if we don't already know them
+		for(long i=0; i<xml.TrustCount(); i++)
+		{
+			std::string identity;
+			identity=xml.GetIdentity(i);
 
-		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, SingleUse=?, LastSeen=?, PublishTrustList=?, PublishBoardList=? WHERE IdentityID=?");
-		st.Bind(0,xml.GetName());
-		if(xml.GetSingleUse()==true)
-		{
-			st.Bind(1,"true");
-		}
-		else
-		{
-			st.Bind(1,"false");
-		}
-		st.Bind(2,now.Format("%Y-%m-%d %H:%M:%S"));
-		if(xml.GetPublishTrustList()==true)
-		{
-			st.Bind(3,"true");
-		}
-		else
-		{
-			st.Bind(3,"false");
-		}
-		if(xml.GetPublishBoardList()==true)
-		{
-			st.Bind(4,"true");
-		}
-		else
-		{
-			st.Bind(4,"false");
-		}
-		st.Bind(5,identityid);
-		st.Step();
-		st.Finalize();
+			//TODO get the trust levels as well
 
-		st=m_db->Prepare("INSERT INTO tblIdentityRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
+			st.Bind(0,identity);
+			st.Step();
+			if(st.RowReturned()==false)
+			{
+				m_db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded) VALUES('"+identity+"','"+now.Format("%Y-%m-%d %H:%M:%S")+"');");
+			}
+			st.Reset();
+		}
+
+		st=m_db->Prepare("INSERT INTO tblTrustListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
 		st.Bind(0,identityid);
 		st.Bind(1,idparts[4]);
 		st.Bind(2,index);
@@ -109,14 +94,14 @@ const bool IdentityRequester::HandleAllData(FCPMessage &message)
 	else
 	{
 		// bad data - mark index
-		st=m_db->Prepare("INSERT INTO tblIdentityRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
+		st=m_db->Prepare("INSERT INTO tblTrustListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
 		st.Bind(0,identityid);
 		st.Bind(1,idparts[4]);
 		st.Bind(2,index);
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" error parsing Identity XML file : "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" error parsing TrustList XML file : "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -126,7 +111,7 @@ const bool IdentityRequester::HandleAllData(FCPMessage &message)
 
 }
 
-const bool IdentityRequester::HandleGetFailed(FCPMessage &message)
+const bool TrustListRequester::HandleGetFailed(FCPMessage &message)
 {
 	DateTime now;
 	SQLite3DB::Statement st;
@@ -142,7 +127,7 @@ const bool IdentityRequester::HandleGetFailed(FCPMessage &message)
 	// if this is a fatal error - insert index into database so we won't try to download this index again
 	if(message["Fatal"]=="true")
 	{
-		st=m_db->Prepare("INSERT INTO tblIdentityRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
+		st=m_db->Prepare("INSERT INTO tblTrustListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
 		st.Bind(0,identityid);
 		st.Bind(1,idparts[4]);
 		st.Bind(2,index);
@@ -159,10 +144,10 @@ const bool IdentityRequester::HandleGetFailed(FCPMessage &message)
 
 }
 
-const bool IdentityRequester::HandleMessage(FCPMessage &message)
+const bool TrustListRequester::HandleMessage(FCPMessage &message)
 {
 
-	if(message["Identifier"].find("IdentityRequester")==0)
+	if(message["Identifier"].find("TrustListRequester")==0)
 	{
 		if(message.GetName()=="DataFound")
 		{
@@ -194,7 +179,7 @@ const bool IdentityRequester::HandleMessage(FCPMessage &message)
 	return false;
 }
 
-void IdentityRequester::Initialize()
+void TrustListRequester::Initialize()
 {
 	std::string tempval="";
 	Option::instance()->Get("MaxIdentityRequests",tempval);
@@ -202,26 +187,25 @@ void IdentityRequester::Initialize()
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"Option MaxIdentityRequests is currently set at "+tempval+".  It must be 1 or greater.");
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"Option MaxTrustListRequests is currently set at "+tempval+".  It must be 1 or greater.");
 	}
 	if(m_maxrequests>100)
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_WARNING,"Option MaxIdentityRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
+		m_log->WriteLog(LogFile::LOGLEVEL_WARNING,"Option MaxTrustListRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
 	Option::instance()->Get("MessageBase",m_messagebase);
 	m_tempdate.SetToGMTime();
 }
 
-void IdentityRequester::PopulateIDList()
+void TrustListRequester::PopulateIDList()
 {
 	DateTime date;
 	int id;
 
 	date.SetToGMTime();
-	date.Add(0,0,-1);
 
-	// select identities we want to query (haven't seen in last hour) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
-	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND (LastSeen IS NULL OR LastSeen<='"+date.Format("%Y-%m-%d %H:%M:%S")+"') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+	// select identities we want to query (we've seen them today and they are publishing trust list) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
+	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+date.Format("%Y-%m-%d")+"' AND PublishTrustList='true' AND LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	st.Step();
 
 	m_ids.clear();
@@ -234,7 +218,7 @@ void IdentityRequester::PopulateIDList()
 	}
 }
 
-void IdentityRequester::Process()
+void TrustListRequester::Process()
 {
 	// max is the smaller of the config value or the total number of identities we will request from
 	long max=m_maxrequests>m_ids.size() ? m_ids.size() : m_maxrequests;
@@ -270,7 +254,14 @@ void IdentityRequester::Process()
 
 }
 
-void IdentityRequester::RemoveFromRequestList(const long identityid)
+void TrustListRequester::RegisterWithThread(FreenetMasterThread *thread)
+{
+	thread->RegisterFCPConnected(this);
+	thread->RegisterFCPMessageHandler(this);
+	thread->RegisterPeriodicProcessor(this);
+}
+
+void TrustListRequester::RemoveFromRequestList(const long identityid)
 {
 	std::vector<long>::iterator i=m_requesting.begin();
 	while(i!=m_requesting.end() && (*i)!=identityid)
@@ -283,14 +274,7 @@ void IdentityRequester::RemoveFromRequestList(const long identityid)
 	}
 }
 
-void IdentityRequester::RegisterWithThread(FreenetMasterThread *thread)
-{
-	thread->RegisterFCPConnected(this);
-	thread->RegisterFCPMessageHandler(this);
-	thread->RegisterPeriodicProcessor(this);
-}
-
-void IdentityRequester::StartRequest(const long identityid)
+void TrustListRequester::StartRequest(const long identityid)
 {
 	DateTime now;
 	FCPMessage message;
@@ -309,7 +293,7 @@ void IdentityRequester::StartRequest(const long identityid)
 
 		now.SetToGMTime();
 
-		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblIdentityRequests WHERE Day=? AND IdentityID=?;");
+		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblTrustListRequests WHERE Day=? AND IdentityID=?;");
 		st2.Bind(0,now.Format("%Y-%m-%d"));
 		st2.Bind(1,identityid);
 		st2.Step();
@@ -329,10 +313,10 @@ void IdentityRequester::StartRequest(const long identityid)
 		StringFunctions::Convert(identityid,identityidstr);
 
 		message.SetName("ClientGet");
-		message["URI"]=publickey+m_messagebase+"|"+now.Format("%Y-%m-%d")+"|Identity|"+indexstr+".xml";
-		message["Identifier"]="IdentityRequester|"+identityidstr+"|"+indexstr+"|"+message["URI"];
+		message["URI"]=publickey+m_messagebase+"|"+now.Format("%Y-%m-%d")+"|TrustList|"+indexstr+".xml";
+		message["Identifier"]="TrustListRequester|"+identityidstr+"|"+indexstr+"|"+message["URI"];
 		message["ReturnType"]="direct";
-		message["MaxSize"]="10000";			// 10 KB
+		message["MaxSize"]="1000000";			// 1 MB
 
 		m_fcp->SendMessage(message);
 

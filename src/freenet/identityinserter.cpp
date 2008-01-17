@@ -17,17 +17,20 @@ IdentityInserter::IdentityInserter(FCPv2 *fcp):IFCPConnected(fcp)
 	Initialize();
 }
 
-void IdentityInserter::FCPConnected()
-{
-	m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false';");
-}
-
 void IdentityInserter::CheckForNeededInsert()
 {
+	DateTime now;
 	DateTime date;
+	now.SetToGMTime();
 	date.SetToGMTime();
 	// set date to 1 hour back
 	date.Add(0,0,-1);
+
+	// Because of importance of Identity.xml, if we are now at the next day we immediately want to insert identities so change the date back to now
+	if(date.GetDay()!=now.GetDay())
+	{
+		date=now;
+	}
 
 	SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID FROM tblLocalIdentity WHERE PrivateKey IS NOT NULL AND PrivateKey <> '' AND InsertingIdentity='false' AND (LastInsertedIdentity<'"+date.Format("%Y-%m-%d %H:%M:%S")+"' OR LastInsertedIdentity IS NULL) ORDER BY LastInsertedIdentity;");
 	
@@ -37,6 +40,12 @@ void IdentityInserter::CheckForNeededInsert()
 	}
 
 }
+
+void IdentityInserter::FCPConnected()
+{
+	m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false';");
+}
+
 
 void IdentityInserter::FCPDisconnected()
 {
@@ -127,7 +136,7 @@ void IdentityInserter::StartInsert(const long localidentityid)
 	StringFunctions::Convert(localidentityid,idstring);
 	date.SetToGMTime();
 
-	SQLite3DB::Recordset rs=m_db->Query("SELECT Name,PrivateKey,SingleUse FROM tblLocalIdentity WHERE LocalIdentityID="+idstring+";");
+	SQLite3DB::Recordset rs=m_db->Query("SELECT Name,PrivateKey,SingleUse,PublishTrustList,PublishBoardList FROM tblLocalIdentity WHERE LocalIdentityID="+idstring+";");
 
 	if(rs.Empty()==false)
 	{
@@ -141,6 +150,8 @@ void IdentityInserter::StartInsert(const long localidentityid)
 		long index=0;
 		std::string indexstr;
 		std::string singleuse="false";
+		std::string publishtrustlist="false";
+		std::string publishboardlist="false";
 
 		now.SetToGMTime();
 
@@ -175,6 +186,18 @@ void IdentityInserter::StartInsert(const long localidentityid)
 			singleuse=rs.GetField(2);
 		}
 		singleuse=="true" ? idxml.SetSingleUse(true) : idxml.SetSingleUse(false);
+
+		if(rs.GetField(3))
+		{
+			publishtrustlist=rs.GetField(3);
+		}
+		publishtrustlist=="true" ? idxml.SetPublishTrustList(true) : idxml.SetPublishTrustList(false);
+
+		if(rs.GetField(4))
+		{
+			publishboardlist=rs.GetField(3);
+		}
+		publishboardlist=="true" ? idxml.SetPublishBoardList(true) : idxml.SetPublishBoardList(false);
 
 		data=idxml.GetXML();
 		StringFunctions::Convert(data.size(),datasizestr);

@@ -21,7 +21,6 @@ int main()
 	SetupDB();
 	SetupDefaultOptions();
 
-
 	SetupLogFile();
 
 	SetupNetwork();

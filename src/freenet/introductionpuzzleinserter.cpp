@@ -112,6 +112,12 @@ const bool IntroductionPuzzleInserter::HandlePutFailed(FCPMessage &message)
 	st.Step();
 	st.Finalize();
 
+	// if fatal error or collision - mark index
+	if(message["Fatal"]=="true" || message["Code"]=="9")
+	{
+		m_db->Execute("UPDATE tblIntroductionPuzzleInserts SET Day='"+idparts[5]+"', InsertIndex="+idparts[2]+", FoundSolution='true' WHERE UUID='"+idparts[3]+"';");
+	}
+
 	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" failed to insert puzzle "+idparts[3]);
 
 	return true;

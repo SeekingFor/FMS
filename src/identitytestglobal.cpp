@@ -35,18 +35,35 @@ void SetupDB()
 				PublicKey				TEXT,\
 				PrivateKey				TEXT,\
 				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
+				PublishTrustList		BOOL CHECK(PublishTrustList IN('true','false')) DEFAULT 'false',\
+				PublishBoardList		BOOL CHECK(PublishBoardList IN('true','false')) DEFAULT 'false',\
 				InsertingIdentity		BOOL CHECK(InsertingIdentity IN('true','false')) DEFAULT 'false',\
 				LastInsertedIdentity	DATETIME,\
 				InsertingPuzzle			BOOL CHECK(InsertingPuzzle IN('true','false')) DEFAULT 'false',\
 				LastInsertedPuzzle		DATETIME,\
 				InsertingTrustList		BOOL CHECK(InsertingTrustList IN('true','false')) DEFAULT 'false',\
-				LastInsertedTrustList	DATETIME\
+				LastInsertedTrustList	DATETIME,\
+				InsertingBoardList		BOOL CHECK(InsertingBoardList IN('true','false')) DEFAULT 'false',\
+				LastInsertedBoardList	DATETIME\
 				);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblLocalIdentityInserts(\
 				LocalIdentityID		INTEGER,\
 				Day					DATE,\
 				InsertIndex			INTEGER\
+				);");
+
+	db->Execute("CREATE TABLE IF NOT EXISTS tblTrustListInserts(\
+				LocalIdentityID		INTEGER,\
+				Day					DATE,\
+				InsertIndex			INTEGER\
+				);");
+
+	db->Execute("CREATE TABLE IF NOT EXISTS tblTrustListRequests(\
+				IdentityID			INTEGER,\
+				Day					DATE,\
+				RequestIndex		INTEGER,\
+				Found				BOOL CHECK(Found IN('true','false')) DEFAULT 'false'\
 				);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblIntroductionPuzzleInserts(\
@@ -66,6 +83,8 @@ void SetupDB()
 				PublicKey			TEXT,\
 				Name				TEXT,\
 				SingleUse			BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
+				PublishTrustList	BOOL CHECK(PublishTrustList IN('true','false')) DEFAULT 'false',\
+				PublishBoardList	BOOL CHECK(PublishBoardList IN('true','false')) DEFAULT 'false',\
 				DateAdded			DATETIME,\
 				LastSeen			DATETIME,\
 				LocalMessageTrust	INTEGER CHECK(LocalMessageTrust BETWEEN 0 AND 100) DEFAULT 50,\
@@ -75,7 +94,7 @@ void SetupDB()
 				);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblIdentityRequests(\
-				IdentityID			INTEGER PRIMARY KEY,\
+				IdentityID			INTEGER,\
 				Day					DATE,\
 				RequestIndex		INTEGER,\
 				Found				BOOL CHECK(Found IN('true','false')) DEFAULT 'false'\
@@ -99,6 +118,51 @@ void SetupDB()
 				Solution			TEXT,\
 				Inserted			BOOL CHECK(Inserted IN('true','false')) DEFAULT 'false'\
 				);");
+
+	db->Execute("CREATE TABLE IF NOT EXISTS tblPeerTrust(\
+				IdentityID			INTEGER,\
+				TargetIdentityID	INTEGER,\
+				MessageTrust		INTEGER CHECK(MessageTrust BETWEEN 0 AND 100),\
+				TrustListTrust		INTEGER CHECK(TrustListTrust BETWEEN 0 AND 100)\
+				);");
+
+	// calculates peer trust
+	db->Execute("CREATE VIEW IF NOT EXISTS vwCalculatedPeerTrust AS \
+				SELECT TargetIdentityID, \
+				ROUND(SUM(MessageTrust*(LocalMessageTrust/100.0))/SUM(LocalMessageTrust/100.0),0) AS 'PeerMessageTrust', \
+				ROUND(SUM(TrustListTrust*(LocalTrustListTrust/100.0))/SUM(LocalTrustListTrust/100.0),0) AS 'PeerTrustListTrust' \
+				FROM tblPeerTrust INNER JOIN tblIdentity ON tblPeerTrust.IdentityID=tblIdentity.IdentityID \
+				WHERE LocalTrustListTrust>(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust') \
+				GROUP BY TargetIdentityID;");
+
+	// update PeerTrustLevel when deleting a record from tblPeerTrust
+	db->Execute("CREATE TRIGGER trgDeleteOntblPeerTrust AFTER DELETE ON tblPeerTrust \
+				FOR EACH ROW \
+				BEGIN \
+					UPDATE tblIdentity SET PeerMessageTrust=(SELECT PeerMessageTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=old.TargetIdentityID), PeerTrustListTrust=(SELECT PeerTrustListTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=old.TargetIdentityID) WHERE IdentityID=old.TargetIdentityID;\
+				END;");
+
+	// update PeerTrustLevel when inserting a record into tblPeerTrust
+	db->Execute("CREATE TRIGGER trgInsertOntblPeerTrust AFTER INSERT ON tblPeerTrust \
+				FOR EACH ROW \
+				BEGIN \
+					UPDATE tblIdentity SET PeerMessageTrust=(SELECT PeerMessageTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=new.TargetIdentityID), PeerTrustListTrust=(SELECT PeerTrustListTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=new.TargetIdentityID) WHERE IdentityID=new.TargetIdentityID;\
+				END;");
+
+	// update PeerTrustLevel when updating a record in tblPeerTrust
+	db->Execute("CREATE TRIGGER trgUpdateOntblPeerTrust AFTER UPDATE ON tblPeerTrust \
+				FOR EACH ROW \
+				BEGIN \
+					UPDATE tblIdentity SET PeerMessageTrust=(SELECT PeerMessageTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=old.TargetIdentityID), PeerTrustListTrust=(SELECT PeerTrustListTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=old.TargetIdentityID) WHERE IdentityID=old.TargetIdentityID;\
+					UPDATE tblIdentity SET PeerMessageTrust=(SELECT PeerMessageTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=new.TargetIdentityID), PeerTrustListTrust=(SELECT PeerTrustListTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=new.TargetIdentityID) WHERE IdentityID=new.TargetIdentityID;\
+				END;");
+
+	// recalculate all Peer TrustLevels when updating Local TrustLevels on tblIdentity - doesn't really need to be all, but rather all identities the updated identity has a trust level for.  It's easier to update everyone for now.
+	db->Execute("CREATE TRIGGER trgUpdateLocalTrustLevels AFTER UPDATE OF LocalMessageTrust,LocalTrustListTrust ON tblIdentity \
+				FOR EACH ROW \
+				BEGIN \
+					UPDATE tblIdentity SET PeerMessageTrust=(SELECT PeerMessageTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=IdentityID), PeerTrustListTrust=(SELECT PeerTrustListTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=IdentityID);\
+				END;");
 
 }
 
@@ -161,6 +225,18 @@ void SetupDefaultOptions()
 	st.Bind(0,"MaxIntroductionPuzzleRequests");
 	st.Bind(1,"5");
 	st.Bind(2,"Maximum number of concurrent requests for new IntroductionPuzzle xml files");
+	st.Step();
+	st.Reset();
+
+	st.Bind(0,"MaxTrustListRequests");
+	st.Bind(1,"5");
+	st.Bind(2,"Maximum number of concurrent requests for new Trust Lists");
+	st.Step();
+	st.Reset();
+
+	st.Bind(0,"MinLocalTrustListTrust");
+	st.Bind(1,"50");
+	st.Bind(2,"Specifies a local trust list trust level that a peer must have before its trust list will be included in the weighted average.  Any peers below this number will be excluded from the results.");
 	st.Step();
 	st.Reset();
 

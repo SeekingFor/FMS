@@ -4,7 +4,7 @@
 #include <vector>
 #include <zthread/Thread.h>
 
-#define FMS_VERSION	"0.0.1"
+#define FMS_VERSION	"0.0.2"
 
 // opens database and creates tables and initial inserts if necessary
 void SetupDB();
