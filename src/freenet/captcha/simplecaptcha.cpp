@@ -56,7 +56,8 @@ void SimpleCaptcha::Generate()
 
 const std::string SimpleCaptcha::GenerateRandomString(const int len)
 {
-	static std::string chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	// no l,1 O,0 because they look too much alike
+	static std::string chars="abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ23456789";
 	std::string temp="";
 	for(int i=0; i<len; i++)
 	{

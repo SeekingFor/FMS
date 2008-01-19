@@ -14,7 +14,7 @@ class Statement
 public:
 	Statement();
 	Statement(sqlite3_stmt *statement);
-	Statement(Statement &rhs);
+	Statement(const Statement &rhs);
 	virtual ~Statement();
 
 	virtual const int ParameterCount() { return m_parametercount; }
@@ -36,6 +36,7 @@ public:
 
 	virtual const bool Bind(const int column);
 	virtual const bool Bind(const int column, const int value);
+	virtual const bool Bind(const int column, const long value)			{ return Bind(column,static_cast<int>(value)); }
 	virtual const bool Bind(const int column, const double value);
 	virtual const bool Bind(const int column, const std::string &value);
 	virtual const bool Bind(const int column, const void *data, const int length);

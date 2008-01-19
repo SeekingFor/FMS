@@ -11,6 +11,7 @@
 #include "../../include/freenet/introductionpuzzleremover.h"
 #include "../../include/freenet/identityintroductioninserter.h"
 #include "../../include/freenet/trustlistinserter.h"
+#include "../../include/freenet/trustlistrequester.h"
 
 #include <zthread/Thread.h>
 
@@ -61,7 +62,7 @@ const bool FreenetMasterThread::FCPConnect()
 		m_receivednodehello=false;
 	}
 
-	m_log->WriteLog(LogFile::LOGLEVEL_INFO,__FUNCTION__" trying to connect to node "+m_fcphost);
+	m_log->WriteLog(LogFile::LOGLEVEL_INFO,"FreenetMasterThread::FCPConnect trying to connect to node "+m_fcphost);
 
 	if(m_fcp.Connect(m_fcphost.c_str(),m_fcpport)==true)
 	{
@@ -70,7 +71,7 @@ const bool FreenetMasterThread::FCPConnect()
 		// send ClientHello message to node
 		m_fcp.SendMessage("ClientHello",2,"Name",clientname.c_str(),"ExpectedVersion","2.0");
 
-		m_log->WriteLog(LogFile::LOGLEVEL_INFO,__FUNCTION__" connected to node");
+		m_log->WriteLog(LogFile::LOGLEVEL_INFO,"FreenetMasterThread::FCPConnect connected to node");
 
 		return true;
 	}
@@ -112,7 +113,7 @@ const bool FreenetMasterThread::HandleMessage(FCPMessage &message)
 			{
 				info+="\t\t\t\t"+(*mi).first+"="+(*mi).second+"\r\n";
 			}
-			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" received unhandled "+message.GetName()+" message.  Message content :\r\n"+info);
+			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"FreenetMasterThread::HandleMessage received unhandled "+message.GetName()+" message.  Message content :\r\n"+info);
 
 			// if unhandled message was alldata - we must retrieve the data
 			if(message.GetName()=="AllData")
@@ -137,7 +138,7 @@ const bool FreenetMasterThread::HandleMessage(FCPMessage &message)
 	}
 	else
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" received "+message.GetName()+" message before NodeHello");
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"FreenetMasterThread::HandleMessage received "+message.GetName()+" message before NodeHello");
 	}
 
 	return false;
@@ -173,7 +174,7 @@ void FreenetMasterThread::run()
 			if(FCPConnect()==false)
 			{
 
-				m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" could not connect to node.  Waiting 60 seconds.");
+				m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"FreenetMasterThread::run could not connect to node.  Waiting 60 seconds.");
 
 				// wait 60 seconds - will then try to connect again
 				try
@@ -233,6 +234,7 @@ void FreenetMasterThread::Setup()
 	m_registrables.push_back(new IntroductionPuzzleRemover());
 	m_registrables.push_back(new IdentityIntroductionInserter(&m_fcp));
 	m_registrables.push_back(new TrustListInserter(&m_fcp));
+	m_registrables.push_back(new TrustListRequester(&m_fcp));
 
 	for(std::vector<IFreenetRegistrable *>::iterator i=m_registrables.begin(); i!=m_registrables.end(); i++)
 	{
@@ -243,7 +245,7 @@ void FreenetMasterThread::Setup()
 
 void FreenetMasterThread::Shutdown()
 {
-	// delete each registerable object
+	// delete each registrable object
 	for(std::vector<IFreenetRegistrable *>::iterator i=m_registrables.begin(); i!=m_registrables.end(); i++)
 	{
 		delete (*i);

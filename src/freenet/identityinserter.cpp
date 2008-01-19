@@ -26,10 +26,13 @@ void IdentityInserter::CheckForNeededInsert()
 	// set date to 1 hour back
 	date.Add(0,0,-1);
 
-	// Because of importance of Identity.xml, if we are now at the next day we immediately want to insert identities so change the date back to now
+	// Because of importance of Identity.xml, if we are now at the next day we immediately want to insert identities so change the date back to 12:00 AM so we find all identities not inserted yet today
 	if(date.GetDay()!=now.GetDay())
 	{
 		date=now;
+		date.SetHour(0);
+		date.SetMinute(0);
+		date.SetSecond(0);
 	}
 
 	SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID FROM tblLocalIdentity WHERE PrivateKey IS NOT NULL AND PrivateKey <> '' AND InsertingIdentity='false' AND (LastInsertedIdentity<'"+date.Format("%Y-%m-%d %H:%M:%S")+"' OR LastInsertedIdentity IS NULL) ORDER BY LastInsertedIdentity;");
@@ -79,14 +82,14 @@ const bool IdentityInserter::HandleMessage(FCPMessage &message)
 		{
 			m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+now.Format("%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
 			m_db->Execute("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
-			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" inserted identity xml");
+			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityInserter::HandleMessage inserted Identity xml");
 			return true;
 		}
 
 		if(message.GetName()=="PutFailed")
 		{
 			m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID="+idparts[1]+";");
-			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" failure inserting identity xml.  Code="+message["Code"]+" Description="+message["CodeDescription"]);
+			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityInserter::HandleMessage failure inserting Identity xml.  Code="+message["Code"]+" Description="+message["CodeDescription"]);
 			
 			// if code 9 (collision), then insert index into inserted table
 			if(message["Code"]=="9")
@@ -195,7 +198,7 @@ void IdentityInserter::StartInsert(const long localidentityid)
 
 		if(rs.GetField(4))
 		{
-			publishboardlist=rs.GetField(3);
+			publishboardlist=rs.GetField(4);
 		}
 		publishboardlist=="true" ? idxml.SetPublishBoardList(true) : idxml.SetPublishBoardList(false);
 

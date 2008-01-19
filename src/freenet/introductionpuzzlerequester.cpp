@@ -76,7 +76,7 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" parsed IntroductionPuzzle XML file : "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IntroductionPuzzleRequester::HandleAllData parsed IntroductionPuzzle XML file : "+message["Identifier"]);
 	}
 	else
 	{
@@ -88,7 +88,7 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" error parsing IntroductionPuzzle XML file : "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IntroductionPuzzleRequester::HandleAllData error parsing IntroductionPuzzle XML file : "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -121,7 +121,7 @@ const bool IntroductionPuzzleRequester::HandleGetFailed(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" fatal error requesting "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IntroductionPuzzleRequester::HandleGetFailed fatal error requesting "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list

@@ -104,7 +104,7 @@ const bool IdentityRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" parsed Identity XML file : "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityRequester::HandleAllData parsed Identity XML file : "+message["Identifier"]);
 	}
 	else
 	{
@@ -116,7 +116,7 @@ const bool IdentityRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" error parsing Identity XML file : "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IdentityRequester::HandleAllData error parsing Identity XML file : "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -149,7 +149,7 @@ const bool IdentityRequester::HandleGetFailed(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" fatal error requesting "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IdentityRequester::HandleGetFailed fatal error requesting "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list

@@ -91,10 +91,10 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPMessage &message)
 		}
 		else
 		{
-			m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" parsed public SSK key was not valid.");
+			m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IdentityIntroductionRequester::HandleAllData parsed public SSK key was not valid.");
 		}
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" parsed IdentityIntroduction XML file : "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityIntroductionRequester::HandleAllData parsed IdentityIntroduction XML file : "+message["Identifier"]);
 	}
 	else
 	{
@@ -104,7 +104,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();		
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" error parsing IdentityIntroduction XML file : "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IdentityIntroductionRequester::HandleAllData error parsing IdentityIntroduction XML file : "+message["Identifier"]);
 	}
 
 	// remove UUID from request list
@@ -127,7 +127,7 @@ const bool IdentityIntroductionRequester::HandleGetFailed(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" Fatal GetFailed for "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityIntroductionRequester::HandleAllData Fatal GetFailed for "+message["Identifier"]);
 	}
 
 	// remove UUID from request list
@@ -279,7 +279,6 @@ void IdentityIntroductionRequester::StartRequest(const std::string &UUID)
 	st.Bind(0,UUID);
 	st.Step();
 
-	//TODO finish
 	if(st.RowReturned())
 	{
 		st.ResultText(0,day);

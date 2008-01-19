@@ -61,7 +61,7 @@ const bool IdentityIntroductionInserter::HandleMessage(FCPMessage &message)
 			if(message["Fatal"]=="true" || message["Code"]=="9")
 			{
 				m_db->Execute("DELETE FROM tblIdentityIntroductionInserts WHERE UUID='"+idparts[3]+"';");
-				m_log->WriteLog(LogFile::LOGLEVEL_WARNING,__FUNCTION__" received fatal error trying to insert IdentityIntroduction "+idparts[3]);
+				m_log->WriteLog(LogFile::LOGLEVEL_WARNING,"IdentityIntroductionInserter::HandleMessage received fatal error trying to insert IdentityIntroduction "+idparts[3]);
 			}
 			m_inserting=false;
 			return true;
@@ -71,7 +71,7 @@ const bool IdentityIntroductionInserter::HandleMessage(FCPMessage &message)
 		{
 			m_db->Execute("UPDATE tblIdentityIntroductionInserts SET Inserted='true' WHERE UUID='"+idparts[3]+"';");
 			m_inserting=false;
-			m_log->WriteLog(LogFile::LOGLEVEL_INFO,__FUNCTION__" successfully inserted IdentityIntroduction "+idparts[3]);
+			m_log->WriteLog(LogFile::LOGLEVEL_INFO,"IdentityIntroductionInserter::HandleMessage successfully inserted IdentityIntroduction "+idparts[3]);
 			return true;
 		}
 
@@ -150,7 +150,7 @@ void IdentityIntroductionInserter::StartInsert(const long localidentityid, const
 	}
 	else
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" could not find a public key for identity.  It is probably a new identity that doesn't have a key yet.");
+		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityIntroductionInserter::StartInsert could not find a public key for identity.  It is probably a new identity that doesn't have a key yet.");
 	}
 
 }

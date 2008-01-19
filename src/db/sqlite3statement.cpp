@@ -30,7 +30,7 @@ Statement::Statement(sqlite3_stmt *statement)
 	}
 }
 
-Statement::Statement(Statement &rhs)
+Statement::Statement(const Statement &rhs)
 {
 	m_statement=NULL;
 	m_parametercount=0;

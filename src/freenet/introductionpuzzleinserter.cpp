@@ -118,7 +118,7 @@ const bool IntroductionPuzzleInserter::HandlePutFailed(FCPMessage &message)
 		m_db->Execute("UPDATE tblIntroductionPuzzleInserts SET Day='"+idparts[5]+"', InsertIndex="+idparts[2]+", FoundSolution='true' WHERE UUID='"+idparts[3]+"';");
 	}
 
-	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" failed to insert puzzle "+idparts[3]);
+	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IntroductionPuzzleInserter::HandlePutFailed failed to insert puzzle "+idparts[3]);
 
 	return true;
 }
@@ -149,7 +149,7 @@ const bool IntroductionPuzzleInserter::HandlePutSuccessful(FCPMessage &message)
 	st.Step();
 	st.Finalize();
 
-	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" inserted puzzle "+idparts[3]);
+	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IntroductionPuzzleInserter::HandlePutSuccessful inserted puzzle "+idparts[3]);
 
 	return true;
 }
@@ -240,6 +240,6 @@ void IntroductionPuzzleInserter::StartInsert(const long localidentityid)
 	m_db->Execute("UPDATE tblLocalIdentity SET InsertingPuzzle='true' WHERE LocalIdentityID="+idstring+";");
 	m_db->Execute("INSERT INTO tblIntroductionPuzzleInserts(UUID,Type,MimeType,LocalIdentityID,PuzzleData,PuzzleSolution) VALUES('"+xml.GetUUID()+"','captcha','image/bmp',"+idstring+",'"+encodedpuzzle+"','"+solutionstring+"');");
 
-	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" started insert for id "+idstring);
+	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IntroductionPuzzleInserter::StartInsert started insert for id "+idstring);
 
 }

@@ -12,6 +12,7 @@ function linkbar()
 			<li><a href="introduce.php">Introduce Identity</a></li>
 			<li><a href="introductionstatus.php">Introduction Status</a></li>
 			<li><a href="addpeeridentity.php">Manually Add Peer</a></li>
+			<li><a href="identitytrust.php">Identity Trust</a></li>
 		</ul>
 		</div>
 <?php

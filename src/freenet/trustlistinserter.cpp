@@ -68,14 +68,14 @@ const bool TrustListInserter::HandleMessage(FCPMessage &message)
 		{
 			m_db->Execute("UPDATE tblLocalIdentity SET InsertingTrustList='false', LastInsertedTrustList='"+now.Format("%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
 			m_db->Execute("INSERT INTO tblTrustListInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
-			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" inserted TrustList xml");
+			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"TrustListInserter::HandleMessage inserted TrustList xml");
 			return true;
 		}
 
 		if(message.GetName()=="PutFailed")
 		{
 			m_db->Execute("UPDATE tblLocalIdentity SET InsertingTrustList='false' WHERE LocalIdentityID="+idparts[1]+";");
-			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" failure inserting TrustList xml.  Code="+message["Code"]+" Description="+message["CodeDescription"]);
+			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"TrustListInserter::HandleMessage failure inserting TrustList xml.  Code="+message["Code"]+" Description="+message["CodeDescription"]);
 			
 			// if code 9 (collision), then insert index into inserted table
 			if(message["Code"]=="9")

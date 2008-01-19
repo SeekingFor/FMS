@@ -65,7 +65,7 @@ function content()
 		print "<br>";
 	}
 	?>
-	<input type="submit">
+	<input type="submit" value="Announce">
 	</form>	
 	<?php	
 }

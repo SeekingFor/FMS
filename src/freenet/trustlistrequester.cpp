@@ -32,6 +32,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 {
 	DateTime now;
 	SQLite3DB::Statement st;
+	SQLite3DB::Statement trustst;
 	std::vector<std::string> idparts;
 	long datalength;
 	std::vector<char> data;
@@ -64,23 +65,45 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 	// parse file into xml and update the database
 	if(xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
+
+		// drop all existing peer trust from this identity - we will rebuild it when we go through each trust in the xml file
+		st=m_db->Prepare("DELETE FROM tblPeerTrust WHERE IdentityID=?;");
+		st.Bind(0,identityid);
+		st.Step();
+		st.Finalize();
+
 		st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
+		trustst=m_db->Prepare("INSERT INTO tblPeerTrust(IdentityID,TargetIdentityID,MessageTrust,TrustListTrust) VALUES(?,?,?,?);");
 		// loop through all trust entries in xml and add to database if we don't already know them
 		for(long i=0; i<xml.TrustCount(); i++)
 		{
+			int id;
 			std::string identity;
 			identity=xml.GetIdentity(i);
-
-			//TODO get the trust levels as well
 
 			st.Bind(0,identity);
 			st.Step();
 			if(st.RowReturned()==false)
 			{
-				m_db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded) VALUES('"+identity+"','"+now.Format("%Y-%m-%d %H:%M:%S")+"');");
+				m_db->ExecuteInsert("INSERT INTO tblIdentity(PublicKey,DateAdded) VALUES('"+identity+"','"+now.Format("%Y-%m-%d %H:%M:%S")+"');",(long &)id);
+			}
+			else
+			{
+				st.ResultInt(0,id);
 			}
 			st.Reset();
+
+			//insert trust for this identity
+			trustst.Bind(0,identityid);
+			trustst.Bind(1,id);
+			trustst.Bind(2,xml.GetMessageTrust(i));
+			trustst.Bind(3,xml.GetTrustListTrust(i));
+			trustst.Step();
+			trustst.Reset();
+
 		}
+		trustst.Finalize();
+		st.Finalize();
 
 		st=m_db->Prepare("INSERT INTO tblTrustListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
 		st.Bind(0,identityid);
@@ -89,7 +112,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,__FUNCTION__" parsed Identity XML file : "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"TrustListRequester::HandleAllData parsed TrustList XML file : "+message["Identifier"]);
 	}
 	else
 	{
@@ -101,7 +124,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" error parsing TrustList XML file : "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"TrustListRequester::HandleAllData error parsing TrustList XML file : "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -134,7 +157,7 @@ const bool TrustListRequester::HandleGetFailed(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__" fatal error requesting "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"TrustListRequester::HandleGetFailed fatal error requesting "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list

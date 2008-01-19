@@ -126,13 +126,52 @@ void SetupDB()
 				TrustListTrust		INTEGER CHECK(TrustListTrust BETWEEN 0 AND 100)\
 				);");
 
+	db->Execute("CREATE TABLE IF NOT EXISTS tblBoard(\
+				BoardID				INTEGER PRIMARY KEY,\
+				BoardName			TEXT UNIQUE,\
+				BoardDescription	TEXT,\
+				DateAdded			DATETIME\
+				);");
+
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded) VALUES('fms','Freenet Message System','2007-12-01');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded) VALUES('freenet','Discussion about Freenet','2007-12-01');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded) VALUES('public','Public discussion','2007-12-01');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded) VALUES('test','Test board','2007-12-01');");
+
+	db->Execute("CREATE TABLE IF NOT EXISTS tblMessage(\
+				MessageID			INTEGER PRIMARY KEY,\
+				MessageDate			DATE,\
+				MessageTime			TIME,\
+				Subject				TEXT,\
+				MessageUUID			TEXT UNIQUE,\
+				ReplyBoardID		INTEGER,\
+				Body				TEXT\
+				);");
+
+	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageReplyTo(\
+				MessageID			INTEGER,\
+				ReplyToMessageID	INTEGER,\
+				Order				INTEGER\
+				);");
+	
+	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageBoard(\
+				MessageID			INTEGER,\
+				BoardID				INTEGER\
+				);");
+
+	// low / high / message count for each board
+	db->Execute("CREATE VIEW IF NOT EXISTS vwBoardStats AS \
+				SELECT tblBoard.BoardID AS 'BoardID', IFNULL(MIN(MessageID),0) AS 'LowMessageID', IFNULL(MAX(MessageID),0) AS 'HighMessageID', COUNT(MessageID) AS 'MessageCount' \
+				FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID \
+				GROUP BY tblBoard.BoardID;");
+
 	// calculates peer trust
 	db->Execute("CREATE VIEW IF NOT EXISTS vwCalculatedPeerTrust AS \
 				SELECT TargetIdentityID, \
 				ROUND(SUM(MessageTrust*(LocalMessageTrust/100.0))/SUM(LocalMessageTrust/100.0),0) AS 'PeerMessageTrust', \
 				ROUND(SUM(TrustListTrust*(LocalTrustListTrust/100.0))/SUM(LocalTrustListTrust/100.0),0) AS 'PeerTrustListTrust' \
 				FROM tblPeerTrust INNER JOIN tblIdentity ON tblPeerTrust.IdentityID=tblIdentity.IdentityID \
-				WHERE LocalTrustListTrust>(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust') \
+				WHERE LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust') \
 				GROUP BY TargetIdentityID;");
 
 	// update PeerTrustLevel when deleting a record from tblPeerTrust
@@ -186,7 +225,7 @@ void SetupDefaultOptions()
 	// StartFreenetUpdater
 	st.Bind(0,"StartFreenetUpdater");
 	st.Bind(1,"true");
-	st.Bind(2,"Start Freenet Updater.");
+	st.Bind(2,"Start Freenet Updater thread.");
 	st.Step();
 	st.Reset();
 

@@ -75,7 +75,7 @@ const bool UnkeyedIDCreator::HandleMessage(FCPMessage &message)
 				SaveKeys(id,message["RequestURI"],message["InsertURI"]);
 			}
 
-			m_log->WriteLog(LogFile::LOGLEVEL_INFO,__FUNCTION__" received keypair");
+			m_log->WriteLog(LogFile::LOGLEVEL_INFO,"UnkeyedIDCreator::HandleMessage received keypair");
 
 			m_waiting=false;
 

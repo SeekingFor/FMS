@@ -134,11 +134,12 @@ const bool TrustListXML::ParseXML(const std::string &xml)
 			}
 			else
 			{
-				m_log->WriteLog(LogFile::LOGLEVEL_ERROR,__FUNCTION__," malformed Trust in TrustList.xml");
+				m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"TrustListXML::ParseXML malformed Trust in TrustList.xml");
 			}
 			
 			node=node->NextSibling("Trust");
 		}
+		return true;
 
 	}
 	else
