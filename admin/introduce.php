@@ -53,16 +53,22 @@ function content()
 	print "<br>Type answers for a few puzzles and submit<br>";
 	
 	
-	$st=$db->prepare("SELECT UUID,Day FROM tblIntroductionPuzzleRequests WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND Day>='".gmdate('Y-m-d',strtotime('-1 day'))."' AND Found='true';");
+	$st=$db->prepare("SELECT UUID,Day,IdentityID FROM tblIntroductionPuzzleRequests WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND Day>='".gmdate('Y-m-d',strtotime('-1 day'))."' AND Found='true' ORDER BY IdentityID, RequestIndex DESC;");
 	$st->execute();
 	
+	// only show latest captcha for each known identity
+	$lastid='';
 	while($record=$st->fetch())
 	{
-		print "<img src=\"showcaptcha.php?UUID=".$record[0]."\">";
-		print "<input type=\"hidden\" name=\"uuid[]\" value=\"".$record[0]."\">";
-		print "<input type=\"hidden\" name=\"day[]\" value=\"".$record[1]."\">";
-		print "<input type=\"text\" name=\"solution[]\">";
-		print "<br>";
+		if($lastid!=$record[2])
+		{
+			$lastid=$record[2];
+			print "<img src=\"showcaptcha.php?UUID=".$record[0]."\">";
+			print "<input type=\"hidden\" name=\"uuid[]\" value=\"".$record[0]."\">";
+			print "<input type=\"hidden\" name=\"day[]\" value=\"".$record[1]."\">";
+			print "<input type=\"text\" name=\"solution[]\">";
+			print "<br>";
+		}
 	}
 	?>
 	<input type="submit" value="Announce">

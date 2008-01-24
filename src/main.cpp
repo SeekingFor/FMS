@@ -1,4 +1,4 @@
-#include "../include/identitytestglobal.h"
+#include "../include/global.h"
 #include "../include/commandthread.h"
 
 #include <ctime>
@@ -21,13 +21,14 @@ int main()
 	SetupDB();
 	SetupDefaultOptions();
 
+
 	SetupLogFile();
 
 	SetupNetwork();
 
 	LogFile::instance()->WriteLog(LogFile::LOGLEVEL_INFO,"FMS startup v"FMS_VERSION);
 
-	
+
 	StartThreads(threads);
 
 

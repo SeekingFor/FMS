@@ -1,4 +1,5 @@
 #include "../include/socketdefines.h"
+#include <cerrno>
 
 #ifdef XMEM
 	#include <xmem.h>

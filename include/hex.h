@@ -12,4 +12,4 @@ const bool Decode(const std::string &encoded, std::vector<unsigned char> &data);
 		
 };
 
-#endif _hex_funcs_
+#endif	// _hex_funcs_

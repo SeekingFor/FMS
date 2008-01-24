@@ -12,6 +12,10 @@
 #include "../../include/freenet/identityintroductioninserter.h"
 #include "../../include/freenet/trustlistinserter.h"
 #include "../../include/freenet/trustlistrequester.h"
+#include "../../include/freenet/messagelistrequester.h"
+#include "../../include/freenet/messagerequester.h"
+#include "../../include/freenet/messageinserter.h"
+#include "../../include/freenet/messagelistinserter.h"
 
 #include <zthread/Thread.h>
 
@@ -235,6 +239,10 @@ void FreenetMasterThread::Setup()
 	m_registrables.push_back(new IdentityIntroductionInserter(&m_fcp));
 	m_registrables.push_back(new TrustListInserter(&m_fcp));
 	m_registrables.push_back(new TrustListRequester(&m_fcp));
+	m_registrables.push_back(new MessageListRequester(&m_fcp));
+	m_registrables.push_back(new MessageRequester(&m_fcp));
+	m_registrables.push_back(new MessageInserter(&m_fcp));
+	m_registrables.push_back(new MessageListInserter(&m_fcp));
 
 	for(std::vector<IFreenetRegistrable *>::iterator i=m_registrables.begin(); i!=m_registrables.end(); i++)
 	{

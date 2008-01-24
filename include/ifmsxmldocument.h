@@ -1,6 +1,8 @@
 #ifndef _ifmsxmldocument_
 #define _ifmsxmldocument_
 
+#include "stringfunctions.h"
+
 #include <string>
 #include <tinyxml.h>
 
@@ -58,6 +60,13 @@ protected:
 		TiXmlElement *el=new TiXmlElement(name);
 		el->LinkEndChild(txt);
 		return el;
+	}
+
+	virtual TiXmlElement *XMLCreateTextElement(const std::string &name, const long data)
+	{
+		std::string datastr;
+		StringFunctions::Convert(data,datastr);
+		return XMLCreateTextElement(name,datastr);
 	}
 
 	virtual const bool XMLGetBooleanElement(TiXmlElement *parent, const std::string &name)

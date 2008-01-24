@@ -33,8 +33,8 @@ private:
 	void RemoveFromRequestList(const long identityid);
 
 	DateTime m_tempdate;
-	std::string m_messagebase;
 	long m_maxrequests;
+	std::string m_messagebase;
 	std::vector<long> m_requesting;		// list of ids we are currently requesting from
 	std::map<long,bool> m_ids;			// map of all ids we know and whether we have requested file from them yet
 

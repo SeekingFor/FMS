@@ -8,6 +8,12 @@
 namespace StringFunctions
 {
 
+inline const bool Convert(const std::string &input, std::string &output)
+{
+	output=input;
+	return true;
+}
+
 /**
 	\brief Converts a string into any other type
 	\param input[in] string to convert

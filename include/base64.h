@@ -12,4 +12,4 @@ const bool Decode(const std::string &encoded, std::vector<unsigned char> &data);
 
 }	// namespace
 
-#endif	_base64_
+#endif	// _base64_

@@ -11,7 +11,7 @@ function content()
 	if(isset($_REQUEST["formaction"]) && $_REQUEST["formaction"]=="create" && $_REQUEST["name"]!="")
 	{
 		$db=new PDO('sqlite:'.$dblocation);
-		$st=$db->prepare("INSERT INTO tblLocalIdentity(Name) VALUES(?);");
+		$st=$db->prepare("INSERT INTO tblLocalIdentity(Name,PublishTrustList) VALUES(?,'true');");
 		$st->bindParam(1,$_REQUEST["name"]);
 		$st->execute();
 ?>
