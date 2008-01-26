@@ -1,7 +1,9 @@
 #ifndef _uwildmat_
 #define _uwildmat_
 
-#include "../pstdint.h"
+#ifdef _WIN32
+	#include "../pstdint.h"
+#endif
 
 /*
 **  WILDMAT MATCHING

@@ -145,7 +145,7 @@ void IIndexInserter<IDTYPE>::RegisterWithThread(FreenetMasterThread *thread)
 template <class IDTYPE>
 void IIndexInserter<IDTYPE>::RemoveFromInsertList(const IDTYPE identityid)
 {
-	std::vector<IDTYPE>::iterator i=m_inserting.begin();
+	typename std::vector<IDTYPE>::iterator i=m_inserting.begin();
 	while(i!=m_inserting.end() && (*i)!=identityid)
 	{
 		i++;

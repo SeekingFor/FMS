@@ -134,13 +134,14 @@ void IIndexRequester<IDTYPE>::InitializeIIndexRequester()
 template <class IDTYPE>
 void IIndexRequester<IDTYPE>::Process()
 {
-	// max is the smaller of the config value or the total number of identities we will request from
+	// max is the smaller of the config value or the total number of ids we will request from
 	long max=m_maxrequests>m_ids.size() ? m_ids.size() : m_maxrequests;
 
 	// try to keep up to max requests going
 	if(m_requesting.size()<max)
 	{
-		std::map<IDTYPE,bool>::iterator i=m_ids.begin();
+		typename std::map<IDTYPE,bool>::iterator i=m_ids.begin();
+
 		while(i!=m_ids.end() && (*i).second==true)
 		{
 			i++;
@@ -160,7 +161,7 @@ void IIndexRequester<IDTYPE>::Process()
 	// this will recheck for ids every minute
 	DateTime now;
 	now.SetToGMTime();
-	if(m_tempdate<(now-(1.0/1440.0)))
+	if(m_ids.size()==0 && m_tempdate<(now-(1.0/1440.0)))
 	{
 		PopulateIDList();
 		m_tempdate=now;
@@ -179,7 +180,7 @@ void IIndexRequester<IDTYPE>::RegisterWithThread(FreenetMasterThread *thread)
 template <class IDTYPE>
 void IIndexRequester<IDTYPE>::RemoveFromRequestList(const IDTYPE id)
 {
-	std::vector<IDTYPE>::iterator i=m_requesting.begin();
+	typename std::vector<IDTYPE>::iterator i=m_requesting.begin();
 	while(i!=m_requesting.end() && (*i)!=id)
 	{
 		i++;

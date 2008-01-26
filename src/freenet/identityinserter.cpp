@@ -80,7 +80,14 @@ const bool IdentityInserter::HandleMessage(FCPMessage &message)
 
 		if(message.GetName()=="PutSuccessful")
 		{
-			m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+now.Format("%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
+			// a little hack here - if we just inserted index yesterday and it is now the next day - we would have inserted todays date not yesterdays as LastInsertedIdentity.
+			// If this is the case, we will skip updating LastInsertedIdentity so that we can insert this identity again for today
+			DateTime lastdate;
+			lastdate.Set(idparts[4]);
+			if(lastdate.GetDay()!=now.GetDay())
+			{
+				m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+now.Format("%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
+			}
 			m_db->Execute("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
 			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityInserter::HandleMessage inserted Identity xml");
 			return true;

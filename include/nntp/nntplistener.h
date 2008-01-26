@@ -3,6 +3,7 @@
 
 #include <list>
 #include <vector>
+#include <zthread/Thread.h>
 #include <zthread/Task.h>
 #include <zthread/ZThread.h>
 #include <zthread/ThreadedExecutor.h>

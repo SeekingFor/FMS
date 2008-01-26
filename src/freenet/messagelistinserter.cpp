@@ -11,7 +11,7 @@ MessageListInserter::MessageListInserter()
 	Initialize();
 }
 
-MessageListInserter::MessageListInserter(FCPv2 *fcp):IIndexInserter(fcp)
+MessageListInserter::MessageListInserter(FCPv2 *fcp):IIndexInserter<long>(fcp)
 {
 	Initialize();
 }
@@ -29,10 +29,10 @@ void MessageListInserter::CheckForNeededInsert()
 
 		previous.Add(0,0,0,-m_daysbackward);
 
-		// query for identities that have messages in the past X days and we haven't inserted lists for in the past hour
+		// query for identities that have messages in the past X days and we haven't inserted lists for in the past 30 minutes
 		SQLite3DB::Statement st=m_db->Prepare("SELECT tblLocalIdentity.LocalIdentityID FROM tblLocalIdentity INNER JOIN tblMessageInserts ON tblLocalIdentity.LocalIdentityID=tblMessageInserts.LocalIdentityID WHERE tblMessageInserts.Day>=? AND (tblLocalIdentity.LastInsertedMessageList<=? OR tblLocalIdentity.LastInsertedMessageList IS NULL OR tblLocalIdentity.LastInsertedMessageList='');");
 		st.Bind(0,previous.Format("%Y-%m-%d"));
-		st.Bind(1,(now-(1.0/24.0)).Format("%Y-%m-%d %H:%M:%S"));
+		st.Bind(1,(now-(1.0/48.0)).Format("%Y-%m-%d %H:%M:%S"));
 		st.Step();
 
 		if(st.RowReturned())

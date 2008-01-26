@@ -8,7 +8,7 @@ function content()
 	global $dblocation;
 	
 	$db=new PDO('sqlite:'.$dblocation);
-	$st=$db->prepare("SELECT tblLocalIdentity.Name, COUNT(Inserted) FROM tblLocalIdentity LEFT JOIN tblIdentityIntroductionInserts ON tblLocalIdentity.LocalIdentityID=tblIdentityIntroductionInserts.LocalIdentityID WHERE (Inserted='true' OR Inserted IS NULL) GROUP BY tblLocalIdentity.LocalIdentityID;");
+	$st=$db->prepare("SELECT tblLocalIdentity.Name, COUNT(Inserted), tblLocalIdentity.PublicKey FROM tblLocalIdentity LEFT JOIN tblIdentityIntroductionInserts ON tblLocalIdentity.LocalIdentityID=tblIdentityIntroductionInserts.LocalIdentityID WHERE (Inserted='true' OR Inserted IS NULL) GROUP BY tblLocalIdentity.LocalIdentityID;");
 	$st->execute();
 	
 	?>
@@ -23,7 +23,7 @@ function content()
 		{
 			?>
 		<tr>
-			<td>
+			<td title="<?php print $record[2]; ?>">
 				<?php print $record[0]; ?>
 			</td>
 			<td>

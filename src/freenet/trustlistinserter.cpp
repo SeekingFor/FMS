@@ -126,15 +126,18 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	std::string publickey;
 	int messagetrust;
 	int trustlisttrust;
-	DateTime now;
+	DateTime now,date;
 	int index;
 	std::string indexstr;
 	std::string localidentityidstr;
 
 	now.SetToGMTime();
-	
-	// build the xml file
-	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey, LocalMessageTrust, LocalTrustListTrust FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey<>'';");
+	date.SetToGMTime();
+
+	// build the xml file - we only want to add identities that we recently saw, otherwise we could be inserting a ton of identities
+	date.Add(0,0,0,-20);	// identities seen in last 20 days
+	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey, LocalMessageTrust, LocalTrustListTrust FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND LastSeen>=?;");
+	st.Bind(0,date.Format("%Y-%m-%d"));
 	st.Step();
 	while(st.RowReturned())
 	{

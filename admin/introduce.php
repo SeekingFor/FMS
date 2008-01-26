@@ -9,13 +9,13 @@ function localiddropdown($name)
 	
 	$db=new PDO('sqlite:'.$dblocation);
 	
-	$st=$db->prepare("SELECT LocalIdentityID, Name FROM tblLocalIdentity ORDER BY Name;");	
+	$st=$db->prepare("SELECT LocalIdentityID, Name, PublicKey FROM tblLocalIdentity ORDER BY Name;");	
 	$st->execute();
 	
 	print "<select name=\"".$name."\">";
 	while($record=$st->fetch())
 	{
-		print "<option value=\"".$record[0]."\">".$record[1]."</option>";
+		print "<option value=\"".$record[0]."\" title=\"".$record[2]."\">".$record[1]."</option>";
 	}
 	print "</select>";
 }
@@ -53,12 +53,13 @@ function content()
 	print "<br>Type answers for a few puzzles and submit<br>";
 	
 	
-	$st=$db->prepare("SELECT UUID,Day,IdentityID FROM tblIntroductionPuzzleRequests WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND Day>='".gmdate('Y-m-d',strtotime('-1 day'))."' AND Found='true' ORDER BY IdentityID, RequestIndex DESC;");
+	$st=$db->prepare("SELECT UUID,Day,IdentityID FROM tblIntroductionPuzzleRequests WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND Day>='".gmdate('Y-m-d',strtotime('-1 day'))."' AND Found='true' ORDER BY IdentityID, Day DESC, RequestIndex DESC;");
 	$st->execute();
 	
 	// only show latest captcha for each known identity
 	$lastid='';
-	while($record=$st->fetch())
+	$shown=0;
+	while(($record=$st->fetch()) && $shown<30)
 	{
 		if($lastid!=$record[2])
 		{
@@ -68,10 +69,21 @@ function content()
 			print "<input type=\"hidden\" name=\"day[]\" value=\"".$record[1]."\">";
 			print "<input type=\"text\" name=\"solution[]\">";
 			print "<br>";
+			$shown++;
 		}
 	}
+	
+	if($shown>0)
+	{
 	?>
 	<input type="submit" value="Announce">
+	<?php
+	}
+	else
+	{
+		print "You must wait for some puzzles to be downloaded.  Check back later.";
+	}
+	?>
 	</form>	
 	<?php	
 }

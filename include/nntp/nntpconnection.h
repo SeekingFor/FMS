@@ -9,6 +9,17 @@
 #include <vector>
 #include <zthread/Runnable.h>
 
+#ifdef _WIN32
+
+#else
+	#include <sys/socket.h>
+	#include <sys/select.h>
+	#include <sys/types.h>
+	#include <netdb.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+#endif
+
 class NNTPConnection:public ZThread::Runnable,public ILogger//,public IDatabase
 {
 public:
@@ -51,7 +62,7 @@ private:
 	void HandlePostedMessage(const std::string &message);
 
 	void SendArticleParts(const NNTPCommand &command);
-	void SendArticleOverInfo(const Message &message);
+	void SendArticleOverInfo(Message &message);
 
 	// various NNTP commands to handle
 	const bool HandleQuitCommand(const NNTPCommand &command);

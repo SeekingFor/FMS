@@ -88,10 +88,12 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPMessage &message)
 				st.Step();
 			}
 			st.Finalize();
+
+			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityIntroductionRequester::HandleAddData parsed a valid identity.");
 		}
 		else
 		{
-			m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IdentityIntroductionRequester::HandleAllData parsed public SSK key was not valid.");
+			m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IdentityIntroductionRequester::HandleAllData parsed, public SSK key was not valid.");
 		}
 
 		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityIntroductionRequester::HandleAllData parsed IdentityIntroduction XML file : "+message["Identifier"]);

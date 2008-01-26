@@ -9,7 +9,8 @@
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 #else
-
+	#include <netinet/in.h>  // gcc - IPPROTO_ consts
+	#include <netdb.h>       // gcc - addrinfo
 #endif
 
 #ifdef XMEM
@@ -29,7 +30,7 @@ NNTPListener::~NNTPListener()
 void NNTPListener::run()
 {
 	int rval;
-	struct fd_set readfs;
+	fd_set readfs;
 	struct timeval tv;
 	std::vector<SOCKET>::iterator listeni;
 	SOCKET highsocket;
@@ -81,15 +82,30 @@ void NNTPListener::run()
 	// see if any threads are still running - just calling interrupt without check would cause assert in debug mode
 	if(m_connections.wait(1)==false)
 	{
+		LogFile::instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPListener::run interrupting connection threads and waiting 60 seconds for exit.");
 		try
 		{
 			m_connections.interrupt();
 		}
 		catch(...)
 		{
+			LogFile::instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPListener::run caught unhandled exception.");
 		}
-		m_connections.wait();
+		if(m_connections.wait(60)==false)
+		{
+			LogFile::instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPListener::run connection threads did not exit after 60 seconds.");
+		}
 	}
+
+	for(listeni=m_listensockets.begin(); listeni!=m_listensockets.end(); listeni++)
+	{
+		#ifdef _WIN32
+		closesocket((*listeni));
+		#else
+		close((*listeni));
+		#endif
+	}
+	m_listensockets.clear();
 
 }
 

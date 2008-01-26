@@ -25,10 +25,11 @@ function content()
 		}
 	}
 	
-	$st=$db->prepare("SELECT IdentityID,Name,LocalMessageTrust,PeerMessageTrust,LocalTrustListTrust,PeerTrustListTrust FROM tblIdentity ORDER BY Name;");
+	$st=$db->prepare("SELECT IdentityID,Name,LocalMessageTrust,PeerMessageTrust,LocalTrustListTrust,PeerTrustListTrust,PublicKey FROM tblIdentity ORDER BY Name;");
 	$st->execute();
 	?>
 	<h2>Identity Trust</h2>
+	Message Trust is how much you trust the identity to post good messages.  Trust List Trust is how much weight you want the trust list of that identity to have when calculating the total.  The local trust levels are set by you, and the peer trust levels are calculated by a weighted average using other identities trust lists.
 	<form name="frmtrust" method="post">
 	<input type="hidden" name="formaction" value="updatetrust">
 	<table>
@@ -44,18 +45,18 @@ function content()
 		{
 		?>
 		<tr>
-			<td>
-				<?php print($record[1]) ?>
-				<input type="hidden" name="identityid[]" value="<?php print($record[0]) ?>">
+			<td title="<?php print($record[6]); ?>">
+				<?php print($record[1]); ?>
+				<input type="hidden" name="identityid[]" value="<?php print($record[0]); ?>">
 			</td>
 			<td>
-				<input type="hidden" name="oldlocalmessagetrust[]" value="<?php print($record[2]) ?>">
-				<input type="text" name="newlocalmessagetrust[]" size="2" maxlength="3" value="<?php print($record[2]) ?>">
+				<input type="hidden" name="oldlocalmessagetrust[]" value="<?php print($record[2]); ?>">
+				<input type="text" name="newlocalmessagetrust[]" size="2" maxlength="3" value="<?php print($record[2]); ?>">
 			</td>
-			<td><?php print($record[3]) ?></td>
+			<td><?php print($record[3]); ?></td>
 			<td>
-				<input type="hidden" name="oldlocaltrustlisttrust[]" value="<?php print($record[4]) ?>">
-				<input type="text" name="newlocaltrustlisttrust[]" size="2" maxlength="3" value="<?php print($record[4]) ?>">
+				<input type="hidden" name="oldlocaltrustlisttrust[]" value="<?php print($record[4]); ?>">
+				<input type="text" name="newlocaltrustlisttrust[]" size="2" maxlength="3" value="<?php print($record[4]); ?>">
 			</td>
 			<td><?php print($record[5]) ?></td>
 		</tr>

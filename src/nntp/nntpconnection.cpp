@@ -24,7 +24,7 @@ NNTPConnection::NNTPConnection(SOCKET sock)
 	m_status.m_allowpost=false;
 	m_status.m_boardid=-1;
 	m_status.m_messageid=-1;
-	m_status.m_mode=ClientMode::MODE_NONE;
+	m_status.m_mode=MODE_NONE;
 
 	Option::instance()->Get("NNTPAllowPost",tempval);
 	if(tempval=="true")
@@ -479,7 +479,7 @@ const bool NNTPConnection::HandleModeCommand(const NNTPCommand &command)
 		StringFunctions::UpperCase(arg,arg);
 		if(arg=="READER")
 		{
-			m_status.m_mode=ClientMode::MODE_READER;
+			m_status.m_mode=MODE_READER;
 			if(m_status.m_allowpost==true)
 			{
 				SendBufferedLine("200 Posting allowed");
@@ -865,7 +865,7 @@ const bool NNTPConnection::HandleQuitCommand(const NNTPCommand &command)
 void NNTPConnection::run()
 {
 	struct timeval tv;
-	FD_SET writefs,readfs;
+	fd_set writefs,readfs;
 	int rval;
 
 	// seed random number generater for this thread
@@ -919,7 +919,7 @@ void NNTPConnection::run()
 	
 }
 
-void NNTPConnection::SendArticleOverInfo(const Message &message)
+void NNTPConnection::SendArticleOverInfo(Message &message)
 {
 	std::string tempval;
 	std::string line;
@@ -934,7 +934,7 @@ void NNTPConnection::SendArticleOverInfo(const Message &message)
 	references=message.GetInReplyTo();
 	if(references.size()>0)
 	{
-		for(std::map<long,std::string>::const_reverse_iterator i=references.rbegin(); i!=references.rend(); i++)
+		for(std::map<long,std::string>::reverse_iterator i=references.rbegin(); i!=references.rend(); i++)
 		{
 			if(i!=references.rbegin())
 			{
@@ -1163,9 +1163,11 @@ void NNTPConnection::SocketReceive()
 	}
 	else if(rval==-1)
 	{
+		std::string errnostr;
+		StringFunctions::Convert(GetSocketErrorNumber(),errnostr);
 		// error on receive - close the connection
 		Disconnect();
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPConnection::SocketReceive recv returned -1 : "+GetSocketErrorMessage());
+		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPConnection::SocketReceive recv returned -1 : "+errnostr+" - "+GetSocketErrorMessage());
 	}
 }
 
@@ -1180,7 +1182,9 @@ void NNTPConnection::SocketSend()
 		}
 		else if(rval==-1)
 		{
-			m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPConnection::SocketSend returned -1 : "+GetSocketErrorMessage());
+			std::string errnostr;
+			StringFunctions::Convert(GetSocketErrorNumber(),errnostr);
+			m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPConnection::SocketSend returned -1 : "+errnostr+" - "+GetSocketErrorMessage());
 		}
 	}
 }

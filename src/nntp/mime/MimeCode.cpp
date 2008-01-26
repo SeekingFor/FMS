@@ -19,6 +19,12 @@ static char THIS_FILE[]=__FILE__;
 #define new DEBUG_NEW
 #endif
 
+#ifndef _WIN32
+	#define stricmp strcasecmp
+	#define strnicmp strncasecmp
+	#define memicmp memcmp
+#endif
+
 //////////////////////////////////////////////////////////////////////
 // CMimeEnvironment - global environment to manage encoding/decoding
 //////////////////////////////////////////////////////////////////////

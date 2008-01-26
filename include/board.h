@@ -35,4 +35,4 @@ private:
 	long m_messagecount;		// number of messages in this board
 };
 
-#endif _board_
+#endif	// _board_

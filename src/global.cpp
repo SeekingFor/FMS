@@ -18,6 +18,7 @@
 void SetupDB()
 {
 
+	DateTime date;
 	SQLite3DB::DB *db=SQLite3DB::DB::instance();
 
 	db->Open("fms.db3");
@@ -212,21 +213,21 @@ void SetupDB()
 				GROUP BY TargetIdentityID;");
 
 	// update PeerTrustLevel when deleting a record from tblPeerTrust
-	db->Execute("CREATE TRIGGER trgDeleteOntblPeerTrust AFTER DELETE ON tblPeerTrust \
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgDeleteOntblPeerTrust AFTER DELETE ON tblPeerTrust \
 				FOR EACH ROW \
 				BEGIN \
 					UPDATE tblIdentity SET PeerMessageTrust=(SELECT PeerMessageTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=old.TargetIdentityID), PeerTrustListTrust=(SELECT PeerTrustListTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=old.TargetIdentityID) WHERE IdentityID=old.TargetIdentityID;\
 				END;");
 
 	// update PeerTrustLevel when inserting a record into tblPeerTrust
-	db->Execute("CREATE TRIGGER trgInsertOntblPeerTrust AFTER INSERT ON tblPeerTrust \
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgInsertOntblPeerTrust AFTER INSERT ON tblPeerTrust \
 				FOR EACH ROW \
 				BEGIN \
 					UPDATE tblIdentity SET PeerMessageTrust=(SELECT PeerMessageTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=new.TargetIdentityID), PeerTrustListTrust=(SELECT PeerTrustListTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=new.TargetIdentityID) WHERE IdentityID=new.TargetIdentityID;\
 				END;");
 
 	// update PeerTrustLevel when updating a record in tblPeerTrust
-	db->Execute("CREATE TRIGGER trgUpdateOntblPeerTrust AFTER UPDATE ON tblPeerTrust \
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgUpdateOntblPeerTrust AFTER UPDATE ON tblPeerTrust \
 				FOR EACH ROW \
 				BEGIN \
 					UPDATE tblIdentity SET PeerMessageTrust=(SELECT PeerMessageTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=old.TargetIdentityID), PeerTrustListTrust=(SELECT PeerTrustListTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=old.TargetIdentityID) WHERE IdentityID=old.TargetIdentityID;\
@@ -234,14 +235,49 @@ void SetupDB()
 				END;");
 
 	// recalculate all Peer TrustLevels when updating Local TrustLevels on tblIdentity - doesn't really need to be all, but rather all identities the updated identity has a trust level for.  It's easier to update everyone for now.
-	db->Execute("CREATE TRIGGER trgUpdateLocalTrustLevels AFTER UPDATE OF LocalMessageTrust,LocalTrustListTrust ON tblIdentity \
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgUpdateLocalTrustLevels AFTER UPDATE OF LocalMessageTrust,LocalTrustListTrust ON tblIdentity \
 				FOR EACH ROW \
 				BEGIN \
 					UPDATE tblIdentity SET PeerMessageTrust=(SELECT PeerMessageTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=IdentityID), PeerTrustListTrust=(SELECT PeerTrustListTrust FROM vwCalculatedPeerTrust WHERE TargetIdentityID=IdentityID);\
 				END;");
 
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgDeleteMessage AFTER DELETE ON tblMessage \
+				FOR EACH ROW \
+				BEGIN \
+					DELETE FROM tblMessageBoard WHERE tblMessageBoard.MessageID=old.MessageID;\
+					DELETE FROM tblMessageReplyTo WHERE tblMessageReplyTo.MessageID=old.MessageID;\
+				END;");
+
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgDeleteIdentity AFTER DELETE ON tblIdentity \
+				FOR EACH ROW \
+				BEGIN \
+					DELETE FROM tblIdentityRequests WHERE IdentityID=old.IdentityID;\
+					DELETE FROM tblIntroductionPuzzleRequests WHERE IdentityID=old.IdentityID;\
+					DELETE FROM tblMessageListRequests WHERE IdentityID=old.IdentityID;\
+					DELETE FROM tblMessageRequests WHERE IdentityID=old.IdentityID;\
+					DELETE FROM tblPeerTrust WHERE IdentityID=old.IdentityID;\
+					DELETE FROM tblTrustListRequests WHERE IdentityID=old.IdentityID;\
+				END;");
+
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgDeleteLocalIdentity AFTER DELETE ON tblLocalIdentity \
+				FOR EACH ROW \
+				BEGIN \
+					DELETE FROM tblIdentityIntroductionInserts WHERE LocalIdentityID=old.LocalIdentityID;\
+					DELETE FROM tblIntroductionPuzzleInserts WHERE LocalIdentityID=old.LocalIdentityID;\
+					DELETE FROM tblLocalIdentityInserts WHERE LocalIdentityID=old.LocalIdentityID;\
+					DELETE FROM tblMessageInserts WHERE LocalIdentityID=old.LocalIdentityID;\
+					DELETE FROM tblMessageListInserts WHERE LocalIdentityID=old.LocalIdentityID;\
+					DELETE FROM tblTrustListInserts WHERE LocalIdentityID=old.LocalIdentityID;\
+				END;");
+
 	// delete introduction puzzles that were half-way inserted
 	db->Execute("DELETE FROM tblIntroductionPuzzleInserts WHERE Day IS NULL AND InsertIndex IS NULL;");
+
+	// delete stale introduction puzzles (2 or more days old)
+	date.SetToGMTime();
+	date.Add(0,0,0,-2);
+	db->Execute("DELETE FROM tblIntroductionPuzzleInserts WHERE Day<='"+date.Format("%Y-%m-%d")+"';");
+	db->Execute("DELETE FROM tblIntroductionPuzzleRequests WHERE Day<='"+date.Format("%Y-%m-%d")+"';");
 
 }
 
@@ -439,6 +475,7 @@ void ShutdownThreads(std::vector<ZThread::Thread *> &threads)
 
 	for(i=threads.begin(); i!=threads.end(); i++)
 	{
+		LogFile::instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"ShutdownThreads waiting for thread to exit.");
 		(*i)->wait();
 		delete (*i);
 	}

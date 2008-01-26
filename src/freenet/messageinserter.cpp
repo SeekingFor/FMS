@@ -5,7 +5,7 @@ MessageInserter::MessageInserter()
 	Initialize();
 }
 
-MessageInserter::MessageInserter(FCPv2 *fcp):IIndexInserter(fcp)
+MessageInserter::MessageInserter(FCPv2 *fcp):IIndexInserter<std::string>(fcp)
 {
 	Initialize();
 }

@@ -13,6 +13,12 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifndef _WIN32
+	#define stricmp strcasecmp
+	#define strnicmp strncasecmp
+	#define memicmp memcmp
+#endif
+
 #ifdef _DEBUG
 #undef THIS_FILE
 static char THIS_FILE[]=__FILE__;
@@ -464,7 +470,16 @@ list<CMimeField>::iterator CMimeHeader::FindField(const char* pszFieldName)
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <io.h>
+
+#ifdef _WIN32
+	#include <io.h>
+#else
+	#include <sys/io.h>
+#endif
+
+#ifndef O_BINARY
+	#define O_BINARY 0
+#endif
 
 // initialize the content with text
 int CMimeBody::SetText(const char* pbText, int nLength/*=0*/)

@@ -10,7 +10,7 @@ MessageRequester::MessageRequester()
 	Initialize();
 }
 
-MessageRequester::MessageRequester(FCPv2 *fcp):IIndexRequester(fcp)
+MessageRequester::MessageRequester(FCPv2 *fcp):IIndexRequester<std::string>(fcp)
 {
 	Initialize();
 }

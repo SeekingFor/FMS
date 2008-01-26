@@ -27,11 +27,17 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 	
 	while(!rs.AtEnd())
 	{
+		std::string localidentityidstr;
 		DateTime now;
 		now.SetToGMTime();
 
+		if(rs.GetField(0))
+		{
+			localidentityidstr=rs.GetField(0);
+		}
+
 		// if this identity has any non-solved puzzles for today, we don't need to insert a new puzzle
-		SQLite3DB::Recordset rs2=m_db->Query("SELECT UUID FROM tblIntroductionPuzzleInserts WHERE Day='"+now.Format("%Y-%m-%d")+"' AND FoundSolution='false';");
+		SQLite3DB::Recordset rs2=m_db->Query("SELECT UUID FROM tblIntroductionPuzzleInserts WHERE Day='"+now.Format("%Y-%m-%d")+"' AND FoundSolution='false' AND LocalIdentityID="+localidentityidstr+";");
 
 		// identity doesn't have any non-solved puzzles for today - start a new insert
 		if(rs2.Empty()==true)

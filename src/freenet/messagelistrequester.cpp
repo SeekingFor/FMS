@@ -10,7 +10,7 @@ MessageListRequester::MessageListRequester()
 	Initialize();
 }
 
-MessageListRequester::MessageListRequester(FCPv2 *fcp):IIndexRequester(fcp)
+MessageListRequester::MessageListRequester(FCPv2 *fcp):IIndexRequester<long>(fcp)
 {
 	Initialize();
 }
@@ -81,7 +81,7 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"MessageListRequester::HandleAllData parsed TrustList XML file : "+message["Identifier"]);
+		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"MessageListRequester::HandleAllData parsed MessageList XML file : "+message["Identifier"]);
 	}
 	else
 	{
