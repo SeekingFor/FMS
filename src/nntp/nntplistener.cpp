@@ -27,13 +27,15 @@ NNTPListener::~NNTPListener()
 
 }
 
-void NNTPListener::run()
+void NNTPListener::Run()
 {
 	int rval;
 	fd_set readfs;
 	struct timeval tv;
 	std::vector<SOCKET>::iterator listeni;
 	SOCKET highsocket;
+
+	LogFile::Instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPListener::run thread started.");
 
 	StartListen();
 
@@ -69,17 +71,34 @@ void NNTPListener::run()
 				{
 					SOCKET newsock;
 					struct sockaddr_storage addr;
-					int addrlen=sizeof(addr);
+					socklen_t addrlen=sizeof(addr);
 					newsock=accept((*listeni),(struct sockaddr *)&addr,&addrlen);
-					LogFile::instance()->WriteLog(LogFile::LOGLEVEL_INFO,"NNTPListener::run NNTP client connected");
-					m_connections.execute(new NNTPConnection(newsock));
+					LogFile::Instance()->WriteLog(LogFile::LOGLEVEL_INFO,"NNTPListener::run NNTP client connected");
+					//m_connections.execute(new NNTPConnection(newsock));
+					m_connectionthreads.push_back(new PThread::Thread(new NNTPConnection(newsock)));
 				}
 			}
 		}
 
-	}while(!ZThread::Thread::interrupted() && m_listensockets.size()>0);
+		// check for any non-running connection threads that we can delete
+		for(std::vector<PThread::Thread *>::iterator i=m_connectionthreads.begin(); i!=m_connectionthreads.end(); )
+		{
+			if((*i)->IsRunning()==false)
+			{
+				delete (*i);
+				i=m_connectionthreads.erase(i);
+			}
+			if(i!=m_connectionthreads.end())
+			{
+				i++;
+			}
+		}
+
+	//}while(!ZThread::Thread::interrupted() && m_listensockets.size()>0);
+	}while(!IsCancelled() && m_listensockets.size()>0);
 
 	// see if any threads are still running - just calling interrupt without check would cause assert in debug mode
+	/*
 	if(m_connections.wait(1)==false)
 	{
 		LogFile::instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPListener::run interrupting connection threads and waiting 60 seconds for exit.");
@@ -91,10 +110,21 @@ void NNTPListener::run()
 		{
 			LogFile::instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPListener::run caught unhandled exception.");
 		}
-		if(m_connections.wait(60)==false)
+		if(m_connections.wait(60000)==false)
 		{
 			LogFile::instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPListener::run connection threads did not exit after 60 seconds.");
 		}
+	}
+	*/
+	for(std::vector<PThread::Thread *>::iterator i=m_connectionthreads.begin(); i!=m_connectionthreads.end(); i++)
+	{
+		if((*i)->IsRunning())
+		{
+			LogFile::Instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPListener::Run waiting for connection thread to exit.");
+			(*i)->Cancel();
+			(*i)->Join();
+		}
+		delete (*i);
 	}
 
 	for(listeni=m_listensockets.begin(); listeni!=m_listensockets.end(); listeni++)
@@ -107,6 +137,8 @@ void NNTPListener::run()
 	}
 	m_listensockets.clear();
 
+	LogFile::Instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPListener::run thread exiting.");
+
 }
 
 void NNTPListener::StartListen()
@@ -115,15 +147,15 @@ void NNTPListener::StartListen()
 	std::string bindaddresses;
 	std::vector<std::string> listenaddresses;
 	std::string nntpport;
-	if(Option::instance()->Get("NNTPListenPort",nntpport)==false)
+	if(Option::Instance()->Get("NNTPListenPort",nntpport)==false)
 	{
 		nntpport="1119";
-		Option::instance()->Set("NNTPListenPort",nntpport);
+		Option::Instance()->Set("NNTPListenPort",nntpport);
 	}
-	if(Option::instance()->Get("NNTPBindAddresses",bindaddresses)==false)
+	if(Option::Instance()->Get("NNTPBindAddresses",bindaddresses)==false)
 	{
 		bindaddresses="127.0.0.1";
-		Option::instance()->Set("NNTPBindAddresses",bindaddresses);
+		Option::Instance()->Set("NNTPBindAddresses",bindaddresses);
 	}
 	StringFunctions::Split(bindaddresses,",",listenaddresses);
 	
@@ -150,12 +182,12 @@ void NNTPListener::StartListen()
 					{
 						if(listen(sock,10)==0)
 						{
-							LogFile::instance()->WriteLog(LogFile::LOGLEVEL_INFO,"NNTPListener::StartListen started listening at "+(*i)+":"+nntpport);
+							LogFile::Instance()->WriteLog(LogFile::LOGLEVEL_INFO,"NNTPListener::StartListen started listening at "+(*i)+":"+nntpport);
 							m_listensockets.push_back(sock);
 						}
 						else
 						{
-							LogFile::instance()->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPListener::StartListen socket listen failed");
+							LogFile::Instance()->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPListener::StartListen socket listen failed");
 							#ifdef _WIN32
 							closesocket(sock);
 							#else
@@ -165,7 +197,7 @@ void NNTPListener::StartListen()
 					}
 					else
 					{
-						LogFile::instance()->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPListener::StartListen socket bind failed");
+						LogFile::Instance()->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPListener::StartListen socket bind failed");
 						#ifdef _WIN32
 						closesocket(sock);
 						#else
@@ -175,7 +207,7 @@ void NNTPListener::StartListen()
 				}
 				else
 				{
-					LogFile::instance()->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPListener::StartListen couldn't create socket");
+					LogFile::Instance()->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPListener::StartListen couldn't create socket");
 				}
 			}
 		}
@@ -186,6 +218,6 @@ void NNTPListener::StartListen()
 	}
 	if(m_listensockets.size()==0)
 	{
-		LogFile::instance()->WriteLog(LogFile::LOGLEVEL_FATAL,"NNTPListener::StartListen couldn't start listening on any sockets");
+		LogFile::Instance()->WriteLog(LogFile::LOGLEVEL_FATAL,"NNTPListener::StartListen couldn't start listening on any sockets");
 	}
 }

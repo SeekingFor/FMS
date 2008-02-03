@@ -9,7 +9,7 @@
 class ILogger
 {
 public:
-	ILogger():m_log(LogFile::instance()) {}
+	ILogger():m_log(LogFile::Instance()) {}
 	
 protected:
 	LogFile *m_log;

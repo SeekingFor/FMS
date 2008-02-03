@@ -36,7 +36,8 @@ LogFile::~LogFile()
 
 bool LogFile::CloseFile()
 {
-	ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+	//ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+	PThread::Guard g(m_logmutex);
 
 	if(m_fileptr)
 	{
@@ -51,7 +52,8 @@ bool LogFile::OpenFile()
 {
 	CloseFile();
 
-	ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+	//ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+	PThread::Guard g(m_logmutex);
 
 	m_fileptr=fopen(m_filename.c_str(),"a+b");
 
@@ -91,7 +93,8 @@ void LogFile::WriteLog(const char *format, ...)
 	
 	if(m_fileptr)
 	{
-		ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+		//ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+		PThread::Guard g(m_logmutex);
 		if(m_writedate)
 		{
 			WriteDate();
@@ -117,7 +120,8 @@ void LogFile::WriteLog(const std::string &text)
 	
 	if(m_fileptr)
 	{
-		ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+		//ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+		PThread::Guard g(m_logmutex);
 		if(m_writedate)
 		{
 			WriteDate();	
@@ -146,7 +150,8 @@ void LogFile::WriteLog(const LogLevel level, const char *format, ...)
 		
 		if(m_fileptr)
 		{
-			ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+			//ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+			PThread::Guard g(m_logmutex);
 			if(m_writedate)
 			{
 				WriteDate();	
@@ -178,7 +183,8 @@ void LogFile::WriteLog(const LogLevel level, const std::string &text)
 		
 		if(m_fileptr)
 		{
-			ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+			//ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+			PThread::Guard g(m_logmutex);
 			if(m_writedate)
 			{
 				WriteDate();	
@@ -227,7 +233,8 @@ void LogFile::WriteLogLevel(LogLevel level)
 
 void LogFile::WriteNewLine()
 {
-	ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+	//ZThread::Guard<ZThread::Mutex> g(m_logmutex);
+	PThread::Guard g(m_logmutex);
 
 	if(m_fileptr)
 	{

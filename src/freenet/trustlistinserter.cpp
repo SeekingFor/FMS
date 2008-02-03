@@ -93,7 +93,7 @@ const bool TrustListInserter::HandleMessage(FCPMessage &message)
 
 void TrustListInserter::Initialize()
 {
-	Option::instance()->Get("MessageBase",m_messagebase);
+	Option::Instance()->Get("MessageBase",m_messagebase);
 	m_lastchecked.SetToGMTime();
 }
 

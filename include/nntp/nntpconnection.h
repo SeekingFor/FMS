@@ -7,7 +7,8 @@
 
 #include <string>
 #include <vector>
-#include <zthread/Runnable.h>
+//#include <zthread/Runnable.h>
+#include "../pthreadwrapper/runnable.h"
 
 #ifdef _WIN32
 
@@ -20,7 +21,7 @@
 	#include <arpa/inet.h>
 #endif
 
-class NNTPConnection:public ZThread::Runnable,public ILogger//,public IDatabase
+class NNTPConnection:public PThread::Runnable,public ILogger
 {
 public:
 	NNTPConnection(SOCKET sock);
@@ -29,7 +30,7 @@ public:
 	void Disconnect();
 	const bool Disconnected()		{ return m_socket==INVALID_SOCKET; }
 
-	void run();
+	void Run();
 
 private:
 

@@ -84,9 +84,13 @@ const bool IdentityInserter::HandleMessage(FCPMessage &message)
 			// If this is the case, we will skip updating LastInsertedIdentity so that we can insert this identity again for today
 			DateTime lastdate;
 			lastdate.Set(idparts[4]);
-			if(lastdate.GetDay()!=now.GetDay())
+			if(lastdate.GetDay()==now.GetDay())
 			{
 				m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+now.Format("%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
+			}
+			else
+			{
+				m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID="+idparts[1]+";");
 			}
 			m_db->Execute("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
 			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityInserter::HandleMessage inserted Identity xml");
@@ -179,7 +183,7 @@ void IdentityInserter::StartInsert(const long localidentityid)
 		}
 		StringFunctions::Convert(index,indexstr);
 
-		Option::instance()->Get("MessageBase",messagebase);
+		Option::Instance()->Get("MessageBase",messagebase);
 
 		if(rs.GetField(0))
 		{

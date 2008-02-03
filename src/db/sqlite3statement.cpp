@@ -44,6 +44,7 @@ Statement::~Statement()
 	
 	Finalize();
 	
+	/*
 	std::vector<char *>::iterator i;
 	for(i=textptrs.begin(); i!=textptrs.end(); i++)
 	{
@@ -52,13 +53,16 @@ Statement::~Statement()
 			delete [] (*i);
 		}
 	}
+	*/
+
 }
 
 const bool Statement::Bind(const int column)
 {
 	if(Valid() && column>=0 && column<m_parametercount)
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		if(sqlite3_bind_null(m_statement,column+1)==SQLITE_OK)
 		{
 			return true;
@@ -78,7 +82,8 @@ const bool Statement::Bind(const int column, const int value)
 {
 	if(Valid() && column>=0 && column<m_parametercount)
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		if(sqlite3_bind_int(m_statement,column+1,value)==SQLITE_OK)
 		{
 			return true;
@@ -98,7 +103,8 @@ const bool Statement::Bind(const int column, const double value)
 {
 	if(Valid() && column>=0 && column<m_parametercount)
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		if(sqlite3_bind_double(m_statement,column+1,value)==SQLITE_OK)
 		{
 			return true;
@@ -118,12 +124,17 @@ const bool Statement::Bind(const int column, const std::string &value)
 {
 	if(Valid() && column>=0 && column<m_parametercount)
 	{
-		char *text=new char[value.size()+1];
-		strncpy(text,value.c_str(),value.size());
-		text[value.size()]=NULL;
-		textptrs.push_back(text);
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
-		if(sqlite3_bind_text(m_statement,column+1,text,value.size(),NULL)==SQLITE_OK)
+		//char *text=new char[value.size()+1];
+		//strncpy(text,value.c_str(),value.size());
+		//text[value.size()]=NULL;
+		//textptrs.push_back(text);
+		
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
+		//m_boundtext.push_back(std::vector<char>(value.begin(),value.end()));
+		//if(sqlite3_bind_text(m_statement,column+1,text,value.size(),NULL)==SQLITE_OK)
+		//if(sqlite3_bind_text(m_statement,column+1,&(m_boundtext[m_boundtext.size()-1][0]),(m_boundtext[m_boundtext.size()-1]).size(),NULL)==SQLITE_OK)		
+		if(sqlite3_bind_text(m_statement,column+1,value.c_str(),value.size(),SQLITE_TRANSIENT)==SQLITE_OK)
 		{
 			return true;
 		}
@@ -142,8 +153,9 @@ const bool Statement::Bind(const int column, const void *data, const int length)
 {
 	if(Valid() && column>=0 && column<m_parametercount)
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
-		if(sqlite3_bind_blob(m_statement,column+1,data,length,NULL)==SQLITE_OK)
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
+		if(sqlite3_bind_blob(m_statement,column+1,data,length,SQLITE_TRANSIENT)==SQLITE_OK)
 		{
 			return true;
 		}
@@ -162,7 +174,8 @@ void Statement::Finalize()
 {
 	if(m_statement)
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		m_statementcount[m_statement]--;
 		if(m_statementcount[m_statement]<=0)
 		{
@@ -186,7 +199,8 @@ Statement &Statement::operator=(const Statement &rhs)
 
 		if(m_statement)
 		{
-			ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+			//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+			PThread::Guard g(DB::Instance()->m_mutex);
 			m_statementcount[m_statement]++;
 		}
 	}
@@ -197,7 +211,8 @@ const bool Statement::Reset()
 {
 	if(Valid())
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		if(sqlite3_reset(m_statement)==SQLITE_OK)
 		{
 			return true;
@@ -217,7 +232,8 @@ const bool Statement::ResultBlob(const int column, void *data, int &length)
 {
 	if(Valid() && column>=0 && column<m_resultcolumncount)
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		data=(void *)sqlite3_column_blob(m_statement,column);
 		length=sqlite3_column_bytes(m_statement,column);
 		return true;
@@ -232,7 +248,8 @@ const bool Statement::ResultDouble(const int column, double &result)
 {
 	if(Valid() && column>=0 && column<m_resultcolumncount)
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		result=sqlite3_column_double(m_statement,column);
 		return true;
 	}
@@ -246,7 +263,8 @@ const bool Statement::ResultInt(const int column, int &result)
 {
 	if(Valid() && column>=0 && column<m_resultcolumncount)
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		result=sqlite3_column_int(m_statement,column);
 		return true;
 	}
@@ -260,7 +278,8 @@ const bool Statement::ResultNull(const int column)
 {
 	if(Valid() && column>=0 && column<m_resultcolumncount)
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		if(sqlite3_column_type(m_statement,column)==SQLITE_NULL)
 		{
 			return true;
@@ -280,7 +299,8 @@ const bool Statement::ResultText(const int column, std::string &result)
 {
 	if(Valid() && column>=0 && column<m_resultcolumncount)
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		const unsigned char *cresult=sqlite3_column_text(m_statement,column);
 		if(cresult)
 		{
@@ -303,7 +323,8 @@ const bool Statement::Step(const bool saveinsertrowid)
 	m_rowreturned=false;
 	if(Valid())
 	{
-		ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+		PThread::Guard g(DB::Instance()->m_mutex);
 		int result=sqlite3_step(m_statement);
 		if(result==SQLITE_OK || result==SQLITE_ROW || result==SQLITE_DONE)
 		{
@@ -313,7 +334,7 @@ const bool Statement::Step(const bool saveinsertrowid)
 			}
 			if(saveinsertrowid)
 			{
-				m_lastinsertrowid=sqlite3_last_insert_rowid(DB::instance()->GetDB());
+				m_lastinsertrowid=sqlite3_last_insert_rowid(DB::Instance()->GetDB());
 			}
 			return true;
 		}
@@ -330,7 +351,8 @@ const bool Statement::Step(const bool saveinsertrowid)
 
 const bool Statement::Valid()
 {
-	ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+	//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+	PThread::Guard g(DB::Instance()->m_mutex);
 	return m_statement ? true : false ;
 }
 

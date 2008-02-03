@@ -57,7 +57,8 @@ private:
 	long m_lastinsertrowid;
 
 	static std::map<sqlite3_stmt *, long> m_statementcount;
-	std::vector<char *> textptrs;
+	//std::vector<char *> textptrs;
+	//std::vector<std::vector<char> > m_boundtext;
 
 };	//class
 

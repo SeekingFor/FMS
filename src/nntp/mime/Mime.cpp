@@ -474,7 +474,9 @@ list<CMimeField>::iterator CMimeHeader::FindField(const char* pszFieldName)
 #ifdef _WIN32
 	#include <io.h>
 #else
-	#include <sys/io.h>
+	#if !defined(__APPLE__) && !defined(__DARWIN__)
+		#include <sys/io.h>
+	#endif
 #endif
 
 #ifndef O_BINARY

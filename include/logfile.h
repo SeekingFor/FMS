@@ -1,10 +1,13 @@
 #ifndef _logfile_
 #define _logfile_
 
-#include <zthread/Singleton.h>
-#include <zthread/Mutex.h>
+//#include <zthread/Singleton.h>
+//#include <zthread/Mutex.h>
+#include "pthreadwrapper/singleton.h"
+#include "pthreadwrapper/mutex.h"
+#include <string>
 
-class LogFile:public ZThread::Singleton<LogFile>
+class LogFile:public PThread::Singleton<LogFile>
 {
 public:
 	LogFile();
@@ -57,7 +60,7 @@ private:
 	bool m_writenewline;
 	char *m_datebuffer;
 
-	ZThread::Mutex m_logmutex;
+	PThread::Mutex m_logmutex;
 	
 };
 

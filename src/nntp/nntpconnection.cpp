@@ -7,7 +7,10 @@
 #include "../../include/messagelist.h"
 #include "../../include/option.h"
 
-#include <zthread/Thread.h>
+#include <algorithm>
+
+//#include <zthread/Thread.h>
+#include "../../include/pthreadwrapper/thread.h"
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -26,7 +29,7 @@ NNTPConnection::NNTPConnection(SOCKET sock)
 	m_status.m_messageid=-1;
 	m_status.m_mode=MODE_NONE;
 
-	Option::instance()->Get("NNTPAllowPost",tempval);
+	Option::Instance()->Get("NNTPAllowPost",tempval);
 	if(tempval=="true")
 	{
 		m_status.m_allowpost=true;
@@ -230,7 +233,7 @@ const bool NNTPConnection::HandleLastCommand(const NNTPCommand &command)
 		{
 			Message mess;
 
-			if(mess.Load(m_status.m_messageid,m_status.m_boardid))
+			if(mess.LoadPrevious(m_status.m_messageid,m_status.m_boardid))
 			{
 				std::ostringstream tempstr;
 
@@ -316,7 +319,7 @@ const bool NNTPConnection::HandleListCommand(const NNTPCommand &command)
 
 			if(show==true)
 			{
-				tempstr << (*i).GetBoardName() << "\t" << (*i).GetHighMessageID() << "\t" << (*i).GetLowMessageID() << "\t" << (m_status.m_allowpost ? "y" : "n");
+				tempstr << (*i).GetBoardName() << " " << (*i).GetHighMessageID() << " " << (*i).GetLowMessageID() << " " << (m_status.m_allowpost ? "y" : "n");
 				SendBufferedLine(tempstr.str());
 			}
 		}
@@ -583,7 +586,7 @@ const bool NNTPConnection::HandleNextCommand(const NNTPCommand &command)
 		{
 			Message mess;
 
-			if(mess.Load(m_status.m_messageid,m_status.m_boardid))
+			if(mess.LoadNext(m_status.m_messageid,m_status.m_boardid))
 			{
 				std::ostringstream tempstr;
 
@@ -633,6 +636,11 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 			messageuuid=command.m_arguments[0];
 			messageuuid=StringFunctions::Replace(messageuuid,"<","");
 			messageuuid=StringFunctions::Replace(messageuuid,">","");
+			// get rid of @ and everything after
+			if(messageuuid.find("@")!=std::string::npos)
+			{
+				messageuuid.erase(messageuuid.find("@"));
+			}
 		}
 		// single article or range
 		else
@@ -862,7 +870,7 @@ const bool NNTPConnection::HandleQuitCommand(const NNTPCommand &command)
 	return true;
 }
 
-void NNTPConnection::run()
+void NNTPConnection::Run()
 {
 	struct timeval tv;
 	fd_set writefs,readfs;
@@ -908,15 +916,16 @@ void NNTPConnection::run()
 				SocketSend();
 			}
 		}
-		else if(rval==-1)
+		else if(rval==SOCKET_ERROR)
 		{
 			m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPConnection::run select returned -1 : "+GetSocketErrorMessage());	
 		}
 
-	}while(!Disconnected() && !ZThread::Thread::interrupted());
-	
+//	}while(!Disconnected() && !ZThread::Thread::interrupted());
+	}while(!Disconnected() && !IsCancelled());
+
 	Disconnect();
-	
+
 }
 
 void NNTPConnection::SendArticleOverInfo(Message &message)
@@ -940,7 +949,7 @@ void NNTPConnection::SendArticleOverInfo(Message &message)
 			{
 				line+=" ";
 			}
-			line+="<"+(*i).second+">";
+			line+="<"+(*i).second+"@freenetproject.org>";
 		}
 		line+="\t";
 	}

@@ -169,7 +169,7 @@ const bool IntroductionPuzzleRequester::HandleMessage(FCPMessage &message)
 void IntroductionPuzzleRequester::Initialize()
 {
 	std::string tempval="";
-	Option::instance()->Get("MaxIntroductionPuzzleRequests",tempval);
+	Option::Instance()->Get("MaxIntroductionPuzzleRequests",tempval);
 	StringFunctions::Convert(tempval,m_maxrequests);
 	if(m_maxrequests<1)
 	{
@@ -180,7 +180,7 @@ void IntroductionPuzzleRequester::Initialize()
 	{
 		m_log->WriteLog(LogFile::LOGLEVEL_WARNING,"Option MaxIntroductionPuzzleRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
-	Option::instance()->Get("MessageBase",m_messagebase);
+	Option::Instance()->Get("MessageBase",m_messagebase);
 	m_tempdate.SetToGMTime();
 }
 
@@ -233,7 +233,7 @@ void IntroductionPuzzleRequester::Process()
 	// this will recheck for ids every minute
 	DateTime now;
 	now.SetToGMTime();
-	if(m_tempdate<(now-(1.0/1440.0)))
+	if(m_ids.size()==0 && m_tempdate<(now-(1.0/1440.0)))
 	{
 		PopulateIDList();
 		m_tempdate=now;

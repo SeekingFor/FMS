@@ -76,7 +76,8 @@ void Recordset::Open(const std::string &sql, DB *db)
 	Free();
 	m_currentrow=0;
 
-	ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+	//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
+	PThread::Guard g(DB::Instance()->m_mutex);
 	if(sqlite3_get_table(db->GetDB(),sql.c_str(),&m_rs,&m_rows,&m_cols,NULL)==SQLITE_OK)
 	{
 	}

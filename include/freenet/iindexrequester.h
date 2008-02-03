@@ -127,7 +127,7 @@ void IIndexRequester<IDTYPE>::InitializeIIndexRequester()
 	m_maxrequests=-1;
 	m_fcpuniquename="";
 
-	Option::instance()->Get("MessageBase",m_messagebase);
+	Option::Instance()->Get("MessageBase",m_messagebase);
 	m_tempdate.SetToGMTime();
 }
 

@@ -22,7 +22,7 @@ Message::Message(const long messageid)
 
 const std::string Message::GetNNTPArticleID() const
 {
-	return "<"+m_messageuuid+">";
+	return "<"+m_messageuuid+"@freenetproject.org>";
 }
 
 const std::string Message::GetNNTPBody() const
@@ -57,7 +57,7 @@ const std::string Message::GetNNTPHeaders() const
 			{
 				rval+=" ";
 			}
-			rval+="<"+(*j).second+">";
+			rval+="<"+(*j).second+"@freenetproject.org>";
 		}
 		rval+="\r\n";
 	}
@@ -121,6 +121,9 @@ const bool Message::Load(const long messageid, const long boardid)
 		st.ResultText(7,m_fromname);
 		st.Finalize();
 
+		// strip off any \r\n in subject
+		m_subject=StringFunctions::Replace(m_subject,"\r\n","");
+
 		// get board list
 		st=m_db->Prepare("SELECT tblBoard.BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
 		st.Bind(0,messageid);
@@ -179,10 +182,10 @@ const bool Message::Load(const std::string &messageuuid)
 
 const bool Message::LoadNext(const long messageid, const long boardid)
 {
-	std::string sql="SELECT MessageID FROM tblMessage WHERE MessageID>?";
+	std::string sql="SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessage.MessageID>?";
 	if(boardid!=-1)
 	{
-		sql+=" AND BoardID=?";
+		sql+=" AND tblMessageBoard.BoardID=?";
 	}
 	sql+=";";
 
@@ -209,12 +212,12 @@ const bool Message::LoadNext(const long messageid, const long boardid)
 
 const bool Message::LoadPrevious(const long messageid, const long boardid)
 {
-	std::string sql="SELECT MessageID FROM tblMessage WHERE MessageID<?";
+	std::string sql="SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessage.MessageID<?";
 	if(boardid!=-1)
 	{
-		sql+=" AND BoardID=?";
+		sql+=" AND tblMessageBoard.BoardID=?";
 	}
-	sql+=";";
+	sql+=" ORDER BY tblMessage.MessageID DESC;";
 
 	SQLite3DB::Statement st=m_db->Prepare(sql);
 
@@ -255,6 +258,8 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 	if(mime.GetFieldValue("From"))
 	{
 		m_fromname=mime.GetFieldValue("From");
+		// remove any path folding
+		m_fromname=StringFunctions::Replace(m_fromname,"\r\n","");
 		// strip off everything between () and <> and any whitespace
 		std::string::size_type startpos=m_fromname.find("(");
 		std::string::size_type endpos;
@@ -276,6 +281,18 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 			}
 		}
 		m_fromname=StringFunctions::TrimWhitespace(m_fromname);
+
+		// trim off " from beginning and end
+		if(m_fromname.size()>0 && m_fromname[0]=='\"')
+		{
+			m_fromname.erase(0,1);
+		}
+		if(m_fromname.size()>0 && m_fromname[m_fromname.size()-1]=='\"')
+		{
+			m_fromname.erase(m_fromname.size()-1,1);
+		}
+
+		m_fromname=StringFunctions::TrimWhitespace(m_fromname);
 	}
 	else
 	{
@@ -285,6 +302,8 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 	if(mime.GetFieldValue("Newsgroups"))
 	{
 		std::string temp=mime.GetFieldValue("Newsgroups");
+		// remove any path folding
+		temp=StringFunctions::Replace(temp,"\r\n","");
 		std::vector<std::string> parts;
 		StringFunctions::SplitMultiple(temp,", \t",parts);
 		for(std::vector<std::string>::iterator i=parts.begin(); i!=parts.end(); i++)
@@ -302,6 +321,8 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 	if(mime.GetFieldValue("Followup-To"))
 	{
 		m_replyboardname=mime.GetFieldValue("Followup-To");
+		// remove any path folding
+		m_replyboardname=StringFunctions::Replace(m_replyboardname,"\r\n","");
 	}
 	else
 	{
@@ -314,6 +335,8 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 	if(mime.GetFieldValue("Subject"))
 	{
 		m_subject=mime.GetFieldValue("Subject");
+		// remove any path folding
+		m_subject=StringFunctions::Replace(m_subject,"\r\n","");
 	}
 	else
 	{
@@ -323,14 +346,22 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 	if(mime.GetFieldValue("References"))
 	{
 		std::string temp=mime.GetFieldValue("References");
+		// remove any path folding
+		temp=StringFunctions::Replace(temp,"\r\n","");
 		std::vector<std::string> parts;
 		int count=0;
 		StringFunctions::SplitMultiple(temp,", \t",parts);
 		for(std::vector<std::string>::reverse_iterator i=parts.rbegin(); i!=parts.rend(); i++)
 		{
+			// get rid of < and > and any whitespace
 			(*i)=StringFunctions::Replace((*i),"<","");
 			(*i)=StringFunctions::Replace((*i),">","");
 			(*i)=StringFunctions::TrimWhitespace((*i));
+			// erase @ and everything after
+			if((*i).find("@")!=std::string::npos)
+			{
+				(*i).erase((*i).find("@"));
+			}
 			if((*i)!="")
 			{
 				m_inreplyto[count++]=(*i);

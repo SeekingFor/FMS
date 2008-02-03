@@ -7,12 +7,13 @@
 #include "ifcpconnected.h"
 #include "iperiodicprocessor.h"
 
-#include <zthread/Runnable.h>
+//#include <zthread/Runnable.h>
+#include "../pthreadwrapper/runnable.h"
 
 // forward declaration
 class IFreenetRegistrable;
 
-class FreenetMasterThread:public ZThread::Runnable,public ILogger, public IFCPMessageHandler
+class FreenetMasterThread:public PThread::Runnable,public ILogger, public IFCPMessageHandler
 {
 public:
 	FreenetMasterThread();
@@ -20,7 +21,7 @@ public:
 	
 	const bool HandleMessage(FCPMessage &message);
 
-	void run();
+	void Run();
 
 	// registration methods for children objects
 	void RegisterPeriodicProcessor(IPeriodicProcessor *obj);

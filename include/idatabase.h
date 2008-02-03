@@ -9,7 +9,7 @@
 class IDatabase
 {
 public:
-	IDatabase():m_db(SQLite3DB::DB::instance()) {}
+	IDatabase():m_db(SQLite3DB::DB::Instance()) {}
 	
 protected:
 	SQLite3DB::DB *m_db;

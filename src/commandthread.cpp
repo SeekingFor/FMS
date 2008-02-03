@@ -44,17 +44,21 @@ void CommandThread::HandleQuit()
 	m_running=false;	
 }
 
-void CommandThread::run()
+void CommandThread::Run()
 {
 	std::string input;
 	m_running=true;
+
+	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"CommandThread::run thread started.");
 	
 	do
 	{
+
+		std::cout << ">";
 		std::cin >> input;
 		
 		HandleInput(input);
 		
-	}while(m_running==true);
+	}while(m_running && !IsCancelled());
 	
 }

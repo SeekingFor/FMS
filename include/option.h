@@ -4,10 +4,11 @@
 #include "db/sqlite3db.h"
 
 #include <sstream>
-#include <zthread/Singleton.h>
+//#include <zthread/Singleton.h>
+#include "pthreadwrapper/singleton.h"
 
 //just a wrapper around the database for the options table
-class Option:public ZThread::Singleton<Option>
+class Option:public PThread::Singleton<Option>
 {
 public:
 	const bool Get(const std::string &option, std::string &value);
@@ -25,14 +26,14 @@ void Option::Set(const std::string &option, const T &value)
 	std::string tempval;
 	if(Get(option,tempval)==true)
 	{
-		SQLite3DB::Statement st=SQLite3DB::DB::instance()->Prepare("UPDATE tblOption SET OptionValue=? WHERE Option=?;");
+		SQLite3DB::Statement st=SQLite3DB::DB::Instance()->Prepare("UPDATE tblOption SET OptionValue=? WHERE Option=?;");
 		st.Bind(0,valuestr.str());
 		st.Bind(1,option);
 		st.Step();
 	}
 	else
 	{
-		SQLite3DB::Statement st=SQLite3DB::DB::instance()->Prepare("INSERT INTO tblOption(Option,OptionValue) VALUES(?,?);");
+		SQLite3DB::Statement st=SQLite3DB::DB::Instance()->Prepare("INSERT INTO tblOption(Option,OptionValue) VALUES(?,?);");
 		st.Bind(0,option);
 		st.Bind(1,valuestr.str());
 		st.Step();

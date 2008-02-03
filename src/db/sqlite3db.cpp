@@ -30,7 +30,8 @@ const bool DB::Close()
 {
 	if(IsOpen())
 	{
-		ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		PThread::Guard g(m_mutex);
 		m_lastresult=sqlite3_close(m_db);
 		if(m_lastresult==SQLITE_OK)
 		{
@@ -52,7 +53,8 @@ const bool DB::Execute(const std::string &sql)
 {
 	if(IsOpen())
 	{
-		ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		PThread::Guard g(m_mutex);
 		m_lastresult=sqlite3_exec(m_db,sql.c_str(),NULL,NULL,NULL);
 		if(m_lastresult==SQLITE_OK)
 		{
@@ -73,7 +75,8 @@ const bool DB::ExecuteInsert(const std::string &sql, long &insertid)
 {
 	if(IsOpen())
 	{
-		ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		PThread::Guard g(m_mutex);
 		m_lastresult=sqlite3_exec(m_db,sql.c_str(),NULL,NULL,NULL);
 		if(m_lastresult==SQLITE_OK)
 		{
@@ -95,7 +98,8 @@ const int DB::GetLastError(std::string &errormessage)
 {
 	if(IsOpen())
 	{
-		ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		PThread::Guard g(m_mutex);
 		int errcode=sqlite3_errcode(m_db);
 		const char *errmsg=sqlite3_errmsg(m_db);
 		if(errmsg)
@@ -118,7 +122,8 @@ void DB::Initialize()
 
 const bool DB::IsOpen()
 {
-	ZThread::Guard<ZThread::Mutex> g(m_mutex);
+	//ZThread::Guard<ZThread::Mutex> g(m_mutex);
+	PThread::Guard g(m_mutex);
 	return m_db ? true : false; 
 }
 
@@ -130,7 +135,8 @@ const bool DB::Open(const std::string &filename)
 	}
 	if(IsOpen()==false)
 	{
-		ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		PThread::Guard g(m_mutex);
 		m_lastresult=sqlite3_open(filename.c_str(),&m_db);
 		if(m_lastresult==SQLITE_OK)
 		{
@@ -151,7 +157,8 @@ Statement DB::Prepare(const std::string &sql)
 {
 	if(IsOpen())
 	{
-		ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		PThread::Guard g(m_mutex);
 		sqlite3_stmt *statement=NULL;
 		m_lastresult=sqlite3_prepare_v2(m_db,sql.c_str(),sql.size(),&statement,NULL);
 		if(m_lastresult==SQLITE_OK)
@@ -173,7 +180,8 @@ Recordset DB::Query(const std::string &sql)
 {
 	if(IsOpen())
 	{
-		ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		PThread::Guard g(m_mutex);
 		char **rs=NULL;
 		int rows,cols;
 		m_lastresult=sqlite3_get_table(m_db,sql.c_str(),&rs,&rows,&cols,NULL);
@@ -197,9 +205,14 @@ const int DB::SetBusyTimeout(const int ms)
 {
 	if(IsOpen())
 	{
-		ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		//ZThread::Guard<ZThread::Mutex> g(m_mutex);
+		PThread::Guard g(m_mutex);
 		m_lastresult=sqlite3_busy_timeout(m_db,ms);
 		return m_lastresult;
+	}
+	else
+	{
+		return SQLITE_ERROR;
 	}
 }
 

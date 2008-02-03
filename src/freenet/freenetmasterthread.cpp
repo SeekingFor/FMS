@@ -17,7 +17,8 @@
 #include "../../include/freenet/messageinserter.h"
 #include "../../include/freenet/messagelistinserter.h"
 
-#include <zthread/Thread.h>
+//#include <zthread/Thread.h>
+#include "../../include/pthreadwrapper/thread.h"
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -27,22 +28,22 @@ FreenetMasterThread::FreenetMasterThread()
 {
 	std::string fcpport;
 
-	if(Option::instance()->Get("FCPHost",m_fcphost)==false)
+	if(Option::Instance()->Get("FCPHost",m_fcphost)==false)
 	{
 		m_fcphost="localhost";
-		Option::instance()->Set("FCPHost",m_fcphost);
+		Option::Instance()->Set("FCPHost",m_fcphost);
 	}
-	if(Option::instance()->Get("FCPPort",fcpport)==false)
+	if(Option::Instance()->Get("FCPPort",fcpport)==false)
 	{
 		fcpport="9481";
-		Option::instance()->Set("FCPPort",fcpport);
+		Option::Instance()->Set("FCPPort",fcpport);
 	}
 
 	// convert fcp port to long, and make sure it's within the valid port range
 	if(StringFunctions::Convert(fcpport,m_fcpport)==false)
 	{
 		m_fcpport=9481;
-		Option::instance()->Set("FCPPort","9481");
+		Option::Instance()->Set("FCPPort","9481");
 	}
 
 	m_receivednodehello=false;
@@ -163,11 +164,13 @@ void FreenetMasterThread::RegisterPeriodicProcessor(IPeriodicProcessor *obj)
 	m_processors.push_back(obj);
 }
 
-void FreenetMasterThread::run()
+void FreenetMasterThread::Run()
 {
 
 	FCPMessage message;
 	bool done=false;
+
+	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"FreenetMasterThread::run thread started.");
 
 	Setup();
 
@@ -181,6 +184,7 @@ void FreenetMasterThread::run()
 				m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"FreenetMasterThread::run could not connect to node.  Waiting 60 seconds.");
 
 				// wait 60 seconds - will then try to connect again
+				/*
 				try
 				{
 					ZThread::Thread::sleep(60000);
@@ -188,6 +192,11 @@ void FreenetMasterThread::run()
 				catch(...)
 				{
 					done=true;
+				}
+				*/
+				for(int i=0; i<60 && !IsCancelled(); i++)
+				{
+					Sleep(1000);
 				}
 			}
 		}
@@ -215,11 +224,14 @@ void FreenetMasterThread::run()
 			}
 
 		}
-	}while(!ZThread::Thread::interrupted() && done==false);
+//	}while(!ZThread::Thread::interrupted() && done==false);
+	}while(!IsCancelled() && done==false);
 
 	m_fcp.Disconnect();
 
 	Shutdown();
+
+	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"FreenetMasterThread::run thread exiting.");
 
 }
 

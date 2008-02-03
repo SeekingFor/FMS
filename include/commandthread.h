@@ -4,13 +4,14 @@
 #include "ilogger.h"
 #include "idatabase.h"
 
-#include <zthread/Thread.h>
+//#include <zthread/Thread.h>
+#include "pthreadwrapper/runnable.h"
 
-class CommandThread:public ZThread::Runnable,public ILogger, public IDatabase
+class CommandThread:public PThread::Runnable,public ILogger, public IDatabase
 {
 public:
 
-	void run();
+	void Run();
 
 private:
 

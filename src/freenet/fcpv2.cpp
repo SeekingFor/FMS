@@ -66,7 +66,7 @@ const bool FCPv2::Connect(const char *host, const int port)
 	struct sockaddr_storage m_serveraddr;
 
 	std::ostringstream portstring;
-	addrinfo hint,*result;
+	addrinfo hint,*result,*current;
 	result=NULL;
 	portstring << port;
 
@@ -80,16 +80,19 @@ const bool FCPv2::Connect(const char *host, const int port)
 
 	if(result)
 	{
-		memset(&m_serveraddr,0,sizeof(struct sockaddr_storage));
-
-		m_serversocket=socket(result->ai_family,result->ai_socktype,result->ai_protocol);
-
-		if(m_serversocket!=-1)
+		for(current=result; current!=NULL && m_serversocket==-1; current=current->ai_next)
 		{
-			rval=connect(m_serversocket,result->ai_addr,result->ai_addrlen);
-			if(rval==-1)
+			memset(&m_serveraddr,0,sizeof(struct sockaddr_storage));
+
+			m_serversocket=socket(current->ai_family,current->ai_socktype,current->ai_protocol);
+
+			if(m_serversocket!=-1)
 			{
-				Disconnect();
+				rval=connect(m_serversocket,current->ai_addr,current->ai_addrlen);
+				if(rval==-1)
+				{
+					Disconnect();
+				}
 			}
 		}
 

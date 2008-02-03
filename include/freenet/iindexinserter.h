@@ -117,7 +117,7 @@ template <class IDTYPE>
 void IIndexInserter<IDTYPE>::InitializeIIndexInserter()
 {
 	m_fcpuniquename="";
-	Option::instance()->Get("MessageBase",m_messagebase);
+	Option::Instance()->Get("MessageBase",m_messagebase);
 	m_lastchecked.SetToGMTime();
 }
 

@@ -209,7 +209,7 @@ void MessageRequester::Initialize()
 {
 	m_fcpuniquename="MessageRequester";
 	std::string tempval;
-	Option::instance()->Get("MaxMessageRequests",tempval);
+	Option::Instance()->Get("MaxMessageRequests",tempval);
 	StringFunctions::Convert(tempval,m_maxrequests);
 	if(m_maxrequests<1)
 	{
@@ -220,7 +220,7 @@ void MessageRequester::Initialize()
 	{
 		m_log->WriteLog(LogFile::LOGLEVEL_WARNING,"Option MaxMessageRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
-	Option::instance()->Get("MessageDownloadMaxDaysBackward",tempval);
+	Option::Instance()->Get("MessageDownloadMaxDaysBackward",tempval);
 	StringFunctions::Convert(tempval,m_maxdaysbackward);
 	if(m_maxdaysbackward<0)
 	{
@@ -239,12 +239,21 @@ void MessageRequester::PopulateIDList()
 	std::string val1;
 	std::string val2;
 	std::string val3;
+	std::string sql;
 
 	date.SetToGMTime();
 	date.Add(0,0,0,-m_maxdaysbackward);
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT tblIdentity.IdentityID,Day,RequestIndex FROM tblMessageRequests INNER JOIN tblIdentity ON tblMessageRequests.IdentityID=tblIdentity.IdentityID WHERE tblIdentity.LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') AND FromMessageList='true' AND Found='false' AND Day>='"+date.Format("%Y-%m-%d")+"';");
+	sql="SELECT tblIdentity.IdentityID,Day,RequestIndex ";
+	sql+="FROM tblMessageRequests INNER JOIN tblIdentity ON tblMessageRequests.IdentityID=tblIdentity.IdentityID ";
+	sql+="WHERE tblIdentity.LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') AND FromMessageList='true' AND Found='false' AND Day>='"+date.Format("%Y-%m-%d")+"' ";
+	sql+="AND (tblIdentity.PeerMessageTrust IS NULL OR tblIdentity.PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')) ";
+	sql+=";";
+
+	SQLite3DB::Statement st=m_db->Prepare(sql);
 	st.Step();
+
+	m_ids.clear();
 
 	while(st.RowReturned())
 	{

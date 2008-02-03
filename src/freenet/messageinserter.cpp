@@ -53,15 +53,25 @@ const bool MessageInserter::HandlePutFailed(FCPMessage &message)
 
 const bool MessageInserter::HandlePutSuccessful(FCPMessage &message)
 {
+	DateTime date;
+	int localidentityid;
 	int index;
 	std::vector<std::string> idparts;
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(idparts[3],index);
+	StringFunctions::Convert(idparts[2],localidentityid);
 
 	SQLite3DB::Statement st=m_db->Prepare("UPDATE tblMessageInserts SET Day=?, InsertIndex=?, Inserted='true' WHERE MessageUUID=?;");
 	st.Bind(0,idparts[5]);
 	st.Bind(1,index);
 	st.Bind(2,idparts[1]);
+	st.Step();
+
+	// insert record into temp table so MessageList will be inserted ASAP
+	date.SetToGMTime();
+	st=m_db->Prepare("INSERT INTO tmpMessageListInsert(LocalIdentityID,Date) VALUES(?,?);");
+	st.Bind(0,localidentityid);
+	st.Bind(1,date.Format("%Y-%m-%d"));
 	st.Step();
 
 	RemoveFromInsertList(idparts[1]);

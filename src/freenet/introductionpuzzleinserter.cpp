@@ -223,7 +223,7 @@ void IntroductionPuzzleInserter::StartInsert(const long localidentityid)
 		privatekey=rs2.GetField(0);
 	}
 
-	Option::instance()->Get("MessageBase",messagebase);
+	Option::Instance()->Get("MessageBase",messagebase);
 
 	GenerateCaptcha(encodedpuzzle,solutionstring);
 

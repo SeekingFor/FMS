@@ -26,8 +26,8 @@ std::string Replace(const std::string &input, const std::string &find, const std
 
 void Split(const std::string &str, const std::string &delim, std::vector<std::string> &output)
 {
-    unsigned int offset = 0;
-    unsigned int delimIndex = 0;
+	std::string::size_type offset = 0;
+	std::string::size_type delimIndex = 0;
     
     delimIndex = str.find(delim, offset);
 
@@ -43,8 +43,8 @@ void Split(const std::string &str, const std::string &delim, std::vector<std::st
 
 void SplitMultiple(const std::string &str, const std::string &delim, std::vector<std::string> &output)
 {
-    unsigned int offset = 0;
-    unsigned int delimIndex = 0;
+	std::string::size_type offset = 0;
+	std::string::size_type delimIndex = 0;
     
     delimIndex = str.find_first_of(delim, offset);
 

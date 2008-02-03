@@ -6,6 +6,7 @@
 #include "../include/db/sqlite3db.h"
 #include "../include/freenet/freenetmasterthread.h"
 #include "../include/nntp/nntplistener.h"
+#include "../include/http/httpthread.h"
 
 #ifdef _WIN32
 	#include <winsock2.h>
@@ -19,7 +20,7 @@ void SetupDB()
 {
 
 	DateTime date;
-	SQLite3DB::DB *db=SQLite3DB::DB::instance();
+	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 
 	db->Open("fms.db3");
 	db->SetBusyTimeout(10000);		// set timeout to 10 seconds
@@ -84,7 +85,7 @@ void SetupDB()
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblIdentity(\
 				IdentityID			INTEGER PRIMARY KEY,\
-				PublicKey			TEXT,\
+				PublicKey			TEXT UNIQUE,\
 				Name				TEXT,\
 				SingleUse			BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
 				PublishTrustList	BOOL CHECK(PublishTrustList IN('true','false')) DEFAULT 'false',\
@@ -156,7 +157,7 @@ void SetupDB()
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageReplyTo(\
 				MessageID			INTEGER,\
-				ReplyToMessageUUID	INTEGER,\
+				ReplyToMessageUUID	TEXT,\
 				ReplyOrder			INTEGER\
 				);");
 
@@ -196,11 +197,17 @@ void SetupDB()
 				Inserted			BOOL CHECK(Inserted IN('true','false')) DEFAULT 'false'\
 				);");
 
+	// MessageInserter will insert a record into this temp table which the MessageListInserter will query for and insert a MessageList when needed
+	db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpMessageListInsert(\
+				LocalIdentityID		INTEGER,\
+				Date				DATETIME\
+				);");
+
 	// low / high / message count for each board
 	db->Execute("CREATE VIEW IF NOT EXISTS vwBoardStats AS \
 				SELECT tblBoard.BoardID AS 'BoardID', IFNULL(MIN(MessageID),0) AS 'LowMessageID', IFNULL(MAX(MessageID),0) AS 'HighMessageID', COUNT(MessageID) AS 'MessageCount' \
 				FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID \
-				WHERE MessageID>=0 \
+				WHERE MessageID>=0 OR MessageID IS NULL \
 				GROUP BY tblBoard.BoardID;");
 
 	// calculates peer trust
@@ -210,6 +217,7 @@ void SetupDB()
 				ROUND(SUM(TrustListTrust*(LocalTrustListTrust/100.0))/SUM(LocalTrustListTrust/100.0),0) AS 'PeerTrustListTrust' \
 				FROM tblPeerTrust INNER JOIN tblIdentity ON tblPeerTrust.IdentityID=tblIdentity.IdentityID \
 				WHERE LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust') \
+				AND ( PeerTrustListTrust IS NULL OR PeerTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerTrustListTrust') ) \
 				GROUP BY TargetIdentityID;");
 
 	// update PeerTrustLevel when deleting a record from tblPeerTrust
@@ -279,6 +287,10 @@ void SetupDB()
 	db->Execute("DELETE FROM tblIntroductionPuzzleInserts WHERE Day<='"+date.Format("%Y-%m-%d")+"';");
 	db->Execute("DELETE FROM tblIntroductionPuzzleRequests WHERE Day<='"+date.Format("%Y-%m-%d")+"';");
 
+	// insert SomeDude's public key
+	date.SetToGMTime();
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded) VALUES('SSK@NuBL7aaJ6Cn4fB7GXFb9Zfi8w1FhPyW3oKgU9TweZMw,iXez4j3qCpd596TxXiJgZyTq9o-CElEuJxm~jNNZAuA,AQACAAE/','"+date.Format("%Y-%m-%d %H:%M:%S")+"');");
+
 }
 
 void SetupDefaultOptions()
@@ -286,7 +298,7 @@ void SetupDefaultOptions()
 	// OptionValue should always be inserted as a string, even if the option really isn't a string - just to keep the field data type consistent
 
 	std::ostringstream tempstr;	// must set tempstr to "" between db inserts
-	SQLite3DB::DB *db=SQLite3DB::DB::instance();
+	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	SQLite3DB::Statement st=db->Prepare("INSERT INTO tblOption(Option,OptionValue,OptionDescription) VALUES(?,?,?);");
 
 	// LogLevel
@@ -321,7 +333,19 @@ void SetupDefaultOptions()
 	// StartNNTP
 	st.Bind(0,"StartNNTP");
 	st.Bind(1,"true");
-	st.Bind(2,"Start NNTP service.");
+	st.Bind(2,"Start NNTP server.");
+	st.Step();
+	st.Reset();
+
+	st.Bind(0,"StartHTTP");
+	st.Bind(1,"true");
+	st.Bind(2,"Start HTTP server.");
+	st.Step();
+	st.Reset();
+
+	st.Bind(0,"HTTPListenPort");
+	st.Bind(1,"8080");
+	st.Bind(2,"Port HTTP server will listen on.");
 	st.Step();
 	st.Reset();
 
@@ -334,7 +358,7 @@ void SetupDefaultOptions()
 
 	// FCPHost
 	st.Bind(0,"FCPHost");
-	st.Bind(1,"localhost");
+	st.Bind(1,"127.0.0.1");
 	st.Bind(2,"Host name or address of Freenet node.");
 	st.Step();
 	st.Reset();
@@ -394,20 +418,32 @@ void SetupDefaultOptions()
 	st.Step();
 	st.Reset();
 
+	st.Bind(0,"MinPeerMessageTrust");
+	st.Bind(1,"30");
+	st.Bind(2,"Specifies a peer message trust level that a peer must have before its messages will be downloaded.");
+	st.Step();
+	st.Reset();
+
 	st.Bind(0,"MinLocalTrustListTrust");
 	st.Bind(1,"50");
 	st.Bind(2,"Specifies a local trust list trust level that a peer must have before its trust list will be included in the weighted average.  Any peers below this number will be excluded from the results.");
 	st.Step();
 	st.Reset();
 
+	st.Bind(0,"MinPeerTrustListTrust");
+	st.Bind(1,"30");
+	st.Bind(2,"Specifies a peer trust list trust level that a peer must have before its trust list will be included in the weighted average.  Any peers below this number will be excluded from the results.");
+	st.Step();
+	st.Reset();
+
 	st.Bind(0,"MessageDownloadMaxDaysBackward");
-	st.Bind(1,"3");
+	st.Bind(1,"5");
 	st.Bind(2,"The maximum number of days backward that messages will be downloaded from each identity");
 	st.Step();
 	st.Reset();
 
 	st.Bind(0,"MessageListDaysBackward");
-	st.Bind(1,"3");
+	st.Bind(1,"5");
 	st.Bind(2,"The number of days backward that messages you have inserted will appear in your MessageLists");
 	st.Step();
 	st.Reset();
@@ -422,23 +458,23 @@ void SetupLogFile()
 
 	date.SetToGMTime();
 
-	LogFile::instance()->SetFileName("fms-"+date.Format("%Y-%m-%d")+".log");
-	LogFile::instance()->OpenFile();
-	LogFile::instance()->SetWriteNewLine(true);
-	LogFile::instance()->SetWriteDate(true);
-	LogFile::instance()->SetWriteLogLevel(true);
+	LogFile::Instance()->SetFileName("fms-"+date.Format("%Y-%m-%d")+".log");
+	LogFile::Instance()->OpenFile();
+	LogFile::Instance()->SetWriteNewLine(true);
+	LogFile::Instance()->SetWriteDate(true);
+	LogFile::Instance()->SetWriteLogLevel(true);
 
-	if(Option::instance()->Get("LogLevel",configval)==false)
+	if(Option::Instance()->Get("LogLevel",configval)==false)
 	{
 		configval="4";
-		Option::instance()->Set("LogLevel",configval);
+		Option::Instance()->Set("LogLevel",configval);
 	}
 	if(StringFunctions::Convert(configval,loglevel)==false)
 	{
 		loglevel=LogFile::LOGLEVEL_DEBUG;
-		Option::instance()->Set("LogLevel",loglevel);
+		Option::Instance()->Set("LogLevel",loglevel);
 	}
-	LogFile::instance()->SetLogLevel((LogFile::LogLevel)loglevel);
+	LogFile::Instance()->SetLogLevel((LogFile::LogLevel)loglevel);
 }
 
 void SetupNetwork()
@@ -456,12 +492,12 @@ void ShutdownNetwork()
 #endif
 }
 
-void ShutdownThreads(std::vector<ZThread::Thread *> &threads)
+void ShutdownThreads(std::vector<PThread::Thread *> &threads)
 {
-	std::vector<ZThread::Thread *>::iterator i;
+	std::vector<PThread::Thread *>::iterator i;
 	for(i=threads.begin(); i!=threads.end(); i++)
 	{
-		if((*i)->wait(1)==false)
+/*		if((*i)->wait(1)==false)
 		{
 			try
 			{
@@ -471,12 +507,15 @@ void ShutdownThreads(std::vector<ZThread::Thread *> &threads)
 			{
 			}
 		}
+		*/
+		(*i)->Cancel();
 	}
 
 	for(i=threads.begin(); i!=threads.end(); i++)
 	{
-		LogFile::instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"ShutdownThreads waiting for thread to exit.");
-		(*i)->wait();
+		LogFile::Instance()->WriteLog(LogFile::LOGLEVEL_DEBUG,"ShutdownThreads waiting for thread to exit.");
+		//(*i)->wait();
+		(*i)->Join();
 		delete (*i);
 	}
 
@@ -484,32 +523,45 @@ void ShutdownThreads(std::vector<ZThread::Thread *> &threads)
 
 }
 
-void StartThreads(std::vector<ZThread::Thread *> &threads)
+void StartThreads(std::vector<PThread::Thread *> &threads)
 {
 	std::string startfreenet;
 	std::string startnntp;
+	std::string starthttp;
 
-	if(Option::instance()->Get("StartFreenetUpdater",startfreenet)==false)
+	if(Option::Instance()->Get("StartFreenetUpdater",startfreenet)==false)
 	{
 		startfreenet="true";
-		Option::instance()->Set("StartFreenetUpdater","true");
+		Option::Instance()->Set("StartFreenetUpdater","true");
 	}
 
-	if(Option::instance()->Get("StartNNTP",startnntp)==false)
+	if(Option::Instance()->Get("StartNNTP",startnntp)==false)
 	{
 		startnntp="true";
-		Option::instance()->Set("StartNNTP","true");
+		Option::Instance()->Set("StartNNTP","true");
+	}
+
+	if(Option::Instance()->Get("StartHTTP",starthttp)==false)
+	{
+		starthttp="true";
+		Option::Instance()->Set("StartHTTP","true");
 	}
 
 	if(startfreenet=="true")
 	{
-		ZThread::Thread *t=new ZThread::Thread(new FreenetMasterThread());
+		PThread::Thread *t=new PThread::Thread(new FreenetMasterThread());
 		threads.push_back(t);
 	}
 
 	if(startnntp=="true")
 	{
-		ZThread::Thread *t=new ZThread::Thread(new NNTPListener());
+		PThread::Thread *t=new PThread::Thread(new NNTPListener());
+		threads.push_back(t);
+	}
+
+	if(starthttp=="true")
+	{
+		PThread::Thread *t=new PThread::Thread(new HTTPThread());
 		threads.push_back(t);
 	}
 

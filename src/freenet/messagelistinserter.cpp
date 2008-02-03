@@ -21,6 +21,7 @@ void MessageListInserter::CheckForNeededInsert()
 	// only do 1 insert at a time
 	if(m_inserting.size()==0)
 	{
+		std::string sql;
 		DateTime now;
 		DateTime previous;
 
@@ -29,8 +30,13 @@ void MessageListInserter::CheckForNeededInsert()
 
 		previous.Add(0,0,0,-m_daysbackward);
 
-		// query for identities that have messages in the past X days and we haven't inserted lists for in the past 30 minutes
-		SQLite3DB::Statement st=m_db->Prepare("SELECT tblLocalIdentity.LocalIdentityID FROM tblLocalIdentity INNER JOIN tblMessageInserts ON tblLocalIdentity.LocalIdentityID=tblMessageInserts.LocalIdentityID WHERE tblMessageInserts.Day>=? AND (tblLocalIdentity.LastInsertedMessageList<=? OR tblLocalIdentity.LastInsertedMessageList IS NULL OR tblLocalIdentity.LastInsertedMessageList='');");
+		// query for identities that have messages in the past X days and (we haven't inserted lists for in the past 30 minutes OR identity has a record in tmpMessageListInsert)
+		sql="SELECT tblLocalIdentity.LocalIdentityID ";
+		sql+="FROM tblLocalIdentity INNER JOIN tblMessageInserts ON tblLocalIdentity.LocalIdentityID=tblMessageInserts.LocalIdentityID ";
+		sql+="WHERE tblMessageInserts.Day>=? AND ((tblLocalIdentity.LastInsertedMessageList<=? OR tblLocalIdentity.LastInsertedMessageList IS NULL OR tblLocalIdentity.LastInsertedMessageList='') OR tblLocalIdentity.LocalIdentityID IN (SELECT LocalIdentityID FROM tmpMessageListInsert)) ";
+		sql+=";";
+
+		SQLite3DB::Statement st=m_db->Prepare(sql);
 		st.Bind(0,previous.Format("%Y-%m-%d"));
 		st.Bind(1,(now-(1.0/48.0)).Format("%Y-%m-%d %H:%M:%S"));
 		st.Step();
@@ -93,7 +99,14 @@ const bool MessageListInserter::HandlePutSuccessful(FCPMessage &message)
 	st.Bind(1,localidentityid);
 	st.Step();
 
+	// delete any record from tmpMessageListInsert
+	st=m_db->Prepare("DELETE FROM tmpMessageListInsert WHERE LocalIdentityID=?;");
+	st.Bind(0,localidentityid);
+	st.Step();
+
 	RemoveFromInsertList(localidentityid);
+
+	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"MessageListInserter::HandlePutSuccessful successfully inserted MessageList.");
 
 	return true;
 }
@@ -104,7 +117,7 @@ void MessageListInserter::Initialize()
 
 	m_fcpuniquename="MessageListInserter";
 	m_daysbackward=0;
-	Option::instance()->Get("MessageListDaysBackward",tempval);
+	Option::Instance()->Get("MessageListDaysBackward",tempval);
 	StringFunctions::Convert(tempval,m_daysbackward);
 }
 

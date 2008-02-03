@@ -139,7 +139,7 @@ void MessageListRequester::Initialize()
 {
 	m_fcpuniquename="MessageListRequester";
 	std::string tempval;
-	Option::instance()->Get("MaxMessageListRequests",tempval);
+	Option::Instance()->Get("MaxMessageListRequests",tempval);
 	StringFunctions::Convert(tempval,m_maxrequests);
 	if(m_maxrequests<1)
 	{
