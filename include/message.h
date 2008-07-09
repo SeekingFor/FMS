@@ -3,7 +3,8 @@
 
 #include "idatabase.h"
 #include "ilogger.h"
-#include "datetime.h"
+
+#include <Poco/DateTime.h>
 
 class Message:public IDatabase,public ILogger
 {
@@ -17,10 +18,12 @@ public:
 	const std::string GetSubject() const			{ return m_subject; }
 	const std::string GetBody() const				{ return m_body; }
 	const std::string GetReplyBoardName()			{ return m_replyboardname; }
-	const DateTime GetDateTime() const				{ return m_datetime; }
+	const Poco::DateTime GetDateTime() const		{ return m_datetime; }
 	const std::string GetFromName() const			{ return m_fromname; }
 	std::vector<std::string> GetBoards() const		{ return m_boards; }
 	std::map<long,std::string> GetInReplyTo() const	{ return m_inreplyto; }
+
+	void SetFromName(const std::string &fromname)	{ m_fromname=fromname; }
 
 	const std::string GetNNTPHeaders() const;
 	const std::string GetNNTPArticleID() const;
@@ -44,20 +47,41 @@ public:
 	
 	const bool ParseNNTPMessage(const std::string &nntpmessage);
 
-	void StartFreenetInsert();
+	const bool PostedToAdministrationBoard()		{ return CheckForAdministrationBoard(m_boards); }
+
+	const bool StartFreenetInsert();
+	void HandleAdministrationMessage();
 
 private:
 	void Initialize();
+	// checks vector of boards for any special administration boards - if it finds one true is returned, otherwise false
+	const bool CheckForAdministrationBoard(const std::vector<std::string> &boards);
+	void HandleChangeTrust();
+	void StripAdministrationBoards();	// removes administration boards from boards vector
+	const int FindLocalIdentityID(const std::string &name);
+
+	struct fileattachment
+	{
+		fileattachment(const std::string &filename, const std::string &mimetype, const std::vector<unsigned char> &data):m_filename(filename),m_mimetype(mimetype),m_data(data)	{}
+		std::string m_filename;
+		std::string m_mimetype;
+		std::vector<unsigned char> m_data;
+	};
 
 	long m_messageid;
+	bool m_addnewpostfromidentities;
 	std::string m_messageuuid;
 	std::string m_subject;
 	std::string m_body;
 	std::string m_replyboardname;
-	DateTime m_datetime;
+	Poco::DateTime m_datetime;
 	std::string m_fromname;
 	std::vector<std::string> m_boards;
 	std::map<long,std::string> m_inreplyto;
+	std::vector<fileattachment> m_fileattachments;
+	long m_changemessagetrustonreply;
+	long m_minlocalmessagetrust;
+	long m_minlocaltrustlisttrust;
 
 };
 

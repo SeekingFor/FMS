@@ -1,6 +1,10 @@
 #include "../../include/freenet/messagelistrequester.h"
 #include "../../include/freenet/messagelistxml.h"
 
+#include <Poco/DateTime.h>
+#include <Poco/DateTimeFormatter.h>
+#include <Poco/Timestamp.h>
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif
@@ -15,9 +19,32 @@ MessageListRequester::MessageListRequester(FCPv2 *fcp):IIndexRequester<long>(fcp
 	Initialize();
 }
 
+void MessageListRequester::GetBoardList(std::map<std::string,bool> &boards)
+{
+	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, SaveReceivedMessages FROM tblBoard;");
+	st.Step();
+	while(st.RowReturned())
+	{
+		std::string boardname="";
+		std::string tempval="";
+		st.ResultText(0,boardname);
+		st.ResultText(1,tempval);
+
+		if(tempval=="true")
+		{
+			boards[boardname]=true;
+		}
+		else
+		{
+			boards[boardname]=false;
+		}
+
+		st.Step();
+	}
+}
+
 const bool MessageListRequester::HandleAllData(FCPMessage &message)
 {	
-	DateTime now;
 	SQLite3DB::Statement st;
 	SQLite3DB::Statement trustst;
 	std::vector<std::string> idparts;
@@ -26,8 +53,12 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 	MessageListXML xml;
 	long identityid;
 	long index;
+	std::map<std::string,bool> boards;	// list of boards and if we will save messages for that board or not
+	bool addmessage=false;
+	std::string boardsstr="";
 
-	now.SetToGMTime();
+	GetBoardList(boards);
+
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
 	StringFunctions::Convert(idparts[1],identityid);
@@ -54,25 +85,110 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 	{
 
 		SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblMessageRequests WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
+		SQLite3DB::Statement spk=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
 		SQLite3DB::Statement mst=m_db->Prepare("INSERT INTO tblMessageRequests(IdentityID,Day,RequestIndex,FromMessageList) VALUES(?,?,?,'true');");
 		for(long i=0; i<xml.MessageCount(); i++)
 		{
-			st.Bind(0,identityid);
-			st.Bind(1,xml.GetDate(i));
-			st.Bind(2,xml.GetIndex(i));
-			st.Step();
-			if(st.RowReturned()==false)
+
+			// go through each board the message was posted to and see if we are saving messages to that board
+			// if the board isn't found, see if we are saving messages to new boards
+			boardsstr="";
+			addmessage=false;
+			std::vector<std::string> messageboards=xml.GetBoards(i);
+			for(std::vector<std::string>::iterator j=messageboards.begin(); j!=messageboards.end(); j++)
 			{
-				mst.Bind(0,identityid);
-				mst.Bind(1,xml.GetDate(i));
-				mst.Bind(2,xml.GetIndex(i));
-				mst.Step();
-				mst.Reset();
+				if(boards.find((*j))!=boards.end())
+				{
+					if(boards[(*j)]==true)
+					{
+						addmessage=true;
+					}
+				}
+				else if(m_savetonewboards==true)
+				{
+					addmessage=true;
+				}
+				if(j!=messageboards.begin())
+				{
+					boardsstr+=", ";
+				}
+				boardsstr+=(*j);
 			}
-			st.Reset();
+
+			if(addmessage==true)
+			{
+				st.Bind(0,identityid);
+				st.Bind(1,xml.GetDate(i));
+				st.Bind(2,xml.GetIndex(i));
+				st.Step();
+				if(st.RowReturned()==false)
+				{
+					mst.Bind(0,identityid);
+					mst.Bind(1,xml.GetDate(i));
+					mst.Bind(2,xml.GetIndex(i));
+					mst.Step();
+					mst.Reset();
+				}
+				st.Reset();
+			}
+			else
+			{
+				m_log->trace("MessageListRequester::HandleAllData will not download message posted to "+boardsstr);
+			}
 		}
-		mst.Finalize();
-		st.Finalize();
+
+		// insert external message indexes
+		for(long i=0; i<xml.ExternalMessageCount(); i++)
+		{
+			if(xml.GetExternalType(i)=="Keyed")
+			{
+				// go through each board the message was posted to and see if we are saving messages to that board
+				// if the board isn't found, see if we are saving messages to new boards
+				boardsstr="";
+				addmessage=false;
+				std::vector<std::string> messageboards=xml.GetExternalBoards(i);
+				for(std::vector<std::string>::iterator j=messageboards.begin(); j!=messageboards.end(); j++)
+				{
+					if(boards.find((*j))!=boards.end())
+					{
+						if(boards[(*j)]==true)
+						{
+							addmessage=true;
+						}
+					}
+					else if(m_savetonewboards==true)
+					{
+						addmessage=true;
+					}
+					if(j!=messageboards.begin())
+					{
+						boardsstr+=", ";
+					}
+					boardsstr+=(*j);
+				}
+
+				if(addmessage==true)
+				{
+					spk.Bind(0,xml.GetExternalIdentity(i));
+					spk.Step();
+					if(spk.RowReturned())
+					{
+						int thisidentityid=0;
+						spk.ResultInt(0,thisidentityid);
+						mst.Bind(0,thisidentityid);
+						mst.Bind(1,xml.GetExternalDate(i));
+						mst.Bind(2,xml.GetExternalIndex(i));
+						mst.Step();
+						mst.Reset();
+					}
+					spk.Reset();
+				}
+				else
+				{
+					m_log->trace("MessageListRequester::HandleAllData will not download external message posted to "+boardsstr+" from " + xml.GetExternalIdentity(i));
+				}
+			}
+		}
 
 		st=m_db->Prepare("INSERT INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
 		st.Bind(0,identityid);
@@ -81,7 +197,7 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"MessageListRequester::HandleAllData parsed MessageList XML file : "+message["Identifier"]);
+		m_log->debug("MessageListRequester::HandleAllData parsed MessageList XML file : "+message["Identifier"]);
 	}
 	else
 	{
@@ -93,7 +209,7 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"MessageListRequester::HandleAllData error parsing MessageList XML file : "+message["Identifier"]);
+		m_log->error("MessageListRequester::HandleAllData error parsing MessageList XML file : "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -105,16 +221,21 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 
 const bool MessageListRequester::HandleGetFailed(FCPMessage &message)
 {
-	DateTime now;
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
 	long identityid;
 	long index;
 
-	now.SetToGMTime();
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(idparts[1],identityid);
 	StringFunctions::Convert(idparts[2],index);	
+
+	// code 27 - permanent redirect
+	if(message["Code"]=="27")
+	{
+		StartRedirectRequest(message);
+		return true;
+	}
 
 	// if this is a fatal error - insert index into database so we won't try to download this index again
 	if(message["Fatal"]=="true")
@@ -126,7 +247,7 @@ const bool MessageListRequester::HandleGetFailed(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"MessageListRequester::HandleGetFailed fatal error requesting "+message["Identifier"]);
+		m_log->error("MessageListRequester::HandleGetFailed fatal error code="+message["Code"]+" requesting "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -144,23 +265,53 @@ void MessageListRequester::Initialize()
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"Option MaxMessageListRequests is currently set at "+tempval+".  It must be 1 or greater.");
+		m_log->error("Option MaxMessageListRequests is currently set at "+tempval+".  It must be 1 or greater.");
 	}
 	if(m_maxrequests>100)
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_WARNING,"Option MaxMessageListRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
+		m_log->warning("Option MaxMessageListRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
+
+	tempval="";
+	Option::Instance()->Get("LocalTrustOverridesPeerTrust",tempval);
+	if(tempval=="true")
+	{
+		m_localtrustoverrides=true;
+	}
+	else
+	{
+		m_localtrustoverrides=false;
+	}
+
+	tempval="";
+	Option::Instance()->Get("SaveMessagesFromNewBoards",tempval);
+	if(tempval=="true")
+	{
+		m_savetonewboards=true;
+	}
+	else
+	{
+		m_savetonewboards=false;
+	}
+
 }
 
 void MessageListRequester::PopulateIDList()
 {
-	DateTime date;
+	Poco::DateTime date;
 	int id;
 
-	date.SetToGMTime();
+	SQLite3DB::Statement st;
 
 	// select identities we want to query (we've seen them today) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
-	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+date.Format("%Y-%m-%d")+"' AND LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+	if(m_localtrustoverrides==false)
+	{
+		st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (LocalMessageTrust IS NULL OR LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust')) AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+	}
+	else
+	{
+		st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+	}
 	st.Step();
 
 	m_ids.clear();
@@ -173,12 +324,50 @@ void MessageListRequester::PopulateIDList()
 	}
 }
 
+void MessageListRequester::StartRedirectRequest(FCPMessage &message)
+{
+	std::vector<std::string> parts;
+	std::string indexstr="";
+	std::string identityidstr="";
+	std::string datestr="";
+	FCPMessage newmessage;
+
+	// get the new edition #
+	StringFunctions::Split(message["RedirectURI"],"/",parts);
+	//edition # is 2nd to last part
+	if(parts.size()>2)
+	{
+		indexstr=parts[parts.size()-2];
+	}
+
+	// get identityid
+	parts.clear();
+	StringFunctions::Split(message["Identifier"],"|",parts);
+	if(parts.size()>1)
+	{
+		identityidstr=parts[1];
+	}
+	if(parts.size()>4)
+	{
+		datestr=parts[4];
+	}
+
+	newmessage.SetName("ClientGet");
+	newmessage["URI"]=StringFunctions::UriDecode(message["RedirectURI"]);
+	newmessage["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|_|"+datestr+"|"+newmessage["URI"];
+	newmessage["ReturnType"]="direct";
+	newmessage["MaxSize"]="1000000";
+
+	m_fcp->SendMessage(newmessage);
+
+}
+
 void MessageListRequester::StartRequest(const long &id)
 {
-	DateTime now;
+	Poco::DateTime now;
 	FCPMessage message;
 	std::string publickey;
-	int index;
+	int index=0;
 	std::string indexstr;
 	std::string identityidstr;
 
@@ -190,10 +379,10 @@ void MessageListRequester::StartRequest(const long &id)
 	{
 		st.ResultText(0,publickey);
 
-		now.SetToGMTime();
+		now=Poco::Timestamp();
 
 		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblMessageListRequests WHERE Day=? AND IdentityID=?;");
-		st2.Bind(0,now.Format("%Y-%m-%d"));
+		st2.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
 		st2.Bind(1,id);
 		st2.Step();
 
@@ -203,6 +392,8 @@ void MessageListRequester::StartRequest(const long &id)
 			if(st2.ResultNull(0)==false)
 			{
 				st2.ResultInt(0,index);
+				// don't increment index here - the node will let us know if there is a new edition
+				// 2008-05-31 - well actually the node isn't reliably retreiving the latest edition for USKs, so we DO need to increment the index
 				index++;
 			}
 		}
@@ -212,10 +403,10 @@ void MessageListRequester::StartRequest(const long &id)
 		StringFunctions::Convert(id,identityidstr);
 
 		message.SetName("ClientGet");
-		message["URI"]=publickey+m_messagebase+"|"+now.Format("%Y-%m-%d")+"|MessageList|"+indexstr+".xml";
-		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|"+message["URI"];
+		message["URI"]="USK"+publickey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|MessageList/"+indexstr+"/MessageList.xml";
+		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|_|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|"+message["URI"];
 		message["ReturnType"]="direct";
-		message["MaxSize"]="1000000";			// 1 MB
+		message["MaxSize"]="1000000";
 
 		m_fcp->SendMessage(message);
 

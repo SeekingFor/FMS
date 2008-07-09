@@ -13,6 +13,8 @@ const bool Encode(const std::vector<unsigned char> &data, std::string &encoded)
 {
 	std::vector<unsigned char>::size_type currentdatapos=0;
 
+	//reserve space for encoded data 4*input/3
+	encoded.reserve((4L*data.size())/3L);
 	while(currentdatapos<data.size())
 	{
 		encoded.push_back(base64chars[(data[currentdatapos]>>2 & 0x3F)]);
@@ -45,6 +47,12 @@ const bool Decode(const std::string &encoded, std::vector<unsigned char> &data)
 	std::string::size_type charpos=0;
 	std::string::size_type encodedpos=0;
 	unsigned char currentbyte=0;
+
+	// reserve space for decoded data (encoded size*3/4)
+	if(encoded.size()>1)
+	{
+		data.reserve((encoded.size()*3)/4);
+	}
 
 	// loop while encoded pos fits in current size
 	while(encodedpos+3<encoded.size())

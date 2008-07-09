@@ -1,6 +1,9 @@
 #include "../../../include/http/pages/announceidentitypage.h"
 #include "../../../include/stringfunctions.h"
-#include "../../../include/datetime.h"
+#include "../../../include/global.h"
+
+#include <Poco/DateTime.h>
+#include <Poco/DateTimeFormatter.h>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -23,7 +26,7 @@ const std::string AnnounceIdentityPage::CreateLocalIdentityDropDown(const std::s
 		st.ResultText(1,name);
 		st.ResultText(2,pubkey);
 
-		rval+="<option value=\""+id+"\" title=\""+pubkey+"\">"+name+"</option>";
+		rval+="<option value=\""+id+"\" title=\""+pubkey+"\">"+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"</option>";
 		st.Step();
 	}
 	rval+="</select>";
@@ -32,7 +35,7 @@ const std::string AnnounceIdentityPage::CreateLocalIdentityDropDown(const std::s
 
 const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
-	DateTime date;
+	Poco::DateTime date;
 	std::string content;
 	int shown=0;
 	std::string countstr="";
@@ -40,6 +43,8 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 	std::string lastid="";
 	std::string thisid="";
 	std::string day="";
+	int requestindex=0;
+	bool willshow=false;
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="announce")
 	{
@@ -81,12 +86,11 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 	content+="<tr><td colspan=\"4\"><center>Select Identity : ";
 	content+=CreateLocalIdentityDropDown("localidentityid","");
 	content+="</td></tr>";
-	content+="<tr><td colspan=\"4\"><center>Type the answers of a few puzzles</td></tr>";
+	content+="<tr><td colspan=\"4\"><center>Type the answers of a few puzzles.  The puzzles are case sensitive.  Getting announced will take some time.  DO NOT continuously solve captchas.  Solve 30 at most, wait a day, and if your identity has not been announced, repeat until it is.</td></tr>";
 	content+="<tr>";
 
-	date.SetToGMTime();
-	date.Add(0,0,0,-1);
-	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID,Day,IdentityID FROM tblIntroductionPuzzleRequests WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND UUID NOT IN (SELECT UUID FROM tblIntroductionPuzzleInserts) AND Day>='"+date.Format("%Y-%m-%d")+"' AND Found='true' ORDER BY IdentityID, Day DESC, RequestIndex DESC;");
+	date-=Poco::Timespan(1,0,0,0,0);
+	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID,Day,IdentityID,RequestIndex FROM tblIntroductionPuzzleRequests WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND UUID NOT IN (SELECT UUID FROM tblIntroductionPuzzleInserts) AND Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND Found='true' ORDER BY IdentityID, Day DESC, RequestIndex DESC;");
 	st.Step();
 
 	if(st.RowReturned()==false)
@@ -99,8 +103,25 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 		st.ResultText(0,uuid);
 		st.ResultText(1,day);
 		st.ResultText(2,thisid);
+		st.ResultInt(3,requestindex);
 
-		if(thisid!=lastid)
+		// if we are already inserting a solution for an identity - we shouldn't show any puzzles that are older than the one we are inserting
+		// get the last index # we are inserting this day from this identity
+		// if the index here is greater than the index in the st statement, we will skip this puzzle because we are already inserting a puzzle with a greater index
+		willshow=true;
+		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblIdentityIntroductionInserts INNER JOIN tblIntroductionPuzzleRequests ON tblIdentityIntroductionInserts.UUID=tblIntroductionPuzzleRequests.UUID WHERE tblIdentityIntroductionInserts.Day=? AND tblIdentityIntroductionInserts.UUID IN (SELECT UUID FROM tblIntroductionPuzzleRequests WHERE IdentityID=? AND Day=?) GROUP BY tblIdentityIntroductionInserts.Day;");
+		st2.Step();
+		if(st2.RowReturned()==true)
+		{
+			int index=0;
+			st2.ResultInt(0,index);
+			if(index>=requestindex)
+			{
+				willshow=false;
+			}
+		}
+
+		if(willshow && thisid!=lastid)
 		{
 			StringFunctions::Convert(shown,countstr);
 			if(shown>0 && shown%4==0)
@@ -113,7 +134,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 			content+="<input type=\"hidden\" name=\"day["+countstr+"]\" value=\""+day+"\">";
 			content+="<input type=\"text\" name=\"solution["+countstr+"]\">";
 			content+="</td>\r\n";
-			thisid=lastid;
+			lastid=thisid;
 			shown++;
 		}
 		
@@ -124,7 +145,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 	content+="</table>";
 	content+="</form>";
 
-	return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"+StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return StringFunctions::Replace(m_template,"[CONTENT]",content);
 }
 
 const bool AnnounceIdentityPage::WillHandleURI(const std::string &uri)

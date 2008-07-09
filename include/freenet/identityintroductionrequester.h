@@ -3,11 +3,12 @@
 
 #include "../idatabase.h"
 #include "../ilogger.h"
-#include "../datetime.h"
 #include "ifreenetregistrable.h"
 #include "ifcpconnected.h"
 #include "ifcpmessagehandler.h"
 #include "iperiodicprocessor.h"
+
+#include <Poco/DateTime.h>
 
 class IdentityIntroductionRequester:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
@@ -32,7 +33,7 @@ private:
 	const bool HandleGetFailed(FCPMessage &message);
 	const bool HandleAllData(FCPMessage &message);
 
-	DateTime m_tempdate;
+	Poco::DateTime m_tempdate;
 	std::map<long,bool> m_ids;
 	std::vector<std::string> m_requesting;
 	std::string m_messagebase;

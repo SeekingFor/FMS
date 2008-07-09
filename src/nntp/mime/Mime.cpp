@@ -12,6 +12,7 @@
 #include "../../../include/nntp/mime/Mime.h"
 #include <stdlib.h>
 #include <time.h>
+#include <cstring>
 
 #ifndef _WIN32
 	#define stricmp strcasecmp
@@ -362,7 +363,7 @@ void CMimeHeader::SetBoundary(const char* pszBoundary/*=NULL*/)
 	char buf[80];
 	if (!pszBoundary)				// generate a new boundary delimeter
 	{
-		::srand(((unsigned)::time(NULL)) ^ (unsigned)this);
+		::srand(((unsigned)::time(NULL)));// ^ reinterpret_cast<unsigned>(this));
 		::sprintf(buf, "__=_Part_Boundary_%03d_%06d.%06d", ++s_nPartNumber, rand(), rand());
 		if (s_nPartNumber >= 9)
 			s_nPartNumber = 0;
@@ -475,7 +476,11 @@ list<CMimeField>::iterator CMimeHeader::FindField(const char* pszFieldName)
 	#include <io.h>
 #else
 	#if !defined(__APPLE__) && !defined(__DARWIN__)
-		#include <sys/io.h>
+		#if !defined(__FreeBSD__) && !defined(solaris) && !defined(__sun)
+			#include <sys/io.h>
+		#else
+			#include <stdio.h>
+		#endif
 	#endif
 #endif
 

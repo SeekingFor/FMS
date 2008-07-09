@@ -2,12 +2,13 @@
 #define _unkeyedidcreatorr_
 
 #include "../ilogger.h"
-#include "../datetime.h"
 #include "../idatabase.h"
 #include "ifreenetregistrable.h"
 #include "ifcpconnected.h"
 #include "ifcpmessagehandler.h"
 #include "iperiodicprocessor.h"
+
+#include <Poco/DateTime.h>
 
 
 /**
@@ -33,7 +34,7 @@ private:
 	void CheckForUnkeyedID();
 	void SaveKeys(const long localidentityid, const std::string &publickey, const std::string &privatekey);
 
-	DateTime m_lastchecked;
+	Poco::DateTime m_lastchecked;
 	bool m_waiting;
 };
 

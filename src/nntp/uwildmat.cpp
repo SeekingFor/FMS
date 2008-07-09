@@ -66,6 +66,7 @@
 //#include "libinn.h"
 #include "../../include/nntp/uwildmat.h"
 #include <string>
+#include <cstring>
 
 #define ABORT -1
 

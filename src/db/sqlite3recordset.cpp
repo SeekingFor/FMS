@@ -1,5 +1,7 @@
 #include "../../include/db/sqlite3db/sqlite3recordset.h"
 
+#include <cstdlib>
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif
@@ -33,6 +35,18 @@ const char *Recordset::Get(const int row, const int field)
 	if(row>=0 && row<m_rows && field>=0 && field<m_cols)
 	{
 		return m_rs[m_cols+(m_cols*row)+field];
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+const char *Recordset::GetColumnName(const int column)
+{
+	if(column>=0 && column<m_cols)
+	{
+		return m_rs[column];
 	}
 	else
 	{
@@ -76,8 +90,7 @@ void Recordset::Open(const std::string &sql, DB *db)
 	Free();
 	m_currentrow=0;
 
-	//ZThread::Guard<ZThread::Mutex> g(DB::instance()->m_mutex);
-	PThread::Guard g(DB::Instance()->m_mutex);
+	Poco::ScopedLock<Poco::FastMutex> g(DB::Instance()->m_mutex);
 	if(sqlite3_get_table(db->GetDB(),sql.c_str(),&m_rs,&m_rows,&m_cols,NULL)==SQLITE_OK)
 	{
 	}

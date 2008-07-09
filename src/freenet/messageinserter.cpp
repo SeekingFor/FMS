@@ -1,4 +1,9 @@
 #include "../../include/freenet/messageinserter.h"
+#include "../../include/freenet/messagexml.h"
+
+#include <Poco/DateTime.h>
+#include <Poco/DateTimeFormatter.h>
+#include <Poco/Timestamp.h>
 
 MessageInserter::MessageInserter()
 {
@@ -12,17 +17,31 @@ MessageInserter::MessageInserter(FCPv2 *fcp):IIndexInserter<std::string>(fcp)
 
 void MessageInserter::CheckForNeededInsert()
 {
+	Poco::DateTime now;
+	bool didinsert=false;
 	// only do 1 insert at a time
 	if(m_inserting.size()==0)
 	{
-		SQLite3DB::Statement st=m_db->Prepare("SELECT MessageUUID FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE tblLocalIdentity.PrivateKey IS NOT NULL AND tblLocalIdentity.PrivateKey <> '' AND tblMessageInserts.Inserted='false';");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT MessageUUID FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE tblLocalIdentity.PrivateKey IS NOT NULL AND tblLocalIdentity.PrivateKey <> '' AND tblMessageInserts.Inserted='false' AND tblMessageInserts.SendDate<=?;");
+		st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
 		st.Step();
 
-		if(st.RowReturned())
+		while(st.RowReturned() && m_inserting.size()==0)
 		{
-			std::string messageuuid;
+			std::string messageuuid="";
 			st.ResultText(0,messageuuid);
-			StartInsert(messageuuid);
+
+			// make sure there are no uninserted files attached to this message
+			SQLite3DB::Statement st2=m_db->Prepare("SELECT FileInsertID FROM tblFileInserts WHERE Key IS NULL AND MessageUUID=?;");
+			st2.Bind(0,messageuuid);
+			st2.Step();
+
+			if(st2.RowReturned()==false)
+			{
+				StartInsert(messageuuid);
+			}
+
+			st.Step();
 		}
 	}
 }
@@ -41,7 +60,7 @@ const bool MessageInserter::HandlePutFailed(FCPMessage &message)
 	{
 		SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblMessageInserts(LocalIdentityID,Day,InsertIndex,Inserted) VALUES(?,?,?,'true');");
 		st.Bind(0,localidentityid);
-		st.Bind(1,idparts[5]);
+		st.Bind(1,idparts[6]);
 		st.Bind(2,index);
 		st.Step();
 	}
@@ -53,30 +72,56 @@ const bool MessageInserter::HandlePutFailed(FCPMessage &message)
 
 const bool MessageInserter::HandlePutSuccessful(FCPMessage &message)
 {
-	DateTime date;
+	MessageXML xml;
+	Poco::DateTime date;
 	int localidentityid;
 	int index;
 	std::vector<std::string> idparts;
+
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(idparts[3],index);
 	StringFunctions::Convert(idparts[2],localidentityid);
 
 	SQLite3DB::Statement st=m_db->Prepare("UPDATE tblMessageInserts SET Day=?, InsertIndex=?, Inserted='true' WHERE MessageUUID=?;");
-	st.Bind(0,idparts[5]);
+	st.Bind(0,idparts[6]);
 	st.Bind(1,index);
 	st.Bind(2,idparts[1]);
 	st.Step();
 
 	// insert record into temp table so MessageList will be inserted ASAP
-	date.SetToGMTime();
+	date=Poco::Timestamp();
 	st=m_db->Prepare("INSERT INTO tmpMessageListInsert(LocalIdentityID,Date) VALUES(?,?);");
 	st.Bind(0,localidentityid);
-	st.Bind(1,date.Format("%Y-%m-%d"));
+	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Step();
+
+	// update the messageuuid to the real messageuuid
+	st=m_db->Prepare("SELECT MessageXML FROM tblMessageInserts WHERE MessageUUID=?;");
+	st.Bind(0,idparts[1]);
+	st.Step();
+	if(st.RowReturned())
+	{
+		std::string xmldata="";
+		st.ResultText(0,xmldata);
+		xml.ParseXML(xmldata);
+		xml.SetMessageID(idparts[4]);
+
+		SQLite3DB::Statement st2=m_db->Prepare("UPDATE tblMessageInserts SET MessageUUID=?, MessageXML=? WHERE MessageUUID=?;");
+		st2.Bind(0,idparts[4]);
+		st2.Bind(1,xml.GetXML());
+		st2.Bind(2,idparts[1]);
+		st2.Step();
+
+		//update file insert MessageUUID as well
+		st2=m_db->Prepare("UPDATE tblFileInserts SET MessageUUID=? WHERE MessageUUID=?;");
+		st2.Bind(0,idparts[4]);
+		st2.Bind(1,idparts[1]);
+		st2.Step();
+	}
 
 	RemoveFromInsertList(idparts[1]);
 
-	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"MessageInserter::HandlePutSuccessful successfully inserted message "+message["Identifier"]);
+	m_log->debug("MessageInserter::HandlePutSuccessful successfully inserted message "+message["Identifier"]);
 
 	return true;
 }
@@ -86,11 +131,11 @@ void MessageInserter::Initialize()
 	m_fcpuniquename="MessageInserter";
 }
 
-void MessageInserter::StartInsert(const std::string &messageuuid)
+const bool MessageInserter::StartInsert(const std::string &messageuuid)
 {
-	DateTime now;
-	now.SetToGMTime();
-	SQLite3DB::Statement st=m_db->Prepare("SELECT MessageXML,PrivateKey,tblLocalIdentity.LocalIdentityID FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE MessageUUID=?;");
+	MessageXML xmlfile;
+	Poco::DateTime now;
+	SQLite3DB::Statement st=m_db->Prepare("SELECT MessageXML,PrivateKey,tblLocalIdentity.LocalIdentityID,PublicKey FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE MessageUUID=?;");
 	st.Bind(0,messageuuid);
 	st.Step();
 
@@ -101,6 +146,7 @@ void MessageInserter::StartInsert(const std::string &messageuuid)
 		std::string xml;
 		std::string xmlsizestr;
 		std::string privatekey;
+		std::string publickey;
 		FCPMessage message;
 		std::string indexstr;
 		int index=0;
@@ -108,11 +154,11 @@ void MessageInserter::StartInsert(const std::string &messageuuid)
 		st.ResultText(0,xml);
 		st.ResultText(1,privatekey);
 		st.ResultInt(2,localidentityid);
-		StringFunctions::Convert(xml.size(),xmlsizestr);
+		st.ResultText(3,publickey);
 		StringFunctions::Convert(localidentityid,idstr);
 
 		st=m_db->Prepare("SELECT MAX(InsertIndex) FROM tblMessageInserts WHERE Day=? AND LocalIdentityID=?;");
-		st.Bind(0,now.Format("%Y-%m-%d"));
+		st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
 		st.Bind(1,localidentityid);
 		st.Step();
 
@@ -123,9 +169,41 @@ void MessageInserter::StartInsert(const std::string &messageuuid)
 		}
 		StringFunctions::Convert(index,indexstr);
 
+		xmlfile.ParseXML(xml);
+
+		// add file attachments to xml - must do this before we change UUID
+		st=m_db->Prepare("SELECT Key, Size FROM tblFileInserts WHERE MessageUUID=?;");
+		st.Bind(0,xmlfile.GetMessageID());
+		st.Step();
+		while(st.RowReturned())
+		{
+			std::string key="";
+			int size;
+			
+			st.ResultText(0,key);
+			st.ResultInt(1,size);
+
+			xmlfile.AddFileAttachment(key,size);
+
+			st.Step();
+		}
+
+		// recreate messageuuid in xml - UUID of message will not match entry in MessageInserts table until we successfully insert it
+		// see HandlePutSuccessful
+		// if we don't already have an @sskpart - add it
+		if(xmlfile.GetMessageID().find("@")==std::string::npos)
+		{
+			// remove - and ~ from publickey part
+			std::string publickeypart=StringFunctions::Replace(StringFunctions::Replace(publickey.substr(4,43),"-",""),"~","");
+			xmlfile.SetMessageID(xmlfile.GetMessageID()+"@"+publickeypart);
+		}
+		xml=xmlfile.GetXML();
+
+		StringFunctions::Convert(xml.size(),xmlsizestr);
+
 		message.SetName("ClientPut");
-		message["URI"]=privatekey+m_messagebase+"|"+now.Format("%Y-%m-%d")+"|Message|"+indexstr+".xml";
-		message["Identifier"]=m_fcpuniquename+"|"+messageuuid+"|"+idstr+"|"+indexstr+"|"+message["URI"];
+		message["URI"]=privatekey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Message|"+indexstr+".xml";
+		message["Identifier"]=m_fcpuniquename+"|"+messageuuid+"|"+idstr+"|"+indexstr+"|"+xmlfile.GetMessageID()+"|"+message["URI"];
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmlsizestr;
 		m_fcp->SendMessage(message);
@@ -133,7 +211,13 @@ void MessageInserter::StartInsert(const std::string &messageuuid)
 
 		m_inserting.push_back(messageuuid);
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"MessageInserter::StartInsert started message insert "+message["URI"]);
+		m_log->debug("MessageInserter::StartInsert started message insert "+message["URI"]);
+	
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 
 }

@@ -1,6 +1,8 @@
 #include "../../include/freenet/trustlistxml.h"
 #include "../../include/stringfunctions.h"
 
+#include <algorithm>
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif
@@ -10,9 +12,9 @@ TrustListXML::TrustListXML()
 	Initialize();
 }
 
-void TrustListXML::AddTrust(const std::string &identity, const long messagetrust, const long trustlisttrust)
+void TrustListXML::AddTrust(const std::string &identity, const long messagetrust, const long trustlisttrust, const std::string &messagetrustcomment, const std::string &trustlisttrustcomment)
 {
-	m_trust.push_back(trust(identity,messagetrust,trustlisttrust));
+	m_trust.push_back(trust(identity,messagetrust,trustlisttrust,messagetrustcomment,trustlisttrustcomment));
 }
 
 std::string TrustListXML::GetIdentity(const long index)
@@ -39,6 +41,18 @@ long TrustListXML::GetMessageTrust(const long index)
 	}	
 }
 
+std::string TrustListXML::GetMessageTrustComment(const long index)
+{
+	if(index>=0 && index<m_trust.size())
+	{
+		return m_trust[index].m_messagetrustcomment;
+	}
+	else
+	{
+		return "";
+	}	
+}
+
 long TrustListXML::GetTrustListTrust(const long index)
 {
 	if(index>=0 && index<m_trust.size())
@@ -51,16 +65,24 @@ long TrustListXML::GetTrustListTrust(const long index)
 	}
 }
 
+std::string TrustListXML::GetTrustListTrustComment(const long index)
+{
+	if(index>=0 && index<m_trust.size())
+	{
+		return m_trust[index].m_trustlisttrustcomment;
+	}
+	else
+	{
+		return "";
+	}
+}
+
 std::string TrustListXML::GetXML()
 {
-	TiXmlDocument td;
-	TiXmlDeclaration *tdec=new TiXmlDeclaration("1.0","UTF-8","");
-	TiXmlElement *tid;
-	TiXmlPrinter tp;
+	Poco::AutoPtr<Poco::XML::Document> doc=new Poco::XML::Document;
+	Poco::AutoPtr<Poco::XML::Element> root=doc->createElement("TrustList");
 
-	td.LinkEndChild(tdec);
-	tid=new TiXmlElement("TrustList");
-	td.LinkEndChild(tid);
+	doc->appendChild(root);
 
 	for(std::vector<trust>::iterator i=m_trust.begin(); i!=m_trust.end(); i++)
 	{
@@ -68,15 +90,28 @@ std::string TrustListXML::GetXML()
 		std::string trustlisttrust;
 		StringFunctions::Convert((*i).m_messagetrust,messagetrust);
 		StringFunctions::Convert((*i).m_trustlisttrust,trustlisttrust);
-		TiXmlElement *tr=new TiXmlElement("Trust");
-		tid->LinkEndChild(tr);
-		tr->LinkEndChild(XMLCreateCDATAElement("Identity",(*i).m_identity));
-		tr->LinkEndChild(XMLCreateTextElement("MessageTrustLevel",messagetrust));
-		tr->LinkEndChild(XMLCreateTextElement("TrustListTrustLevel",trustlisttrust));
+		Poco::AutoPtr<Poco::XML::Element> tr=doc->createElement("Trust");
+		root->appendChild(tr);
+		tr->appendChild(XMLCreateCDATAElement(doc,"Identity",(*i).m_identity));
+		if((*i).m_messagetrust>=0)
+		{
+			tr->appendChild(XMLCreateTextElement(doc,"MessageTrustLevel",messagetrust));
+		}
+		if((*i).m_trustlisttrust>=0)
+		{
+			tr->appendChild(XMLCreateTextElement(doc,"TrustListTrustLevel",trustlisttrust));
+		}
+		if((*i).m_messagetrustcomment!="")
+		{
+			tr->appendChild(XMLCreateTextElement(doc,"MessageTrustComment",(*i).m_messagetrustcomment));
+		}
+		if((*i).m_trustlisttrustcomment!="")
+		{
+			tr->appendChild(XMLCreateTextElement(doc,"TrustListTrustComment",(*i).m_trustlisttrustcomment));
+		}
 	}
 
-	td.Accept(&tp);
-	return std::string(tp.CStr());
+	return GenerateXML(doc);
 }
 
 void TrustListXML::Initialize()
@@ -86,64 +121,95 @@ void TrustListXML::Initialize()
 
 const bool TrustListXML::ParseXML(const std::string &xml)
 {
-	TiXmlDocument td;
-	td.Parse(xml.c_str());
 
-	if(!td.Error())
+	bool parsed=false;
+	Poco::XML::DOMParser dp;
+
+	Initialize();
+
+	try
 	{
-		std::string identity;
-		std::string messagetruststr;
-		std::string trustlisttruststr;
-		long messagetrust;
-		long trustlisttrust;
-		TiXmlText *txt;
-		TiXmlHandle hnd(&td);
-		TiXmlNode *node;
+		Poco::AutoPtr<Poco::XML::Document> doc=dp.parseString(FixCDATA(xml));
+		Poco::XML::Element *root=XMLGetFirstChild(doc,"TrustList");
+		Poco::XML::Element *trustel=NULL;
+		Poco::XML::Element *txt=NULL;
 
-		Initialize();
+		std::vector<std::string> foundkeys;
 
-		node=hnd.FirstChild("TrustList").FirstChild("Trust").ToElement();
-		while(node)
+		trustel=XMLGetFirstChild(root,"Trust");
+		while(trustel)
 		{
-			identity="";
-			messagetrust=-1;
-			trustlisttrust=-1;
+			std::string identity="";
+			int messagetrust=-1;
+			int trustlisttrust=-1;
+			std::string messagetrustcomment="";
+			std::string trustlisttrustcomment="";
 
-			TiXmlHandle hnd2(node);
-			txt=hnd2.FirstChild("Identity").FirstChild().ToText();
+			txt=XMLGetFirstChild(trustel,"Identity");
 			if(txt)
 			{
-				identity=txt->ValueStr();
+				if(txt->firstChild())
+				{
+					identity=SanitizeSingleString(txt->firstChild()->getNodeValue());
+				}
 			}
-			txt=hnd2.FirstChild("MessageTrustLevel").FirstChild().ToText();
+			txt=XMLGetFirstChild(trustel,"MessageTrustLevel");
 			if(txt)
 			{
-				messagetruststr=txt->ValueStr();
-				StringFunctions::Convert(messagetruststr,messagetrust);
+				if(txt->firstChild())
+				{
+					std::string mtl=txt->firstChild()->getNodeValue();
+					StringFunctions::Convert(mtl,messagetrust);
+				}
 			}
-			txt=hnd2.FirstChild("TrustListTrustLevel").FirstChild().ToText();
+			txt=XMLGetFirstChild(trustel,"TrustListTrustLevel");
 			if(txt)
 			{
-				trustlisttruststr=txt->ValueStr();
-				StringFunctions::Convert(trustlisttruststr,trustlisttrust);
+				if(txt->firstChild())
+				{
+					std::string tltl=txt->firstChild()->getNodeValue();
+					StringFunctions::Convert(tltl,trustlisttrust);
+				}
+			}
+			txt=XMLGetFirstChild(trustel,"MessageTrustComment");
+			if(txt)
+			{
+				if(txt->firstChild())
+				{
+					messagetrustcomment=SanitizeSingleString(txt->firstChild()->getNodeValue());
+				}
+			}
+			txt=XMLGetFirstChild(trustel,"TrustListTrustComment");
+			if(txt)
+			{
+				if(txt->firstChild())
+				{
+					trustlisttrustcomment=SanitizeSingleString(txt->firstChild()->getNodeValue());
+				}
 			}
 
-			if(identity!="" && messagetrust>=0 && messagetrust<=100 && trustlisttrust>=0 && trustlisttrust<=100)
+			if(identity!="" && messagetrust>=-1 && messagetrust<=100 && trustlisttrust>=-1 && trustlisttrust<=100)
 			{
-				m_trust.push_back(trust(identity,messagetrust,trustlisttrust));
+				// check so we don't add the same identity multiple times from a trust list
+				if(std::find(foundkeys.begin(),foundkeys.end(),identity)==foundkeys.end())
+				{
+					foundkeys.push_back(identity);
+					m_trust.push_back(trust(identity,messagetrust,trustlisttrust,messagetrustcomment,trustlisttrustcomment));
+				}
 			}
 			else
 			{
-				m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"TrustListXML::ParseXML malformed Trust in TrustList.xml");
+				m_log->error("TrustListXML::ParseXML malformed Trust in TrustList.xml");
 			}
-			
-			node=node->NextSibling("Trust");
-		}
-		return true;
 
+			trustel=XMLGetNextSibling(trustel,"Trust");
+		}
+
+		parsed=true;
 	}
-	else
+	catch(...)
 	{
-		return false;
 	}
+
+	return parsed;
 }

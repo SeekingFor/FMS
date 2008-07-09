@@ -4,11 +4,10 @@
 #include "db/sqlite3db.h"
 
 #include <sstream>
-//#include <zthread/Singleton.h>
-#include "pthreadwrapper/singleton.h"
+#include "threadwrapper/singleton.h"
 
 //just a wrapper around the database for the options table
-class Option:public PThread::Singleton<Option>
+class Option:public Singleton<Option>
 {
 public:
 	const bool Get(const std::string &option, std::string &value);

@@ -3,7 +3,6 @@
 
 #include "../idatabase.h"
 #include "../ilogger.h"
-#include "../datetime.h"
 #include "../option.h"
 #include "../stringfunctions.h"
 #include "ifreenetregistrable.h"
@@ -11,12 +10,21 @@
 #include "ifcpmessagehandler.h"
 #include "iperiodicprocessor.h"
 
+#include <Poco/DateTime.h>
+#include <Poco/Timestamp.h>
+#include <Poco/Timespan.h>
+
+#ifdef XMEM
+	#include <xmem.h>
+#endif
+
 template <class IDTYPE>
 class IIndexRequester:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
 public:
 	IIndexRequester();
 	IIndexRequester(FCPv2 *fcp);
+	virtual ~IIndexRequester()		{}
 
 	virtual void FCPConnected();
 	virtual void FCPDisconnected();
@@ -35,7 +43,9 @@ protected:
 	virtual const bool HandleGetFailed(FCPMessage &message)=0;
 	virtual void RemoveFromRequestList(const IDTYPE id);
 
-	DateTime m_tempdate;
+	Poco::DateTime m_tempdate;
+	Poco::DateTime m_lastreceived;
+	Poco::DateTime m_lastpopulated;
 	std::string m_messagebase;
 	std::map<IDTYPE,bool> m_ids;			// map of all ids we know and whether we have requested file from them yet
 	std::vector<IDTYPE> m_requesting;		// list of ids we are currently requesting from
@@ -64,19 +74,21 @@ void IIndexRequester<IDTYPE>::FCPConnected()
 	// make sure variables have been initialized by the derived class
 	if(m_maxrequests==-1)
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IIndexRequester<IDTYPE>::FCPConnected maxrequests not initialized correctly!");
+		m_log->fatal("IIndexRequester<IDTYPE>::FCPConnected maxrequests not initialized correctly!");
 	}
 	if(m_fcpuniquename=="")
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IIndexRequester<IDTYPE>::FCPConnected fcpuniquename not initialized correctly!");
+		m_log->fatal("IIndexRequester<IDTYPE>::FCPConnected fcpuniquename not initialized correctly!");
 	}
 	if(m_fcpuniquename.find("|")!=std::string::npos)
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IIndexRequester<IDTYPE>::FCPConnected fcpuniquename contains | character!  This is not a valid character!");
+		m_log->fatal("IIndexRequester<IDTYPE>::FCPConnected fcpuniquename contains | character!  This is not a valid character!");
 	}
 
+	m_lastreceived=Poco::Timestamp();
 	m_requesting.clear();
 	PopulateIDList();
+	m_lastpopulated=Poco::Timestamp();
 }
 
 template <class IDTYPE>
@@ -91,6 +103,9 @@ const bool IIndexRequester<IDTYPE>::HandleMessage(FCPMessage &message)
 
 	if(message["Identifier"].find(m_fcpuniquename)==0)
 	{
+
+		m_lastreceived=Poco::Timestamp();
+
 		if(message.GetName()=="DataFound")
 		{
 			return true;
@@ -128,14 +143,19 @@ void IIndexRequester<IDTYPE>::InitializeIIndexRequester()
 	m_fcpuniquename="";
 
 	Option::Instance()->Get("MessageBase",m_messagebase);
-	m_tempdate.SetToGMTime();
+	m_tempdate=Poco::Timestamp();
+	m_lastreceived=Poco::Timestamp();
+	m_lastpopulated=Poco::Timestamp();
+	m_lastpopulated-=Poco::Timespan(0,0,10,0,0);
 }
 
 template <class IDTYPE>
 void IIndexRequester<IDTYPE>::Process()
 {
+	Poco::DateTime now;
+
 	// max is the smaller of the config value or the total number of ids we will request from
-	long max=m_maxrequests>m_ids.size() ? m_ids.size() : m_maxrequests;
+	typename std::map<IDTYPE,bool>::size_type max=m_maxrequests>m_ids.size() ? m_ids.size() : m_maxrequests;
 
 	// try to keep up to max requests going
 	if(m_requesting.size()<max)
@@ -153,18 +173,26 @@ void IIndexRequester<IDTYPE>::Process()
 		}
 		else
 		{
-			// we requested from all ids in the list, repopulate the list
-			PopulateIDList();
+			// we requested from all ids in the list, repopulate the list (only every 10 minutes)
+			if(m_lastpopulated<(now-Poco::Timespan(0,0,10,0,0)))
+			{
+				PopulateIDList();
+				m_lastpopulated=Poco::Timestamp();
+			}
 		}
 	}
 	// special case - if there were 0 ids on the list when we started then we will never get a chance to repopulate the list
 	// this will recheck for ids every minute
-	DateTime now;
-	now.SetToGMTime();
-	if(m_ids.size()==0 && m_tempdate<(now-(1.0/1440.0)))
+	if(m_ids.size()==0 && m_tempdate<(now-Poco::Timespan(0,0,1,0,0)))
 	{
 		PopulateIDList();
 		m_tempdate=now;
+	}
+	// if we haven't received any messages to this object in 10 minutes, clear the requests and repopulate id list
+	if(m_ids.size()>0 && m_lastreceived<(now-Poco::Timespan(0,0,10,0,0)))
+	{
+		m_log->error("IIndexRequester<IDTYPE>::Process "+m_fcpuniquename+" Object has not received any messages in 10 minutes.  Restarting requests.");
+		FCPConnected();
 	}
 
 }

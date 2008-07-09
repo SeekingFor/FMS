@@ -6,12 +6,19 @@
 	#include <xmem.h>
 #endif
 
-const std::string ShowCaptchaPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+void ShowCaptchaPage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response)
 {
-	std::string content="HTTP/1.1 200 OK\r\n";
+	m_log->trace("ShowCaptchaPage::handleRequest from "+request.clientAddress().toString());
+
+	std::map<std::string,std::string> queryvars;
+	CreateQueryVarMap(request,queryvars);
+
+	response.setChunkedTransferEncoding(true);
+
+	std::string content="";
 	if(queryvars.find("UUID")!=queryvars.end())
 	{
-		SQLite3DB::Statement st=m_db->Prepare("SELECT MimeType,PuzzleData FROM tblIntroductionPuzzleRequests WHERE UUID=?;");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT MimeType,PuzzleData FROM tblIntroductionPuzzleRequests WHERE Type='captcha' AND UUID=?;");
 		st.Bind(0,(*queryvars.find("UUID")).second);
 		st.Step();
 
@@ -20,19 +27,23 @@ const std::string ShowCaptchaPage::GeneratePage(const std::string &method, const
 			std::string mime;
 			std::string b64data;
 			std::vector<unsigned char> data;
-			std::string lenstr;
 
 			st.ResultText(0,mime);
 			st.ResultText(1,b64data);
 			Base64::Decode(b64data,data);
-			StringFunctions::Convert(data.size(),lenstr);
 
-			content+="Content-Type: "+mime+"\r\n";
-			content+="Content-Length: "+lenstr+"\r\n\r\n";
-			content+=std::string(data.begin(),data.end());
+			// mime type should be short and have a / in it - otherwise skip
+			if(mime.size()<50 && mime.find("/")!=std::string::npos)
+			{
+				response.setContentType(mime);
+				response.setContentLength(data.size());
+				content+=std::string(data.begin(),data.end());
+			}
 		}
 	}
-	return content;
+
+	std::ostream &ostr = response.send();
+	ostr << content;
 }
 
 const bool ShowCaptchaPage::WillHandleURI(const std::string &uri)

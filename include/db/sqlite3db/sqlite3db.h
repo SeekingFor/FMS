@@ -1,14 +1,11 @@
 #ifndef _sqlite3db_
 #define _sqlite3db_
 
-//#include <zthread/Singleton.h>
-//#include <zthread/Mutex.h>
+#include <Poco/Mutex.h>
 #include <sqlite3.h>
 #include <string>
-#include "../../pthreadwrapper/singleton.h"
-#include "../../pthreadwrapper/mutex.h"
-
 #include "../sqlite3db.h"
+#include "../../threadwrapper/singleton.h"
 
 #if SQLITE_VERSION_NUMBER<3005000
 #error "Your version of SQLite is too old!  3.5.0 or later is required."
@@ -17,7 +14,7 @@
 namespace SQLite3DB
 {
 
-class DB:public PThread::Singleton<DB>
+class DB:public Singleton<DB>
 {
 public:
 	DB();
@@ -41,7 +38,7 @@ public:
 
 	sqlite3 *GetDB() { return m_db; }
 
-	PThread::Mutex m_mutex;			// public so that recordset and statment can lock this mutex themselves
+	Poco::FastMutex m_mutex;			// public so that recordset and statment can lock this mutex themselves
 
 private:
 	void Initialize();

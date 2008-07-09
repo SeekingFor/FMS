@@ -3,11 +3,12 @@
 
 #include "../idatabase.h"
 #include "../ilogger.h"
-#include "../datetime.h"
 #include "ifreenetregistrable.h"
 #include "ifcpconnected.h"
 #include "ifcpmessagehandler.h"
 #include "iperiodicprocessor.h"
+
+#include <Poco/DateTime.h>
 
 class IntroductionPuzzleRequester:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
@@ -32,7 +33,7 @@ private:
 	const bool HandleAllData(FCPMessage &message);
 	const bool HandleGetFailed(FCPMessage &message);
 
-	DateTime m_tempdate;
+	Poco::DateTime m_tempdate;
 	std::string m_messagebase;
 	long m_maxrequests;
 	std::vector<long> m_requesting;		// list of ids we are currently requesting from

@@ -3,11 +3,12 @@
 
 #include "../idatabase.h"
 #include "../ilogger.h"
-#include "../datetime.h"
 #include "ifreenetregistrable.h"
 #include "ifcpconnected.h"
 #include "ifcpmessagehandler.h"
 #include "iperiodicprocessor.h"
+
+#include <Poco/DateTime.h>
 
 class TrustListInserter:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
@@ -30,7 +31,7 @@ private:
 	void StartInsert(const long localidentityid, const std::string &privatekey);
 
 	std::string m_messagebase;
-	DateTime m_lastchecked;
+	Poco::DateTime m_lastchecked;
 	
 };
 

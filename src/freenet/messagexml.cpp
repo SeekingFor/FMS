@@ -11,44 +11,60 @@ MessageXML::MessageXML()
 
 std::string MessageXML::GetXML()
 {
-	TiXmlDocument td;
-	TiXmlDeclaration *tdec=new TiXmlDeclaration("1.0","UTF-8","");
-	TiXmlElement *tid;
-	TiXmlPrinter tp;
+	Poco::AutoPtr<Poco::XML::Document> doc=new Poco::XML::Document;
+	Poco::AutoPtr<Poco::XML::Element> root=doc->createElement("Message");
 
-	td.LinkEndChild(tdec);
-	tid=new TiXmlElement("Message");
-	td.LinkEndChild(tid);
+	doc->appendChild(root);
 
-	tid->LinkEndChild(XMLCreateTextElement("Date",m_date));
-	tid->LinkEndChild(XMLCreateTextElement("Time",m_time));
-	tid->LinkEndChild(XMLCreateCDATAElement("Subject",m_subject));
-	tid->LinkEndChild(XMLCreateCDATAElement("MessageID",m_messageid));
-	tid->LinkEndChild(XMLCreateCDATAElement("ReplyBoard",m_replyboard));
-	tid->LinkEndChild(XMLCreateCDATAElement("Body",m_body));
+	root->appendChild(XMLCreateTextElement(doc,"Date",m_date));
+	root->appendChild(XMLCreateTextElement(doc,"Time",m_time));
+	root->appendChild(XMLCreateCDATAElement(doc,"Subject",m_subject));
+	root->appendChild(XMLCreateCDATAElement(doc,"MessageID",m_messageid));
+	root->appendChild(XMLCreateCDATAElement(doc,"ReplyBoard",m_replyboard));
+	
+	root->appendChild(XMLCreateCDATAElement(doc,"Body",m_body));
 
-	TiXmlElement *brds=new TiXmlElement("Boards");
-	tid->LinkEndChild(brds);
+	Poco::AutoPtr<Poco::XML::Element> brds=doc->createElement("Boards");
+
+	root->appendChild(brds);
+
+	// attach boards
 	for(std::vector<std::string>::iterator i=m_boards.begin(); i!=m_boards.end(); i++)
 	{
-		brds->LinkEndChild(XMLCreateCDATAElement("Board",(*i)));
+		std::string boardname=(*i);
+		StringFunctions::Convert(boardname,boardname);
+		brds->appendChild(XMLCreateCDATAElement(doc,"Board",boardname));
 	}
 
+	// attach inreplyto ids
 	if(m_inreplyto.size()>0)
 	{
-		TiXmlElement *rply=new TiXmlElement("InReplyTo");
-		tid->LinkEndChild(rply);
+		Poco::AutoPtr<Poco::XML::Element> rply=doc->createElement("InReplyTo");
+		root->appendChild(rply);
 		for(std::map<long,std::string>::iterator j=m_inreplyto.begin(); j!=m_inreplyto.end(); j++)
 		{
-			TiXmlElement *mess=new TiXmlElement("Message");
-			rply->LinkEndChild(mess);
-			mess->LinkEndChild(XMLCreateTextElement("Order",(*j).first));
-			mess->LinkEndChild(XMLCreateCDATAElement("MessageID",(*j).second));
+			Poco::AutoPtr<Poco::XML::Element> mess=doc->createElement("Message");
+			rply->appendChild(mess);
+			mess->appendChild(XMLCreateTextElement(doc,"Order",(*j).first));
+			mess->appendChild(XMLCreateCDATAElement(doc,"MessageID",(*j).second));
 		}
 	}
 
-	td.Accept(&tp);
-	return std::string(tp.CStr());
+	// add attachemnt node if we have attachments
+	if(m_fileattachments.size()>0)
+	{
+		Poco::AutoPtr<Poco::XML::Element> attachments=doc->createElement("Attachments");
+		root->appendChild(attachments);
+		for(std::vector<fileattachment>::iterator j=m_fileattachments.begin(); j!=m_fileattachments.end(); j++)
+		{
+			Poco::AutoPtr<Poco::XML::Element> f=doc->createElement("File");
+			attachments->appendChild(f);
+			f->appendChild(XMLCreateCDATAElement(doc,"Key",(*j).m_key));
+			f->appendChild(XMLCreateTextElement(doc,"Size",(*j).m_size));
+		}
+	}
+
+	return GenerateXML(doc);
 }
 
 void MessageXML::Initialize()
@@ -60,94 +76,151 @@ void MessageXML::Initialize()
 	m_replyboard="";
 	m_inreplyto.clear();
 	m_body="";
+	m_fileattachments.clear();
 }
 
 const bool MessageXML::ParseXML(const std::string &xml)
 {
-	TiXmlDocument td;
-	td.Parse(xml.c_str());
+	bool parsed=false;
+	Poco::XML::DOMParser dp;
 
-	if(!td.Error())
+	Initialize();
+
+	try
 	{
-		TiXmlHandle hnd(&td);
-		TiXmlNode *node1;
-		TiXmlNode *node2;
-		TiXmlText *txt;
+		Poco::AutoPtr<Poco::XML::Document> doc=dp.parseString(FixCDATA(xml));
+		Poco::XML::Element *root=XMLGetFirstChild(doc,"Message");
+		Poco::XML::Element *txt=NULL;
 
-		Initialize();
-
-		txt=hnd.FirstChild("Message").FirstChild("Date").FirstChild().ToText();
+		txt=XMLGetFirstChild(root,"Date");
 		if(txt)
 		{
-			m_date=txt->ValueStr();
-		}
-		txt=hnd.FirstChild("Message").FirstChild("Time").FirstChild().ToText();
-		if(txt)
-		{
-			m_time=txt->ValueStr();
-		}
-		txt=hnd.FirstChild("Message").FirstChild("Subject").FirstChild().ToText();
-		if(txt)
-		{
-			m_subject=txt->ValueStr();
-		}
-		txt=hnd.FirstChild("Message").FirstChild("MessageID").FirstChild().ToText();
-		if(txt)
-		{
-			m_messageid=txt->ValueStr();
-		}
-		txt=hnd.FirstChild("Message").FirstChild("ReplyBoard").FirstChild().ToText();
-		if(txt)
-		{
-			m_replyboard=txt->ValueStr();
-		}
-		txt=hnd.FirstChild("Message").FirstChild("Body").FirstChild().ToText();
-		if(txt)
-		{
-			m_body=txt->ValueStr();
-		}
-
-		node2=hnd.FirstChild("Message").FirstChild("Boards").FirstChild("Board").ToNode();
-		while(node2)
-		{
-			if(node2->FirstChild())
+			if(txt->firstChild())
 			{
-				m_boards.push_back(node2->FirstChild()->ValueStr());
+				m_date=SanitizeSingleString(txt->firstChild()->getNodeValue());
 			}
-			node2=node2->NextSibling("Board");
 		}
-
-		node2=hnd.FirstChild("Message").FirstChild("InReplyTo").FirstChild("Message").ToNode();
-		while(node2)
+		txt=XMLGetFirstChild(root,"Time");
+		if(txt)
 		{
-			std::string orderstr;
-			long order=-1;
-			std::string messageid="";
-			TiXmlHandle hnd2(node2);
-			txt=hnd2.FirstChild("Order").FirstChild().ToText();
-			if(txt)
+			if(txt->firstChild())
 			{
-				orderstr=txt->ValueStr();
-				StringFunctions::Convert(orderstr,order);
+				m_time=SanitizeSingleString(txt->firstChild()->getNodeValue());
 			}
-			txt=hnd2.FirstChild("MessageID").FirstChild().ToText();
-			if(txt)
+		}
+		txt=XMLGetFirstChild(root,"Subject");
+		if(txt)
+		{
+			if(txt->firstChild())
 			{
-				messageid=txt->ValueStr();
+				m_subject=SanitizeSingleString(txt->firstChild()->getNodeValue());
 			}
+		}
+		txt=XMLGetFirstChild(root,"MessageID");
+		if(txt)
+		{
+			if(txt->firstChild())
+			{
+				m_messageid=SanitizeSingleString(txt->firstChild()->getNodeValue());
+			}
+		}
+		txt=XMLGetFirstChild(root,"ReplyBoard");
+		if(txt)
+		{
+			if(txt->firstChild())
+			{
+				m_replyboard=SanitizeSingleString(txt->firstChild()->getNodeValue());
+				StringFunctions::LowerCase(m_replyboard,m_replyboard);
+				if(m_replyboard.size()>40)
+				{
+					m_replyboard.erase(40);
+				}
+			}
+		}
+		txt=XMLGetFirstChild(root,"Body");
+		if(txt)
+		{
+			if(txt->firstChild())
+			{
+				m_body=txt->firstChild()->getNodeValue();
+			}
+		}
+		Poco::XML::Element *boards=XMLGetFirstChild(root,"Boards");
+		if(boards)
+		{
+			Poco::XML::Element *board=XMLGetFirstChild(boards,"Board");
+			while(board)
+			{
+				if(board->firstChild())
+				{
+					std::string boardname=SanitizeSingleString(board->firstChild()->getNodeValue());
+					StringFunctions::LowerCase(boardname,boardname);
+					if(boardname.size()>40)
+					{
+						boardname.erase(40);
+					}
+					m_boards.push_back(boardname);
+				}
+				board=XMLGetNextSibling(board,"Board");
+			}
+		}
+		Poco::XML::Element *inreplyto=XMLGetFirstChild(root,"InReplyTo");
+		if(inreplyto)
+		{
+			Poco::XML::Element *message=XMLGetFirstChild(inreplyto,"Message");
+			while(message)
+			{
+				Poco::XML::Element *orderel=XMLGetFirstChild(message,"Order");
+				Poco::XML::Element *messageidel=XMLGetFirstChild(message,"MessageID");
+				if(orderel && orderel->firstChild() && messageidel && messageidel->firstChild())
+				{
+					int order=-1;
+					std::string messageid="";
 
-			if(order!=-1 && messageid!="")
-			{
-				m_inreplyto[order]=messageid;
-			}
+					StringFunctions::Convert(orderel->firstChild()->getNodeValue(),order);
+					messageid=messageidel->firstChild()->getNodeValue();
 
-			node2=node2->NextSibling("Message");
+					if(order!=-1 && messageid!="")
+					{
+						m_inreplyto[order]=messageid;
+					}
+				}
+				message=XMLGetNextSibling(message,"Message");
+			}
+		}
+		Poco::XML::Element *attachments=XMLGetFirstChild(root,"Attachments");
+		if(attachments)
+		{
+			Poco::XML::Element *file=XMLGetFirstChild(attachments,"File");
+			while(file)
+			{
+				Poco::XML::Element *keyel=XMLGetFirstChild(file,"Key");
+				Poco::XML::Element *sizeel=XMLGetFirstChild(file,"Size");
+
+				if(keyel && keyel->firstChild() && sizeel && sizeel->firstChild())
+				{
+					int size=-1;
+					std::string key="";
+					
+					StringFunctions::Convert(sizeel->firstChild()->getNodeValue(),size);
+					key=keyel->firstChild()->getNodeValue();
+
+					if(size!=-1 && key!="")
+					{
+						m_fileattachments.push_back(fileattachment(key,size));
+					}
+				}
+
+				file=XMLGetNextSibling(file,"File");
+			}
 		}
 
-		return true;
+		parsed=true;
+
 	}
-	else
+	catch(...)
 	{
-		return false;
 	}
+
+	return parsed;
 }

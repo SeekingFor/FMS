@@ -19,6 +19,7 @@ public:
 	virtual const int Count() { return m_rows; }
 	virtual const bool AtBeginning() { return m_currentrow==0; }
 	virtual const bool AtEnd() { return m_currentrow>=m_rows; }
+	virtual const int Cols() { return m_cols; }
 
 	virtual const bool Next() { if(m_currentrow<m_rows) { m_currentrow++; return true; } else { return false; } }
 	virtual const bool Previous() { if(m_currentrow-1>=0) { m_currentrow--; return true; } else { return false; } }
@@ -28,6 +29,7 @@ public:
 	virtual const char *GetField(const int field);
 	virtual const int GetInt(const int field);
 	virtual const double GetDouble(const int field);
+	virtual const char *GetColumnName(const int column);
 
 	virtual void Open(const std::string &sql, DB *db);
 

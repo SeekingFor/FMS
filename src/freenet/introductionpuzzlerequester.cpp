@@ -2,6 +2,13 @@
 #include "../../include/freenet/introductionpuzzlexml.h"
 #include "../../include/option.h"
 #include "../../include/stringfunctions.h"
+#include "../../include/bitmapvalidator.h"
+#include "../../include/base64.h"
+
+#include <Poco/DateTime.h>
+#include <Poco/Timespan.h>
+#include <Poco/Timestamp.h>
+#include <Poco/DateTimeFormatter.h>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -30,7 +37,7 @@ void IntroductionPuzzleRequester::FCPDisconnected()
 
 const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 {
-	DateTime now;
+	Poco::DateTime now;
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
 	long datalength;
@@ -38,8 +45,8 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 	IntroductionPuzzleXML xml;
 	long identityid;
 	long index;
+	bool validmessage=true;
 
-	now.SetToGMTime();
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
 	StringFunctions::Convert(idparts[1],identityid);
@@ -64,19 +71,79 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 	// parse file into xml and update the database
 	if(xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
+
+		// check if last part of UUID matches first part of public key of identity who inserted it
+		st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
+		st.Bind(0,identityid);
+		st.Step();
+		if(st.RowReturned())
+		{
+			std::vector<std::string> uuidparts;
+			std::vector<std::string> keyparts;
+			std::string keypart="";
+			std::string publickey="";
+
+			st.ResultText(0,publickey);
+
+			StringFunctions::SplitMultiple(publickey,"@,",keyparts);
+			StringFunctions::SplitMultiple(xml.GetUUID(),"@",uuidparts);
+
+			if(uuidparts.size()>1 && keyparts.size()>1)
+			{
+				keypart=StringFunctions::Replace(StringFunctions::Replace(keyparts[1],"-",""),"~","");
+				if(keypart!=uuidparts[1])
+				{
+					m_log->error("IntroductionPuzzleRequester::HandleAllData UUID in IntroductionPuzzle doesn't match public key of identity : "+message["Identifier"]);
+					validmessage=false;
+				}
+			}
+			else
+			{
+				m_log->error("IntroductionPuzzleRequester::HandleAllData Error with identity's public key or UUID : "+message["Identifier"]);
+				validmessage=false;
+			}
+
+		}
+		else
+		{
+			m_log->error("IntroductionPuzzleRequester::HandleAllData Error couldn't find identity : "+message["Identifier"]);
+			validmessage=false;
+		}
+
+		// we can only validate bitmaps for now
+		BitmapValidator val;
+		std::vector<unsigned char> puzzledata;
+		Base64::Decode(xml.GetPuzzleData(),puzzledata);
+		if(xml.GetMimeType()!="image/bmp" || val.Validate(puzzledata)==false)
+		{
+			m_log->error("IntroductionPuzzleRequester::HandleAllData received bad mime type and/or data for "+message["Identifier"]);
+			validmessage=false;
+		}
+
 		st=m_db->Prepare("INSERT INTO tblIntroductionPuzzleRequests(IdentityID,Day,RequestIndex,Found,UUID,Type,MimeType,PuzzleData) VALUES(?,?,?,?,?,?,?,?);");
 		st.Bind(0,identityid);
 		st.Bind(1,idparts[4]);
 		st.Bind(2,index);
-		st.Bind(3,"true");
-		st.Bind(4,xml.GetUUID());
-		st.Bind(5,xml.GetType());
-		st.Bind(6,xml.GetMimeType());
-		st.Bind(7,xml.GetPuzzleData());
+		if(validmessage)
+		{
+			st.Bind(3,"true");
+			st.Bind(4,xml.GetUUID());
+			st.Bind(5,xml.GetType());
+			st.Bind(6,xml.GetMimeType());
+			st.Bind(7,xml.GetPuzzleData());
+		}
+		else
+		{
+			st.Bind(3,"false");
+			st.Bind(4);
+			st.Bind(5);
+			st.Bind(6);
+			st.Bind(7);
+		}
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IntroductionPuzzleRequester::HandleAllData parsed IntroductionPuzzle XML file : "+message["Identifier"]);
+		m_log->debug("IntroductionPuzzleRequester::HandleAllData parsed IntroductionPuzzle XML file : "+message["Identifier"]);
 	}
 	else
 	{
@@ -88,7 +155,7 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IntroductionPuzzleRequester::HandleAllData error parsing IntroductionPuzzle XML file : "+message["Identifier"]);
+		m_log->error("IntroductionPuzzleRequester::HandleAllData error parsing IntroductionPuzzle XML file : "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -100,13 +167,11 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 
 const bool IntroductionPuzzleRequester::HandleGetFailed(FCPMessage &message)
 {
-	DateTime now;
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
 	long identityid;
 	long index;
 
-	now.SetToGMTime();
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(idparts[1],identityid);
 	StringFunctions::Convert(idparts[2],index);	
@@ -121,7 +186,7 @@ const bool IntroductionPuzzleRequester::HandleGetFailed(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IntroductionPuzzleRequester::HandleGetFailed fatal error requesting "+message["Identifier"]);
+		m_log->error("IntroductionPuzzleRequester::HandleGetFailed fatal error requesting "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -174,25 +239,33 @@ void IntroductionPuzzleRequester::Initialize()
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"Option MaxIntroductionPuzzleRequests is currently set at "+tempval+".  It must be 1 or greater.");
+		m_log->error("Option MaxIntroductionPuzzleRequests is currently set at "+tempval+".  It must be 1 or greater.");
 	}
 	if(m_maxrequests>100)
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_WARNING,"Option MaxIntroductionPuzzleRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
+		m_log->warning("Option MaxIntroductionPuzzleRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
 	Option::Instance()->Get("MessageBase",m_messagebase);
-	m_tempdate.SetToGMTime();
+	m_tempdate=Poco::Timestamp();
 }
 
 void IntroductionPuzzleRequester::PopulateIDList()
 {
-	DateTime now;
+	Poco::DateTime now;
 	int id;
+	std::string limitnum="30";
 
-	now.SetToGMTime();
+	// if we don't have an identity that we haven't seen yet, then set limit to 5
+	SQLite3DB::Statement st=m_db->Prepare("SELECT tblLocalIdentity.LocalIdentityID FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey WHERE tblIdentity.IdentityID IS NULL;");
+	st.Step();
+	if(!st.RowReturned())
+	{
+		limitnum="5";
+	}
+	st.Finalize();
 
-	// select identities that aren't single use and have been seen today
-	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND SingleUse='false' AND LastSeen>='"+now.Format("%Y-%m-%d")+"';");
+	// select identities that aren't single use, are publishing a trust list, and have been seen today ( order by trust DESC and limit to limitnum )
+	st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublishTrustList='true' AND PublicKey IS NOT NULL AND PublicKey <> '' AND SingleUse='false' AND LastSeen>='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"' ORDER BY LocalMessageTrust DESC LIMIT 0,"+limitnum+";");
 	st.Step();
 
 	m_ids.clear();
@@ -231,9 +304,8 @@ void IntroductionPuzzleRequester::Process()
 	}
 	// special case - if there were 0 identities on the list when we started then we will never get a chance to repopulate the list
 	// this will recheck for ids every minute
-	DateTime now;
-	now.SetToGMTime();
-	if(m_ids.size()==0 && m_tempdate<(now-(1.0/1440.0)))
+	Poco::DateTime now;
+	if(m_ids.size()==0 && m_tempdate<(now-Poco::Timespan(0,0,1,0,0)))
 	{
 		PopulateIDList();
 		m_tempdate=now;
@@ -262,7 +334,7 @@ void IntroductionPuzzleRequester::RemoveFromRequestList(const long identityid)
 
 void IntroductionPuzzleRequester::StartRequest(const long identityid)
 {
-	DateTime now;
+	Poco::DateTime now;
 	FCPMessage message;
 	std::string publickey;
 	int index;
@@ -277,10 +349,10 @@ void IntroductionPuzzleRequester::StartRequest(const long identityid)
 	{
 		st.ResultText(0,publickey);
 
-		now.SetToGMTime();
+		now=Poco::Timestamp();
 
 		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblIntroductionPuzzleRequests WHERE Day=? AND IdentityID=?;");
-		st2.Bind(0,now.Format("%Y-%m-%d"));
+		st2.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
 		st2.Bind(1,identityid);
 		st2.Step();
 
@@ -299,7 +371,7 @@ void IntroductionPuzzleRequester::StartRequest(const long identityid)
 		StringFunctions::Convert(identityid,identityidstr);
 
 		message.SetName("ClientGet");
-		message["URI"]=publickey+m_messagebase+"|"+now.Format("%Y-%m-%d")+"|IntroductionPuzzle|"+indexstr+".xml";
+		message["URI"]=publickey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|IntroductionPuzzle|"+indexstr+".xml";
 		message["Identifier"]="IntroductionPuzzleRequester|"+identityidstr+"|"+indexstr+"|"+message["URI"];
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";		// 1 MB

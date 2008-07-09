@@ -9,6 +9,12 @@
 namespace StringFunctions
 {
 
+void LowerCase(const std::string &str, std::string &output)
+{
+	output=str;
+	std::transform(str.begin(),str.end(),output.begin(),tolower);
+}
+
 std::string Replace(const std::string &input, const std::string &find, const std::string &replace)
 {
 	std::string returnstr=input;

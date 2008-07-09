@@ -1,6 +1,8 @@
 #include "../../include/freenet/unkeyedidcreator.h"
 #include "../../include/stringfunctions.h"
 
+#include <Poco/Timestamp.h>
+
 #include <sstream>
 
 #ifdef XMEM
@@ -50,7 +52,7 @@ void UnkeyedIDCreator::CheckForUnkeyedID()
 	}
 
 	// set last checked time to now
-	m_lastchecked.SetToGMTime();
+	m_lastchecked=Poco::Timestamp();
 
 }
 
@@ -75,7 +77,7 @@ const bool UnkeyedIDCreator::HandleMessage(FCPMessage &message)
 				SaveKeys(id,message["RequestURI"],message["InsertURI"]);
 			}
 
-			m_log->WriteLog(LogFile::LOGLEVEL_INFO,"UnkeyedIDCreator::HandleMessage received keypair");
+			m_log->information("UnkeyedIDCreator::HandleMessage received keypair");
 
 			m_waiting=false;
 
@@ -90,16 +92,15 @@ const bool UnkeyedIDCreator::HandleMessage(FCPMessage &message)
 void UnkeyedIDCreator::Initialize()
 {
 	m_waiting=false;
-	m_lastchecked.SetToGMTime();
+	m_lastchecked=Poco::Timestamp();
 }
 
 void UnkeyedIDCreator::Process()
 {
-	DateTime now;
-	now.SetToGMTime();
+	Poco::DateTime now;
 
 	// only perform check every minute (1/1440 of 1 day)
-	if(m_waiting==false && m_lastchecked<(now-(1.0/1440.0)))
+	if(m_waiting==false && m_lastchecked<(now-Poco::Timespan(0,0,1,0,0)))
 	{
 		CheckForUnkeyedID();
 	}

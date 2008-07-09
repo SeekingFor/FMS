@@ -2,11 +2,14 @@
 #define _homepage_
 
 #include "../ipagehandler.h"
+#include "../../idatabase.h"
 
-class HomePage:public IPageHandler
+class HomePage:public IPageHandler,public IDatabase
 {
 public:
 	HomePage(const std::string &templatestr):IPageHandler(templatestr) {}
+
+	IPageHandler *New()	{ return new HomePage(m_template); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

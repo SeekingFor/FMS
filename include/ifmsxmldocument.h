@@ -1,10 +1,22 @@
 #ifndef _ifmsxmldocument_
 #define _ifmsxmldocument_
 
+#include <Poco/DOM/Document.h>
+#include <Poco/DOM/Element.h>
+#include <Poco/DOM/Text.h>
+#include <Poco/DOM/CDATASection.h>
+#include <Poco/DOM/DOMParser.h>
+#include <Poco/DOM/DOMWriter.h>
+#include <Poco/XML/XMLWriter.h>
+#include <Poco/AutoPtr.h>
+
 #include "stringfunctions.h"
 
 #include <string>
-#include <tinyxml.h>
+
+#ifdef XMEM
+	#include <xmem.h>
+#endif
 
 /**
 	\brief Interface for objects that represent an XML document
@@ -29,53 +41,116 @@ public:
 
 protected:
 	/**
+		Poco doesn't like CDATA with whitespace outside the tags
+		This will remove the whitespace from around CDATA tags
+	*/
+	virtual const std::string FixCDATA(const std::string &xmlstr)
+	{
+		std::string rstring=xmlstr;
+		std::string::size_type beg1=std::string::npos;
+		std::string::size_type end1=rstring.find("<![CDATA[");
+		std::string::size_type beg2=std::string::npos;
+		std::string::size_type end2=std::string::npos;
+
+		while(end1!=std::string::npos)
+		{
+			beg1=rstring.rfind(">",end1);
+			if(beg1!=end1-1)
+			{
+				rstring.erase(beg1+1,end1-(beg1+1));
+			}
+
+			beg2=rstring.find("]]>",end1);
+			if(beg2!=std::string::npos)
+			{
+				end2=rstring.find("<",beg2);
+				if(end2!=std::string::npos)
+				{
+					rstring.erase(beg2+3,end2-(beg2+3));
+				}
+			}
+
+			end1=rstring.find("<![CDATA[",end1+1);
+		}
+		return rstring;
+	}
+	/**
 		\brief Creates and returns an element with a boolean value
 	*/
-	virtual TiXmlElement *XMLCreateBooleanElement(const std::string &name, const bool value)
+	virtual Poco::AutoPtr<Poco::XML::Element> XMLCreateBooleanElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const bool value)
 	{
-		TiXmlText *txt=new TiXmlText(value ? "true" : "false");
-		TiXmlElement *el=new TiXmlElement(name);
-		el->LinkEndChild(txt);
-		return el;
+		if(doc)
+		{
+			Poco::AutoPtr<Poco::XML::Text> txt=doc->createTextNode(value ? "true" : "false");
+			Poco::AutoPtr<Poco::XML::Element> el=doc->createElement(name);
+			el->appendChild(txt);
+			return el;
+		}
+		else
+		{
+			return NULL;
+		}
 	}
 
 	/**
 		\brief Creates and returns an element with a CDATA value
 	*/
-	virtual TiXmlElement *XMLCreateCDATAElement(const std::string &name, const std::string &data)
+	virtual Poco::AutoPtr<Poco::XML::Element> XMLCreateCDATAElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const std::string &data)
 	{
-		TiXmlText *txt=new TiXmlText(data);
-		txt->SetCDATA(true);
-		TiXmlElement *el=new TiXmlElement(name);
-		el->LinkEndChild(txt);
-		return el;
+		if(doc)
+		{
+			// Poco XML won't break up CDATA sections correctly when assigned a string with the 
+			// end tag is present.  However, it will parse it correctly, so we will manually break the
+			// CDATA into separate parts
+			Poco::AutoPtr<Poco::XML::CDATASection> sec=doc->createCDATASection(StringFunctions::Replace(data,"]]>","]]]><![CDATA[]>"));
+			Poco::AutoPtr<Poco::XML::Element> el=doc->createElement(name);
+			el->appendChild(sec);
+			return el;
+		}
+		else
+		{
+			return NULL;
+		}
 	}
 
 	/**
 		\brief Creates and returns a text element
 	*/
-	virtual TiXmlElement *XMLCreateTextElement(const std::string &name, const std::string &data)
+	virtual Poco::AutoPtr<Poco::XML::Element> XMLCreateTextElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const std::string &data)
 	{
-		TiXmlText *txt=new TiXmlText(data);
-		TiXmlElement *el=new TiXmlElement(name);
-		el->LinkEndChild(txt);
-		return el;
-	}
-
-	virtual TiXmlElement *XMLCreateTextElement(const std::string &name, const long data)
-	{
-		std::string datastr;
-		StringFunctions::Convert(data,datastr);
-		return XMLCreateTextElement(name,datastr);
-	}
-
-	virtual const bool XMLGetBooleanElement(TiXmlElement *parent, const std::string &name)
-	{
-		TiXmlHandle hnd(parent);
-		TiXmlText *txt=hnd.FirstChild(name).FirstChild().ToText();
-		if(txt)
+		if(doc)
 		{
-			if(txt->ValueStr()=="true")
+			Poco::AutoPtr<Poco::XML::Text> txt=doc->createTextNode(data);
+			Poco::AutoPtr<Poco::XML::Element> el=doc->createElement(name);
+			el->appendChild(txt);
+			return el;
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+
+	virtual Poco::AutoPtr<Poco::XML::Element> XMLCreateTextElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const long data)
+	{
+		if(doc)
+		{
+			std::string datastr;
+			StringFunctions::Convert(data,datastr);
+			return XMLCreateTextElement(doc,name,datastr);
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+
+	virtual const bool XMLGetBooleanElement(Poco::XML::Element *parent, const std::string &name)
+	{
+		Poco::XML::Element *el=XMLGetFirstChild(parent,name);
+		if(el && el->firstChild())
+		{
+			if(el->firstChild()->getNodeValue()=="true")
 			{
 				return true;
 			}
@@ -85,6 +160,66 @@ protected:
 			}
 		}
 		return false;
+	}
+
+	virtual Poco::XML::Element *XMLGetFirstChild(Poco::XML::Node *parent, const std::string &name)
+	{
+		if(parent)
+		{
+			Poco::XML::Node *child=parent->firstChild();
+			while(child && child->nodeName()!=name)
+			{
+				child=child->nextSibling();
+			}
+			//return child.cast<Poco::XML::Element>();
+			return static_cast<Poco::XML::Element *>(child);
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+
+	virtual Poco::XML::Element *XMLGetNextSibling(Poco::XML::Node *node, const std::string &name)
+	{
+		if(node)
+		{
+			Poco::XML::Node *next=node->nextSibling();
+			while(next && next->nodeName()!=name)
+			{
+				next=next->nextSibling();
+			}
+			//return next.cast<Poco::XML::Element>();
+			return static_cast<Poco::XML::Element *>(next);
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+
+	const std::string SanitizeSingleString(const std::string &text)
+	{
+		std::string returntext=text;
+		// remove bogus chars from text string
+		for(char i=1; i<32; i++)
+		{
+			returntext=StringFunctions::Replace(returntext,std::string(1,i),"");
+		}
+		return returntext;
+	}
+
+	const std::string GenerateXML(Poco::AutoPtr<Poco::XML::Document> doc)
+	{
+		std::ostringstream str;
+		if(doc)
+		{
+			Poco::XML::DOMWriter dr;
+			dr.setOptions(Poco::XML::XMLWriter::WRITE_XML_DECLARATION | Poco::XML::XMLWriter::PRETTY_PRINT);
+			dr.setNewLine(Poco::XML::XMLWriter::NEWLINE_CRLF);
+			dr.writeNode(str,doc);
+		}
+		return str.str();
 	}
 	
 };

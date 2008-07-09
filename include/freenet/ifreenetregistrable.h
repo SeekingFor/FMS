@@ -9,6 +9,8 @@ class FreenetMasterThread;
 class IFreenetRegistrable
 {
 public:
+	IFreenetRegistrable()			{}
+	virtual ~IFreenetRegistrable()	{}
 
 	virtual void RegisterWithThread(FreenetMasterThread *thread)=0;
 	

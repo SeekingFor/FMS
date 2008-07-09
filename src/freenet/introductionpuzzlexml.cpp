@@ -11,25 +11,20 @@ IntroductionPuzzleXML::IntroductionPuzzleXML()
 
 std::string IntroductionPuzzleXML::GetXML()
 {
-	TiXmlDocument td;
-	TiXmlDeclaration *tdec=new TiXmlDeclaration("1.0","UTF-8","");
-	TiXmlElement *tid;
-	TiXmlPrinter tp;
+	Poco::AutoPtr<Poco::XML::Document> doc=new Poco::XML::Document;
+	Poco::AutoPtr<Poco::XML::Element> root=doc->createElement("IntroductionPuzzle");
 
-	td.LinkEndChild(tdec);
-	tid=new TiXmlElement("IntroductionPuzzle");
-	td.LinkEndChild(tid);
+	doc->appendChild(root);
 
-	tid->LinkEndChild(XMLCreateTextElement("Type",m_type));
+	root->appendChild(XMLCreateTextElement(doc,"Type",m_type));
 
-	tid->LinkEndChild(XMLCreateTextElement("UUID",m_uuid));
+	root->appendChild(XMLCreateCDATAElement(doc,"UUID",m_uuid));
 
-	tid->LinkEndChild(XMLCreateTextElement("MimeType",m_mimetype));
+	root->appendChild(XMLCreateTextElement(doc,"MimeType",m_mimetype));
 
-	tid->LinkEndChild(XMLCreateTextElement("PuzzleData",m_puzzledata));
+	root->appendChild(XMLCreateTextElement(doc,"PuzzleData",m_puzzledata));
 
-	td.Accept(&tp);
-	return std::string(tp.CStr());
+	return GenerateXML(doc);
 }
 
 void IntroductionPuzzleXML::Initialize()
@@ -42,46 +37,55 @@ void IntroductionPuzzleXML::Initialize()
 
 const bool IntroductionPuzzleXML::ParseXML(const std::string &xml)
 {
-	TiXmlDocument td;
-	td.Parse(xml.c_str());
+	bool parsed=false;
+	Poco::XML::DOMParser dp;
 
-	if(!td.Error())
+	Initialize();
+
+	try
 	{
-		TiXmlElement *el;
-		TiXmlText *txt;
-		TiXmlHandle hnd(&td);
+		Poco::AutoPtr<Poco::XML::Document> doc=dp.parseString(FixCDATA(xml));
+		Poco::XML::Element *root=XMLGetFirstChild(doc,"IntroductionPuzzle");
+		Poco::XML::Element *txt=NULL;
 
-		Initialize();
-
-		txt=hnd.FirstChild("IntroductionPuzzle").FirstChild("Type").FirstChild().ToText();
+		txt=XMLGetFirstChild(root,"Type");
 		if(txt)
 		{
-			m_type=txt->ValueStr();
+			if(txt->firstChild())
+			{
+				m_type=SanitizeSingleString(txt->firstChild()->getNodeValue());
+			}
 		}
-
-		txt=hnd.FirstChild("IntroductionPuzzle").FirstChild("UUID").FirstChild().ToText();
+		txt=XMLGetFirstChild(root,"UUID");
 		if(txt)
 		{
-			m_uuid=txt->ValueStr();
+			if(txt->firstChild())
+			{
+				m_uuid=SanitizeSingleString(txt->firstChild()->getNodeValue());
+			}
 		}
-
-		txt=hnd.FirstChild("IntroductionPuzzle").FirstChild("MimeType").FirstChild().ToText();
+		txt=XMLGetFirstChild(root,"MimeType");
 		if(txt)
 		{
-			m_mimetype=txt->ValueStr();
+			if(txt->firstChild())
+			{
+				m_mimetype=SanitizeSingleString(txt->firstChild()->getNodeValue());
+			}
 		}
-
-		txt=hnd.FirstChild("IntroductionPuzzle").FirstChild("PuzzleData").FirstChild().ToText();
+		txt=XMLGetFirstChild(root,"PuzzleData");
 		if(txt)
 		{
-			m_puzzledata=txt->ValueStr();
+			if(txt->firstChild())
+			{
+				m_puzzledata=SanitizeSingleString(txt->firstChild()->getNodeValue());
+			}
 		}
 
-		return true;
-
+		parsed=true;
 	}
-	else
+	catch(...)
 	{
-		return false;
 	}
+
+	return parsed;
 }

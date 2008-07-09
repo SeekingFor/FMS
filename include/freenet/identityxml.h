@@ -24,6 +24,9 @@ public:
 	const bool GetSingleUse()						{ return m_singleuse; }
 	void SetSingleUse(const bool singleuse)			{ m_singleuse=singleuse; }
 
+	const int GetFreesiteEdition()					{ return m_freesiteedition; }
+	void SetFreesiteEdition(const int edition)		{ m_freesiteedition=edition; }
+
 private:
 	void Initialize();
 
@@ -31,6 +34,7 @@ private:
 	bool m_publishtrustlist;
 	bool m_publishboardlist;
 	bool m_singleuse;
+	int m_freesiteedition;
 
 };
 

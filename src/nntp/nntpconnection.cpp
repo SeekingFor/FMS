@@ -1,16 +1,17 @@
 #include "../../include/nntp/nntpconnection.h"
 #include "../../include/nntp/uwildmat.h"
 #include "../../include/stringfunctions.h"
-#include "../../include/datetime.h"
 #include "../../include/boardlist.h"
 #include "../../include/message.h"
 #include "../../include/messagelist.h"
 #include "../../include/option.h"
+#include "../../include/nntp/extensiontrust.h"
+#include "../../include/threadwrapper/cancelablethread.h"
 
 #include <algorithm>
-
-//#include <zthread/Thread.h>
-#include "../../include/pthreadwrapper/thread.h"
+#include <Poco/DateTime.h>
+#include <Poco/DateTimeFormatter.h>
+#include <Poco/Timestamp.h>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -28,6 +29,7 @@ NNTPConnection::NNTPConnection(SOCKET sock)
 	m_status.m_boardid=-1;
 	m_status.m_messageid=-1;
 	m_status.m_mode=MODE_NONE;
+	m_status.m_authenticated=false;
 
 	Option::Instance()->Get("NNTPAllowPost",tempval);
 	if(tempval=="true")
@@ -68,6 +70,58 @@ const bool NNTPConnection::HandleArticleCommand(const NNTPCommand &command)
 	return true;
 }
 
+const bool NNTPConnection::HandleAuthInfoCommand(const NNTPCommand &command)
+{
+	if(command.m_arguments.size()<2)
+	{
+		SendBufferedLine("501 Syntax error");
+	}
+	else if(m_status.m_authenticated==true)
+	{
+		SendBufferedLine("502 Command unavailable");		// not available when already authenticated
+	}
+	else
+	{
+		std::string arg=command.m_arguments[0];
+		StringFunctions::UpperCase(arg,arg);
+		std::string name="";
+		// get remaining args as part of the name since a name might have a space and the args are split on spaces
+		for(std::vector<std::string>::const_iterator i=command.m_arguments.begin()+1; i!=command.m_arguments.end(); i++)
+		{
+			// we split on the space, so add it back
+			if(i!=command.m_arguments.begin()+1)
+			{
+				name+=" ";
+			}	
+			name+=(*i);
+		}
+		if(arg=="USER")
+		{
+			LocalIdentity localid;
+			if(localid.Load(name))
+			{
+				m_status.m_authuser=localid;
+				m_status.m_authenticated=true;
+				SendBufferedLine("281 Authentication accepted");
+			}
+			else
+			{
+				SendBufferedLine("481 Authentication failed");
+			}
+		}
+		else if(arg=="PASS")
+		{
+			SendBufferedLine("482 Authentication commands issued out of sequence");	// only require username
+		}
+		else
+		{
+			SendBufferedLine("501 Syntax error");
+		}
+	}
+
+	return true;
+}
+
 const bool NNTPConnection::HandleBodyCommand(const NNTPCommand &command)
 {
 	SendArticleParts(command);
@@ -80,7 +134,10 @@ const bool NNTPConnection::HandleCapabilitiesCommand(const NNTPCommand &command)
 	
 	SendBufferedLine("101 Capability list :");
 	SendBufferedLine("VERSION 2");
-	SendBufferedLine("MODE-READER");
+	if(m_status.m_authenticated==false)		// RFC 4643 2.2 0 - don't advertise MODE-READER after authentication
+	{
+		SendBufferedLine("MODE-READER");
+	}
 	SendBufferedLine("READER");
 	SendBufferedLine("LIST OVERVIEW.FMT");
 	SendBufferedLine("OVER MSGID");
@@ -88,6 +145,11 @@ const bool NNTPConnection::HandleCapabilitiesCommand(const NNTPCommand &command)
 	{
 		SendBufferedLine("POST");
 	}
+	if(m_status.m_authenticated==false)
+	{
+		SendBufferedLine("AUTHINFO USER");
+	}
+	SendBufferedLine("XFMSTRUST");
 	SendBufferedLine(".");
 	
 	return true;
@@ -163,15 +225,185 @@ const bool NNTPConnection::HandleCommand(const NNTPCommand &command)
 	{
 		return HandleOverCommand(command);
 	}
+	if(command.m_command=="AUTHINFO")
+	{
+		return HandleAuthInfoCommand(command);
+	}
+	if(command.m_command=="XGETTRUST")
+	{
+		return HandleGetTrustCommand(command);
+	}
+	if(command.m_command=="XSETTRUST")
+	{
+		return HandleSetTrustCommand(command);
+	}
+	if(command.m_command=="XGETTRUSTLIST")
+	{
+		return HandleGetTrustListCommand(command);
+	}
 
 	return false;
 }
 
 const bool NNTPConnection::HandleDateCommand(const NNTPCommand &command)
 {
-	DateTime now;
-	now.SetToGMTime();
-	SendBufferedLine("111 "+now.Format("%Y%m%d%H%M%S"));
+	Poco::DateTime now;
+	SendBufferedLine("111 "+Poco::DateTimeFormatter::format(now,"%Y%m%d%H%M%S"));
+	return true;
+}
+
+const bool NNTPConnection::HandleGetTrustCommand(const NNTPCommand &command)
+{
+	if(command.m_arguments.size()>=2)
+	{
+		std::string type=command.m_arguments[0];
+		StringFunctions::UpperCase(type,type);
+		if(type=="MESSAGE" || type=="TRUSTLIST" || type=="PEERMESSAGE" || type=="PEERTRUSTLIST")
+		{
+			if(m_status.m_authenticated)
+			{
+				bool found=false;
+				int trust=-1;
+				std::string nntpname="";
+				for(int i=1; i<command.m_arguments.size(); i++)
+				{
+					if(i!=1)
+					{
+						nntpname+=" ";
+					}
+					nntpname+=command.m_arguments[i];
+				}
+
+				TrustExtension tr(m_status.m_authuser.GetID());
+
+				if(type=="MESSAGE")
+				{
+					if(tr.GetMessageTrust(nntpname,trust))
+					{
+						found=true;
+					}
+				}
+				else if(type=="TRUSTLIST")
+				{
+					if(tr.GetTrustListTrust(nntpname,trust))
+					{
+						found=true;
+					}
+				}
+				else if(type=="PEERMESSAGE")
+				{
+					if(tr.GetPeerMessageTrust(nntpname,trust))
+					{
+						found=true;
+					}
+				}
+				else if(type=="PEERTRUSTLIST")
+				{
+					if(tr.GetPeerTrustListTrust(nntpname,trust))
+					{
+						found=true;
+					}
+				}
+
+				if(trust>=0 && found)
+				{
+					std::string truststr="";
+					StringFunctions::Convert(trust,truststr);
+					SendBufferedLine("280 "+truststr);
+				}
+				else if(found)
+				{
+					SendBufferedLine("281 null");
+				}
+				else
+				{
+					SendBufferedLine("480 Identity not found");
+				}
+
+			}
+			else
+			{
+				SendBufferedLine("480 User not authenticated");
+			}
+		}
+		else
+		{
+			SendBufferedLine("501 Syntax error");
+		}
+	}
+	else
+	{
+		SendBufferedLine("501 Syntax error");
+	}
+	return true;
+}	
+
+const bool NNTPConnection::HandleGetTrustListCommand(const NNTPCommand &command)
+{
+	if(m_status.m_authenticated)
+	{
+		TrustExtension tr(m_status.m_authuser.GetID());
+		std::map<std::string,TrustExtension::trust> trustlist;
+		if(tr.GetTrustList(trustlist))
+		{
+			SendBufferedLine("280 Trust list follows");
+			for(std::map<std::string,TrustExtension::trust>::iterator i=trustlist.begin(); i!=trustlist.end(); i++)
+			{
+				std::ostringstream tempstr;
+				tempstr << (*i).first << "\t";
+				if((*i).second.m_localmessagetrust>-1)
+				{
+					tempstr << (*i).second.m_localmessagetrust;
+				} 
+				else
+				{
+					tempstr << "null";
+				}
+				tempstr << "\t";
+				if((*i).second.m_localtrustlisttrust>-1)
+				{
+					tempstr << (*i).second.m_localtrustlisttrust;
+				}
+				else
+				{
+					tempstr << "null";
+				}
+				tempstr << "\t";
+				if((*i).second.m_peermessagetrust>-1)
+				{
+					tempstr << (*i).second.m_peermessagetrust;
+				}
+				else
+				{
+					tempstr << "null";
+				}
+				tempstr << "\t";
+				if((*i).second.m_peertrustlisttrust>-1)
+				{
+					tempstr << (*i).second.m_peertrustlisttrust;
+				}
+				else
+				{
+					tempstr << "null";
+				}
+				tempstr << "\t";
+				tempstr << (*i).second.m_messagetrustcomment;
+				tempstr << "\t";
+				tempstr << (*i).second.m_trustlisttrustcomment;
+
+				SendBufferedLine(tempstr.str());
+			}
+			SendBufferedLine(".");
+		}
+		else
+		{
+			SendBufferedLine("501 Syntax error");
+		}
+	}
+	else
+	{
+		SendBufferedLine("480 User not authenticated");
+	}
 	return true;
 }
 
@@ -202,7 +434,7 @@ const bool NNTPConnection::HandleGroupCommand(const NNTPCommand &command)
 	else
 	{
 		SendBufferedLine("501 Syntax error");
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPConnection::HandleGroupCommand syntax error");
+		m_log->debug("NNTPConnection::HandleGroupCommand syntax error");
 	}
 
 	return true;
@@ -317,7 +549,7 @@ const bool NNTPConnection::HandleListCommand(const NNTPCommand &command)
 				show=uwildmat((*i).GetBoardName().c_str(),arg2.c_str());
 			}
 
-			if(show==true)
+			if(show==true && (*i).GetSaveReceivedMessages()==true)
 			{
 				tempstr << (*i).GetBoardName() << " " << (*i).GetHighMessageID() << " " << (*i).GetLowMessageID() << " " << (m_status.m_allowpost ? "y" : "n");
 				SendBufferedLine(tempstr.str());
@@ -348,7 +580,7 @@ const bool NNTPConnection::HandleListCommand(const NNTPCommand &command)
 				show=uwildmat((*i).GetBoardName().c_str(),arg2.c_str());
 			}
 
-			if(show==true)
+			if(show==true && (*i).GetSaveReceivedMessages()==true)
 			{
 				tempstr << (*i).GetBoardName() << "\t" << (*i).GetBoardDescription();
 				SendBufferedLine(tempstr.str());
@@ -375,7 +607,7 @@ const bool NNTPConnection::HandleListCommand(const NNTPCommand &command)
 	{
 		// unknown arg
 		SendBufferedLine("501 Syntax error");
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPConnection::HandleListCommand unhandled LIST variant");
+		m_log->debug("NNTPConnection::HandleListCommand unhandled LIST variant");
 	}
 
 	return true;
@@ -387,7 +619,6 @@ const bool NNTPConnection::HandleListGroupCommand(const NNTPCommand &command)
 	std::ostringstream tempstr;
 	Board board;
 	bool validgroup=false;
-	int tempint;
 	int lownum=-1;
 	int highnum=-1;
 
@@ -433,7 +664,7 @@ const bool NNTPConnection::HandleListGroupCommand(const NNTPCommand &command)
 	{
 		// unknown arg
 		SendBufferedLine("501 Syntax error");
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPConnection::HandleListGroupCommand unknown arguments");
+		m_log->debug("NNTPConnection::HandleListGroupCommand unknown arguments");
 	}
 
 	if(validgroup)
@@ -492,18 +723,18 @@ const bool NNTPConnection::HandleModeCommand(const NNTPCommand &command)
 				SendBufferedLine("201 Posting prohibited");
 			}
 			
-			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPConnection::HandleModeCommand set mode to reader");
+			m_log->debug("NNTPConnection::HandleModeCommand set mode to reader");
 		}
 		else
 		{
 			SendBufferedLine("501 Syntax error");
-			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPConnection::HandleModeCommand unknown MODE argument : "+arg);
+			m_log->debug("NNTPConnection::HandleModeCommand unknown MODE argument : "+arg);
 		}
 	}
 	else
 	{
 		SendBufferedLine("501 Syntax error");
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPConnection::HandleModeCommand no argument supplied for MODE");	
+		m_log->debug("NNTPConnection::HandleModeCommand no argument supplied for MODE");	
 	}
 
 	return true;
@@ -513,16 +744,23 @@ const bool NNTPConnection::HandleNewGroupsCommand(const NNTPCommand &command)
 {
 	if(command.m_arguments.size()>=2)
 	{
-		DateTime date;
-		int tempint;
+		Poco::DateTime date;
+		int tempyear=0;
+		int tempmonth=0;
+		int tempday=0;
 		if(command.m_arguments[0].size()==8)
 		{
-			StringFunctions::Convert(command.m_arguments[0].substr(0,4),tempint);
-			date.SetYear(tempint);
-			StringFunctions::Convert(command.m_arguments[0].substr(4,2),tempint);
-			date.SetMonth(tempint);
-			StringFunctions::Convert(command.m_arguments[0].substr(6,2),tempint);
-			date.SetDay(tempint);
+			StringFunctions::Convert(command.m_arguments[0].substr(0,4),tempyear);
+			StringFunctions::Convert(command.m_arguments[0].substr(4,2),tempmonth);
+			StringFunctions::Convert(command.m_arguments[0].substr(6,2),tempday);
+			try
+			{
+				date.assign(tempyear,tempmonth,tempday,date.hour(),date.minute(),date.second());
+			}
+			catch(...)
+			{
+				m_log->fatal("NNTPConnection::HandleNewGroupsCommand error assigning date");
+			}
 		}
 		else
 		{
@@ -534,35 +772,40 @@ const bool NNTPConnection::HandleNewGroupsCommand(const NNTPCommand &command)
 			the current year, and the previous century otherwise.
 			*/
 			int century;
-			DateTime now;
-			now.SetToGMTime();
-			century=now.GetYear()-(now.GetYear()%100);
+			Poco::DateTime now;
+			century=now.year()-(now.year()%100);
 
-			StringFunctions::Convert(command.m_arguments[0].substr(0,2),tempint);
-			tempint<=now.GetYear()-century ? tempint+=century : tempint+=(century-100);
+			StringFunctions::Convert(command.m_arguments[0].substr(0,2),tempyear);
+			tempyear<=now.year()-century ? tempyear+=century : tempyear+=(century-100);
 			
 			//tempint > 50 ? tempint+=1900 : tempint+=2000;
 			
-			date.SetYear(tempint);
-			StringFunctions::Convert(command.m_arguments[0].substr(2,2),tempint);
-			date.SetMonth(tempint);
-			StringFunctions::Convert(command.m_arguments[0].substr(4,2),tempint);
-			date.SetDay(tempint);
+			StringFunctions::Convert(command.m_arguments[0].substr(2,2),tempmonth);
+			StringFunctions::Convert(command.m_arguments[0].substr(4,2),tempday);
+			try
+			{
+				date.assign(tempyear,tempmonth,tempday);
+			}
+			catch(...)
+			{
+				m_log->fatal("NNTPConnection::HandleNewGroupsCommand error assigning date");
+			}
 		}
-
-		date.Normalize();
 
 		BoardList bl;
 
-		bl.LoadNew(date.Format("%Y-%m-%d %H:%M:%S"));
+		bl.LoadNew(Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 
 		SendBufferedLine("231 List of new newsgroups follows");
 
 		for(BoardList::iterator i=bl.begin(); i!=bl.end(); i++)
 		{
-			std::ostringstream tempstr;
-			tempstr << (*i).GetBoardName() << " " << (*i).GetHighMessageID() << " " << (*i).GetLowMessageID() << " " << m_status.m_allowpost ? "y" : "n";
-			SendBufferedLine(tempstr.str());
+			if((*i).GetSaveReceivedMessages()==true)
+			{
+				std::ostringstream tempstr;
+				tempstr << (*i).GetBoardName() << " " << (*i).GetHighMessageID() << " " << (*i).GetLowMessageID() << " " << m_status.m_allowpost ? "y" : "n";
+				SendBufferedLine(tempstr.str());
+			}
 		}
 
 		SendBufferedLine(".");
@@ -571,7 +814,7 @@ const bool NNTPConnection::HandleNewGroupsCommand(const NNTPCommand &command)
 	else
 	{
 		SendBufferedLine("501 Syntax error");
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPConnection::HandleNewGroupsCommand syntax error");
+		m_log->debug("NNTPConnection::HandleNewGroupsCommand syntax error");
 	}
 
 	return true;
@@ -636,11 +879,13 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 			messageuuid=command.m_arguments[0];
 			messageuuid=StringFunctions::Replace(messageuuid,"<","");
 			messageuuid=StringFunctions::Replace(messageuuid,">","");
+			/*
 			// get rid of @ and everything after
 			if(messageuuid.find("@")!=std::string::npos)
 			{
 				messageuuid.erase(messageuuid.find("@"));
 			}
+			*/
 		}
 		// single article or range
 		else
@@ -779,8 +1024,24 @@ void NNTPConnection::HandlePostedMessage(const std::string &message)
 
 	if(mess.ParseNNTPMessage(message))
 	{
-		mess.StartFreenetInsert();
-		SendBufferedLine("240 Article received OK");
+		// if we authenticated, set the username to the authenticated user
+		if(m_status.m_authenticated)
+		{
+			mess.SetFromName(m_status.m_authuser.GetName());
+		}
+		// handle a messages posted to an adminboard
+		if(mess.PostedToAdministrationBoard()==true)
+		{
+			mess.HandleAdministrationMessage();
+		}
+		if(mess.StartFreenetInsert())
+		{
+			SendBufferedLine("240 Article received OK");
+		}
+		else
+		{
+			SendBufferedLine("441 Posting failed.  Make sure the identity you are sending with exists!");
+		}
 	}
 	else
 	{
@@ -824,7 +1085,7 @@ void NNTPConnection::HandleReceivedData()
 			{
 				SendBufferedLine("500 Unknown command");
 
-				m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"NNTPConnection::HandleReceivedData received unhandled NNTP command : "+commandline);
+				m_log->debug("NNTPConnection::HandleReceivedData received unhandled NNTP command : "+commandline);
 			}
 
 		}
@@ -854,6 +1115,147 @@ void NNTPConnection::HandleReceivedData()
 	}
 }
 
+const bool NNTPConnection::HandleSetTrustCommand(const NNTPCommand &command)
+{
+	if(command.m_arguments.size()>=3)
+	{
+		std::string type=command.m_arguments[0];
+		StringFunctions::UpperCase(type,type);
+		if(type=="MESSAGE" || type=="TRUSTLIST" || type=="MESSAGECOMMENT" || type=="TRUSTLISTCOMMENT")
+		{
+			if(m_status.m_authenticated)
+			{
+				bool found=false;
+				bool valid=false;
+				int trust=-1;
+				std::string comment="";
+				std::string nntpname="";
+
+				if(type=="MESSAGE" || type=="TRUSTLIST")
+				{
+					for(int i=1; i<command.m_arguments.size()-1; i++)
+					{
+						if(i!=1)
+						{
+							nntpname+=" ";
+						}
+						nntpname+=command.m_arguments[i];
+					}
+
+					if(command.m_arguments[command.m_arguments.size()-1]!="null")
+					{
+						StringFunctions::Convert(command.m_arguments[command.m_arguments.size()-1],trust);
+					}
+
+					if(trust>=-1 && trust<=100)
+					{
+						valid=true;
+					}
+				}
+				else
+				{
+					int startpos=-1;
+					// get nntpname
+					for(int i=1; i<command.m_arguments.size() && startpos==-1; i++)
+					{
+						if(command.m_arguments[i].size()>0 && command.m_arguments[i][0]!='\"')
+						{
+							if(i!=1)
+							{
+								nntpname+=" ";
+							}
+							nntpname+=command.m_arguments[i];
+						}
+						else
+						{
+							startpos=i;
+						}
+					}
+
+					// get comment
+					for(int i=startpos; i<command.m_arguments.size(); i++)
+					{
+						if(i!=startpos)
+						{
+							comment+=" ";
+						}
+						comment+=command.m_arguments[i];
+					}
+					// strip " from comment beginning and end
+					if(comment.size()>0 && comment[0]=='\"')
+					{
+						comment.erase(0,1);
+					}
+					if(comment.size()>0 && comment[comment.size()-1]=='\"')
+					{
+						comment.erase(comment.size()-1);
+					}
+
+					valid=true;
+				}
+
+				TrustExtension tr(m_status.m_authuser.GetID());
+
+				if(type=="MESSAGE")
+				{
+					if(tr.SetMessageTrust(nntpname,trust))
+					{
+						found=true;
+					}
+				}
+				if(type=="TRUSTLIST")
+				{
+					if(tr.SetTrustListTrust(nntpname,trust))
+					{
+						found=true;
+					}
+				}
+				if(type=="MESSAGECOMMENT")
+				{
+					if(tr.SetMessageTrustComment(nntpname,comment))
+					{
+						found=true;
+					}
+				}
+				if(type=="TRUSTLISTCOMMENT")
+				{
+					if(tr.SetTrustListTrustComment(nntpname,comment))
+					{
+						found=true;
+					}
+				}
+
+				if(found && valid)
+				{
+					SendBufferedLine("280 Trust Set");
+				}
+				else if(found==false)
+				{
+					SendBufferedLine("480 Identity not found");
+				}
+				else
+				{
+					SendBufferedLine("501 Syntax error");
+				}
+
+			}
+			else
+			{
+				SendBufferedLine("480 User not authenticated");
+			}
+		}
+		else
+		{
+			SendBufferedLine("501 Syntax error");
+		}
+	}
+	else
+	{
+		SendBufferedLine("501 Syntax error");
+	}
+	return true;
+}
+
 const bool NNTPConnection::HandleStatCommand(const NNTPCommand &command)
 {
 	SendArticleParts(command);
@@ -866,11 +1268,11 @@ const bool NNTPConnection::HandleQuitCommand(const NNTPCommand &command)
 	SendBufferedLine("205 Connection Closing");
 	SocketSend();
 	Disconnect();
-	m_log->WriteLog(LogFile::LOGLEVEL_INFO,"NNTPConnection::HandleQuitCommand client closed connection");
+	m_log->information("NNTPConnection::HandleQuitCommand client closed connection");
 	return true;
 }
 
-void NNTPConnection::Run()
+void NNTPConnection::run()
 {
 	struct timeval tv;
 	fd_set writefs,readfs;
@@ -918,10 +1320,9 @@ void NNTPConnection::Run()
 		}
 		else if(rval==SOCKET_ERROR)
 		{
-			m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPConnection::run select returned -1 : "+GetSocketErrorMessage());	
+			m_log->error("NNTPConnection::run select returned -1 : "+GetSocketErrorMessage());	
 		}
 
-//	}while(!Disconnected() && !ZThread::Thread::interrupted());
 	}while(!Disconnected() && !IsCancelled());
 
 	Disconnect();
@@ -938,7 +1339,7 @@ void NNTPConnection::SendArticleOverInfo(Message &message)
 	line=tempval+"\t";
 	line+=message.GetSubject()+"\t";
 	line+=message.GetFromName()+"\t";
-	line+=message.GetDateTime().Format("%a, %d %b %y %H:%M:%S -0000")+"\t";
+	line+=Poco::DateTimeFormatter::format(message.GetDateTime(),"%w, %d %b %y %H:%M:%S -0000")+"\t";
 	line+=message.GetNNTPArticleID()+"\t";
 	references=message.GetInReplyTo();
 	if(references.size()>0)
@@ -949,7 +1350,7 @@ void NNTPConnection::SendArticleOverInfo(Message &message)
 			{
 				line+=" ";
 			}
-			line+="<"+(*i).second+"@freenetproject.org>";
+			line+="<"+(*i).second+">"; //+"@freenetproject.org>";
 		}
 		line+="\t";
 	}
@@ -1009,6 +1410,21 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 		else
 		{
 			articleid=command.m_arguments[0];
+			//strip off < and > and everthing after @
+			if(articleid.size()>0 && articleid[0]=='<')
+			{
+				articleid.erase(0,1);
+			}
+			if(articleid.size()>0 && articleid[articleid.size()-1]=='>')
+			{
+				articleid.erase(articleid.size()-1);
+			}
+			/*
+			if(articleid.size()>0 && articleid.find('@')!=std::string::npos)
+			{
+				articleid.erase(articleid.find('@'));
+			}
+			*/
 			message.Load(articleid);
 			type=2;
 		}
@@ -1168,7 +1584,7 @@ void NNTPConnection::SocketReceive()
 	else if(rval==0)
 	{
 		Disconnect();
-		m_log->WriteLog(LogFile::LOGLEVEL_INFO,"NNTPConnection::SocketReceive remote host closed connection");
+		m_log->information("NNTPConnection::SocketReceive remote host closed connection");
 	}
 	else if(rval==-1)
 	{
@@ -1176,7 +1592,7 @@ void NNTPConnection::SocketReceive()
 		StringFunctions::Convert(GetSocketErrorNumber(),errnostr);
 		// error on receive - close the connection
 		Disconnect();
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPConnection::SocketReceive recv returned -1 : "+errnostr+" - "+GetSocketErrorMessage());
+		m_log->error("NNTPConnection::SocketReceive recv returned -1 : "+errnostr+" - "+GetSocketErrorMessage());
 	}
 }
 
@@ -1193,7 +1609,7 @@ void NNTPConnection::SocketSend()
 		{
 			std::string errnostr;
 			StringFunctions::Convert(GetSocketErrorNumber(),errnostr);
-			m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"NNTPConnection::SocketSend returned -1 : "+errnostr+" - "+GetSocketErrorMessage());
+			m_log->error("NNTPConnection::SocketSend returned -1 : "+errnostr+" - "+GetSocketErrorMessage());
 		}
 	}
 }

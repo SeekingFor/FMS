@@ -1,25 +1,17 @@
 #ifndef _global_
 #define _global_
 
-#include <vector>
-//#include <zthread/Thread.h>
-#include "pthreadwrapper/thread.h"
+#include <string>
+#include <Poco/ScopedLock.h>
+#include <Poco/Mutex.h>
 
-#define FMS_VERSION	"0.1.8"
+#define VERSION_MAJOR		"0"
+#define VERSION_MINOR		"3"
+#define VERSION_RELEASE		"6"
+#define FMS_VERSION			VERSION_MAJOR"."VERSION_MINOR"."VERSION_RELEASE
 
-// opens database and creates tables and initial inserts if necessary
-void SetupDB();
-// inserts default options into the database
-void SetupDefaultOptions();
-// opens logfile and sets it up
-void SetupLogFile();
+typedef Poco::ScopedLock<Poco::FastMutex> Guard;
 
-void StartThreads(std::vector<PThread::Thread *> &threads);
-void ShutdownThreads(std::vector<PThread::Thread *> &threads);
-
-// needed for Windows to setup network
-void SetupNetwork();
-// cleanup network on Windows
-void ShutdownNetwork();
+std::string CreateShortIdentityName(const std::string &name, const std::string &publickey);
 
 #endif	// _global_

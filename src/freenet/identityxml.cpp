@@ -11,26 +11,26 @@ IdentityXML::IdentityXML()
 
 std::string IdentityXML::GetXML()
 {
-	TiXmlDocument td;
-	TiXmlDeclaration *tdec=new TiXmlDeclaration("1.0","UTF-8","");
-	TiXmlElement *tid;
-	TiXmlPrinter tp;
+	Poco::AutoPtr<Poco::XML::Document> doc=new Poco::XML::Document;
+	Poco::AutoPtr<Poco::XML::Element> root=doc->createElement("Identity");
 
-	td.LinkEndChild(tdec);
-	tid=new TiXmlElement("Identity");
-	td.LinkEndChild(tid);
+	doc->appendChild(root);
 
-	tid->LinkEndChild(XMLCreateCDATAElement("Name",m_name));
+	root->appendChild(XMLCreateCDATAElement(doc,"Name",m_name));
 
-	tid->LinkEndChild(XMLCreateBooleanElement("SingleUse",m_singleuse));
+	root->appendChild(XMLCreateBooleanElement(doc,"SingleUse",m_singleuse));
 
-	tid->LinkEndChild(XMLCreateBooleanElement("PublishTrustList",m_publishtrustlist));
+	root->appendChild(XMLCreateBooleanElement(doc,"PublishTrustList",m_publishtrustlist));
 
-	tid->LinkEndChild(XMLCreateBooleanElement("PublishBoardList",m_publishboardlist));
+	root->appendChild(XMLCreateBooleanElement(doc,"PublishBoardList",m_publishboardlist));
 
-	td.Accept(&tp);
-	return std::string(tp.CStr());
+	// freesite edition will be -1 if identity isn't publishing a freesite
+	if(m_freesiteedition>=0)
+	{
+		root->appendChild(XMLCreateTextElement(doc,"FreesiteEdition",m_freesiteedition));
+	}
 
+	return GenerateXML(doc);
 }
 
 void IdentityXML::Initialize()
@@ -39,39 +39,56 @@ void IdentityXML::Initialize()
 	m_publishtrustlist=false;
 	m_publishboardlist=false;
 	m_singleuse=false;
+	m_freesiteedition=-1;
 }
 
 const bool IdentityXML::ParseXML(const std::string &xml)
 {
-	TiXmlDocument td;
-	td.Parse(xml.c_str());
 
-	if(!td.Error())
+	bool parsed=false;
+	Poco::XML::DOMParser dp;
+
+	Initialize();
+
+	try
 	{
-		TiXmlElement *el;
-		TiXmlText *txt;
-		TiXmlHandle hnd(&td);
+		Poco::AutoPtr<Poco::XML::Document> doc=dp.parseString(FixCDATA(xml));
+		Poco::XML::Element *root=XMLGetFirstChild(doc,"Identity");
+		Poco::XML::Element *txt=NULL;
 
-		Initialize();
-
-		txt=hnd.FirstChild("Identity").FirstChild("Name").FirstChild().ToText();
+		txt=XMLGetFirstChild(root,"Name");
 		if(txt)
 		{
-			m_name=txt->ValueStr();
+			if(txt->firstChild())
+			{
+				m_name=txt->firstChild()->getNodeValue();
+				if(m_name.size()>40)
+				{
+					m_name.erase(40);
+				}
+			}
+		}
+		
+		m_singleuse=XMLGetBooleanElement(root,"SingleUse");
+		m_publishtrustlist=XMLGetBooleanElement(root,"PublishTrustList");
+		m_publishboardlist=XMLGetBooleanElement(root,"PublishBoardList");
+		
+		txt=XMLGetFirstChild(root,"FreesiteEdition");
+		if(txt)
+		{
+			if(txt->firstChild())
+			{
+				std::string editionstr=txt->firstChild()->getNodeValue();
+				StringFunctions::Convert(editionstr,m_freesiteedition);
+			}
 		}
 
-		m_singleuse=XMLGetBooleanElement(hnd.FirstChild("Identity").ToElement(),"SingleUse");
-
-		m_publishtrustlist=XMLGetBooleanElement(hnd.FirstChild("Identity").ToElement(),"PublishTrustList");
-
-		m_publishboardlist=XMLGetBooleanElement(hnd.FirstChild("Identity").ToElement(),"PublishBoardList");
-
-		return true;
+		parsed=true;
 
 	}
-	else
+	catch(...)
 	{
-		return false;
 	}
 
+	return parsed;
 }

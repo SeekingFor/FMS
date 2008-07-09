@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <sstream>
+#include <cstring>
 
 #ifdef _WIN32
 	#include <ws2tcpip.h>
@@ -127,7 +128,7 @@ const bool FCPv2::Disconnect()
 int FCPv2::FindOnReceiveBuffer(const char *text)
 {
 	bool found;
-	int i,j;
+	std::vector<char>::size_type i,j;
 	size_t tlen=strlen(text);
 
 	if(m_receivebuffer.size()>=tlen)
@@ -292,9 +293,9 @@ const int FCPv2::SendMessage(const char *messagename, const int fieldcount, ...)
 	va_list args;
 	const char *field;
 	const char *val;
-	int bytecount=0;
+	std::vector<char>::size_type bytecount=0;
 	int i;
-	int startlen;
+	std::vector<char>::size_type startlen;
 
 	startlen=m_sendbuffer.size();
 
@@ -325,8 +326,8 @@ const int FCPv2::SendMessage(const char *messagename, const int fieldcount, ...)
 
 const int FCPv2::SendMessage(FCPMessage &message)
 {
-	int bytecount=0;
-	int startlen;
+	std::vector<char>::size_type bytecount=0;
+	std::vector<char>::size_type startlen;
 	FCPMessage::iterator i;
 
 	startlen=m_sendbuffer.size();

@@ -14,7 +14,7 @@ private:
 	void Initialize();
 	const bool HandlePutSuccessful(FCPMessage &message);
 	const bool HandlePutFailed(FCPMessage &message);
-	void StartInsert(const std::string &messageuuid);
+	const bool StartInsert(const std::string &messageuuid);
 	void CheckForNeededInsert();
 
 };

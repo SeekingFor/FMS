@@ -91,6 +91,13 @@ std::string TrimWhitespace(const std::string &str);
 void UpperCase(const std::string &str, std::string &output);
 
 /**
+	\brief Converts a string to lower case
+	\param str string to convert to lower case
+	\param[out] string converted to lower case
+*/
+void LowerCase(const std::string &str, std::string &output);
+
+/**
 	\brief Decodes a URI encoded string
 	\param aSrc string that is URI encoded
 	\return URI decoded input string

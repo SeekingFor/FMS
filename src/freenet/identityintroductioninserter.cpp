@@ -1,9 +1,10 @@
 #include "../../include/freenet/identityintroductioninserter.h"
 #include "../../include/freenet/identityintroductionxml.h"
-#include "../../include/xyssl/sha1.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/hex.h"
 #include "../../include/option.h"
+
+#include <Poco/SHA1Engine.h>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -63,7 +64,7 @@ const bool IdentityIntroductionInserter::HandleMessage(FCPMessage &message)
 				m_db->Execute("DELETE FROM tblIdentityIntroductionInserts WHERE UUID='"+idparts[3]+"';");
 				// update the puzzle from the request table (set to not found) because we don't need it anymore and don't want to user tyring to solve it again
 				m_db->Execute("UPDATE tblIntroductionPuzzleRequests SET Found='false' WHERE UUID='"+idparts[3]+"';");
-				m_log->WriteLog(LogFile::LOGLEVEL_WARNING,"IdentityIntroductionInserter::HandleMessage received fatal error trying to insert IdentityIntroduction "+idparts[3]);
+				m_log->warning("IdentityIntroductionInserter::HandleMessage received fatal error trying to insert IdentityIntroduction "+idparts[3]);
 			}
 			m_inserting=false;
 			return true;
@@ -73,7 +74,7 @@ const bool IdentityIntroductionInserter::HandleMessage(FCPMessage &message)
 		{
 			m_db->Execute("UPDATE tblIdentityIntroductionInserts SET Inserted='true' WHERE UUID='"+idparts[3]+"';");
 			m_inserting=false;
-			m_log->WriteLog(LogFile::LOGLEVEL_INFO,"IdentityIntroductionInserter::HandleMessage successfully inserted IdentityIntroduction "+idparts[3]);
+			m_log->information("IdentityIntroductionInserter::HandleMessage successfully inserted IdentityIntroduction "+idparts[3]);
 			return true;
 		}
 
@@ -95,11 +96,10 @@ void IdentityIntroductionInserter::Initialize()
 
 void IdentityIntroductionInserter::Process()
 {
-	DateTime now;
-	now.SetToGMTime();
+	Poco::DateTime now;
 
 	// only do 1 insert at a time
-	if(!m_inserting && m_lastchecked<(now-(1.0/1440.0)))
+	if(!m_inserting && m_lastchecked<(now-Poco::Timespan(0,0,1,0,0)))
 	{
 		CheckForNewInserts();
 		m_lastchecked=now;
@@ -120,7 +120,7 @@ void IdentityIntroductionInserter::StartInsert(const long localidentityid, const
 	std::string publickey;
 	std::string data;
 	std::string datasizestr;
-	std::vector<unsigned char> hash;
+//	std::vector<unsigned char> hash;
 	std::string encodedhash;
 	
 	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey FROM tblLocalIdentity WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND LocalIdentityID=?;");
@@ -135,9 +135,14 @@ void IdentityIntroductionInserter::StartInsert(const long localidentityid, const
 		data=xml.GetXML();
 		StringFunctions::Convert(data.size(),datasizestr);
 
-		hash.resize(20);
-		sha1((unsigned char *)solution.c_str(),solution.size(),&hash[0]);
-		Hex::Encode(hash,encodedhash);
+		Poco::SHA1Engine sha1;
+		sha1.update(solution);
+		encodedhash=Poco::DigestEngine::digestToHex(sha1.digest());
+		StringFunctions::UpperCase(encodedhash,encodedhash);
+
+//		hash.resize(20);
+//		sha1((unsigned char *)solution.c_str(),solution.size(),&hash[0]);
+//		Hex::Encode(hash,encodedhash);
 
 		message.SetName("ClientPut");
 		message["URI"]="KSK@"+m_messagebase+"|"+day+"|"+UUID+"|"+encodedhash+".xml";
@@ -152,7 +157,7 @@ void IdentityIntroductionInserter::StartInsert(const long localidentityid, const
 	}
 	else
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityIntroductionInserter::StartInsert could not find a public key for identity.  It is probably a new identity that doesn't have a key yet.");
+		m_log->debug("IdentityIntroductionInserter::StartInsert could not find a public key for identity.  It is probably a new identity that doesn't have a key yet.");
 	}
 
 }

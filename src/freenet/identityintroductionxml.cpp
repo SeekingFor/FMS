@@ -12,19 +12,14 @@ IdentityIntroductionXML::IdentityIntroductionXML()
 
 std::string IdentityIntroductionXML::GetXML()
 {
-	TiXmlDocument td;
-	TiXmlDeclaration *tdec=new TiXmlDeclaration("1.0","UTF-8","");
-	TiXmlElement *tid;
-	TiXmlPrinter tp;
+	Poco::AutoPtr<Poco::XML::Document> doc=new Poco::XML::Document;
+	Poco::AutoPtr<Poco::XML::Element> root=doc->createElement("IdentityIntroduction");
 
-	td.LinkEndChild(tdec);
-	tid=new TiXmlElement("IdentityIntroduction");
-	td.LinkEndChild(tid);
+	doc->appendChild(root);
 
-	tid->LinkEndChild(XMLCreateCDATAElement("Identity",m_identity));
+	root->appendChild(XMLCreateCDATAElement(doc,"Identity",m_identity));
 
-	td.Accept(&tp);
-	return std::string(tp.CStr());
+	return GenerateXML(doc);
 }
 
 void IdentityIntroductionXML::Initialize()
@@ -35,34 +30,37 @@ void IdentityIntroductionXML::Initialize()
 const bool IdentityIntroductionXML::ParseXML(const std::string &xml)
 {
 	FreenetSSK ssk;
-	TiXmlDocument td;
-	td.Parse(xml.c_str());
+	bool parsed=false;
+	Poco::XML::DOMParser dp;
 
-	if(!td.Error())
+	Initialize();
+
+	try
 	{
-		TiXmlElement *el;
-		TiXmlText *txt;
-		TiXmlHandle hnd(&td);
+		Poco::AutoPtr<Poco::XML::Document> doc=dp.parseString(FixCDATA(xml));
+		Poco::XML::Element *root=XMLGetFirstChild(doc,"IdentityIntroduction");
+		Poco::XML::Element *txt=NULL;
 
-		Initialize();
-
-		txt=hnd.FirstChild("IdentityIntroduction").FirstChild("Identity").FirstChild().ToText();
+		txt=XMLGetFirstChild(root,"Identity");
 		if(txt)
 		{
-			m_identity=txt->ValueStr();
+			if(txt->firstChild())
+			{
+				m_identity=SanitizeSingleString(txt->firstChild()->getNodeValue());
+			}
 		}
+
 		ssk.SetPublicKey(m_identity);
 		if(ssk.ValidPublicKey()==false)
 		{
 			return false;
 		}
 
-		return true;
-
+		parsed=true;
 	}
-	else
+	catch(...)
 	{
-		return false;
 	}
 
+	return parsed;
 }

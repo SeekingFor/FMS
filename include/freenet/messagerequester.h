@@ -16,10 +16,15 @@ private:
 	const bool HandleAllData(FCPMessage &message);
 	const bool HandleGetFailed(FCPMessage &message);
 
-	const long GetBoardID(const std::string &boardname);
+	const long GetBoardID(const std::string &boardname, const std::string &identityname);
+	const bool SaveToBoard(const std::string &boardname);
 	const std::string GetIdentityName(const long identityid);
 
 	long m_maxdaysbackward;
+	long m_maxpeermessages;
+	long m_maxboardspermessage;
+	bool m_savemessagesfromnewboards;
+	bool m_localtrustoverrides;
 	
 };
 

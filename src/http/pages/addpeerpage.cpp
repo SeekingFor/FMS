@@ -1,6 +1,8 @@
 #include "../../../include/http/pages/addpeerpage.h"
 #include "../../../include/stringfunctions.h"
-#include "../../../include/datetime.h"
+
+#include <Poco/DateTime.h>
+#include <Poco/DateTimeFormatter.h>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -12,7 +14,7 @@ const std::string AddPeerPage::GeneratePage(const std::string &method, const std
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="add")
 	{
-		DateTime date;
+		Poco::DateTime date;
 		std::string publickey="";
 		if(queryvars.find("publickey")!=queryvars.end())
 		{
@@ -20,10 +22,10 @@ const std::string AddPeerPage::GeneratePage(const std::string &method, const std
 		}
 		if(publickey!="" && publickey.find("SSK@")==0 && publickey[publickey.size()-1]=='/')
 		{
-			date.SetToGMTime();
-			SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded) VALUES(?,?);");
+			SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES(?,?,?);");
 			st.Bind(0,publickey);
-			st.Bind(1,date.Format("%Y-%m-%d %H:%M:%S"));
+			st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+			st.Bind(2,"manually");
 			st.Step();
 			st.Reset();
 		}
@@ -40,7 +42,7 @@ const std::string AddPeerPage::GeneratePage(const std::string &method, const std
 	content+="<input type=\"submit\" value=\"Add\">";
 	content+="</form>";
 
-	return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"+StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return StringFunctions::Replace(m_template,"[CONTENT]",content);
 }
 
 const bool AddPeerPage::WillHandleURI(const std::string &uri)

@@ -1,6 +1,5 @@
 #include "../../include/freenet/freenetmasterthread.h"
 #include "../../include/option.h"
-#include "../../include/uuidgenerator.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/freenet/unkeyedidcreator.h"
 #include "../../include/freenet/identityinserter.h"
@@ -8,17 +7,26 @@
 #include "../../include/freenet/introductionpuzzleinserter.h"
 #include "../../include/freenet/identityintroductionrequester.h"
 #include "../../include/freenet/introductionpuzzlerequester.h"
-#include "../../include/freenet/introductionpuzzleremover.h"
 #include "../../include/freenet/identityintroductioninserter.h"
 #include "../../include/freenet/trustlistinserter.h"
 #include "../../include/freenet/trustlistrequester.h"
 #include "../../include/freenet/messagelistrequester.h"
+#include "../../include/freenet/messagelistinserter.h"
 #include "../../include/freenet/messagerequester.h"
 #include "../../include/freenet/messageinserter.h"
-#include "../../include/freenet/messagelistinserter.h"
+#include "../../include/freenet/boardlistinserter.h"
+#include "../../include/freenet/boardlistrequester.h"
+#include "../../include/freenet/siteinserter.h"
+#include "../../include/freenet/fileinserter.h"
+#include "../../include/freenet/fmsversionrequester.h"
 
-//#include <zthread/Thread.h>
-#include "../../include/pthreadwrapper/thread.h"
+#include <Poco/UUID.h>
+#include <Poco/UUIDGenerator.h>
+#include <Poco/DateTime.h>
+#include <Poco/Timespan.h>
+#include <Poco/Thread.h>
+
+#include <cstdlib>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -67,16 +75,27 @@ const bool FreenetMasterThread::FCPConnect()
 		m_receivednodehello=false;
 	}
 
-	m_log->WriteLog(LogFile::LOGLEVEL_INFO,"FreenetMasterThread::FCPConnect trying to connect to node "+m_fcphost);
+	m_log->information("FreenetMasterThread::FCPConnect trying to connect to node "+m_fcphost);
 
 	if(m_fcp.Connect(m_fcphost.c_str(),m_fcpport)==true)
 	{
-		UUIDGenerator uuid;
-		std::string clientname="FMSClient-"+uuid.Generate();
+		Poco::UUIDGenerator uuidgen;
+		Poco::UUID uuid;
+
+		try
+		{
+			uuid=uuidgen.createRandom();
+		}
+		catch(...)
+		{
+			m_log->fatal("FreenetMasterThread::FCPConnect could not generate UUID");
+		}
+
+		std::string clientname="FMSClient-"+uuid.toString();
 		// send ClientHello message to node
 		m_fcp.SendMessage("ClientHello",2,"Name",clientname.c_str(),"ExpectedVersion","2.0");
 
-		m_log->WriteLog(LogFile::LOGLEVEL_INFO,"FreenetMasterThread::FCPConnect connected to node");
+		m_log->information("FreenetMasterThread::FCPConnect connected to node");
 
 		return true;
 	}
@@ -118,7 +137,7 @@ const bool FreenetMasterThread::HandleMessage(FCPMessage &message)
 			{
 				info+="\t\t\t\t"+(*mi).first+"="+(*mi).second+"\r\n";
 			}
-			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"FreenetMasterThread::HandleMessage received unhandled "+message.GetName()+" message.  Message content :\r\n"+info);
+			m_log->debug("FreenetMasterThread::HandleMessage received unhandled "+message.GetName()+" message.  Message content :\r\n"+info);
 
 			// if unhandled message was alldata - we must retrieve the data
 			if(message.GetName()=="AllData")
@@ -143,7 +162,7 @@ const bool FreenetMasterThread::HandleMessage(FCPMessage &message)
 	}
 	else
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"FreenetMasterThread::HandleMessage received "+message.GetName()+" message before NodeHello");
+		m_log->error("FreenetMasterThread::HandleMessage received "+message.GetName()+" message before NodeHello");
 	}
 
 	return false;
@@ -164,13 +183,18 @@ void FreenetMasterThread::RegisterPeriodicProcessor(IPeriodicProcessor *obj)
 	m_processors.push_back(obj);
 }
 
-void FreenetMasterThread::Run()
+void FreenetMasterThread::run()
 {
 
+	Poco::DateTime lastreceivedmessage;
+	Poco::DateTime lastconnected;
+	Poco::DateTime now;
 	FCPMessage message;
 	bool done=false;
 
-	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"FreenetMasterThread::run thread started.");
+	lastconnected-=Poco::Timespan(0,0,1,0,0);
+
+	m_log->debug("FreenetMasterThread::run thread started.");
 
 	Setup();
 
@@ -178,26 +202,29 @@ void FreenetMasterThread::Run()
 	{
 		if(m_fcp.Connected()==false)
 		{
-			if(FCPConnect()==false)
+			// wait at least 1 minute since last successful connect
+			now=Poco::Timestamp();
+			if(lastconnected<=(now-Poco::Timespan(0,0,1,0,0)))
 			{
+				if(FCPConnect()==false)
+				{
 
-				m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"FreenetMasterThread::run could not connect to node.  Waiting 60 seconds.");
+					m_log->error("FreenetMasterThread::run could not connect to node.  Waiting 60 seconds.");
 
-				// wait 60 seconds - will then try to connect again
-				/*
-				try
-				{
-					ZThread::Thread::sleep(60000);
+					for(int i=0; i<60 && !IsCancelled(); i++)
+					{
+						Poco::Thread::sleep(1000);
+					}
 				}
-				catch(...)
+				else
 				{
-					done=true;
+					lastreceivedmessage=Poco::Timestamp();
+					lastconnected=Poco::Timestamp();
 				}
-				*/
-				for(int i=0; i<60 && !IsCancelled(); i++)
-				{
-					Sleep(1000);
-				}
+			}
+			else
+			{
+				Poco::Thread::sleep(1000);
 			}
 		}
 		// fcp is connected
@@ -214,6 +241,7 @@ void FreenetMasterThread::Run()
 				if(message.GetName()!="")
 				{
 					HandleMessage(message);
+					lastreceivedmessage=Poco::Timestamp();
 				}
 			}
 
@@ -223,15 +251,27 @@ void FreenetMasterThread::Run()
 				(*i)->Process();
 			}
 
+			// if we haven't received any messages from the node in 10 minutes, something is wrong
+			now=Poco::Timestamp();
+			if(lastreceivedmessage<(now-Poco::Timespan(0,0,10,0,0)))
+			{
+				m_log->error("FreenetMasterThread::Run The Freenet node has not responded in 10 minutes.  Trying to reconnect.");
+				m_fcp.Disconnect();
+			}
+
+			if(m_fcp.Connected()==false)
+			{
+				m_log->information("FreenetMasterThread::Run Disconnected from Freenet node.");
+			}
+
 		}
-//	}while(!ZThread::Thread::interrupted() && done==false);
 	}while(!IsCancelled() && done==false);
 
 	m_fcp.Disconnect();
 
 	Shutdown();
 
-	m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"FreenetMasterThread::run thread exiting.");
+	m_log->debug("FreenetMasterThread::run thread exiting.");
 
 }
 
@@ -247,14 +287,18 @@ void FreenetMasterThread::Setup()
 	m_registrables.push_back(new IntroductionPuzzleInserter(&m_fcp));
 	m_registrables.push_back(new IdentityIntroductionRequester(&m_fcp));
 	m_registrables.push_back(new IntroductionPuzzleRequester(&m_fcp));
-	m_registrables.push_back(new IntroductionPuzzleRemover());
 	m_registrables.push_back(new IdentityIntroductionInserter(&m_fcp));
 	m_registrables.push_back(new TrustListInserter(&m_fcp));
 	m_registrables.push_back(new TrustListRequester(&m_fcp));
-	m_registrables.push_back(new MessageListRequester(&m_fcp));
-	m_registrables.push_back(new MessageRequester(&m_fcp));
-	m_registrables.push_back(new MessageInserter(&m_fcp));
 	m_registrables.push_back(new MessageListInserter(&m_fcp));
+	m_registrables.push_back(new MessageListRequester(&m_fcp));
+	m_registrables.push_back(new MessageInserter(&m_fcp));
+	m_registrables.push_back(new MessageRequester(&m_fcp));
+	m_registrables.push_back(new BoardListInserter(&m_fcp));
+	m_registrables.push_back(new BoardListRequester(&m_fcp));
+	m_registrables.push_back(new SiteInserter(&m_fcp));
+	m_registrables.push_back(new FileInserter(&m_fcp));
+	m_registrables.push_back(new FMSVersionRequester(&m_fcp));
 
 	for(std::vector<IFreenetRegistrable *>::iterator i=m_registrables.begin(); i!=m_registrables.end(); i++)
 	{

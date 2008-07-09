@@ -1,14 +1,14 @@
 #ifndef _nntpconnection_
 #define _nntpconnection_
 
+#include "../threadwrapper/cancelablerunnable.h"
 #include "../socketdefines.h"
 #include "../ilogger.h"
 #include "../message.h"
+#include "../localidentity.h"
 
 #include <string>
 #include <vector>
-//#include <zthread/Runnable.h>
-#include "../pthreadwrapper/runnable.h"
 
 #ifdef _WIN32
 
@@ -21,7 +21,7 @@
 	#include <arpa/inet.h>
 #endif
 
-class NNTPConnection:public PThread::Runnable,public ILogger
+class NNTPConnection:public CancelableRunnable,public ILogger
 {
 public:
 	NNTPConnection(SOCKET sock);
@@ -30,7 +30,7 @@ public:
 	void Disconnect();
 	const bool Disconnected()		{ return m_socket==INVALID_SOCKET; }
 
-	void Run();
+	void run();
 
 private:
 
@@ -51,6 +51,8 @@ private:
 		bool m_isposting;
 		long m_boardid;
 		long m_messageid;
+		LocalIdentity m_authuser;		// -1 if user not authenticated, otherwise id of user from tblLocalIdentity
+		bool m_authenticated;
 	};
 
 	void SendBuffered(const std::string &data);
@@ -83,6 +85,10 @@ private:
 	const bool HandleNewGroupsCommand(const NNTPCommand &command);
 	const bool HandlePostCommand(const NNTPCommand &command);
 	const bool HandleOverCommand(const NNTPCommand &command);
+	const bool HandleAuthInfoCommand(const NNTPCommand &command);
+	const bool HandleGetTrustCommand(const NNTPCommand &command);
+	const bool HandleSetTrustCommand(const NNTPCommand &command);
+	const bool HandleGetTrustListCommand(const NNTPCommand &command);
 
 	SOCKET m_socket;
 	ClientStatus m_status;

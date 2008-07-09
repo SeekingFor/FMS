@@ -1,6 +1,8 @@
 #ifndef _simple_captcha_
 #define _simple_captcha_
 
+#include <string>
+
 #include "icaptcha.h"
 
 class SimpleCaptcha:public ICaptcha

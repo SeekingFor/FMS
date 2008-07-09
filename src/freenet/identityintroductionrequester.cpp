@@ -3,8 +3,12 @@
 #include "../../include/freenet/freenetssk.h"
 #include "../../include/option.h"
 #include "../../include/stringfunctions.h"
-#include "../../include/xyssl/sha1.h"
 #include "../../include/hex.h"
+
+#include <Poco/DateTime.h>
+#include <Poco/Timestamp.h>
+#include <Poco/DateTimeFormatter.h>
+#include <Poco/SHA1Engine.h>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -34,7 +38,7 @@ void IdentityIntroductionRequester::FCPDisconnected()
 const bool IdentityIntroductionRequester::HandleAllData(FCPMessage &message)
 {
 	FreenetSSK ssk;
-	DateTime date;
+	Poco::DateTime date;
 	std::vector<std::string> idparts;
 	std::vector<char> data;
 	long datalength;
@@ -81,22 +85,23 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPMessage &message)
 			{
 				// we don't already know about this id - add it
 				st.Finalize();
-				date.SetToGMTime();
-				st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded) VALUES(?,?);");
+				date=Poco::Timestamp();
+				st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES(?,?,?);");
 				st.Bind(0,xml.GetIdentity());
-				st.Bind(1,date.Format("%Y-%m-%d %H:%M:%S"));
+				st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+				st.Bind(2,"solved captcha");
 				st.Step();
 			}
 			st.Finalize();
 
-			m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityIntroductionRequester::HandleAddData parsed a valid identity.");
+			m_log->debug("IdentityIntroductionRequester::HandleAddData parsed a valid identity.");
 		}
 		else
 		{
-			m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IdentityIntroductionRequester::HandleAllData parsed, public SSK key was not valid.");
+			m_log->error("IdentityIntroductionRequester::HandleAllData parsed, public SSK key was not valid.");
 		}
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityIntroductionRequester::HandleAllData parsed IdentityIntroduction XML file : "+message["Identifier"]);
+		m_log->debug("IdentityIntroductionRequester::HandleAllData parsed IdentityIntroduction XML file : "+message["Identifier"]);
 	}
 	else
 	{
@@ -106,7 +111,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();		
 
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"IdentityIntroductionRequester::HandleAllData error parsing IdentityIntroduction XML file : "+message["Identifier"]);
+		m_log->error("IdentityIntroductionRequester::HandleAllData error parsing IdentityIntroduction XML file : "+message["Identifier"]);
 	}
 
 	// remove UUID from request list
@@ -129,7 +134,7 @@ const bool IdentityIntroductionRequester::HandleGetFailed(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->WriteLog(LogFile::LOGLEVEL_DEBUG,"IdentityIntroductionRequester::HandleAllData Fatal GetFailed for "+message["Identifier"]);
+		m_log->debug("IdentityIntroductionRequester::HandleAllData Fatal GetFailed for "+message["Identifier"]);
 	}
 
 	// remove UUID from request list
@@ -182,26 +187,25 @@ void IdentityIntroductionRequester::Initialize()
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
-		m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"Option MaxIdentityIntroductionRequests is currently set at "+tempval+".  It must be 1 or greater.");
+		m_log->error("Option MaxIdentityIntroductionRequests is currently set at "+tempval+".  It must be 1 or greater.");
 	}
 	if(m_maxrequests>100)
 	{
-		m_log->WriteLog(LogFile::LOGLEVEL_WARNING,"Option MaxIdentityIntroductionRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
+		m_log->warning("Option MaxIdentityIntroductionRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
 	Option::Instance()->Get("MessageBase",m_messagebase);
-	m_tempdate.SetToGMTime();
+	m_tempdate=Poco::Timestamp();
 }
 
 void IdentityIntroductionRequester::PopulateIDList()
 {
-	DateTime date;
+	Poco::DateTime date;
 	int id;
 
-	date.SetToGMTime();
-	date.Add(0,0,0,-1);
+	date-=Poco::Timespan(1,0,0,0,0);
 
 	// get all identities that have unsolved puzzles from yesterday or today
-	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblIntroductionPuzzleInserts WHERE Day>='"+date.Format("%Y-%m-%d")+"' AND FoundSolution='false' GROUP BY LocalIdentityID;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblIntroductionPuzzleInserts WHERE Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND FoundSolution='false' GROUP BY LocalIdentityID;");
 	st.Step();
 
 	m_ids.clear();
@@ -241,9 +245,8 @@ void IdentityIntroductionRequester::Process()
 	}
 	// special case - if there were 0 identities on the list when we started then we will never get a chance to repopulate the list
 	// this will recheck for ids every minute
-	DateTime now;
-	now.SetToGMTime();
-	if(m_ids.size()==0 && m_tempdate<(now-(1.0/1440.0)))
+	Poco::DateTime now;
+	if(m_ids.size()==0 && m_tempdate<(now-Poco::Timespan(0,0,1,0,0)))
 	{
 		PopulateIDList();
 		m_tempdate=now;
@@ -274,7 +277,6 @@ void IdentityIntroductionRequester::StartRequest(const std::string &UUID)
 {
 	std::string day;
 	std::string solution;
-	std::vector<unsigned char> solutionhash;
 	std::string encodedhash;
 	FCPMessage message;
 	SQLite3DB::Statement st=m_db->Prepare("SELECT Day, PuzzleSolution FROM tblIntroductionPuzzleInserts WHERE FoundSolution='false' AND UUID=?;");
@@ -287,9 +289,10 @@ void IdentityIntroductionRequester::StartRequest(const std::string &UUID)
 		st.ResultText(1,solution);
 
 		// get the hash of the solution
-		solutionhash.resize(20);
-		sha1((unsigned char *)solution.c_str(),solution.size(),&solutionhash[0]);
-		Hex::Encode(solutionhash,encodedhash);
+		Poco::SHA1Engine sha1;
+		sha1.update(solution);
+		encodedhash=Poco::DigestEngine::digestToHex(sha1.digest());
+		StringFunctions::UpperCase(encodedhash,encodedhash);
 
 		//start request for the solution
 		message.SetName("ClientGet");
@@ -308,16 +311,15 @@ void IdentityIntroductionRequester::StartRequest(const std::string &UUID)
 
 void IdentityIntroductionRequester::StartRequests(const long localidentityid)
 {
-	DateTime date;
+	Poco::DateTime date;
 	std::string localidentityidstr;
 	std::string uuid;
 
-	date.SetToGMTime();
-	date.Add(0,0,0,-1);
+	date-=Poco::Timespan(1,0,0,0,0);
 	StringFunctions::Convert(localidentityid,localidentityidstr);
 
 	// get all non-solved puzzles from yesterday and today for this identity
-	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID FROM tblIntroductionPuzzleInserts WHERE LocalIdentityID="+localidentityidstr+" AND Day>='"+date.Format("%Y-%m-%d")+"' AND FoundSolution='false';");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID FROM tblIntroductionPuzzleInserts WHERE LocalIdentityID="+localidentityidstr+" AND Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND FoundSolution='false';");
 	st.Step();
 
 	// start requests for all non-solved puzzles

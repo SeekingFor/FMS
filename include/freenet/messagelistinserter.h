@@ -13,10 +13,11 @@ private:
 	void Initialize();
 	const bool HandlePutSuccessful(FCPMessage &message);
 	const bool HandlePutFailed(FCPMessage &message);
-	void StartInsert(const long &localidentityid);
+	const bool StartInsert(const long &localidentityid);
 	void CheckForNeededInsert();
 
 	long m_daysbackward;
+	std::map<long,std::string> m_lastinsertedxml;	// last xml document inserted for each local identity
 
 };
 

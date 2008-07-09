@@ -9,6 +9,8 @@ class AddPeerPage:public IPageHandler,public IDatabase
 public:
 	AddPeerPage(const std::string &templatestr):IPageHandler(templatestr)	{}
 
+	IPageHandler *New()	{ return new AddPeerPage(m_template); }
+
 private:
 	const bool WillHandleURI(const std::string &uri);
 	const std::string GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars);
