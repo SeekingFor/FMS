@@ -51,6 +51,7 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 		if(currentmajor<major || (currentmajor==major && currentminor<minor) || (currentmajor==major && currentminor==minor && currentrelease<release))
 		{
 			content+="<b>You are running an old version of FMS.  Please update here: <a href=\"http://"+fcphost+":"+fproxyport+"/"+freesite+"\">FMS "+major+"."+minor+"."+release+"</a></b><br>";
+			content+="You can see the release info <a href=\"versioninfo.htm?Major="+major+"&Minor="+minor+"&Release="+release+"\">here</a><br>";
 			showgenericupdate=false;
 		}
 
@@ -58,7 +59,7 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 
 	if(showgenericupdate)
 	{
-		content+="Check for new versions at the <a href=\"http://"+fcphost+":"+fproxyport+"/USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/63/\">FMS Freesite</a><br>";
+		content+="Check for new versions at the <a href=\"http://"+fcphost+":"+fproxyport+"/USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/66/\">FMS Freesite</a><br>";
 	}
 
 	content+="Use these pages to administer your FMS installation.";

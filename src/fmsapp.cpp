@@ -17,6 +17,7 @@
 #include <Poco/FormattingChannel.h>
 #include <Poco/PatternFormatter.h>
 #include <iostream>
+#include <string>
 
 #ifdef _WIN32
 	#include <direct.h>
@@ -99,7 +100,8 @@ void FMSApp::initialize(Poco::Util::Application &self)
 	ServerApplication::initialize(self);
 
 	// set working directory - fall back on application.dir if working directory isn't set
-	if(m_workingdirectory=="")
+	// if we are runing as a service, then working directory needs to be set to the application directory
+	if(m_workingdirectory=="" || config().getBool("application.runAsService",false)==true)
 	{
 		m_workingdirectory=config().getString("application.dir");
 	}

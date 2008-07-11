@@ -96,6 +96,7 @@ src/http/pages/peerdetailspage.cpp
 src/http/pages/peermaintenancepage.cpp
 src/http/pages/peertrustpage.cpp
 src/http/pages/showcaptchapage.cpp
+src/http/pages/versioninfopage.cpp
 src/nntp/extensiontrust.cpp
 src/nntp/mime
 src/nntp/nntpconnection.cpp

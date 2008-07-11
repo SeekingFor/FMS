@@ -20,6 +20,7 @@ DBMaintenanceThread::DBMaintenanceThread()
 	m_last1day=Poco::Timestamp();
 	m_last1day-=Poco::Timespan(0,23,51,0,0);
 
+	m_deletemessagesolderthan=180;
 	std::string tempval="180";
 	Option::Instance()->Get("DeleteMessagesOlderThan",tempval);
 	StringFunctions::Convert(tempval,m_deletemessagesolderthan);
@@ -252,6 +253,7 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	// delete old messages
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(m_deletemessagesolderthan,0,0,0,0);
+	m_log->trace("PeriodicDBMaintenance::Do1DayMaintenance deleting messages prior to "+Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st=m_db->Prepare("DELETE FROM tblMessage WHERE MessageDate<?;");
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Step();

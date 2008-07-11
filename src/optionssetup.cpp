@@ -107,7 +107,7 @@ void SetupDefaultOptions()
 
 	// NNTPBindAddresses
 	st.Bind(0,"NNTPBindAddresses");
-	st.Bind(1,"localhost");
+	st.Bind(1,"localhost,127.0.0.1");
 	st.Step();
 	st.Reset();
 	upd.Bind(0,"NNTP Server");
