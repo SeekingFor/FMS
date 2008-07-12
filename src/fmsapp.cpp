@@ -18,6 +18,7 @@
 #include <Poco/PatternFormatter.h>
 #include <iostream>
 #include <string>
+#include <cstring>
 
 #ifdef _WIN32
 	#include <direct.h>

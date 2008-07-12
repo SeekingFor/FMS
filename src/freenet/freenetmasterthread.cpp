@@ -200,70 +200,81 @@ void FreenetMasterThread::run()
 
 	do
 	{
-		if(m_fcp.Connected()==false)
+		try
 		{
-			// wait at least 1 minute since last successful connect
-			now=Poco::Timestamp();
-			if(lastconnected<=(now-Poco::Timespan(0,0,1,0,0)))
+			if(m_fcp.Connected()==false)
 			{
-				if(FCPConnect()==false)
+				// wait at least 1 minute since last successful connect
+				now=Poco::Timestamp();
+				if(lastconnected<=(now-Poco::Timespan(0,0,1,0,0)))
 				{
-
-					m_log->error("FreenetMasterThread::run could not connect to node.  Waiting 60 seconds.");
-
-					for(int i=0; i<60 && !IsCancelled(); i++)
+					if(FCPConnect()==false)
 					{
-						Poco::Thread::sleep(1000);
+
+						m_log->error("FreenetMasterThread::run could not connect to node.  Waiting 60 seconds.");
+
+						for(int i=0; i<60 && !IsCancelled(); i++)
+						{
+							Poco::Thread::sleep(1000);
+						}
+					}
+					else
+					{
+						lastreceivedmessage=Poco::Timestamp();
+						lastconnected=Poco::Timestamp();
 					}
 				}
 				else
 				{
-					lastreceivedmessage=Poco::Timestamp();
-					lastconnected=Poco::Timestamp();
+					Poco::Thread::sleep(1000);
 				}
 			}
+			// fcp is connected
 			else
 			{
-				Poco::Thread::sleep(1000);
+				m_fcp.Update(1);
+
+				// check for message on receive buffer and handle it
+				if(m_fcp.ReceiveBufferSize()>0)
+				{
+					message.Reset();
+					message=m_fcp.ReceiveMessage();
+
+					if(message.GetName()!="")
+					{
+						HandleMessage(message);
+						lastreceivedmessage=Poco::Timestamp();
+					}
+				}
+
+				// let objects do their processing
+				for(std::vector<IPeriodicProcessor *>::iterator i=m_processors.begin(); i!=m_processors.end(); i++)
+				{
+					(*i)->Process();
+				}
+
+				// if we haven't received any messages from the node in 10 minutes, something is wrong
+				now=Poco::Timestamp();
+				if(lastreceivedmessage<(now-Poco::Timespan(0,0,10,0,0)))
+				{
+					m_log->error("FreenetMasterThread::Run The Freenet node has not responded in 10 minutes.  Trying to reconnect.");
+					m_fcp.Disconnect();
+				}
+
+				if(m_fcp.Connected()==false)
+				{
+					m_log->information("FreenetMasterThread::Run Disconnected from Freenet node.");
+				}
+
 			}
 		}
-		// fcp is connected
-		else
+		catch(Poco::Exception &e)
 		{
-			m_fcp.Update(1);
-
-			// check for message on receive buffer and handle it
-			if(m_fcp.ReceiveBufferSize()>0)
-			{
-				message.Reset();
-				message=m_fcp.ReceiveMessage();
-
-				if(message.GetName()!="")
-				{
-					HandleMessage(message);
-					lastreceivedmessage=Poco::Timestamp();
-				}
-			}
-
-			// let objects do their processing
-			for(std::vector<IPeriodicProcessor *>::iterator i=m_processors.begin(); i!=m_processors.end(); i++)
-			{
-				(*i)->Process();
-			}
-
-			// if we haven't received any messages from the node in 10 minutes, something is wrong
-			now=Poco::Timestamp();
-			if(lastreceivedmessage<(now-Poco::Timespan(0,0,10,0,0)))
-			{
-				m_log->error("FreenetMasterThread::Run The Freenet node has not responded in 10 minutes.  Trying to reconnect.");
-				m_fcp.Disconnect();
-			}
-
-			if(m_fcp.Connected()==false)
-			{
-				m_log->information("FreenetMasterThread::Run Disconnected from Freenet node.");
-			}
-
+			m_log->error("FreenetMasterThread::run caught exception : "+e.displayText());
+		}
+		catch(...)
+		{
+			m_log->error("FreenetMasterThread::run caught unknown exception");
 		}
 	}while(!IsCancelled() && done==false);
 

@@ -129,32 +129,47 @@ void NNTPListener::StartListen()
 		hint.ai_socktype=SOCK_STREAM;
 		hint.ai_protocol=IPPROTO_TCP;
 		hint.ai_flags=AI_PASSIVE;
+
+		m_log->trace("NNTPListener::StartListen getting address info for "+(*i));
 		
 		rval=getaddrinfo((*i).c_str(),nntpport.c_str(),&hint,&result);
 		if(rval==0)
 		{
 			for(current=result; current!=NULL; current=current->ai_next)
 			{
-				Poco::Net::SocketAddress sa(current->ai_addr,current->ai_addrlen);
-				m_log->debug("NNTPListener::StartListen trying to create socket, bind, and listen on "+sa.toString());
-
-				sock=socket(current->ai_family,current->ai_socktype,current->ai_protocol);
-				if(sock!=INVALID_SOCKET)
+				try
 				{
-					#ifndef _WIN32
-					const char optval='1';
-					setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,&optval,sizeof(optval));
-					#endif
-					if(bind(sock,current->ai_addr,current->ai_addrlen)==0)
+					Poco::Net::SocketAddress sa(current->ai_addr,current->ai_addrlen);
+
+					m_log->debug("NNTPListener::StartListen trying to create socket, bind, and listen on "+sa.toString());
+
+					sock=socket(current->ai_family,current->ai_socktype,current->ai_protocol);
+					if(sock!=INVALID_SOCKET)
 					{
-						if(listen(sock,10)==0)
+						#ifndef _WIN32
+						const char optval='1';
+						setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,&optval,sizeof(optval));
+						#endif
+						if(bind(sock,current->ai_addr,current->ai_addrlen)==0)
 						{
-							m_log->information("NNTPListener::StartListen started listening on "+sa.toString());
-							m_listensockets.push_back(sock);
+							if(listen(sock,10)==0)
+							{
+								m_log->information("NNTPListener::StartListen started listening on "+sa.toString());
+								m_listensockets.push_back(sock);
+							}
+							else
+							{
+								m_log->error("NNTPListener::StartListen socket listen failed");
+								#ifdef _WIN32
+								closesocket(sock);
+								#else
+								close(sock);
+								#endif
+							}
 						}
 						else
 						{
-							m_log->error("NNTPListener::StartListen socket listen failed");
+							m_log->error("NNTPListener::StartListen socket bind failed");
 							#ifdef _WIN32
 							closesocket(sock);
 							#else
@@ -164,17 +179,18 @@ void NNTPListener::StartListen()
 					}
 					else
 					{
-						m_log->error("NNTPListener::StartListen socket bind failed");
-						#ifdef _WIN32
-						closesocket(sock);
-						#else
-						close(sock);
-						#endif
+						m_log->error("NNTPListener::StartListen couldn't create socket");
 					}
 				}
-				else
+				catch(Poco::Exception &e)
 				{
-					m_log->error("NNTPListener::StartListen couldn't create socket");
+					m_log->error("NNTPListener::StartListen caught "+e.displayText());
+					continue;
+				}
+				catch(...)
+				{
+					m_log->error("NNTPListener::StartListen caught unknown exception");
+					continue;
 				}
 			}
 		}
@@ -185,6 +201,6 @@ void NNTPListener::StartListen()
 	}
 	if(m_listensockets.size()==0)
 	{
-		m_log->fatal("NNTPListener::StartListen couldn't start listening on any sockets");
+		m_log->fatal("NNTPListener::StartListen couldn't start listening on any interfaces");
 	}
 }

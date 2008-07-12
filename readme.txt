@@ -42,13 +42,14 @@ startup type in the service properties.
 If you are experiencing a problem with FMS that you can't solve, and you've
 already rebooted your machine, restarted FMS, and have reproduced the problem
 with a brand new database, follow these instructions.  Set the logging option
-to trace and restart FMS.  Create a post on the fms group that contains the
-operating system you are using, along with a description of the problem, what
-you have tried already, if you are using a precompiled binary, the startup
-lines from the log file as well as the portion that corresponds to the problem
-you are experiencing, and any other information you have that pertains to the
-problem.  Make sure to anonymize any IP addresses, host names, subnet masks,
-and keys from the log that you don't want people to know about.
+to trace and restart FMS.  Create a post on the fms group with a descriptive
+subject and a body that contains the operating system you are using, along with
+a description of the problem, what you have tried already, if you are using a
+precompiled binary, the startup lines from the log file as well as the portion
+that corresponds to the problem you are experiencing, and any other information
+you have that pertains to the problem.  Make sure to anonymize any IP addresses,
+host names, subnet masks, and keys from the log that you don't want people to
+know about.
 
 EXITING
 -------
