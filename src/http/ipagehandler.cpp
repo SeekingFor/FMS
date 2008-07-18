@@ -102,7 +102,10 @@ void IPageHandler::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 
 	CreateQueryVarMap(request,vars);
 
-	response.setChunkedTransferEncoding(true);
+	if(request.getVersion()==Poco::Net::HTTPRequest::HTTP_1_1)
+	{
+		response.setChunkedTransferEncoding(true);
+	}
 	response.setContentType("text/html");
 
 	std::ostream &ostr = response.send();

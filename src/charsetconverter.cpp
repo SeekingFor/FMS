@@ -49,7 +49,7 @@ const bool CharsetConverter::Convert(const std::string &input, std::string &outp
 	{
 		std::vector<char> invec(input.begin(),input.end());
 		std::vector<char> outvec(invec.size()*4,0);
-#if defined(_WIN32) //|| defined(__APPLE__) || defined(__DARWIN__)
+#if defined(_WIN32) || defined(__FreeBSD__)//|| defined(__APPLE__) || defined(__DARWIN__)
 		const char *inptr=&invec[0];
 #else
 		char *inptr=&invec[0];

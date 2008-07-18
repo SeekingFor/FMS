@@ -177,6 +177,14 @@ int FMSApp::main(const std::vector<std::string> &args)
 	{
 		logger().information("FMS startup v"FMS_VERSION);
 
+		std::string tempval="";
+		Option::Instance()->Get("VacuumOnStartup",tempval);
+		if(tempval=="true")
+		{
+			logger().information("VACUUMing database");
+			SQLite3DB::DB::Instance()->Execute("VACUUM;");
+		}
+
 		StartThreads();
 
 		if(isInteractive()==true)

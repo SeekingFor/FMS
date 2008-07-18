@@ -166,10 +166,10 @@ void SiteInserter::GeneratePages(const long localidentityid, std::string &uskkey
 		uskkey=key;
 
 		filename=name+"-template.htm";
-		FILE *infile=fopen(filename.c_str(),"r+b");
+		FILE *infile=fopen(filename.c_str(),"rb");
 		if(!infile)
 		{
-			infile=fopen("site-template.htm","r+b");
+			infile=fopen("site-template.htm","rb");
 		}
 		if(infile)
 		{
@@ -205,7 +205,7 @@ void SiteInserter::GeneratePages(const long localidentityid, std::string &uskkey
 
 		// get extra files that the user wants to add to the Freesite
 		filename=name+"-files.txt";
-		infile=fopen(filename.c_str(),"r+b");
+		infile=fopen(filename.c_str(),"rb");
 		if(infile)
 		{
 			std::vector<std::string> files;

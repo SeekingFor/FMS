@@ -17,13 +17,6 @@ void SetupDB()
 	db->Open("fms.db3");
 	db->SetBusyTimeout(20000);		// set timeout to 20 seconds
 
-	tempval="";
-	Option::Instance()->Get("VacuumOnStartup",tempval);
-	if(tempval=="true")
-	{
-		db->Execute("VACUUM;");
-	}
-
 	db->Execute("CREATE TABLE IF NOT EXISTS tblDBVersion(\
 				Major				INTEGER,\
 				Minor				INTEGER\

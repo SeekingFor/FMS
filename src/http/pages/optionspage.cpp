@@ -119,7 +119,7 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 		st.Step();
 		count++;
 	}
-content+="<input type=\"hidden\" name=\"param[0]\" value=\"\">";
+	content+="<input type=\"hidden\" name=\"param[0]\" value=\"\">";
 	content+="<tr><td colspan=\"3\"><center><input type=\"submit\" value=\"Save\"></form></td></tr>";
 	content+="</table>";
 	

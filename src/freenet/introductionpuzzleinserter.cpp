@@ -173,69 +173,76 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 	}
 	StringFunctions::Convert(index,indexstr);
 
-	SQLite3DB::Recordset rs2=m_db->Query("SELECT PrivateKey,PublicKey FROM tblLocalIdentity WHERE LocalIdentityID="+idstring+";");
-	if(rs2.Empty()==false && rs2.GetField(0)!=NULL)
+	if(index<50)
 	{
-		privatekey=rs2.GetField(0);
-		if(rs2.GetField(1))
+		SQLite3DB::Recordset rs2=m_db->Query("SELECT PrivateKey,PublicKey FROM tblLocalIdentity WHERE LocalIdentityID="+idstring+";");
+		if(rs2.Empty()==false && rs2.GetField(0)!=NULL)
 		{
-			publickey=rs2.GetField(1);
+			privatekey=rs2.GetField(0);
+			if(rs2.GetField(1))
+			{
+				publickey=rs2.GetField(1);
+			}
+			if(publickey.size()>=50)
+			{
+				// remove - and ~
+				keypart=StringFunctions::Replace(StringFunctions::Replace(publickey.substr(4,43),"-",""),"~","");
+			}
 		}
-		if(publickey.size()>=50)
+
+		Option::Instance()->Get("MessageBase",messagebase);
+
+		GenerateCaptcha(encodedpuzzle,solutionstring);
+
+		try
 		{
-			// remove - and ~
-			keypart=StringFunctions::Replace(StringFunctions::Replace(publickey.substr(4,43),"-",""),"~","");
+			uuid=uuidgen.createRandom();
 		}
+		catch(...)
+		{
+			m_log->fatal("IntroductionPuzzleInserter::StartInsert could not create UUID");
+		}
+
+		xml.SetType("captcha");
+		std::string uuidstr=uuid.toString();
+		StringFunctions::UpperCase(uuidstr,uuidstr);
+		xml.SetUUID(uuidstr+"@"+keypart);
+		xml.SetPuzzleData(encodedpuzzle);
+		xml.SetMimeType("image/bmp");
+
+		xmldata=xml.GetXML();
+		StringFunctions::Convert(xmldata.size(),xmldatasizestr);
+
+		message.SetName("ClientPut");
+		message["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|IntroductionPuzzle|"+indexstr+".xml";
+		message["Identifier"]=m_fcpuniquename+"|"+idstring+"|"+indexstr+"|"+xml.GetUUID()+"|"+message["URI"];
+		message["UploadFrom"]="direct";
+		message["DataLength"]=xmldatasizestr;
+		m_fcp->SendMessage(message);
+		m_fcp->SendRaw(xmldata.c_str(),xmldata.size());
+
+		// insert to USK
+		message.Reset();
+		message.SetName("ClientPutComplexDir");
+		message["URI"]="USK"+privatekey.substr(3)+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|IntroductionPuzzle/0/";
+		message["Identifier"]=m_fcpuniquename+"USK|"+message["URI"];
+		message["DefaultName"]="IntroductionPuzzle.xml";
+		message["Files.0.Name"]="IntroductionPuzzle.xml";
+		message["Files.0.UplaodFrom"]="direct";
+		message["Files.0.DataLength"]=xmldatasizestr;
+		m_fcp->SendMessage(message);
+		m_fcp->SendRaw(xmldata.c_str(),xmldata.size());
+
+		m_db->Execute("INSERT INTO tblIntroductionPuzzleInserts(UUID,Type,MimeType,LocalIdentityID,PuzzleData,PuzzleSolution) VALUES('"+xml.GetUUID()+"','captcha','image/bmp',"+idstring+",'"+encodedpuzzle+"','"+solutionstring+"');");
+
+		m_inserting.push_back(localidentityid);
+
+		m_log->debug("IntroductionPuzzleInserter::StartInsert started insert for id "+idstring);
 	}
-
-	Option::Instance()->Get("MessageBase",messagebase);
-
-	GenerateCaptcha(encodedpuzzle,solutionstring);
-
-	try
+	else
 	{
-		uuid=uuidgen.createRandom();
+		m_log->warning("IntroductionPuzzleInserter::StartInsert already inserted 50 puzzles for "+idstring);
 	}
-	catch(...)
-	{
-		m_log->fatal("IntroductionPuzzleInserter::StartInsert could not create UUID");
-	}
-
-	xml.SetType("captcha");
-	std::string uuidstr=uuid.toString();
-	StringFunctions::UpperCase(uuidstr,uuidstr);
-	xml.SetUUID(uuidstr+"@"+keypart);
-	xml.SetPuzzleData(encodedpuzzle);
-	xml.SetMimeType("image/bmp");
-
-	xmldata=xml.GetXML();
-	StringFunctions::Convert(xmldata.size(),xmldatasizestr);
-
-	message.SetName("ClientPut");
-	message["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|IntroductionPuzzle|"+indexstr+".xml";
-	message["Identifier"]=m_fcpuniquename+"|"+idstring+"|"+indexstr+"|"+xml.GetUUID()+"|"+message["URI"];
-	message["UploadFrom"]="direct";
-	message["DataLength"]=xmldatasizestr;
-	m_fcp->SendMessage(message);
-	m_fcp->SendRaw(xmldata.c_str(),xmldata.size());
-
-	// insert to USK
-	message.Reset();
-	message.SetName("ClientPutComplexDir");
-	message["URI"]="USK"+privatekey.substr(3)+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|IntroductionPuzzle/0/";
-	message["Identifier"]=m_fcpuniquename+"USK|"+message["URI"];
-	message["DefaultName"]="IntroductionPuzzle.xml";
-	message["Files.0.Name"]="IntroductionPuzzle.xml";
-	message["Files.0.UplaodFrom"]="direct";
-	message["Files.0.DataLength"]=xmldatasizestr;
-	m_fcp->SendMessage(message);
-	m_fcp->SendRaw(xmldata.c_str(),xmldata.size());
-
-	m_db->Execute("INSERT INTO tblIntroductionPuzzleInserts(UUID,Type,MimeType,LocalIdentityID,PuzzleData,PuzzleSolution) VALUES('"+xml.GetUUID()+"','captcha','image/bmp',"+idstring+",'"+encodedpuzzle+"','"+solutionstring+"');");
-
-	m_inserting.push_back(localidentityid);
-
-	m_log->debug("IntroductionPuzzleInserter::StartInsert started insert for id "+idstring);
 
 	return true;
 
