@@ -4,6 +4,7 @@
 #include "../../include/freenet/trustlistxml.h"
 
 #include <Poco/DateTimeFormatter.h>
+#include <Poco/Timespan.h>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -56,6 +57,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 
 	// get count of identities added in last 24 hours
 	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE DateAdded>=?;");
+	now-=Poco::Timespan(1,0,0,0,0);
 	st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
 	st.Step();
 	if(st.RowReturned())
@@ -69,6 +71,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 	{
 		m_log->error("TrustListRequester::HandleAllData couldn't get count of identities added in last 24 hours");
 	}
+	now=Poco::DateTime();
 
 	// parse file into xml and update the database
 	if(xml.ParseXML(std::string(data.begin(),data.end()))==true)
@@ -106,7 +109,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 		// loop through all trust entries in xml and add to database if we don't already know them
 		for(long i=0; i<xml.TrustCount(); i++)
 		{
-			int id;
+			int id=-1;
 			std::string identity;
 			std::string messagetrustcomment="";
 			std::string trustlisttrustcomment="";
@@ -135,41 +138,44 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 			st.Reset();
 
 			//insert trust for this identity
-			trustst.Bind(0,identityid);
-			trustst.Bind(1,id);
-			if(xml.GetMessageTrust(i)==-1)
+			if(id!=-1)
 			{
-				trustst.Bind(2);
+				trustst.Bind(0,identityid);
+				trustst.Bind(1,id);
+				if(xml.GetMessageTrust(i)==-1)
+				{
+					trustst.Bind(2);
+				}
+				else
+				{
+					trustst.Bind(2,xml.GetMessageTrust(i));
+				}
+				if(xml.GetTrustListTrust(i)==-1)
+				{
+					trustst.Bind(3);
+				}
+				else
+				{
+					trustst.Bind(3,xml.GetTrustListTrust(i));
+				}
+				messagetrustcomment=xml.GetMessageTrustComment(i);
+				trustlisttrustcomment=xml.GetTrustListTrustComment(i);
+				// limit comments to 50 characters each
+				if(messagetrustcomment.size()>50)
+				{
+					messagetrustcomment.erase(50);
+				}
+				if(trustlisttrustcomment.size()>50)
+				{
+					trustlisttrustcomment.erase(50);
+				}
+				trustst.Bind(4,messagetrustcomment);
+				trustst.Bind(5,trustlisttrustcomment);
+				trustst.Step();
+				trustst.Reset();
 			}
-			else
-			{
-				trustst.Bind(2,xml.GetMessageTrust(i));
-			}
-			if(xml.GetTrustListTrust(i)==-1)
-			{
-				trustst.Bind(3);
-			}
-			else
-			{
-				trustst.Bind(3,xml.GetTrustListTrust(i));
-			}
-			messagetrustcomment=xml.GetMessageTrustComment(i);
-			trustlisttrustcomment=xml.GetTrustListTrustComment(i);
-			// limit comments to 50 characters each
-			if(messagetrustcomment.size()>50)
-			{
-				messagetrustcomment.erase(50);
-			}
-			if(trustlisttrustcomment.size()>50)
-			{
-				trustlisttrustcomment.erase(50);
-			}
-			trustst.Bind(4,messagetrustcomment);
-			trustst.Bind(5,trustlisttrustcomment);
-			trustst.Step();
-			trustst.Reset();
-
 		}
+
 		trustst.Finalize();
 		st.Finalize();
 
