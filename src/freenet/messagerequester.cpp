@@ -416,7 +416,9 @@ void MessageRequester::PopulateIDList()
 	}
 	sql+="AND tblIdentity.Name <> '' ";
 	// sort by day descending - in case there is a bunch of messages on a day that keep timing out, we will eventually get to the next day and hopefully find messages there
-	sql+="ORDER BY tblMessageRequests.Day DESC ";
+	// secondary ascending sort on tries
+	// tertiary sort on request index (so we get low indexes first)
+	sql+="ORDER BY tblMessageRequests.Day DESC, tblMessageRequests.Tries ASC, tblMessageRequests.RequestIndex ASC ";
 	sql+=";";
 
 	SQLite3DB::Statement st=m_db->Prepare(sql);
@@ -501,6 +503,13 @@ void MessageRequester::StartRequest(const std::string &requestid)
 		m_fcp->SendMessage(message);
 
 		m_requesting.push_back(requestid);
+
+		// update tries
+		st=m_db->Prepare("UPDATE tblMessageRequests SET Tries=Tries+1 WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
+		st.Bind(0,identityid);
+		st.Bind(1,date);
+		st.Bind(2,indexstr);
+		st.Step();
 
 		m_log->debug("MessageRequester::StartRequest requesting "+message["Identifier"]);
 	}

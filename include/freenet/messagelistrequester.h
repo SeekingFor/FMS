@@ -19,6 +19,7 @@ private:
 	const bool HandleAllData(FCPMessage &message);
 	const bool HandleGetFailed(FCPMessage &message);
 	void GetBoardList(std::map<std::string,bool> &boards);
+	const bool CheckDateNotFuture(const std::string &datestr) const;
 
 	bool m_localtrustoverrides;
 	bool m_savetonewboards;

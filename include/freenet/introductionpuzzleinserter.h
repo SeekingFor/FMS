@@ -3,6 +3,7 @@
 
 #include "iindexinserter.h"
 
+#include <map>
 #include <Poco/DateTime.h>
 
 class IntroductionPuzzleInserter:public IIndexInserter<long>
@@ -20,6 +21,8 @@ private:
 	const bool HandlePutFailed(FCPMessage &message);
 
 	Poco::DateTime m_lastchecked;
+	int m_maxpuzzleinserts;
+	std::map<int,Poco::DateTime> m_lastinserted;
 
 };
 

@@ -12,6 +12,7 @@ void ConvertDB0108To0109();
 void ConvertDB0109To0110();
 void ConvertDB0110To0111();
 void ConvertDB0111To0112();
+void ConvertDB0112To0113();
 
 // TODO remove sometime after 0.1.17
 void FixCapitalBoardNames();

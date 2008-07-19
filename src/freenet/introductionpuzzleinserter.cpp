@@ -33,8 +33,13 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 		
 		while(!rs.AtEnd())
 		{
-			std::string localidentityidstr;
+			int localidentityid=0;
+			std::string localidentityidstr="";
 			Poco::DateTime now;
+			float minutesbetweeninserts=0;
+			minutesbetweeninserts=1440.0/(float)m_maxpuzzleinserts;
+			Poco::DateTime lastinsert=now;
+			lastinsert-=Poco::Timespan(0,0,minutesbetweeninserts,0,0);
 
 			if(rs.GetField(0))
 			{
@@ -47,7 +52,15 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 			// identity doesn't have any non-solved puzzles for today - start a new insert
 			if(rs2.Empty()==true)
 			{
-				StartInsert(rs.GetInt(0));
+				if(m_lastinserted.find(rs.GetInt(0))==m_lastinserted.end() || m_lastinserted[rs.GetInt(0)]<=lastinsert)
+				{
+					StartInsert(rs.GetInt(0));
+					m_lastinserted[rs.GetInt(0)]=now;
+				}
+				else
+				{
+					m_log->trace("IntroductionPuzzleInserter::CheckForNeededInsert waiting to insert puzzle for "+localidentityidstr);
+				}
 			}
 
 			rs.Next();
@@ -139,6 +152,7 @@ const bool IntroductionPuzzleInserter::HandlePutSuccessful(FCPMessage &message)
 void IntroductionPuzzleInserter::Initialize()
 {
 	m_fcpuniquename="IntroductionPuzzleInserter";
+	m_maxpuzzleinserts=50;
 }
 
 const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
@@ -173,7 +187,7 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 	}
 	StringFunctions::Convert(index,indexstr);
 
-	if(index<50)
+	if(index<m_maxpuzzleinserts)
 	{
 		SQLite3DB::Recordset rs2=m_db->Query("SELECT PrivateKey,PublicKey FROM tblLocalIdentity WHERE LocalIdentityID="+idstring+";");
 		if(rs2.Empty()==false && rs2.GetField(0)!=NULL)
@@ -241,7 +255,7 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 	}
 	else
 	{
-		m_log->warning("IntroductionPuzzleInserter::StartInsert already inserted 50 puzzles for "+idstring);
+		m_log->warning("IntroductionPuzzleInserter::StartInsert already inserted max puzzles for "+idstring);
 	}
 
 	return true;

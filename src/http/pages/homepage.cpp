@@ -36,22 +36,34 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 	st.Step();
 	if(st.RowReturned())
 	{
-		std::string currentmajor=VERSION_MAJOR;
-		std::string currentminor=VERSION_MINOR;
-		std::string currentrelease=VERSION_RELEASE;
-		std::string major="";
-		std::string minor="";
-		std::string release="";
+		int major=0;
+		int minor=0;
+		int release=0;
+		int currentmajor=0;
+		int currentminor=0;
+		int currentrelease=0;
 		std::string freesite="";
-		st.ResultText(0,major);
-		st.ResultText(1,minor);
-		st.ResultText(2,release);
+		std::string majorstr="";
+		std::string minorstr="";
+		std::string releasestr="";
+
+		StringFunctions::Convert(VERSION_MAJOR,currentmajor);
+		StringFunctions::Convert(VERSION_MINOR,currentminor);
+		StringFunctions::Convert(VERSION_RELEASE,currentrelease);
+
+		st.ResultInt(0,major);
+		st.ResultInt(1,minor);
+		st.ResultInt(2,release);
 		st.ResultText(3,freesite);
+
+		StringFunctions::Convert(major,majorstr);
+		StringFunctions::Convert(minor,minorstr);
+		StringFunctions::Convert(release,releasestr);
 
 		if(currentmajor<major || (currentmajor==major && currentminor<minor) || (currentmajor==major && currentminor==minor && currentrelease<release))
 		{
-			content+="<b>You are running an old version of FMS.  Please update here: <a href=\"http://"+fcphost+":"+fproxyport+"/"+freesite+"\">FMS "+major+"."+minor+"."+release+"</a></b><br>";
-			content+="You can see the release info <a href=\"versioninfo.htm?Major="+major+"&Minor="+minor+"&Release="+release+"\">here</a><br>";
+			content+="<b>You are running an old version of FMS.  Please update here: <a href=\"http://"+fcphost+":"+fproxyport+"/"+freesite+"\">FMS "+majorstr+"."+minorstr+"."+releasestr+"</a></b><br>";
+			content+="You can see the release info <a href=\"versioninfo.htm?Major="+majorstr+"&Minor="+minorstr+"&Release="+releasestr+"\">here</a><br>";
 			showgenericupdate=false;
 		}
 

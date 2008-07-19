@@ -97,13 +97,19 @@ void SetupDB()
 			major=1;
 			minor=12;
 		}
+		if(major==1 && minor==12)
+		{
+			ConvertDB0112To0113();
+			major=1;
+			minor=13;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,12);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,13);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=12;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=13;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -181,6 +187,9 @@ void SetupDB()
 				FoundSolution		BOOL CHECK(FoundSolution IN('true','false')) DEFAULT 'false'\
 				);");
 
+	/*
+		PurgeDate is not used yet
+	*/
 	db->Execute("CREATE TABLE IF NOT EXISTS tblIdentity(\
 				IdentityID				INTEGER PRIMARY KEY,\
 				PublicKey				TEXT UNIQUE,\
@@ -319,12 +328,17 @@ void SetupDB()
 				Found				BOOL CHECK(Found IN('true','false')) DEFAULT 'false'\
 				);");
 
+	/*
+		Key is for anonymous messages (future)
+	*/
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageRequests(\
 				IdentityID			INTEGER,\
 				Day					DATE,\
 				RequestIndex		INTEGER,\
 				FromMessageList		BOOL CHECK(FromMessageList IN('true','false')) DEFAULT 'false',\
-				Found				BOOL CHECK(Found IN('true','false')) DEFAULT 'false'\
+				Found				BOOL CHECK(Found IN('true','false')) DEFAULT 'false',\
+				Tries				INTEGER DEFAULT 0,\
+				Key					TEXT\
 				);");
 
 	db->Execute("CREATE UNIQUE INDEX IF NOT EXISTS idxMessageRequest ON tblMessageRequests(IdentityID,Day,RequestIndex);");

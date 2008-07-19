@@ -222,6 +222,17 @@ void ConvertDB0111To0112()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=12;");
 }
 
+void ConvertDB0112To0113()
+{
+	// Add Tries and Key (for anonymous messages) to tblMessageRequests	
+	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
+
+	db->Execute("ALTER TABLE tblMessageRequests ADD COLUMN Tries INTEGER DEFAULT 0;");
+	db->Execute("ALTER TABLE tblMessageRequests ADD COLUMN Key TEXT;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=13;");
+}
+
 void FixCapitalBoardNames()
 {
 	SQLite3DB::DB *db=SQLite3DB::DB::Instance();

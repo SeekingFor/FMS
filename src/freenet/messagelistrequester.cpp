@@ -19,6 +19,36 @@ MessageListRequester::MessageListRequester(FCPv2 *fcp):IIndexRequester<long>(fcp
 	Initialize();
 }
 
+const bool MessageListRequester::CheckDateNotFuture(const std::string &datestr) const
+{
+	std::vector<std::string> dateparts;
+	int year=0;
+	int month=0;
+	int day=0;
+	Poco::DateTime today;
+
+	StringFunctions::Split(datestr,"-",dateparts);
+	if(dateparts.size()==3)
+	{
+		StringFunctions::Convert(dateparts[0],year);
+		StringFunctions::Convert(dateparts[1],month);
+		StringFunctions::Convert(dateparts[2],day);
+		if(today.year()>year || (today.year()==year && today.month()>month) || (today.year()==year && today.month()==month && today.day()>=day))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
+
+}
+
 void MessageListRequester::GetBoardList(std::map<std::string,bool> &boards)
 {
 	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, SaveReceivedMessages FROM tblBoard;");
@@ -56,6 +86,8 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 	std::map<std::string,bool> boards;	// list of boards and if we will save messages for that board or not
 	bool addmessage=false;
 	std::string boardsstr="";
+	std::string datestr="";
+	std::vector<std::string> dateparts;
 
 	GetBoardList(boards);
 
@@ -115,6 +147,12 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 				boardsstr+=(*j);
 			}
 
+			if(CheckDateNotFuture(xml.GetDate(i))==false)
+			{
+				addmessage=false;
+				m_log->error("MessageListRequester::HandleAllData date for message is in future! "+xml.GetDate(i));
+			}
+
 			if(addmessage==true)
 			{
 				st.Bind(0,identityid);
@@ -165,6 +203,12 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 						boardsstr+=", ";
 					}
 					boardsstr+=(*j);
+				}
+
+				if(CheckDateNotFuture(xml.GetExternalDate(i))==false)
+				{
+					addmessage=false;
+					m_log->error("MessageListRequester::HandleAllData date for external message is in future! "+xml.GetExternalDate(i));
 				}
 
 				if(addmessage==true)

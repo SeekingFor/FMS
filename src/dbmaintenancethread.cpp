@@ -258,6 +258,13 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Step();
 
+	// delete old message requests
+	date=Poco::Timestamp();
+	date-=Poco::Timespan(90,0,0,0,0);
+	st=m_db->Prepare("DELETE FROM tblMessageRequests WHERE Day<?;");
+	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+	st.Step();
+
 	// delete tblIdentityTrust for local identities and identities that have been deleted
 	m_db->Execute("DELETE FROM tblIdentityTrust WHERE LocalIdentityID NOT IN (SELECT LocalIdentityID FROM tblLocalIdentity);");
 	m_db->Execute("DELETE FROM tblIdentityTrust WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity);");

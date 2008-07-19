@@ -678,31 +678,34 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 		std::string temp=mime.GetFieldValue("References");
 		// remove any path folding
 		temp=StringFunctions::Replace(temp,"\r\n","");
-		temp=StringFunctions::Replace(temp,"\t","");
+		temp=StringFunctions::Replace(temp,"\t"," ");
 		std::vector<std::string> parts;
 		int count=0;
 		StringFunctions::SplitMultiple(temp,", \t",parts);
 		for(std::vector<std::string>::reverse_iterator i=parts.rbegin(); i!=parts.rend(); i++)
 		{
-			// get rid of < and > and any whitespace
-			(*i)=StringFunctions::Replace((*i),"<","");
-			(*i)=StringFunctions::Replace((*i),">","");
-			(*i)=StringFunctions::TrimWhitespace((*i));
-			/*
-			// erase @ and everything after
-			if((*i).find("@")!=std::string::npos)
+			if((*i).size()>2)
 			{
-				(*i).erase((*i).find("@"));
-			}
-			*/
-			// only erase after @ if message is old type with @freenetproject.org
-			if((*i).find("@freenetproject.org")!=std::string::npos)
-			{
-				(*i).erase((*i).find("@"));
-			}
-			if((*i)!="")
-			{
-				m_inreplyto[count++]=(*i);
+				// get rid of < and > and any whitespace
+				(*i)=StringFunctions::Replace((*i),"<","");
+				(*i)=StringFunctions::Replace((*i),">","");
+				(*i)=StringFunctions::TrimWhitespace((*i));
+				/*
+				// erase @ and everything after
+				if((*i).find("@")!=std::string::npos)
+				{
+					(*i).erase((*i).find("@"));
+				}
+				*/
+				// only erase after @ if message is old type with @freenetproject.org
+				if((*i).find("@freenetproject.org")!=std::string::npos)
+				{
+					(*i).erase((*i).find("@"));
+				}
+				if((*i)!="")
+				{
+					m_inreplyto[count++]=(*i);
+				}
 			}
 		}
 	}
