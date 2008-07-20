@@ -18,11 +18,13 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 	content+="<table><tr><th>Export Identities</th><th>Import Identities</th></tr>";
 	content+="<tr><td>";
 	content+="<form name=\"frmexport\" method=\"POST\">";
+	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"export\">";
 	content+="<input type=\"submit\" value=\"Export Identities\">";
 	content+="</form>";
 	content+="</td><td>";
 	content+="<form name=\"frmimport\" method=\"POST\" enctype=\"multipart/form-data\">";
+	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"import\">";
 	content+="<input type=\"file\" name=\"file\">";
 	content+="<input type=\"submit\" value=\"Import Identities\">";
@@ -63,7 +65,7 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 		st.ResultText(9,maxmessagedelay);
 
 		content+="<tr>";
-		content+="<td title=\""+publickey+"\"><form name=\"frmupdate\""+countstr+"\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\"><input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\">"+SanitizeOutput(CreateShortIdentityName(name,publickey))+"</td>";
+		content+="<td title=\""+publickey+"\"><form name=\"frmupdate\""+countstr+"\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\">"+SanitizeOutput(CreateShortIdentityName(name,publickey))+"</td>";
 		content+="<td>"+CreateTrueFalseDropDown("singleuse["+countstr+"]",singleuse)+"</td>";
 		content+="<td>"+CreateTrueFalseDropDown("publishtrustlist["+countstr+"]",publishtrustlist)+"</td>";
 		content+="<td>"+CreateTrueFalseDropDown("publishboardlist["+countstr+"]",publishboardlist)+"</td>";
@@ -86,7 +88,7 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 		trustst.Reset();
 
 		content+="<td><input type=\"submit\" value=\"Update\"></form></td>";
-		content+="<td><form name=\"frmdel\""+countstr+"\" method=\"POST\" action=\"confirm.htm\"><input type=\"hidden\" name=\"formaction\" value=\"delete\"><input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\"><input type=\"hidden\" name=\"targetpage\" value=\"localidentities.htm\"><input type=\"hidden\" name=\"confirmdescription\" value=\"Are you sure you want to delete "+SanitizeOutput(CreateShortIdentityName(name,publickey))+"?\"><input type=\"submit\" value=\"Delete\"></form></td>";
+		content+="<td><form name=\"frmdel\""+countstr+"\" method=\"POST\" action=\"confirm.htm\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"delete\"><input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\"><input type=\"hidden\" name=\"targetpage\" value=\"localidentities.htm\"><input type=\"hidden\" name=\"confirmdescription\" value=\"Are you sure you want to delete "+SanitizeOutput(CreateShortIdentityName(name,publickey))+"?\"><input type=\"submit\" value=\"Delete\"></form></td>";
 		content+="</tr>";
 		content+="<tr><td></td><td colspan=\"7\" class=\"smaller\">"+publickey+"</td></tr>";
 		st.Step();
@@ -232,7 +234,7 @@ void LocalIdentitiesPage::handleRequest(Poco::Net::HTTPServerRequest &request, P
 	CreateQueryVarMap(request,vars);
 
 	std::string formaction="";
-	if(vars.find("formaction")!=vars.end())
+	if(vars.find("formaction")!=vars.end() && ValidateFormPassword(vars))
 	{
 		formaction=(*vars.find("formaction")).second;
 		if(formaction=="update")

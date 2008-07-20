@@ -36,21 +36,21 @@ const std::string PeerDetailsPage::GeneratePage(const std::string &method, const
 		StringFunctions::Convert((*queryvars.find("identityid")).second,identityid);
 	}
 
-	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="deletemessages")
+	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="deletemessages" && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement del=m_db->Prepare("DELETE FROM tblMessage WHERE IdentityID=?;");
 		del.Bind(0,identityid);
 		del.Step();
 	}
 
-	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="hide")
+	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="hide" && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement del=m_db->Prepare("UPDATE tblIdentity SET Hidden='true' WHERE IdentityID=?;");
 		del.Bind(0,identityid);
 		del.Step();
 	}
 	
-	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="show")
+	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="show" && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement del=m_db->Prepare("UPDATE tblIdentity SET Hidden='false' WHERE IdentityID=?;");
 		del.Bind(0,identityid);
@@ -112,6 +112,7 @@ const std::string PeerDetailsPage::GeneratePage(const std::string &method, const
 		content+="<tr><td>Hidden in Main Peer Trust Page</td>";
 		content+="<td>"+hidden;
 		content+="&nbsp;<form name=\"frmhidden\" method=\"POST\">";
+		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"identityid\" value=\""+identityidstr+"\">";
 		if(hidden=="false")
 		{
@@ -140,6 +141,7 @@ const std::string PeerDetailsPage::GeneratePage(const std::string &method, const
 		content+="<td>Message Count</td>";
 		content+="<td>"+messagecountstr;
 		content+="&nbsp;&nbsp;<form name=\"frmdeletemessages\" method=\"POST\">";
+		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"identityid\" value=\""+identityidstr+"\">";
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"deletemessages\">";
 		content+="<input type=\"submit\" value=\"Delete Messages\">";

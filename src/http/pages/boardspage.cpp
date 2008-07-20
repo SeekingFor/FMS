@@ -47,7 +47,7 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 
 	if(queryvars.find("formaction")!=queryvars.end())
 	{
-		if((*queryvars.find("formaction")).second=="addboard" && queryvars.find("boardname")!=queryvars.end() && queryvars.find("boarddescription")!=queryvars.end())
+		if((*queryvars.find("formaction")).second=="addboard" && queryvars.find("boardname")!=queryvars.end() && queryvars.find("boarddescription")!=queryvars.end() && ValidateFormPassword(queryvars))
 		{
 			std::string boardname="";
 			std::string boarddescription="";
@@ -63,11 +63,11 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 			addst.Bind(3,"Added manually");
 			addst.Step();
 		}
-		if((*queryvars.find("formaction")).second=="remove0messages")
+		if((*queryvars.find("formaction")).second=="remove0messages" && ValidateFormPassword(queryvars))
 		{
 			m_db->Execute("DELETE FROM tblBoard WHERE BoardID IN (SELECT BoardID FROM vwBoardStats WHERE MessageCount=0 AND BoardID NOT IN (SELECT BoardID FROM tblAdministrationBoard));");
 		}
-		if((*queryvars.find("formaction")).second=="update")
+		if((*queryvars.find("formaction")).second=="update" && ValidateFormPassword(queryvars))
 		{
 			int boardid;
 			std::vector<std::string> boardids;
@@ -174,21 +174,21 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 
 	content+="<tr>";
 	content+="<td colspan=\"3\"><center>";
-	content+="<form name=\"frmboardsearch\" action=\"boards.htm\" method=\"POST\"><input type=\"text\" name=\"boardsearch\" value=\""+SanitizeOutput(boardsearch)+"\"><input type=\"submit\" value=\"Search\"></form>";
+	content+="<form name=\"frmboardsearch\" action=\"boards.htm\" method=\"POST\"><input type=\"text\" name=\"boardsearch\" value=\""+SanitizeOutput(boardsearch)+"\">"+CreateFormPassword()+"<input type=\"submit\" value=\"Search\"></form>";
 	content+="</center></td>";
 	content+="</tr>";
 
 	content+="<tr>";
 	content+="<td colspan=\"3\"><center>";
-	content+="<form name=\"frmremoveboard\" action=\"boards.htm\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"remove0messages\">Remove boards with 0 messages<input type=\"submit\" value=\"Remove\"></form>";
+	content+="<form name=\"frmremoveboard\" action=\"boards.htm\" method=\"POST\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"remove0messages\">Remove boards with 0 messages<input type=\"submit\" value=\"Remove\"></form>";
 	content+="</center></td>";
 	content+="</tr>";
 
 	content+="<tr>";
-	content+="<td><form name=\"frmaddboard\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"addboard\"><input type=\"text\" name=\"boardname\"></td><td><input type=\"text\" name=\"boarddescription\" size=\"40\" maxlength=\"50\"></td><td><input type=\"submit\" value=\"Add Board\"></form></td>";
+	content+="<td><form name=\"frmaddboard\" method=\"POST\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"addboard\"><input type=\"text\" name=\"boardname\"></td><td><input type=\"text\" name=\"boarddescription\" size=\"40\" maxlength=\"50\"></td><td><input type=\"submit\" value=\"Add Board\"></form></td>";
 	content+="</tr>";
 
-	content+="<tr><td colspan=\"4\"><hr><form name=\"frmboards\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\"></td></tr>";
+	content+="<tr><td colspan=\"4\"><hr><form name=\"frmboards\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"</td></tr>";
 	content+="<tr>";
 	content+="<th>Name</th><th>Description</th><th>Save Received Messages *</th><th>Added Method</th>";
 	content+="</tr>";	

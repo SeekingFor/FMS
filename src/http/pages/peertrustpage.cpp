@@ -148,7 +148,7 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 		}
 	}
 
-	if(localidentityid!=-1 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="update")
+	if(localidentityid!=-1 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="update" && ValidateFormPassword(queryvars))
 	{
 		std::vector<std::string> identityids;
 		std::vector<std::string> oldlmt;
@@ -276,6 +276,7 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 	content+="</div>";
 
 	content+="<form name=\"frmtrust\" method=\"POST\">";
+	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"update\">";
 	content+="<input type=\"hidden\" name=\"localidentityid\" value=\""+localidentityidstr+"\">";
 	content+="<input type=\"hidden\" name=\"startrow\" value=\""+startrowstr+"\">";

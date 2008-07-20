@@ -12,7 +12,7 @@ const std::string CreateIdentityPage::GeneratePage(const std::string &method, co
 {
 	std::string content="";
 
-	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="create")
+	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="create" && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblLocalIdentity(Name,PublishTrustList,DateCreated) VALUES(?,'false',?);");
 		std::string name="";
@@ -36,6 +36,7 @@ const std::string CreateIdentityPage::GeneratePage(const std::string &method, co
 	{
 		content+="<h2>Create Identity</h2>";
 		content+="<form name=\"frmcreateidentity\" method=\"POST\">";
+		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"create\">";
 		content+="Name : <input type=\"text\" name=\"name\" maxlength=\"40\">";
 		content+=" <input type=\"submit\" value=\"Create\">";

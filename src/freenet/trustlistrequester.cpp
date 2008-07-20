@@ -33,6 +33,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 	long index;
 	int insertcount=0;
 	int dayinsertcount=0;
+	int previnsertcount=0;
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -71,6 +72,23 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 	{
 		m_log->error("TrustListRequester::HandleAllData couldn't get count of identities added in last 24 hours");
 	}
+
+	// get count of identities added more than 24 hours ago - if 0 then we will accept more than 100 identities now
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE DateAdded<?;");
+	st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
+	st.Step();
+	if(st.RowReturned())
+	{
+		if(st.ResultNull(0)==false)
+		{
+			st.ResultInt(0,previnsertcount);
+		}
+	}
+	else
+	{
+		m_log->error("TrustListRequester::HandleAllData couldn't get count of identities added more than 24 hours ago");
+	}
+
 	now=Poco::DateTime();
 
 	// parse file into xml and update the database
@@ -119,7 +137,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 			st.Step();
 			if(st.RowReturned()==false)
 			{
-				if(insertcount<50 && dayinsertcount<100)
+				if(insertcount<50 && (dayinsertcount<100 || previnsertcount==0))
 				{
 					idinsert.Bind(0,identity);
 					idinsert.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
@@ -183,7 +201,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 		{
 			m_log->warning("TrustListRequester::HandleAllData TrustList contained more than 50 new identities : "+message["Identifier"]);
 		}
-		if(dayinsertcount>=100)
+		if(dayinsertcount>=100 && previnsertcount>0)
 		{
 			m_log->warning("TrustListRequester::HandleAllData TrustList would have inserted more than 100 new identities in the last 24 hours : "+message["Identifier"]);
 		}

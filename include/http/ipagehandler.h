@@ -34,6 +34,9 @@ protected:
 
 	void CreateQueryVarMap(Poco::Net::HTTPServerRequest &request, std::map<std::string,std::string> &vars);
 
+	const std::string CreateFormPassword();
+	const bool ValidateFormPassword(const std::map<std::string,std::string> &vars);
+
 	// replaces html elements with encoded characters (i.e. < becomes &lt;)
 	const std::string SanitizeOutput(const std::string &input);
 

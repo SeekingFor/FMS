@@ -23,7 +23,7 @@ const std::string ControlBoardPage::GeneratePage(const std::string &method, cons
 
 	if(queryvars.find("formaction")!=queryvars.end())
 	{
-		if((*queryvars.find("formaction")).second=="remove" && queryvars.find("boardid")!=queryvars.end())
+		if((*queryvars.find("formaction")).second=="remove" && queryvars.find("boardid")!=queryvars.end() && ValidateFormPassword(queryvars))
 		{
 			int boardid=0;
 			StringFunctions::Convert((*queryvars.find("boardid")).second,boardid);
@@ -45,7 +45,7 @@ const std::string ControlBoardPage::GeneratePage(const std::string &method, cons
 			st.Step();
 
 		}
-		if((*queryvars.find("formaction")).second=="addboard" && queryvars.find("boardname")!=queryvars.end() && (*queryvars.find("boardname")).second!="")
+		if((*queryvars.find("formaction")).second=="addboard" && queryvars.find("boardname")!=queryvars.end() && (*queryvars.find("boardname")).second!="" && ValidateFormPassword(queryvars))
 		{
 			Poco::DateTime date;
 			st=m_db->Prepare("INSERT INTO tblBoard(BoardName,DateAdded) VALUES(?,?);");
@@ -90,6 +90,7 @@ const std::string ControlBoardPage::GeneratePage(const std::string &method, cons
 		content+="<td>"+changetrustlisttruststr+"</td>\r\n";
 		content+="<td>";
 		content+="<form name=\"frmremove\" method=\"POST\">";
+		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"remove\">";
 		content+="<input type=\"hidden\" name=\"boardid\" value=\""+boardidstr+"\">";
 		content+="<input type=\"submit\" value=\"Remove\">";
@@ -102,6 +103,7 @@ const std::string ControlBoardPage::GeneratePage(const std::string &method, cons
 	content+="<tr>";
 	content+="<td>";
 	content+="<form name=\"frmaddboard\" method=\"POST\">";
+	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"addboard\">";
 	content+="<input type=\"text\" name=\"boardname\">";
 	content+="</td>\r\n<td>";

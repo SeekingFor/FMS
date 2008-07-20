@@ -17,6 +17,7 @@
 #include "../../include/http/pages/peermaintenancepage.h"
 #include "../../include/http/pages/peertrustpage.h"
 #include "../../include/http/pages/versioninfopage.h"
+#include "../../include/http/pages/recentlyaddedpage.h"
 
 FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory()
 {
@@ -54,6 +55,7 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory()
 	m_pagehandlers.push_back(new PeerMaintenancePage(templatestr));
 	m_pagehandlers.push_back(new PeerTrustPage(templatestr));
 	m_pagehandlers.push_back(new VersionInfoPage(templatestr));
+	m_pagehandlers.push_back(new RecentlyAddedPage(templatestr));
 	// homepage must be last - catch all page handler
 	m_pagehandlers.push_back(new HomePage(templatestr));
 

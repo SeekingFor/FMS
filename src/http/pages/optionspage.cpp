@@ -38,9 +38,10 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 {
 	std::string content="<h2 style=\"text-align:center;\">Options</h2>\r\n";
 	content+="<form name=\"frmoptions\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"save\">";
+	content+=CreateFormPassword();
 	content+="<table><tr><th>Option</th><th>Value</th><th>Description</th></tr>";
 
-	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="save")
+	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="save" && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement update=m_db->Prepare("UPDATE tblOption SET OptionValue=? WHERE Option=?;");
 		std::vector<std::string> options;

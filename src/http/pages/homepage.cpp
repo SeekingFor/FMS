@@ -19,7 +19,7 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 	Option::Instance()->Get("FCPHost",fcphost);
 	Option::Instance()->Get("FProxyPort",fproxyport);
 
-	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="shutdown")
+	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="shutdown" && ValidateFormPassword(queryvars))
 	{
 		m_log->trace("HomePage::GeneratePage requested shutdown");
 		((FMSApp *)&FMSApp::instance())->Terminate();
@@ -94,6 +94,7 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 
 	content+="<p class=\"paragraph\">";
 	content+="<form name=\"frmshutdown\" method=\"POST\">";
+	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"shutdown\">";
 	content+="<input type=\"submit\" value=\"Shutdown FMS\">";
 	content+="</form>";

@@ -16,7 +16,7 @@ const std::string InsertedFilesPage::GeneratePage(const std::string &method, con
 	Option::Instance()->Get("FProxyPort",fproxyport);
 
 
-	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="removefile" && queryvars.find("fileid")!=queryvars.end())
+	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="removefile" && queryvars.find("fileid")!=queryvars.end() && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement del=m_db->Prepare("DELETE FROM tblFileInserts WHERE FileInsertID=?;");
 		del.Bind(0,(*queryvars.find("fileid")).second);
@@ -40,6 +40,7 @@ const std::string InsertedFilesPage::GeneratePage(const std::string &method, con
 
 		content+="<a href=\"http://"+node+":"+fproxyport+"/"+StringFunctions::UriEncode(key)+"\">"+SanitizeOutput(filename)+"</a> - "+sizestr+" bytes";
 		content+="<form name=\"frmRemove"+insertidstr+"\" method=\"POST\">";
+		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"removefile\">";
 		content+="<input type=\"hidden\" name=\"fileid\" value=\""+insertidstr+"\">";
 		content+="<input type=\"submit\" value=\"Remove\">";

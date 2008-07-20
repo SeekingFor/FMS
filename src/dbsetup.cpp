@@ -401,6 +401,12 @@ void SetupDB()
 				LocalIdentityID		INTEGER\
 				);");
 
+	// Temporary table for form passwords
+	db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpFormPassword(\
+				Date			DATETIME,\
+				Password		TEXT\
+				);");
+
 	// low / high / message count for each board
 	db->Execute("CREATE VIEW IF NOT EXISTS vwBoardStats AS \
 				SELECT tblBoard.BoardID AS 'BoardID', IFNULL(MIN(MessageID),0) AS 'LowMessageID', IFNULL(MAX(MessageID),0) AS 'HighMessageID', COUNT(MessageID) AS 'MessageCount' \

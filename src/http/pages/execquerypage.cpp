@@ -10,7 +10,7 @@ const std::string ExecQueryPage::GeneratePage(const std::string &method, const s
 	std::string content="";
 	std::string query="";
 
-	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="execute" && queryvars.find("query")!=queryvars.end() && (*queryvars.find("query")).second!="")
+	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="execute" && queryvars.find("query")!=queryvars.end() && (*queryvars.find("query")).second!="" && ValidateFormPassword(queryvars))
 	{
 		query=(*queryvars.find("query")).second;
 		SQLite3DB::Recordset rs=m_db->Query(query);
@@ -50,6 +50,7 @@ const std::string ExecQueryPage::GeneratePage(const std::string &method, const s
 
 	content+="<h2>Execute Query</h2>";
 	content+="<form name=\"frmquery\" method=\"POST\">";
+	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"execute\">";
 	content+="<textarea name=\"query\" rows=\"10\" cols=\"80\">"+StringFunctions::Replace(query,"<","&lt;")+"</textarea>";
 	content+="<input type=\"submit\" value=\"Execute Query\">";

@@ -12,7 +12,7 @@ const std::string AddPeerPage::GeneratePage(const std::string &method, const std
 {
 	std::string content="";
 
-	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="add")
+	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="add" && ValidateFormPassword(queryvars))
 	{
 		Poco::DateTime date;
 		std::string publickey="";
@@ -33,6 +33,7 @@ const std::string AddPeerPage::GeneratePage(const std::string &method, const std
 
 	content+="<h2>Add Peer</h2>";
 	content+="<form name=\"frmaddpeer\" method=\"POST\">";
+	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"add\">";
 	content+="Public Key : ";
 	content+="<input type=\"text\" name=\"publickey\" size=\"100\">";

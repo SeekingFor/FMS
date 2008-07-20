@@ -46,7 +46,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 	int requestindex=0;
 	bool willshow=false;
 
-	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="announce")
+	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="announce" && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement insert=m_db->Prepare("INSERT INTO tblIdentityIntroductionInserts(LocalIdentityID,Day,UUID,Solution) VALUES(?,?,?,?);");
 		std::string localidentityidstr="";
@@ -81,6 +81,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 
 	content+="<h2>Announce Identity</h2>";
 	content+="<form name=\"frmannounce\" method=\"POST\">";
+	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"announce\">";
 	content+="<table>";
 	content+="<tr><td colspan=\"4\"><center>Select Identity : ";

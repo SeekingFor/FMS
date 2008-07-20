@@ -228,7 +228,7 @@ void SiteInserter::GeneratePages(const long localidentityid, std::string &uskkey
 				if((*i)!="" && (*i).find("index.htm")==std::string::npos && (*i).find("trustlist.htm")==std::string::npos && (*i).find("files.htm")==std::string::npos)
 				{
 					filename=(*i);
-					infile=fopen(filename.c_str(),"r+b");
+					infile=fopen(filename.c_str(),"rb");
 					if(infile)
 					{
 						fseek(infile,0,SEEK_END);

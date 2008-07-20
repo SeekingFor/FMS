@@ -1,8 +1,14 @@
 #include "../../include/http/ipagehandler.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/http/multipartparser.h"
+#include "../../include/db/sqlite3db.h"
 
 #include <Poco/Net/HTMLForm.h>
+#include <Poco/UUIDGenerator.h>
+#include <Poco/UUID.h>
+#include <Poco/DateTime.h>
+#include <Poco/DateTimeFormatter.h>
+#include <Poco/Timespan.h>
 
 #include <cstring>
 
@@ -33,6 +39,28 @@ void IPageHandler::CreateArgArray(const std::map<std::string,std::string> &vars,
 			args[index]=(*i).second;
 		}
 	}
+}
+
+const std::string IPageHandler::CreateFormPassword()
+{
+	Poco::DateTime date;
+	Poco::UUIDGenerator uuidgen;
+	Poco::UUID uuid;
+	try
+	{
+		uuid=uuidgen.createRandom();
+	}
+	catch(...)
+	{
+	}
+
+	SQLite3DB::Statement st=SQLite3DB::DB::Instance()->Prepare("INSERT INTO tmpFormPassword(Date,Password) VALUES(?,?);");
+	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+	st.Bind(1,uuid.toString());
+	st.Step();
+
+	return "<input type=\"hidden\" name=\"formpassword\" value=\""+uuid.toString()+"\">";
+
 }
 
 const std::string IPageHandler::CreateTrueFalseDropDown(const std::string &name, const std::string &selected)
@@ -122,4 +150,50 @@ const std::string IPageHandler::SanitizeOutput(const std::string &input)
 	output=StringFunctions::Replace(output,"\"","&quot;");
 	output=StringFunctions::Replace(output," ","&nbsp;");
 	return output;
+}
+
+const bool IPageHandler::ValidateFormPassword(const std::map<std::string,std::string> &vars)
+{
+	Poco::DateTime date;
+	date-=Poco::Timespan(0,1,0,0,0);
+
+	SQLite3DB::Statement st=SQLite3DB::DB::Instance()->Prepare("DELETE FROM tmpFormPassword WHERE Date<?;");
+	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+	st.Step();
+
+	std::map<std::string,std::string>::const_iterator i=vars.find("formpassword");
+	if(i!=vars.end())
+	{
+		st=SQLite3DB::DB::Instance()->Prepare("SELECT COUNT(*) FROM tmpFormPassword WHERE Password=?;");
+		st.Bind(0,(*i).second);
+		st.Step();
+		if(st.RowReturned())
+		{
+			if(st.ResultNull(0)==false)
+			{
+				int rval=0;
+				st.ResultInt(0,rval);
+				if(rval>0)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
 }
