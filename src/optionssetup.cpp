@@ -68,7 +68,7 @@ void SetupDefaultOptions()
 	upd.Reset();
 
 	st.Bind(0,"FMSVersionEdition");
-	st.Bind(1,"12");
+	st.Bind(1,"15");
 	st.Step();
 	st.Reset();
 	upd.Bind(0,"Program");

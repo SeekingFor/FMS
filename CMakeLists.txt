@@ -11,8 +11,9 @@ IF(APPLE)
 ENDIF(APPLE)
 OPTION(DO_CHARSET_CONVERSION "Do charset conversion on sent messages to UTF-8.  This requires libiconv." ON)
 OPTION(I_HAVE_READ_THE_README "I have fully read and understood the readme.txt." OFF)
+OPTION(ALTERNATE_CAPTCHA "Use alternate captcha.  This requires the FreeImage library." OFF)
 
-SET(FMS_SRC 
+SET(FMS_SRC
 src/base64.cpp
 src/bitmapvalidator.cpp
 src/board.cpp
@@ -116,6 +117,13 @@ IF(DO_CHARSET_CONVERSION)
 	SET(FMS_SRC ${FMS_SRC} src/charsetconverter.cpp)
 ENDIF(DO_CHARSET_CONVERSION)
 
+IF(ALTERNATE_CAPTCHA)
+	SET(FMS_SRC ${FMS_SRC} 
+	src/freenet/captcha/alternatecaptcha1.cpp
+	src/freenet/captcha/freeimage/bitmap.cpp
+	src/freenet/captcha/freeimage/font.cpp)
+ENDIF(ALTERNATE_CAPTCHA)
+
 IF(NOT I_HAVE_READ_THE_README)
 	MESSAGE(FATAL_ERROR "You must fully read the readme.txt before continuing.")
 ENDIF(NOT I_HAVE_READ_THE_README)
@@ -158,6 +166,12 @@ FIND_LIBRARY(POCO_UTIL_LIBRARY NAMES PocoUtil PocoUtilmt)
 FIND_LIBRARY(POCO_XML_LIBRARY NAMES PocoXML PocoXMLmt)
 FIND_LIBRARY(PTHREADS_LIBRARY NAMES pthread pthreads pthreadvc2)
 FIND_LIBRARY(ICONV_LIBRARY NAMES iconv iconv_s libiconv libiconv_s)
+IF(ALTERNATE_CAPTCHA)
+	FIND_FILE(FREEIMAGE_LIBRARY NAMES libfreeimage.a PATHS /usr/lib/)
+	IF(NOT FREEIMAGE_LIBRARY)
+		FIND_LIBRARY(FREEIMAGE_LIBRARY NAMES FreeImage libFreeImage libfreeimage)
+	ENDIF(NOT FREEIMAGE_LIBRARY)
+ENDIF(ALTERNATE_CAPTCHA)
 
 IF(POCO_FOUNDATION_LIBRARY)
 	TARGET_LINK_LIBRARIES(fms ${POCO_FOUNDATION_LIBRARY})
@@ -213,6 +227,15 @@ IF(DO_CHARSET_CONVERSION)
 		ENDIF(WIN32)
 	ENDIF(ICONV_LIBRARY)
 ENDIF(DO_CHARSET_CONVERSION)
+
+IF(ALTERNATE_CAPTCHA)
+	IF(FREEIMAGE_LIBRARY)
+		TARGET_LINK_LIBRARIES(fms ${FREEIMAGE_LIBRARY})
+		ADD_DEFINITIONS("-DALTERNATE_CAPTCHA")
+	ELSE(FREEIMAGE_LIBRARY)
+		MESSAGE(FATAL_ERROR "Could not find the FreeImage library.  Set the location manually, or turn off the alternate captchas.")
+	ENDIF(FREEIMAGE_LIBRARY)
+ENDIF(ALTERNATE_CAPTCHA)
 
 # FreeBSD won't find Poco include files without this
 IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")

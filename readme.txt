@@ -11,7 +11,9 @@ If you want to use the bundled SQLite3 library, add a -D USE_BUNDLED_SQLITE=ON
 to the cmake command.  Use of the bundled SQLite3 library is on by default when
 compiling on a Mac.  To turn off charset conversion to UTF-8 when sending
 messages, add a -D DO_CHARSET_CONVERSION=OFF.  Compiling with charset
-conversion turned on is recommended.
+conversion turned on is recommended.  If you would like to compile using the
+alternate captchas, add a -D ALTERNATE_CAPTCHA to the cmake command line.  This
+option requires the FreeImage library to be installed.
 
 UPGRADING
 ---------

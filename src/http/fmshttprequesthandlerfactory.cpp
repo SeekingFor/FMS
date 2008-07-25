@@ -23,7 +23,7 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory()
 {
 	// set template
 	std::string templatestr="<html><head></head><body><a href=\"home.htm\">Home</a><br><h1>Could not open template.htm!  Place in program directory and restart!</h1><br>[CONTENT]</body></html>";
-	FILE *infile=fopen("template.htm","r+b");
+	FILE *infile=fopen("template.htm","rb");
 	if(infile)
 	{
 		fseek(infile,0,SEEK_END);

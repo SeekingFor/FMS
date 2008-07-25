@@ -20,7 +20,7 @@ const std::string PeerDetailsPage::GeneratePage(const std::string &method, const
 	std::string dateadded="";
 	std::string addedmethod="";
 	std::string usk="";
-	std::string fcphost="";
+	std::string fcphost="127.0.0.1";
 	std::string hidden="";
 	int freesiteedition=-1;
 	std::string publishtrustlist="";

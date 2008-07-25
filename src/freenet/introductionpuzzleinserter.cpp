@@ -3,6 +3,9 @@
 #include "../../include/stringfunctions.h"
 #include "../../include/option.h"
 #include "../../include/freenet/captcha/simplecaptcha.h"
+#ifdef ALTERNATE_CAPTCHA
+#include "../../include/freenet/captcha/alternatecaptcha1.h"
+#endif
 #include "../../include/base64.h"
 
 #include <Poco/DateTimeFormatter.h>
@@ -71,7 +74,12 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 
 void IntroductionPuzzleInserter::GenerateCaptcha(std::string &encodeddata, std::string &solution)
 {
+#ifdef ALTERNATE_CAPTCHA
+	AlternateCaptcha1 captcha;
+	m_log->trace("IntroductionPuzzleInserter::GenerateCaptcha using alternate captcha generator");
+#else
 	SimpleCaptcha captcha;
+#endif
 	std::vector<unsigned char> puzzle;
 	std::vector<unsigned char> puzzlesolution;
 
