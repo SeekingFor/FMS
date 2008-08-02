@@ -43,6 +43,8 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 	std::string lastid="";
 	std::string thisid="";
 	std::string day="";
+	std::string name="";
+	std::string pubkey="";
 	int requestindex=0;
 	bool willshow=false;
 
@@ -87,11 +89,11 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 	content+="<tr><td colspan=\"4\"><center>Select Identity : ";
 	content+=CreateLocalIdentityDropDown("localidentityid","");
 	content+="</td></tr>";
-	content+="<tr><td colspan=\"4\"><center>Type the answers of a few puzzles.  The puzzles are case sensitive.  Getting announced will take some time.  DO NOT continuously solve captchas.  Solve 30 at most, wait a day, and if your identity has not been announced, repeat until it is.</td></tr>";
+	content+="<tr><td colspan=\"4\"><center>Type the answers of a few of the following puzzles.  You don't need to get them all correct, but remember that they are case sensitive.  Getting announced will take some time.  DO NOT continuously solve captchas.  Solve 30 at most, wait a day, and if your identity has not been announced, repeat until it is.</td></tr>";
 	content+="<tr>";
 
 	date-=Poco::Timespan(1,0,0,0,0);
-	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID,Day,IdentityID,RequestIndex FROM tblIntroductionPuzzleRequests WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND UUID NOT IN (SELECT UUID FROM tblIntroductionPuzzleInserts) AND Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND Found='true' ORDER BY IdentityID, Day DESC, RequestIndex DESC;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID,Day,tblIdentity.IdentityID,RequestIndex,tblIdentity.Name,tblIdentity.PublicKey FROM tblIntroductionPuzzleRequests INNER JOIN tblIdentity ON tblIntroductionPuzzleRequests.IdentityID=tblIdentity.IdentityID WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND UUID NOT IN (SELECT UUID FROM tblIntroductionPuzzleInserts) AND Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND Found='true' ORDER BY tblIdentity.IdentityID, Day DESC, RequestIndex DESC;");
 	st.Step();
 
 	if(st.RowReturned()==false)
@@ -105,6 +107,8 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 		st.ResultText(1,day);
 		st.ResultText(2,thisid);
 		st.ResultInt(3,requestindex);
+		st.ResultText(4,name);
+		st.ResultText(5,pubkey);
 
 		// if we are already inserting a solution for an identity - we shouldn't show any puzzles that are older than the one we are inserting
 		// get the last index # we are inserting this day from this identity
@@ -129,7 +133,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 			{
 				content+="</tr>\r\n<tr>";
 			}
-			content+="<td>";
+			content+="<td title=\"From "+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"\">";
 			content+="<img src=\"showcaptcha.htm?UUID="+uuid+"\"><br>";
 			content+="<input type=\"hidden\" name=\"uuid["+countstr+"]\" value=\""+uuid+"\">";
 			content+="<input type=\"hidden\" name=\"day["+countstr+"]\" value=\""+day+"\">";

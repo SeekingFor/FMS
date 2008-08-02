@@ -12,8 +12,8 @@ to the cmake command.  Use of the bundled SQLite3 library is on by default when
 compiling on a Mac.  To turn off charset conversion to UTF-8 when sending
 messages, add a -D DO_CHARSET_CONVERSION=OFF.  Compiling with charset
 conversion turned on is recommended.  If you would like to compile using the
-alternate captchas, add a -D ALTERNATE_CAPTCHA to the cmake command line.  This
-option requires the FreeImage library to be installed.
+alternate captchas, add a -D ALTERNATE_CAPTCHA=ON to the cmake command line.
+This option requires the FreeImage library to be installed.
 
 UPGRADING
 ---------
@@ -24,11 +24,12 @@ keep the same database unless otherwise noted.
 
 INSTALLATION
 ------------
-Place the binary and any templates in a directory of your choice.  Windows
-users may need to download the runtime DLLs available from the fms Freesite and
-place in the fms directory if they are not already installed on the system.  On
-the first run, a database file will also be created in this directory.  Make
-sure the user that runs FMS has read/write access to this directory.
+Place the binary, any templates, and the fonts directory in a directory of your
+choice.  Windows users may need to download the runtime DLLs available from the
+fms Freesite and place in the fms directory if they are not already installed
+on the system.  On the first run, a database file will also be created in this
+directory.  Make sure the user that runs FMS has read/write access to this
+directory.
 
 RUNNING
 -------

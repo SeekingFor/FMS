@@ -88,6 +88,7 @@ void AlternateCaptcha1::Generate()
 		}
 	}
 
+	// make output a little wavy
 	int offset=rand()%10000;
 	for(int y=0; y<bmp.Height(); y++)
 	{
@@ -128,6 +129,7 @@ const bool AlternateCaptcha1::GetSolution(std::vector<unsigned char> &solution)
 
 void AlternateCaptcha1::LoadFonts()
 {
+
 	FreeImage::Bitmap bmp;
 	Poco::Path path("fonts");
 	Poco::DirectoryIterator di(path);

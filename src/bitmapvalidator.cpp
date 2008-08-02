@@ -6,6 +6,16 @@
 #include <sstream>
 #include <cstdlib>
 
+BitmapValidator::BitmapValidator():m_maxwidth(-1),m_maxheight(-1)
+{
+	
+}
+
+BitmapValidator::~BitmapValidator()
+{
+	
+}
+
 const bool BitmapValidator::Validate(const std::vector<unsigned char> &data)
 {
 	bool validated=false;
@@ -20,7 +30,15 @@ const bool BitmapValidator::Validate(const std::vector<unsigned char> &data)
 		BMP temp;
 		if(temp.ReadFromFile(tempname.c_str()))
 		{
-			validated=true;	
+			validated=true;
+			if(m_maxwidth!=-1 && temp.TellWidth()>m_maxwidth)
+			{
+				validated=false;
+			}
+			if(m_maxheight!=-1 && temp.TellHeight()>m_maxheight)
+			{
+				validated=false;
+			}
 		}
 
 		unlink(tempname.c_str());

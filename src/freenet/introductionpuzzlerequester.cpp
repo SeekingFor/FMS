@@ -112,6 +112,7 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 
 		// we can only validate bitmaps for now
 		BitmapValidator val;
+		val.SetMax(200,200);
 		std::vector<unsigned char> puzzledata;
 		Base64::Decode(xml.GetPuzzleData(),puzzledata);
 		if(xml.GetMimeType()!="image/bmp" || val.Validate(puzzledata)==false)
@@ -265,7 +266,7 @@ void IntroductionPuzzleRequester::PopulateIDList()
 	st.Finalize();
 
 	// select identities that aren't single use, are publishing a trust list, and have been seen today ( order by trust DESC and limit to limitnum )
-	st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublishTrustList='true' AND PublicKey IS NOT NULL AND PublicKey <> '' AND SingleUse='false' AND LastSeen>='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"' ORDER BY LocalMessageTrust DESC LIMIT 0,"+limitnum+";");
+	st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublishTrustList='true' AND PublicKey IS NOT NULL AND PublicKey <> '' AND SingleUse='false' AND (LocalTrustListTrust IS NULL OR LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust')) AND LastSeen>='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"' ORDER BY LocalMessageTrust DESC LIMIT 0,"+limitnum+";");
 	st.Step();
 
 	m_ids.clear();

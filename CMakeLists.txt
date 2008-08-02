@@ -122,6 +122,8 @@ IF(ALTERNATE_CAPTCHA)
 	src/freenet/captcha/alternatecaptcha1.cpp
 	src/freenet/captcha/freeimage/bitmap.cpp
 	src/freenet/captcha/freeimage/font.cpp)
+ELSE(ALTERNATE_CAPTCHA)
+	MESSAGE(STATUS "You are using the old captcha generator.  Add a -D ALTERNATE_CAPTCHA=ON to the command line to use the alternate captcha generator.")
 ENDIF(ALTERNATE_CAPTCHA)
 
 IF(NOT I_HAVE_READ_THE_README)
@@ -169,7 +171,7 @@ FIND_LIBRARY(ICONV_LIBRARY NAMES iconv iconv_s libiconv libiconv_s)
 IF(ALTERNATE_CAPTCHA)
 	FIND_FILE(FREEIMAGE_LIBRARY NAMES libfreeimage.a PATHS /usr/lib/)
 	IF(NOT FREEIMAGE_LIBRARY)
-		FIND_LIBRARY(FREEIMAGE_LIBRARY NAMES FreeImage libFreeImage libfreeimage)
+		FIND_LIBRARY(FREEIMAGE_LIBRARY NAMES FreeImage libFreeImage libfreeimage freeimage)
 	ENDIF(NOT FREEIMAGE_LIBRARY)
 ENDIF(ALTERNATE_CAPTCHA)
 

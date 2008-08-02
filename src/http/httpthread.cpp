@@ -25,28 +25,39 @@ void HTTPThread::run()
 {
 	m_log->debug("HTTPThread::run thread started.");
 
-	Poco::Net::ServerSocket sock(m_listenport);
-	Poco::Net::HTTPServerParams* pParams = new Poco::Net::HTTPServerParams;
-	pParams->setMaxQueued(30);
-	pParams->setMaxThreads(5);
-	Poco::Net::HTTPServer srv(new FMSHTTPRequestHandlerFactory,sock,pParams);
-
-	srv.start();
-	m_log->trace("Started HTTPServer");
-
-	do
+	try
 	{
-		Poco::Thread::sleep(1000);
-	}while(!IsCancelled());
+		Poco::Net::ServerSocket sock(m_listenport);
+		Poco::Net::HTTPServerParams* pParams = new Poco::Net::HTTPServerParams;
+		pParams->setMaxQueued(30);
+		pParams->setMaxThreads(5);
+		Poco::Net::HTTPServer srv(new FMSHTTPRequestHandlerFactory,sock,pParams);
 
-	m_log->trace("Trying to stop HTTPServer");
-	srv.stop();
-	m_log->trace("Stopped HTTPServer");
-	
-	m_log->trace("Waiting for current HTTP requests to finish");
-	while(srv.currentConnections()>0)
+		srv.start();
+		m_log->trace("Started HTTPServer");
+
+		do
+		{
+			Poco::Thread::sleep(1000);
+		}while(!IsCancelled());
+
+		m_log->trace("Trying to stop HTTPServer");
+		srv.stop();
+		m_log->trace("Stopped HTTPServer");
+		
+		m_log->trace("Waiting for current HTTP requests to finish");
+		while(srv.currentConnections()>0)
+		{
+			Poco::Thread::sleep(500);
+		}
+	}
+	catch(Poco::Exception &e)
 	{
-		Poco::Thread::sleep(500);
+		m_log->fatal("HTTPThread::run caught "+e.displayText());
+	}
+	catch(...)
+	{
+		m_log->fatal("HTTPThread::run caught unknown exception");
 	}
 
 	m_log->debug("HTTPThread::run thread exiting.");

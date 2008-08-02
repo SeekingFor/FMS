@@ -6,6 +6,8 @@
 class DocumentTypeValidator
 {
 public:
+	DocumentTypeValidator()				{}
+	virtual ~DocumentTypeValidator()	{}
 	virtual const bool Validate(const std::vector<unsigned char> &data)=0;	
 };
 
