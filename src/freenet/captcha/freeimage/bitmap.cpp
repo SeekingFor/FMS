@@ -135,7 +135,7 @@ void Bitmap::Blit(const Bitmap &bmp, const int destx, const int desty, const int
 		{
 			height=Height()-desty+1;
 		}
-		FIBITMAP *temp=FreeImage_Copy(bmp.m_bmp,sourcex,sourcey,sourcex+width-1,sourcey+height-1);
+		FIBITMAP *temp=FreeImage_Copy(bmp.m_bmp,sourcex,sourcey,sourcex+width,sourcey+height);
 		FreeImage_Paste(m_bmp,temp,destx,desty,alpha);
 		FreeImage_Unload(temp);
 	}

@@ -36,7 +36,7 @@ const std::string ControlBoardPage::GeneratePage(const std::string &method, cons
 			st.Bind(0,boardid);
 			st.Step();
 
-			st=m_db->Prepare("DELETE FROM tblMessage WHERE MessageUUID IN (SELECT MessageUUID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE BoardID=?);");
+			st=m_db->Prepare("DELETE FROM tblMessage WHERE MessageUUID IN (SELECT MessageUUID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE BoardID=? AND MessageUUID IS NOT NULL);");
 			st.Bind(0,boardid);
 			st.Step();
 

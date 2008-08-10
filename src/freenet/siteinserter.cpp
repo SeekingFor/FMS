@@ -277,11 +277,11 @@ std::string SiteInserter::GenerateTrustList(const std::string &htmltemplate, con
 	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 	st.Step();
 
-	content+="<table>";
-	content+="<tr><th colspan=\"5\">";
+	content+="<table class=\"trustlist\">";
+	content+="<tr class=\"title\"><thcolspan=\"5\">";
 	content+="Trust List of "+SanitizeOutput(name);
 	content+="</th></tr>";
-	content+="<tr><td></td><th>Message Trust</th><th>Message Comment</th><th>Trust List Trust</th><th>Trust Comment</th></tr>";
+	content+="<tr class=\"headings\"><th></th><th>Message Trust</th><th>Message Comment</th><th>Trust List Trust</th><th>Trust Comment</th></tr>";
 	while(st.RowReturned())
 	{
 		std::string idname="";
@@ -317,11 +317,11 @@ std::string SiteInserter::GenerateTrustList(const std::string &htmltemplate, con
 		content+="<tr>";
 		if(freesiteedition!="")
 		{
-			content+="<td><a href=\""+uskkey+"\">"+SanitizeOutput(CreateShortIdentityName(idname,publickey))+"</a></td>";
+			content+="<td><div><a href=\""+uskkey+"\">"+SanitizeOutput(CreateShortIdentityName(idname,publickey))+"</a></div></td>";
 		}
 		else
 		{
-			content+="<td>"+SanitizeOutput(CreateShortIdentityName(idname,publickey))+"</td>";
+			content+="<td><div>"+SanitizeOutput(CreateShortIdentityName(idname,publickey))+"</div></td>";
 		}
 		content+="<td "+GetClassString(messagetrust)+">"+messagetrust+"</td>";
 		content+="<td>"+SanitizeOutput(messagetrustcomment)+"</td>";
@@ -331,6 +331,7 @@ std::string SiteInserter::GenerateTrustList(const std::string &htmltemplate, con
 
 		st.Step();
 	}
+	content+="</table>";
 
 	return StringFunctions::Replace(htmltemplate,"[CONTENT]",content);
 

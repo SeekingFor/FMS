@@ -93,7 +93,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 	content+="<tr>";
 
 	date-=Poco::Timespan(1,0,0,0,0);
-	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID,Day,tblIdentity.IdentityID,RequestIndex,tblIdentity.Name,tblIdentity.PublicKey FROM tblIntroductionPuzzleRequests INNER JOIN tblIdentity ON tblIntroductionPuzzleRequests.IdentityID=tblIdentity.IdentityID WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts) AND UUID NOT IN (SELECT UUID FROM tblIntroductionPuzzleInserts) AND Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND Found='true' ORDER BY tblIdentity.IdentityID, Day DESC, RequestIndex DESC;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID,Day,tblIdentity.IdentityID,RequestIndex,tblIdentity.Name,tblIdentity.PublicKey FROM tblIntroductionPuzzleRequests INNER JOIN tblIdentity ON tblIntroductionPuzzleRequests.IdentityID=tblIdentity.IdentityID WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts WHERE UUID IS NOT NULL) AND UUID NOT IN (SELECT UUID FROM tblIntroductionPuzzleInserts WHERE UUID IS NOT NULL) AND Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND Found='true' ORDER BY tblIdentity.IdentityID, Day DESC, RequestIndex DESC;");
 	st.Step();
 
 	if(st.RowReturned()==false)
@@ -114,7 +114,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 		// get the last index # we are inserting this day from this identity
 		// if the index here is greater than the index in the st statement, we will skip this puzzle because we are already inserting a puzzle with a greater index
 		willshow=true;
-		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblIdentityIntroductionInserts INNER JOIN tblIntroductionPuzzleRequests ON tblIdentityIntroductionInserts.UUID=tblIntroductionPuzzleRequests.UUID WHERE tblIdentityIntroductionInserts.Day=? AND tblIdentityIntroductionInserts.UUID IN (SELECT UUID FROM tblIntroductionPuzzleRequests WHERE IdentityID=? AND Day=?) GROUP BY tblIdentityIntroductionInserts.Day;");
+		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblIdentityIntroductionInserts INNER JOIN tblIntroductionPuzzleRequests ON tblIdentityIntroductionInserts.UUID=tblIntroductionPuzzleRequests.UUID WHERE tblIdentityIntroductionInserts.Day=? AND tblIdentityIntroductionInserts.UUID IN (SELECT UUID FROM tblIntroductionPuzzleRequests WHERE IdentityID=? AND Day=? AND UUID IS NOT NULL) GROUP BY tblIdentityIntroductionInserts.Day;");
 		st2.Step();
 		if(st2.RowReturned()==true)
 		{

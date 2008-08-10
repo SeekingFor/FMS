@@ -120,6 +120,8 @@ ENDIF(DO_CHARSET_CONVERSION)
 IF(ALTERNATE_CAPTCHA)
 	SET(FMS_SRC ${FMS_SRC} 
 	src/freenet/captcha/alternatecaptcha1.cpp
+	src/freenet/captcha/alternatecaptcha2.cpp
+	src/freenet/captcha/alternatecaptchafonts.cpp
 	src/freenet/captcha/freeimage/bitmap.cpp
 	src/freenet/captcha/freeimage/font.cpp)
 ELSE(ALTERNATE_CAPTCHA)

@@ -71,7 +71,7 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 
 	if(showgenericupdate)
 	{
-		content+="Check for new versions at the <a href=\"http://"+fcphost+":"+fproxyport+"/USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/72/\">FMS Freesite</a><br>";
+		content+="Check for new versions at the <a href=\"http://"+fcphost+":"+fproxyport+"/USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/76/\">FMS Freesite</a><br>";
 	}
 
 	content+="Use these pages to administer your FMS installation.";

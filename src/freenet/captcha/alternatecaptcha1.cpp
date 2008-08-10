@@ -1,23 +1,13 @@
 #include "../../../include/freenet/captcha/alternatecaptcha1.h"
 
-#include <Poco/Path.h>
-#include <Poco/DirectoryIterator.h>
-
 #include <cmath>
 
 #ifdef ALTERNATE_CAPTCHA
 
-bool AlternateCaptcha1::m_fontsloaded(false);
-std::vector<FreeImage::Font> AlternateCaptcha1::m_fonts;
-
 AlternateCaptcha1::AlternateCaptcha1()
 {
-	if(m_fontsloaded==false)
-	{
-		FreeImage_Initialise(true);
-		LoadFonts();
-		m_fontsloaded=true;
-	}
+	AlternateCaptchaFonts fonts;
+	m_fonts=fonts.Fonts();
 }
 
 void AlternateCaptcha1::Generate()
@@ -125,26 +115,6 @@ const bool AlternateCaptcha1::GetSolution(std::vector<unsigned char> &solution)
 {
 	solution=m_solution;
 	return true;
-}
-
-void AlternateCaptcha1::LoadFonts()
-{
-
-	FreeImage::Bitmap bmp;
-	Poco::Path path("fonts");
-	Poco::DirectoryIterator di(path);
-	Poco::DirectoryIterator end;
-
-	while(di!=end)
-	{
-		if(di.name().find("bmp")!=std::string::npos)
-		{
-			bmp.Load("bmp",di.path().toString());
-			m_fonts.push_back(FreeImage::Font(bmp));
-		}
-		++di;
-	}
-
 }
 
 #endif	// ALTERNATE_CAPTCHA

@@ -33,13 +33,13 @@ const std::string PeerMaintenancePage::GeneratePage(const std::string &method, c
 		}
 		else if((*queryvars.find("formaction")).second=="removeneversent")
 		{
-			m_db->Execute("DELETE FROM tblIdentity WHERE IdentityID NOT IN (SELECT IdentityID FROM tblMessage GROUP BY IdentityID);");
+			m_db->Execute("DELETE FROM tblIdentity WHERE IdentityID NOT IN (SELECT IdentityID FROM tblMessage WHERE IdentityID IS NOT NULL GROUP BY IdentityID);");
 		}
 		else if((*queryvars.find("formaction")).second=="removelastseenneversent20")
 		{
 			date=Poco::Timestamp();
 			date-=Poco::Timespan(20,0,0,0,0);
-			st=m_db->Prepare("DELETE FROM tblIdentity WHERE IdentityID NOT IN (SELECT IdentityID FROM tblMessage GROUP BY IdentityID) AND LastSeen<?;");
+			st=m_db->Prepare("DELETE FROM tblIdentity WHERE IdentityID NOT IN (SELECT IdentityID FROM tblMessage GROUP BY IdentityID WHERE IdentityID IS NOT NULL) AND LastSeen<?;");
 			st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 			st.Step();
 		}

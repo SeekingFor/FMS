@@ -5,6 +5,7 @@
 #include "../../include/freenet/captcha/simplecaptcha.h"
 #ifdef ALTERNATE_CAPTCHA
 #include "../../include/freenet/captcha/alternatecaptcha1.h"
+#include "../../include/freenet/captcha/alternatecaptcha2.h"
 #endif
 #include "../../include/base64.h"
 
@@ -74,24 +75,35 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 
 void IntroductionPuzzleInserter::GenerateCaptcha(std::string &encodeddata, std::string &solution)
 {
+	ICaptcha *cap=0;
 #ifdef ALTERNATE_CAPTCHA
-	AlternateCaptcha1 captcha;
+	if(rand()%2==0)
+	{
+		cap=new AlternateCaptcha1();
+	}
+	else
+	{
+		cap=new AlternateCaptcha2();
+	}
 	m_log->trace("IntroductionPuzzleInserter::GenerateCaptcha using alternate captcha generator");
 #else
 	SimpleCaptcha captcha;
+	cap=&captcha;
 #endif
 	std::vector<unsigned char> puzzle;
 	std::vector<unsigned char> puzzlesolution;
 
-	captcha.Generate();
-	captcha.GetPuzzle(puzzle);
-	captcha.GetSolution(puzzlesolution);
+	cap->Generate();
+	cap->GetPuzzle(puzzle);
+	cap->GetSolution(puzzlesolution);
 
 	encodeddata.clear();
 	solution.clear();
 
 	Base64::Encode(puzzle,encodeddata);
 	solution.insert(solution.begin(),puzzlesolution.begin(),puzzlesolution.end());
+
+	delete cap;
 
 }
 

@@ -1,5 +1,5 @@
-#ifndef _alternate_captcha1_
-#define _alternate_captcha1_
+#ifndef _alternate_captcha2_
+#define _alternate_captcha2_
 
 #ifdef ALTERNATE_CAPTCHA
 
@@ -8,10 +8,10 @@
 #include "icaptcha.h"
 #include "alternatecaptchafonts.h"
 
-class AlternateCaptcha1:public ICaptcha
+class AlternateCaptcha2:public ICaptcha
 {
 public:
-	AlternateCaptcha1();
+	AlternateCaptcha2();
 
 	void Generate();
 
@@ -19,11 +19,8 @@ public:
 	const bool GetSolution(std::vector<unsigned char> &solution);
 
 private:
-	//void LoadFonts();
 	const std::string GenerateRandomString(const int len);
 
-	//AlternateCaptchaFonts m_fonts;
-	//static bool m_fontsloaded;
 	std::vector<FreeImage::Font> m_fonts;
 
 	std::vector<unsigned char> m_puzzle;
@@ -33,4 +30,4 @@ private:
 
 #endif	// ALTERNATE_CAPTCHA
 
-#endif	// _alternate_captcha1_
+#endif	// _alternate_captcha2_

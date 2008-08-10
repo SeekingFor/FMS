@@ -6,6 +6,8 @@
 class ICaptcha
 {
 public:
+	ICaptcha()				{};
+	virtual ~ICaptcha()		{};
 
 	virtual void Generate()=0;
 	
