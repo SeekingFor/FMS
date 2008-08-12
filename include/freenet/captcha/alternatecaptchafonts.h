@@ -3,11 +3,12 @@
 
 #ifdef ALTERNATE_CAPTCHA
 
+#include "../../ilogger.h"
 #include "freeimage/bitmap.h"
 #include "freeimage/font.h"
 #include <vector>
 
-class AlternateCaptchaFonts
+class AlternateCaptchaFonts:public ILogger
 {
 public:
 	AlternateCaptchaFonts();

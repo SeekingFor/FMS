@@ -1,6 +1,7 @@
 #include "../../../include/freenet/captcha/alternatecaptcha1.h"
 
 #include <cmath>
+#include <cstdlib>
 
 #ifdef ALTERNATE_CAPTCHA
 
@@ -12,6 +13,11 @@ AlternateCaptcha1::AlternateCaptcha1()
 
 void AlternateCaptcha1::Generate()
 {
+	if(m_fonts.size()==0)
+	{
+		return;
+	}
+
 	std::string puzzlestring=GenerateRandomString(5);
 	FreeImage::Bitmap tempchar(50,50,32);
 	tempchar.SetTransparent();
@@ -50,7 +56,7 @@ void AlternateCaptcha1::Generate()
 	white.rgbGreen=255;
 	white.rgbBlue=255;
 	white.rgbReserved=255;
-	int numlines=(rand()%5)+10;
+	int numlines=(rand()%5)+5;
 	for(int i=0; i<numlines; i++)
 	{
 		// draw 4 short lines very close to each other

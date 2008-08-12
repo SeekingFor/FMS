@@ -7,7 +7,7 @@
 
 #define VERSION_MAJOR		"0"
 #define VERSION_MINOR		"3"
-#define VERSION_RELEASE		"16"
+#define VERSION_RELEASE		"17"
 #define FMS_VERSION			VERSION_MAJOR"."VERSION_MINOR"."VERSION_RELEASE
 
 typedef Poco::ScopedLock<Poco::FastMutex> Guard;

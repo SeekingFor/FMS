@@ -61,6 +61,6 @@ private:
 
 };
 
-}
+}	// namespace
 
 #endif	// _freeimage_bitmap_

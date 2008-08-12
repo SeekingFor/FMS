@@ -87,8 +87,7 @@ void IntroductionPuzzleInserter::GenerateCaptcha(std::string &encodeddata, std::
 	}
 	m_log->trace("IntroductionPuzzleInserter::GenerateCaptcha using alternate captcha generator");
 #else
-	SimpleCaptcha captcha;
-	cap=&captcha;
+	cap=new SimpleCaptcha();
 #endif
 	std::vector<unsigned char> puzzle;
 	std::vector<unsigned char> puzzlesolution;

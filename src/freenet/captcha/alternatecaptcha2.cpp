@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <vector>
+#include <cstdlib>
 
 #ifdef ALTERNATE_CAPTCHA
 
@@ -16,6 +17,11 @@ AlternateCaptcha2::AlternateCaptcha2()
 
 void AlternateCaptcha2::Generate()
 {
+	if(m_fonts.size()==0)
+	{
+		return;
+	}
+
 	std::string puzzlestring=GenerateRandomString(6);
 	std::vector<int> fontnums(puzzlestring.size(),0);
 	
@@ -42,9 +48,9 @@ void AlternateCaptcha2::Generate()
 	for(int i=0; i<numlines; i++)
 	{
 		int x1=rand()%150;
-		int y1=(rand()%100)+100;
+		int y1=(rand()%80)+110;
 		int x2=(rand()%150)+150;
-		int y2=(rand()%100)+100;
+		int y2=(rand()%80)+110;
 		bigbmp.Line(x1,y1,x2,y2,white);
 		bigbmp.Line(x1+1,y1,x2+1,y2,white);
 	}
@@ -78,7 +84,7 @@ void AlternateCaptcha2::Generate()
 	}
 
 	// rotate the big bitmap back to (almost) horizontal
-	bigbmp.Rotate(-lastrot+((rand()%10)-5),0,0,150,150);
+	bigbmp.Rotate(-lastrot+((rand()%20)-10),0,0,150,150);
 
 	// grab the center of the big bitmap as the final bitmap
 	FreeImage::Bitmap bmp(110,50,32);
