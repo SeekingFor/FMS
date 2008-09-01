@@ -20,3 +20,24 @@ const bool Option::Get(const std::string &option, std::string &value)
 		return false;
 	}
 }
+
+const bool Option::GetInt(const std::string &option, int &value)
+{
+	std::string valstr="";
+	if(Get(option,valstr))
+	{
+		std::istringstream istr(valstr);
+		if(istr >> value)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
+}

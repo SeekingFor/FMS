@@ -33,7 +33,7 @@ private:
 	void Shutdown();
 
 	std::string m_fcphost;
-	long m_fcpport;
+	int m_fcpport;
 	FCPv2 m_fcp;
 	std::vector<IFreenetRegistrable *> m_registrables;
 	std::vector<IPeriodicProcessor *> m_processors;

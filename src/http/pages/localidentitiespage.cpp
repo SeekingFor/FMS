@@ -37,6 +37,7 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 
 	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID,tblLocalIdentity.Name,tblLocalIdentity.PublicKey,tbLLocalIdentity.PublishTrustList,tblLocalIdentity.SingleUse,tblLocalIdentity.PublishBoardList,tblIdentity.IdentityID,tblLocalIdentity.PublishFreesite,tblLocalIdentity.MinMessageDelay,tblLocalIdentity.MaxMessageDelay FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey ORDER BY tblLocalIdentity.Name;");
 	st.Step();
+	SQLite3DB::Statement st2=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
 
 	SQLite3DB::Statement trustst=m_db->Prepare("SELECT COUNT(*) FROM tblPeerTrust LEFT JOIN tblIdentity ON tblPeerTrust.TargetIdentityID=tblIdentity.IdentityID WHERE tblIdentity.PublicKey=? GROUP BY tblPeerTrust.TargetIdentityID;");
 
@@ -53,6 +54,7 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 		std::string publishfreesite="";
 		std::string minmessagedelay="0";
 		std::string maxmessagedelay="0";
+		std::string identityidstr="";
 
 		st.ResultText(0,id);
 		st.ResultText(1,name);
@@ -64,8 +66,26 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 		st.ResultText(8,minmessagedelay);
 		st.ResultText(9,maxmessagedelay);
 
+		st2.Bind(0,publickey);
+		st2.Step();
+		if(st2.RowReturned())
+		{
+			st2.ResultText(0,identityidstr);
+		}
+		st2.Reset();
+
 		content+="<tr>";
-		content+="<td title=\""+publickey+"\"><form name=\"frmupdate\""+countstr+"\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\">"+SanitizeOutput(CreateShortIdentityName(name,publickey))+"</td>";
+		content+="<td title=\""+publickey+"\"><form name=\"frmupdate\""+countstr+"\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\">";
+		if(identityidstr!="")
+		{
+			content+="<a href=\"peerdetails.htm?identityid="+identityidstr+"\">";
+		}
+		content+=SanitizeOutput(CreateShortIdentityName(name,publickey));
+		if(identityidstr!="")
+		{
+			content+="</a>";
+		}
+		content+="</td>";
 		content+="<td>"+CreateTrueFalseDropDown("singleuse["+countstr+"]",singleuse)+"</td>";
 		content+="<td>"+CreateTrueFalseDropDown("publishtrustlist["+countstr+"]",publishtrustlist)+"</td>";
 		content+="<td>"+CreateTrueFalseDropDown("publishboardlist["+countstr+"]",publishboardlist)+"</td>";

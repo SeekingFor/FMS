@@ -234,17 +234,16 @@ const bool IntroductionPuzzleRequester::HandleMessage(FCPMessage &message)
 
 void IntroductionPuzzleRequester::Initialize()
 {
-	std::string tempval="";
-	Option::Instance()->Get("MaxIntroductionPuzzleRequests",tempval);
-	StringFunctions::Convert(tempval,m_maxrequests);
+	m_maxrequests=0;
+	Option::Instance()->GetInt("MaxIntroductionPuzzleRequests",m_maxrequests);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
-		m_log->error("Option MaxIntroductionPuzzleRequests is currently set at "+tempval+".  It must be 1 or greater.");
+		m_log->error("Option MaxIntroductionPuzzleRequests is currently set at less than 1.  It must be 1 or greater.");
 	}
 	if(m_maxrequests>100)
 	{
-		m_log->warning("Option MaxIntroductionPuzzleRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
+		m_log->warning("Option MaxIntroductionPuzzleRequests is currently set at more than 100.  This value might be incorrectly configured.");
 	}
 	Option::Instance()->Get("MessageBase",m_messagebase);
 	m_tempdate=Poco::Timestamp();

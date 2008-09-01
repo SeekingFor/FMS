@@ -35,7 +35,7 @@ private:
 
 	Poco::DateTime m_tempdate;
 	std::string m_messagebase;
-	long m_maxrequests;
+	int m_maxrequests;
 	std::vector<long> m_requesting;		// list of ids we are currently requesting from
 	std::map<long,bool> m_ids;			// map of all ids we know and whether we have requested file from them yet
 	

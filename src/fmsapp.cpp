@@ -162,7 +162,12 @@ int FMSApp::main(const std::vector<std::string> &args)
 	// so we need to set the working directory again
 	int rval=chdir(m_workingdirectory.c_str());
 
-	if(m_displayhelp)
+	if(VerifyDB()==false)
+	{
+		std::cout << "The FMS database failed verification.  It is most likely corrupt!" << std::endl;
+		logger().fatal("The FMS database failed verification.  It is most likely corrupt!");
+	}
+	else if(m_displayhelp)
 	{
 	}
 	else if(m_showoptions)

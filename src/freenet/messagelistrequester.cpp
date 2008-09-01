@@ -303,9 +303,10 @@ const bool MessageListRequester::HandleGetFailed(FCPMessage &message)
 void MessageListRequester::Initialize()
 {
 	m_fcpuniquename="MessageListRequester";
-	std::string tempval;
-	Option::Instance()->Get("MaxMessageListRequests",tempval);
-	StringFunctions::Convert(tempval,m_maxrequests);
+	std::string tempval="";
+
+	m_maxrequests=0;
+	Option::Instance()->GetInt("MaxMessageListRequests",m_maxrequests);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;

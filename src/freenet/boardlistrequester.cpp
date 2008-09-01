@@ -197,8 +197,7 @@ void BoardListRequester::Initialize()
 	m_fcpuniquename="BoardListRequester";
 	m_maxrequests=0;
 
-	Option::Instance()->Get("MaxBoardListRequests",tempval);
-	StringFunctions::Convert(tempval,m_maxrequests);
+	Option::Instance()->GetInt("MaxBoardListRequests",m_maxrequests);
 	if(m_maxrequests<0)
 	{
 		m_maxrequests=0;

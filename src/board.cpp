@@ -58,7 +58,9 @@ const bool Board::Load(const long boardid)
 	m_messagecount=0;
 	m_addedmethod="";
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, HighMessageID, LowMessageID, MessageCount, SaveReceivedMessages, AddedMethod FROM tblBoard LEFT JOIN vwBoardStats ON tblBoard.BoardID=vwBoardStats.BoardID WHERE tblBoard.BoardID=?;");
+	// Optimize query by not using vwBoardStats
+	//SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, HighMessageID, LowMessageID, MessageCount, SaveReceivedMessages, AddedMethod FROM tblBoard LEFT JOIN vwBoardStats ON tblBoard.BoardID=vwBoardStats.BoardID WHERE tblBoard.BoardID=?;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, IFNULL(MAX(MessageID),'0') AS HighMessageID, IFNULL(MIN(MessageID),'0') AS LowMessageID, COUNT(MessageID) AS MessageCount, SaveReceivedMessages, AddedMethod FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblBoard.BoardID=? AND (MessageID IS NULL OR MessageID>=0);");
 	st.Bind(0,boardid);
 	st.Step();
 
@@ -132,7 +134,9 @@ const bool Board::Load(const std::string &boardname)		// same as loading form bo
 	int tempint=-1;
 	m_addedmethod="";
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, HighMessageID, LowMessageID, MessageCount, SaveReceivedMessages, tblBoard.BoardID, AddedMethod FROM tblBoard LEFT JOIN vwBoardStats ON tblBoard.BoardID=vwBoardStats.BoardID WHERE tblBoard.BoardName=?;");
+	// Optimize query by not using vwBoardStats
+	//SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, HighMessageID, LowMessageID, MessageCount, SaveReceivedMessages, tblBoard.BoardID, AddedMethod FROM tblBoard LEFT JOIN vwBoardStats ON tblBoard.BoardID=vwBoardStats.BoardID WHERE tblBoard.BoardName=?;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, IFNULL(MAX(MessageID),'0') AS HighMessageID, IFNULL(MIN(MessageID),'0') AS LowMessageID, COUNT(MessageID) AS MessageCount, SaveReceivedMessages, tblBoard.BoardID, AddedMethod FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblBoard.BoardName=? AND (MessageID IS NULL OR MessageID>=0);");
 	st.Bind(0,boardname);
 	st.Step();
 

@@ -1323,6 +1323,14 @@ void NNTPConnection::run()
 			m_log->error("NNTPConnection::run select returned -1 : "+GetSocketErrorMessage());	
 		}
 
+		//process all remaining commands in buffer
+		std::vector<char>::size_type rbs=0;
+		while(rbs!=m_receivebuffer.size())
+		{
+			rbs=m_receivebuffer.size();
+			HandleReceivedData();
+		}
+
 	}while(!Disconnected() && !IsCancelled());
 
 	Disconnect();

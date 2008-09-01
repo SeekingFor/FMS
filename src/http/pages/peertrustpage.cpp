@@ -297,7 +297,7 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 	
 	// get count of identities we are showing
 	sql="SELECT COUNT(*) FROM tblIdentity LEFT JOIN tblIdentityTrust ON tblIdentity.IdentityID=tblIdentityTrust.IdentityID ";
-	sql+="WHERE tblIdentity.Hidden='false' AND tblIdentityTrust.LocalIdentityID=?";
+	sql+="WHERE tblIdentityTrust.LocalIdentityID=? AND tblIdentity.Hidden='false'";
 	if(namesearch!="")
 	{
 		sql+=" AND (Name LIKE '%' || ? || '%' OR PublicKey LIKE '%' || ? || '%')";
@@ -316,7 +316,7 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 
 	sql="SELECT tblIdentity.IdentityID,Name,tblIdentityTrust.LocalMessageTrust,PeerMessageTrust,tblIdentityTrust.LocalTrustListTrust,PeerTrustListTrust,PublicKey,tblIdentityTrust.MessageTrustComment,tblIdentityTrust.TrustListTrustComment,COUNT(MessageID) AS 'MessageCount',tblIdentity.PublishTrustList ";
 	sql+="FROM tblIdentity LEFT JOIN tblIdentityTrust ON tblIdentity.IdentityID=tblIdentityTrust.IdentityID LEFT JOIN tblMessage ON tblIdentity.IdentityID=tblMessage.IdentityID ";
-	sql+="WHERE tblIdentity.Hidden='false' AND tblIdentityTrust.LocalIdentityID=?";
+	sql+="WHERE tblIdentityTrust.LocalIdentityID=? AND tblIdentity.Hidden='false'";
 	if(namesearch!="")
 	{
 		sql+=" AND (Name LIKE  '%' || ? || '%' OR PublicKey LIKE '%' || ? || '%')";

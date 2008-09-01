@@ -34,24 +34,24 @@
 
 FreenetMasterThread::FreenetMasterThread()
 {
-	std::string fcpport;
 
 	if(Option::Instance()->Get("FCPHost",m_fcphost)==false)
 	{
 		m_fcphost="localhost";
 		Option::Instance()->Set("FCPHost",m_fcphost);
 	}
-	if(Option::Instance()->Get("FCPPort",fcpport)==false)
-	{
-		fcpport="9481";
-		Option::Instance()->Set("FCPPort",fcpport);
-	}
-
-	// convert fcp port to long, and make sure it's within the valid port range
-	if(StringFunctions::Convert(fcpport,m_fcpport)==false)
+	if(Option::Instance()->GetInt("FCPPort",m_fcpport)==false)
 	{
 		m_fcpport=9481;
-		Option::Instance()->Set("FCPPort","9481");
+		Option::Instance()->Set("FCPPort",m_fcpport);
+	}
+	else
+	{
+		if(m_fcpport<1 || m_fcpport>65535)
+		{
+			m_fcpport=9481;
+			Option::Instance()->Set("FCPPort",m_fcpport);
+		}
 	}
 
 	m_receivednodehello=false;

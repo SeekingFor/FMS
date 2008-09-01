@@ -324,8 +324,9 @@ void MessageRequester::Initialize()
 {
 	m_fcpuniquename="MessageRequester";
 	std::string tempval;
-	Option::Instance()->Get("MaxMessageRequests",tempval);
-	StringFunctions::Convert(tempval,m_maxrequests);
+
+	m_maxrequests=0;
+	Option::Instance()->GetInt("MaxMessageRequests",m_maxrequests);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
@@ -335,8 +336,9 @@ void MessageRequester::Initialize()
 	{
 		m_log->warning("Option MaxMessageRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
-	Option::Instance()->Get("MessageDownloadMaxDaysBackward",tempval);
-	StringFunctions::Convert(tempval,m_maxdaysbackward);
+
+	m_maxdaysbackward=0;
+	Option::Instance()->GetInt("MessageDownloadMaxDaysBackward",m_maxdaysbackward);
 	if(m_maxdaysbackward<0)
 	{
 		m_maxdaysbackward=0;
@@ -346,8 +348,9 @@ void MessageRequester::Initialize()
 	{
 		m_log->warning("Option MessageDownloadMaxDaysBackward is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
-	Option::Instance()->Get("MaxPeerMessagesPerDay",tempval);
-	StringFunctions::Convert(tempval,m_maxpeermessages);
+
+	m_maxpeermessages=0;
+	Option::Instance()->GetInt("MaxPeerMessagesPerDay",m_maxpeermessages);
 	if(m_maxpeermessages<1)
 	{
 		m_maxpeermessages=1;
@@ -357,8 +360,9 @@ void MessageRequester::Initialize()
 	{
 		m_log->warning("Option MaxPeerMessagesPerDay is currently set at "+tempval+".  This value might be incorrectly configured.  The suggested value is 200.");
 	}
-	Option::Instance()->Get("MaxBoardsPerMessage",tempval);
-	StringFunctions::Convert(tempval,m_maxboardspermessage);
+
+	m_maxboardspermessage=0;
+	Option::Instance()->GetInt("MaxBoardsPerMessage",m_maxboardspermessage);
 	if(m_maxboardspermessage<1)
 	{
 		m_maxboardspermessage=1;

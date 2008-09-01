@@ -37,7 +37,7 @@ private:
 	std::map<long,bool> m_ids;
 	std::vector<std::string> m_requesting;
 	std::string m_messagebase;
-	long m_maxrequests;
+	int m_maxrequests;
 
 };
 

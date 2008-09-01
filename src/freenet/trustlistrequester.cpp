@@ -270,8 +270,9 @@ void TrustListRequester::Initialize()
 {
 	std::string tempval="";
 	m_fcpuniquename="TrustListRequester";
-	Option::Instance()->Get("MaxIdentityRequests",tempval);
-	StringFunctions::Convert(tempval,m_maxrequests);
+
+	m_maxrequests=0;
+	Option::Instance()->GetInt("MaxIdentityRequests",m_maxrequests);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;

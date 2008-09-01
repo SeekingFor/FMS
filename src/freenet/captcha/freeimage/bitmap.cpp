@@ -1,6 +1,7 @@
 #include "../../../../include/freenet/captcha/freeimage/bitmap.h"
 
 #include <cmath>
+#include <cstdlib>
 
 namespace FreeImage
 {

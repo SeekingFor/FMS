@@ -51,7 +51,7 @@ protected:
 	std::vector<IDTYPE> m_requesting;		// list of ids we are currently requesting from
 
 	// these MUST be populated by child class
-	long m_maxrequests;
+	int m_maxrequests;
 	std::string m_fcpuniquename;
 
 };

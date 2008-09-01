@@ -67,14 +67,14 @@ void AlternateCaptcha2::Generate()
 	// rotate and skew the big bitmap a few times
 	int lastrot=0;
 	int thisrot=0;
-	int numrots=(rand()%4)+4;
+	int numrots=(rand()%3)+4;
 	for(int i=0; i<numrots; i++)
 	{
 		thisrot=((rand()%180)-90);
 		bigbmp.Rotate(-lastrot+thisrot,0,0,150,150);
 		int offset=rand()%10000;
-		float freq=3.0+(float(rand()%7000)/1000.0);
-		float amp=1.0+(float(rand()%1000)/500.0);
+		float freq=5.0+(float(rand()%7000)/1000.0);
+		float amp=1.0+(float(rand()%500)/500.0);
 		for(int y=0; y<bigbmp.Height(); y++)
 		{
 			double shift=sin((double)(y+offset)/freq)*amp;

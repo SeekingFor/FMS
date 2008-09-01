@@ -11,6 +11,7 @@ class Option:public Singleton<Option>
 {
 public:
 	const bool Get(const std::string &option, std::string &value);
+	const bool GetInt(const std::string &option, int &value);
 	template<class T>
 	void Set(const std::string &option, const T &value);
 private:

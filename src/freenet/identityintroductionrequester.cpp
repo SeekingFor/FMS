@@ -181,17 +181,16 @@ const bool IdentityIntroductionRequester::HandleMessage(FCPMessage &message)
 
 void IdentityIntroductionRequester::Initialize()
 {
-	std::string tempval="";
-	Option::Instance()->Get("MaxIdentityIntroductionRequests",tempval);
-	StringFunctions::Convert(tempval,m_maxrequests);
+	m_maxrequests=0;
+	Option::Instance()->GetInt("MaxIdentityIntroductionRequests",m_maxrequests);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
-		m_log->error("Option MaxIdentityIntroductionRequests is currently set at "+tempval+".  It must be 1 or greater.");
+		m_log->error("Option MaxIdentityIntroductionRequests is currently less than 1.  It must be 1 or greater.");
 	}
 	if(m_maxrequests>100)
 	{
-		m_log->warning("Option MaxIdentityIntroductionRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
+		m_log->warning("Option MaxIdentityIntroductionRequests is currently set at more than 100.  This value might be incorrectly configured.");
 	}
 	Option::Instance()->Get("MessageBase",m_messagebase);
 	m_tempdate=Poco::Timestamp();

@@ -16,6 +16,7 @@ void SetupDB()
 
 	db->Open("fms.db3");
 	db->SetBusyTimeout(20000);		// set timeout to 20 seconds
+	db->Execute("PRAGMA synchronous = FULL;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblDBVersion(\
 				Major				INTEGER,\
@@ -547,4 +548,28 @@ void SetupDB()
 	// run analyze - may speed up some queries
 	db->Execute("ANALYZE;");
 
+}
+
+const bool VerifyDB()
+{
+	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
+	SQLite3DB::Statement st=db->Prepare("PRAGMA integrity_check;");
+	st.Step();
+	if(st.RowReturned())
+	{
+		std::string res="";
+		st.ResultText(0,res);
+		if(res=="ok")
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
 }

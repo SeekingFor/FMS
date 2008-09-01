@@ -1,5 +1,6 @@
 #include "../include/optionssetup.h"
 #include "../include/db/sqlite3db.h"
+#include "../include/global.h"
 
 #include <Poco/Message.h>
 
@@ -68,7 +69,7 @@ void SetupDefaultOptions()
 	upd.Reset();
 
 	st.Bind(0,"FMSVersionEdition");
-	st.Bind(1,"19");
+	st.Bind(1,FMS_VERSION_EDITION);
 	st.Step();
 	st.Reset();
 	upd.Bind(0,"Program");

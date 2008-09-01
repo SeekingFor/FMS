@@ -20,9 +20,9 @@ private:
 	const bool SaveToBoard(const std::string &boardname);
 	const std::string GetIdentityName(const long identityid);
 
-	long m_maxdaysbackward;
-	long m_maxpeermessages;
-	long m_maxboardspermessage;
+	int m_maxdaysbackward;
+	int m_maxpeermessages;
+	int m_maxboardspermessage;
 	bool m_savemessagesfromnewboards;
 	bool m_localtrustoverrides;
 	

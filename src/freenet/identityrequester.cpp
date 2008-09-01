@@ -166,18 +166,16 @@ const bool IdentityRequester::HandleGetFailed(FCPMessage &message)
 
 void IdentityRequester::Initialize()
 {
-	std::string tempval="";
 	m_fcpuniquename="IdentityRequester";
-	Option::Instance()->Get("MaxIdentityRequests",tempval);
-	StringFunctions::Convert(tempval,m_maxrequests);
+	Option::Instance()->GetInt("MaxIdentityRequests",m_maxrequests);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
-		m_log->error("Option MaxIdentityRequests is currently set at "+tempval+".  It must be 1 or greater.");
+		m_log->error("Option MaxIdentityRequests is currently set at less than 1.  It must be 1 or greater.");
 	}
 	if(m_maxrequests>100)
 	{
-		m_log->warning("Option MaxIdentityRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
+		m_log->warning("Option MaxIdentityRequests is currently set at more than 100.  This value might be incorrectly configured.");
 	}
 }
 
