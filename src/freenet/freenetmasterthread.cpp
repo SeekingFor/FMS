@@ -123,6 +123,7 @@ const bool FreenetMasterThread::HandleMessage(FCPMessage &message)
 	if(m_receivednodehello==true)
 	{
 		bool handled=false;
+
 		std::vector<IFCPMessageHandler *>::iterator i=m_fcpmessagehandlers.begin();
 		while(handled==false && i!=m_fcpmessagehandlers.end())
 		{

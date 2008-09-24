@@ -61,10 +61,13 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPMessage &message)
 
 	// receive the file
 	data.resize(datalength);
-	m_fcp->ReceiveRaw(&data[0],datalength);
+	if(data.size()>0)
+	{
+		m_fcp->ReceiveRaw(&data[0],datalength);
+	}
 
 	// parse file into xml and update the database
-	if(xml.ParseXML(std::string(data.begin(),data.end()))==true)
+	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 
 		ssk.SetPublicKey(xml.GetIdentity());

@@ -21,6 +21,11 @@ const bool BitmapValidator::Validate(const std::vector<unsigned char> &data)
 	bool validated=false;
 	std::string tempname=Poco::TemporaryFile::tempName();
 
+	if(data.size()==0)
+	{
+		return false;
+	}
+
 	FILE *outfile=fopen(tempname.c_str(),"w+b");
 	if(outfile)
 	{

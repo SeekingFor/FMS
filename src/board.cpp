@@ -107,21 +107,6 @@ const bool Board::Load(const long boardid)
 
 const bool Board::Load(const std::string &boardname)		// same as loading form boardid - but using name
 {
-	/*
-	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardID FROM tblBoard WHERE BoardName=?;");
-	st.Bind(0,boardname);
-	st.Step();
-	if(st.RowReturned())
-	{
-		int tempint;
-		st.ResultInt(0,tempint);
-		return Load(tempint);
-	}
-	else
-	{
-		return false;
-	}
-	*/
 
 	// clear current values
 	m_boardid=-1;
@@ -185,7 +170,6 @@ const bool Board::Load(const std::string &boardname)		// same as loading form bo
 
 void Board::SetDateFromString(const std::string &datestring)
 {
-	// break out date created  - date should be in format yyyy-mm-dd HH:MM:SS, so we split on "-", " " (space), and ":"
 	int tzdiff=0;
 	if(Poco::DateTimeParser::tryParse(datestring,m_datecreated,tzdiff)==false)
 	{

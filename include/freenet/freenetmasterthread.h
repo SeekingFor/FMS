@@ -22,7 +22,7 @@ public:
 
 	void run();
 
-	// registration methods for children objects
+	// registration methods for child objects
 	void RegisterPeriodicProcessor(IPeriodicProcessor *obj);
 	void RegisterFCPConnected(IFCPConnected *obj);
 	void RegisterFCPMessageHandler(IFCPMessageHandler *obj);

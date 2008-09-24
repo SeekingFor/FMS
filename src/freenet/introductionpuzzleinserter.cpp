@@ -59,7 +59,6 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 				// make sure we are on the next day or the appropriate amount of time has elapsed since the last insert
 				if(m_lastinserted.find(rs.GetInt(0))==m_lastinserted.end() || m_lastinserted[rs.GetInt(0)]<=lastinsert || m_lastinserted[rs.GetInt(0)].day()!=now.day())
 				{
-					StartInsert(rs.GetInt(0));
 					m_lastinserted[rs.GetInt(0)]=now;
 				}
 				else
@@ -178,18 +177,18 @@ void IntroductionPuzzleInserter::Initialize()
 const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 {
 	Poco::DateTime now;
-	std::string idstring;
+	std::string idstring="";
 	long index=0;
-	std::string indexstr;
+	std::string indexstr="";
 	Poco::UUIDGenerator uuidgen;
 	Poco::UUID uuid;
-	std::string messagebase;
+	std::string messagebase="";
 	IntroductionPuzzleXML xml;
-	std::string encodedpuzzle;
-	std::string solutionstring;
+	std::string encodedpuzzle="";
+	std::string solutionstring="";
 	FCPMessage message;
-	std::string xmldata;
-	std::string xmldatasizestr;
+	std::string xmldata="";
+	std::string xmldatasizestr="";
 	std::string privatekey="";
 	std::string publickey="";
 	std::string keypart="";
@@ -227,6 +226,11 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		Option::Instance()->Get("MessageBase",messagebase);
 
 		GenerateCaptcha(encodedpuzzle,solutionstring);
+		if(encodedpuzzle.size()==0)
+		{
+			m_log->fatal("IntroductionPuzzleInserter::StartInsert could not create introduction puzzle");
+			return false;
+		}
 
 		try
 		{

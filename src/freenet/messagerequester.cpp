@@ -117,7 +117,10 @@ const bool MessageRequester::HandleAllData(FCPMessage &message)
 
 	// receive the file
 	data.resize(datalength);
-	m_fcp->ReceiveRaw(&data[0],datalength);
+	if(data.size()>0)
+	{
+		m_fcp->ReceiveRaw(&data[0],datalength);
+	}
 
 	// mark this index as received
 	st=m_db->Prepare("UPDATE tblMessageRequests SET Found='true' WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
@@ -128,7 +131,7 @@ const bool MessageRequester::HandleAllData(FCPMessage &message)
 	st.Finalize();
 
 	// parse file into xml and update the database
-	if(xml.ParseXML(std::string(data.begin(),data.end()))==true)
+	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 		std::vector<std::string> boards=xml.GetBoards();
 		std::map<long,std::string> replyto=xml.GetInReplyTo();

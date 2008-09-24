@@ -31,6 +31,7 @@ const std::string CreateIdentityPage::GeneratePage(const std::string &method, co
 		m_db->Execute("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity WHERE LocalIdentityID || '_' || IdentityID NOT IN (SELECT LocalIdentityID || '_' || IdentityID FROM tblIdentityTrust);");
 
 		content+="<h2>Created Identity</h2>";
+		content+="You must have at least 1 local identity that has set explicit trust list trust for one or more peers who are publishing trust lists or you will not be able to learn about other identities.";
 	}
 	else
 	{

@@ -38,7 +38,10 @@ const bool FMSVersionRequester::HandleAllData(FCPMessage &message)
 
 	// receive the file
 	data.resize(datalength);
-	m_fcp->ReceiveRaw(&data[0],datalength);
+	if(data.size()>0)
+	{
+		m_fcp->ReceiveRaw(&data[0],datalength);
+	}
 
 	// update latest edition #
 	std::vector<std::string> parts;
@@ -50,7 +53,7 @@ const bool FMSVersionRequester::HandleAllData(FCPMessage &message)
 	}
 
 	// parse file into xml and update the database
-	if(xml.ParseXML(std::string(data.begin(),data.end()))==true)
+	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 
 		SQLite3DB::Statement st=m_db->Prepare("REPLACE INTO tblFMSVersion(Major,Minor,Release,Notes,Changes,PageKey,SourceKey) VALUES(?,?,?,?,?,?,?);");

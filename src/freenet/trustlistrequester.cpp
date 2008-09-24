@@ -54,7 +54,10 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 
 	// receive the file
 	data.resize(datalength);
-	m_fcp->ReceiveRaw(&data[0],datalength);
+	if(data.size()>0)
+	{
+		m_fcp->ReceiveRaw(&data[0],datalength);
+	}
 
 	// get count of identities added in last 24 hours
 	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE DateAdded>=?;");
@@ -92,7 +95,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 	now=Poco::DateTime();
 
 	// parse file into xml and update the database
-	if(xml.ParseXML(std::string(data.begin(),data.end()))==true)
+	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 		// find the identity name and public key of the identity publishing the trust list
 		std::string publisherid="";
