@@ -149,7 +149,7 @@ const bool FreenetMasterThread::HandleMessage(FCPMessage &message)
 				{
 					m_fcp.Update(1);
 				}
-				if(m_fcp.Connected())
+				if(m_fcp.Connected() && length>0)
 				{
 					char *data=new char[length];
 					m_fcp.ReceiveRaw(data,length);

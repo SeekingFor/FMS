@@ -59,6 +59,7 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 				// make sure we are on the next day or the appropriate amount of time has elapsed since the last insert
 				if(m_lastinserted.find(rs.GetInt(0))==m_lastinserted.end() || m_lastinserted[rs.GetInt(0)]<=lastinsert || m_lastinserted[rs.GetInt(0)].day()!=now.day())
 				{
+					StartInsert(rs.GetInt(0));
 					m_lastinserted[rs.GetInt(0)]=now;
 				}
 				else
