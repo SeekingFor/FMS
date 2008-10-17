@@ -639,6 +639,12 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 		// remove any path folding
 		m_replyboardname=StringFunctions::Replace(m_replyboardname,"\r\n","");
 		m_replyboardname=StringFunctions::Replace(m_replyboardname,"\t","");
+		std::vector<std::string> parts;
+		StringFunctions::Split(m_replyboardname,",",parts);
+		if(parts.size()>1)
+		{
+			m_replyboardname=parts[0];
+		}
 	}
 	else
 	{

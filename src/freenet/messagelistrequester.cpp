@@ -3,6 +3,7 @@
 
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
+#include <Poco/DateTimeParser.h>
 #include <Poco/Timestamp.h>
 
 #ifdef XMEM
@@ -47,6 +48,29 @@ const bool MessageListRequester::CheckDateNotFuture(const std::string &datestr) 
 		return false;
 	}
 
+}
+
+const bool MessageListRequester::CheckDateWithinMaxDays(const std::string &datestr) const
+{
+	Poco::DateTime checkdate;
+	Poco::DateTime date;
+	int tzdiff=0;
+	if(Poco::DateTimeParser::tryParse(datestr,date,tzdiff))
+	{
+		checkdate-=Poco::Timespan(m_messagedownloadmaxdaysbackward,0,0,0,0);
+		if(checkdate<=date)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void MessageListRequester::GetBoardList(std::map<std::string,bool> &boards)
@@ -156,6 +180,11 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 				m_log->error("MessageListRequester::HandleAllData date for message is in future! "+xml.GetDate(i));
 			}
 
+			if(addmessage==true && CheckDateWithinMaxDays(xml.GetDate(i))==false)
+			{
+				addmessage=false;
+			}
+
 			if(addmessage==true)
 			{
 				st.Bind(0,identityid);
@@ -174,7 +203,7 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 			}
 			else
 			{
-				m_log->trace("MessageListRequester::HandleAllData will not download message posted to "+boardsstr);
+				//m_log->trace("MessageListRequester::HandleAllData will not download message posted to "+boardsstr+" on "+xml.GetDate(i));
 			}
 		}
 
@@ -214,6 +243,11 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 					m_log->error("MessageListRequester::HandleAllData date for external message is in future! "+xml.GetExternalDate(i));
 				}
 
+				if(addmessage==true && CheckDateWithinMaxDays(xml.GetExternalDate(i))==false)
+				{
+					addmessage=false;
+				}
+
 				if(addmessage==true)
 				{
 					spk.Bind(0,xml.GetExternalIdentity(i));
@@ -232,7 +266,7 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 				}
 				else
 				{
-					m_log->trace("MessageListRequester::HandleAllData will not download external message posted to "+boardsstr+" from " + xml.GetExternalIdentity(i));
+					//m_log->trace("MessageListRequester::HandleAllData will not download external message posted to "+boardsstr+" from " + xml.GetExternalIdentity(i) + " on " + xml.GetExternalDate(i));
 				}
 			}
 		}
@@ -341,6 +375,11 @@ void MessageListRequester::Initialize()
 	{
 		m_savetonewboards=false;
 	}
+
+	m_messagedownloadmaxdaysbackward=5;
+	tempval="5";
+	Option::Instance()->Get("MessageDownloadMaxDaysBackward",tempval);
+	StringFunctions::Convert(tempval,m_messagedownloadmaxdaysbackward);
 
 }
 

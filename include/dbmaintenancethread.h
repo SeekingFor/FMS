@@ -29,6 +29,7 @@ private:
 	Poco::DateTime m_last1day;
 
 	long m_deletemessagesolderthan;
+	long m_messagedownloadmaxdaysbackward;
 
 };
 

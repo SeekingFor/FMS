@@ -20,7 +20,7 @@ UPGRADING
 It is always a good idea to make a copy of your current FMS installation before
 continuing.  First shut down FMS, make a copy of the directory, and then
 replace all files except the database with those from the new version.  You may
-keep the same database unless otherwise noted.
+keep the same database unless otherwise noted in the release information.
 
 INSTALLATION
 ------------
@@ -75,13 +75,16 @@ is discarded when posting messages.
 
 POSTING MESSAGES
 ----------------
-You must set your newsreader to use UTF-8 when posting messages.  Any non-text
-attachment to the message will be inserted as a regular file and the key added
-to the body of the message when received.  Keep the attachments small, as the
-message can't be inserted until all attachments are inserted.  Text attachments
-will be inlined with the message body.  Cross posting is fine, but remember
-that each identity can set a limit to the number of boards each message may be
-cross posted to.
+You must set your newsreader to use UTF-8 when posting messages unless you have
+compiled with charset conversion turned on.  All headers of the message that
+aren't needed will be stripped and all headers necessary for the proper sending
+of the message will be replaced with sanitized ones.  Any non-text attachment
+to the message will be inserted as a regular file and the key added to the body
+of the message when received.  Keep the attachments small, as the message can't
+be inserted until all attachments are inserted.  Text attachments will be
+inlined with the message body.  Cross posting is fine, but remember that each
+identity can set a limit to the number of boards each message may be cross
+posted to.
 
 CONTROL BOARDS
 --------------

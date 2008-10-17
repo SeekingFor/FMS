@@ -47,6 +47,11 @@ const bool CharsetConverter::Convert(const std::string &input, std::string &outp
 {
 	if(m_iconv!=(iconv_t)-1)
 	{
+		if(input.size()==0)
+		{
+			return true;
+		}
+
 		std::vector<char> invec(input.begin(),input.end());
 		std::vector<char> outvec(invec.size()*4,0);
 #if defined(_WIN32) || defined(__FreeBSD__)//|| defined(__APPLE__) || defined(__DARWIN__)

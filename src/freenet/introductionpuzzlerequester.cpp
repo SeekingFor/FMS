@@ -19,7 +19,7 @@ IntroductionPuzzleRequester::IntroductionPuzzleRequester()
 	Initialize();
 }
 
-IntroductionPuzzleRequester::IntroductionPuzzleRequester(FCPv2 *fcp):IFCPConnected(fcp)
+IntroductionPuzzleRequester::IntroductionPuzzleRequester(FCPv2 *fcp):IIndexRequester<long>(fcp)
 {
 	Initialize();
 }
@@ -200,43 +200,9 @@ const bool IntroductionPuzzleRequester::HandleGetFailed(FCPMessage &message)
 
 }
 
-const bool IntroductionPuzzleRequester::HandleMessage(FCPMessage &message)
-{
-
-	if(message["Identifier"].find("IntroductionPuzzleRequester")==0)
-	{
-		if(message.GetName()=="DataFound")
-		{
-			return true;
-		}
-
-		if(message.GetName()=="AllData")
-		{
-			return HandleAllData(message);
-		}
-
-		if(message.GetName()=="GetFailed")
-		{
-			return HandleGetFailed(message);
-		}
-		
-		if(message.GetName()=="IdentifierCollision")
-		{
-			// remove one of the ids from the requesting list
-			long identityid=0;
-			std::vector<std::string> idparts;
-			StringFunctions::Split(message["Identifier"],"|",idparts);
-			StringFunctions::Convert(idparts[1],identityid);
-			RemoveFromRequestList(identityid);
-			return true;
-		}
-	}
-
-	return false;
-}
-
 void IntroductionPuzzleRequester::Initialize()
 {
+	m_fcpuniquename="IntroductionPuzzleRequester";
 	m_maxrequests=0;
 	Option::Instance()->GetInt("MaxIntroductionPuzzleRequests",m_maxrequests);
 	if(m_maxrequests<1)
@@ -248,8 +214,6 @@ void IntroductionPuzzleRequester::Initialize()
 	{
 		m_log->warning("Option MaxIntroductionPuzzleRequests is currently set at more than 100.  This value might be incorrectly configured.");
 	}
-	Option::Instance()->Get("MessageBase",m_messagebase);
-	m_tempdate=Poco::Timestamp();
 }
 
 void IntroductionPuzzleRequester::PopulateIDList()
@@ -281,61 +245,7 @@ void IntroductionPuzzleRequester::PopulateIDList()
 	}
 }
 
-void IntroductionPuzzleRequester::Process()
-{
-	// max is the smaller of the config value or the total number of identities we will request from
-	long max=m_maxrequests>m_ids.size() ? m_ids.size() : m_maxrequests;
-
-	// try to keep up to max requests going
-	if(m_requesting.size()<max)
-	{
-		std::map<long,bool>::iterator i=m_ids.begin();
-		while(i!=m_ids.end() && (*i).second==true)
-		{
-			i++;
-		}
-
-		if(i!=m_ids.end())
-		{
-			StartRequest((*i).first);
-		}
-		else
-		{
-			// we requested from all ids in the list, repopulate the list
-			PopulateIDList();
-		}
-	}
-	// special case - if there were 0 identities on the list when we started then we will never get a chance to repopulate the list
-	// this will recheck for ids every minute
-	Poco::DateTime now;
-	if(m_ids.size()==0 && m_tempdate<(now-Poco::Timespan(0,0,1,0,0)))
-	{
-		PopulateIDList();
-		m_tempdate=now;
-	}
-}
-
-void IntroductionPuzzleRequester::RegisterWithThread(FreenetMasterThread *thread)
-{
-	thread->RegisterFCPConnected(this);
-	thread->RegisterFCPMessageHandler(this);
-	thread->RegisterPeriodicProcessor(this);
-}
-
-void IntroductionPuzzleRequester::RemoveFromRequestList(const long identityid)
-{
-	std::vector<long>::iterator i=m_requesting.begin();
-	while(i!=m_requesting.end() && (*i)!=identityid)
-	{
-		i++;
-	}
-	if(i!=m_requesting.end())
-	{
-		m_requesting.erase(i);
-	}
-}
-
-void IntroductionPuzzleRequester::StartRequest(const long identityid)
+void IntroductionPuzzleRequester::StartRequest(const long &identityid)
 {
 	Poco::DateTime now;
 	FCPMessage message;
@@ -375,7 +285,7 @@ void IntroductionPuzzleRequester::StartRequest(const long identityid)
 
 		message.SetName("ClientGet");
 		message["URI"]=publickey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|IntroductionPuzzle|"+indexstr+".xml";
-		message["Identifier"]="IntroductionPuzzleRequester|"+identityidstr+"|"+indexstr+"|"+message["URI"];
+		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|"+message["URI"];
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";		// 1 MB
 

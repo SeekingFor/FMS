@@ -25,6 +25,11 @@ DBMaintenanceThread::DBMaintenanceThread()
 	Option::Instance()->Get("DeleteMessagesOlderThan",tempval);
 	StringFunctions::Convert(tempval,m_deletemessagesolderthan);
 
+	m_messagedownloadmaxdaysbackward=5;
+	tempval="5";
+	Option::Instance()->Get("MessageDownloadMaxDaysBackward",tempval);
+	StringFunctions::Convert(tempval,m_messagedownloadmaxdaysbackward);
+
 }
 
 
@@ -260,7 +265,7 @@ void DBMaintenanceThread::Do1DayMaintenance()
 
 	// delete old message requests
 	date=Poco::Timestamp();
-	date-=Poco::Timespan(90,0,0,0,0);
+	date-=Poco::Timespan(m_messagedownloadmaxdaysbackward,0,0,0,0);
 	st=m_db->Prepare("DELETE FROM tblMessageRequests WHERE Day<?;");
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Step();

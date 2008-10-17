@@ -20,9 +20,11 @@ private:
 	const bool HandleGetFailed(FCPMessage &message);
 	void GetBoardList(std::map<std::string,bool> &boards);
 	const bool CheckDateNotFuture(const std::string &datestr) const;
+	const bool CheckDateWithinMaxDays(const std::string &datestr) const;
 
 	bool m_localtrustoverrides;
 	bool m_savetonewboards;
+	long m_messagedownloadmaxdaysbackward;
 
 };
 
