@@ -6,7 +6,7 @@
 class ConfirmPage:public IPageHandler
 {
 public:
-	ConfirmPage(const std::string &templatestr):IPageHandler(templatestr)		{}
+	ConfirmPage(const std::string &templatestr):IPageHandler(templatestr,"confirm.htm")		{}
 
 	IPageHandler *New()	{ return new ConfirmPage(m_template); }
 

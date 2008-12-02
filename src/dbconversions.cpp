@@ -233,6 +233,16 @@ void ConvertDB0112To0113()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=13;");
 }
 
+void ConvertDB0113To0114()
+{
+	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
+
+	db->Execute("ALTER TABLE tblBoard ADD COLUMN Forum TEXT CHECK(Forum IN ('true','false')) DEFAULT 'false';");
+	db->Execute("ALTER TABLE tblMessage ADD COLUMN Read INTEGER CHECK(Read IN (0,1)) DEFAULT 0;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=14;");
+}
+
 void FixCapitalBoardNames()
 {
 	SQLite3DB::DB *db=SQLite3DB::DB::Instance();

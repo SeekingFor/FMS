@@ -24,17 +24,6 @@ IntroductionPuzzleRequester::IntroductionPuzzleRequester(FCPv2 *fcp):IIndexReque
 	Initialize();
 }
 
-void IntroductionPuzzleRequester::FCPConnected()
-{
-	m_requesting.clear();
-	PopulateIDList();
-}
-
-void IntroductionPuzzleRequester::FCPDisconnected()
-{
-	
-}
-
 const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 {
 	Poco::DateTime now;

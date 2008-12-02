@@ -14,12 +14,12 @@ public:
 	virtual ~Recordset();
 
 	virtual void Free() { if(m_rs) { sqlite3_free_table(m_rs); m_rs=NULL; } }
-	virtual const bool Empty() { return (m_rs==NULL || m_rows==0) ? true : false ; }
+	virtual const bool Empty() const 		{ return (m_rs==NULL || m_rows==0) ? true : false ; }
 
-	virtual const int Count() { return m_rows; }
-	virtual const bool AtBeginning() { return m_currentrow==0; }
-	virtual const bool AtEnd() { return m_currentrow>=m_rows; }
-	virtual const int Cols() { return m_cols; }
+	virtual const int Count() const			{ return m_rows; }
+	virtual const bool AtBeginning() const	{ return m_currentrow==0; }
+	virtual const bool AtEnd() const		{ return m_currentrow>=m_rows; }
+	virtual const int Cols() const			{ return m_cols; }
 
 	virtual const bool Next() { if(m_currentrow<m_rows) { m_currentrow++; return true; } else { return false; } }
 	virtual const bool Previous() { if(m_currentrow-1>=0) { m_currentrow--; return true; } else { return false; } }

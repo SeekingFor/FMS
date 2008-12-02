@@ -7,12 +7,11 @@
 class VersionInfoPage:public IPageHandler,public IDatabase
 {
 public:
-	VersionInfoPage(const std::string &templatestr):IPageHandler(templatestr)		{}
+	VersionInfoPage(const std::string &templatestr):IPageHandler(templatestr,"versioninfo.htm")		{}
 
 	IPageHandler *New()	{ return new VersionInfoPage(m_template); }
 
 private:
-	const bool WillHandleURI(const std::string &uri);
 	const std::string GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars);
 
 };

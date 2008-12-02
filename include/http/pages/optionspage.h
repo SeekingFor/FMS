@@ -7,7 +7,7 @@
 class OptionsPage:public IPageHandler,public IDatabase
 {
 public:
-	OptionsPage(const std::string &templatestr):IPageHandler(templatestr)	{}
+	OptionsPage(const std::string &templatestr):IPageHandler(templatestr,"options.htm")	{}
 	
 	IPageHandler *New()	{ return new OptionsPage(m_template); }
 

@@ -11,9 +11,6 @@ public:
 	IntroductionPuzzleRequester();
 	IntroductionPuzzleRequester(FCPv2 *fcp);
 
-	void FCPDisconnected();
-	void FCPConnected();
-
 private:
 	void Initialize();
 	void StartRequest(const long &identityid);

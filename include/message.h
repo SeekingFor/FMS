@@ -46,6 +46,7 @@ public:
 	const bool Load(const std::string &messageuuid);
 	
 	const bool ParseNNTPMessage(const std::string &nntpmessage);
+	const bool Create(const long localidentityid, const long boardid, const std::string &subject, const std::string &body, const std::string &references);
 
 	const bool PostedToAdministrationBoard()		{ return CheckForAdministrationBoard(m_boards); }
 

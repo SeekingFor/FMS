@@ -7,7 +7,7 @@
 class AddPeerPage:public IPageHandler,public IDatabase
 {
 public:
-	AddPeerPage(const std::string &templatestr):IPageHandler(templatestr)	{}
+	AddPeerPage(const std::string &templatestr):IPageHandler(templatestr,"addpeer.htm")	{}
 
 	IPageHandler *New()	{ return new AddPeerPage(m_template); }
 

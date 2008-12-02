@@ -49,6 +49,63 @@ const bool Message::CheckForAdministrationBoard(const std::vector<std::string> &
 	return false;
 }
 
+const bool Message::Create(const long localidentityid, const long boardid, const std::string &subject, const std::string &body, const std::string &references)
+{
+	Initialize();
+
+	Poco::UUIDGenerator uuidgen;
+	Poco::UUID uuid;
+
+	// get header info
+	// date is always set to now regardless of what message has
+	m_datetime=Poco::Timestamp();
+
+	// messageuuid is always a unique id we generate regardless of message message-id
+	try
+	{
+		uuid=uuidgen.createRandom();
+		m_messageuuid=uuid.toString();
+		StringFunctions::UpperCase(m_messageuuid,m_messageuuid);
+	}
+	catch(...)
+	{
+		m_log->fatal("Message::ParseNNTPMessage could not create UUID");
+	}
+	
+	// get from
+	SQLite3DB::Statement st=m_db->Prepare("SELECT Name FROM tblLocalIdentity WHERE LocalIdentityID=?;");
+	st.Bind(0,localidentityid);
+	st.Step();
+	if(st.RowReturned())
+	{
+		st.ResultText(0,m_fromname);
+	}
+
+	// get boards posted to
+	std::string boardname="";
+	SQLite3DB::Statement boardst=m_db->Prepare("SELECT BoardName FROM tblBoard WHERE BoardID=?;");
+	boardst.Bind(0,boardid);
+	boardst.Step();
+	if(boardst.RowReturned())
+	{
+		boardst.ResultText(0,boardname);
+	}
+
+	m_boards.push_back(boardname);
+	m_replyboardname=boardname;
+
+	m_subject=subject;
+
+	m_body=body;
+
+	if(references!="")
+	{
+		m_inreplyto[0]=references;
+	}
+
+	return true;
+}
+
 const int Message::FindLocalIdentityID(const std::string &name)
 {
 	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE Name=?;");

@@ -16,9 +16,9 @@ class IPageHandler:public Poco::Net::HTTPRequestHandler,public ILogger
 {
 public:
 	IPageHandler()	{}
-	IPageHandler(const std::string &templatestr)	{ m_template=templatestr; }
+	IPageHandler(const std::string &templatestr, const std::string &pagename):m_template(templatestr),m_pagename(pagename)	{  }
 	virtual ~IPageHandler()	{}
-	virtual const bool WillHandleURI(const std::string &uri)=0;
+	virtual const bool WillHandleURI(const std::string &uri);
 
 	virtual IPageHandler *New()=0;	// returns a new instance of the object
 
@@ -41,6 +41,7 @@ protected:
 	const std::string SanitizeOutput(const std::string &input);
 
 	std::string m_template;
+	std::string m_pagename;
 
 };
 

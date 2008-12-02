@@ -18,7 +18,7 @@ class DB:public Singleton<DB>
 {
 public:
 	DB();
-	DB(std::string filename);
+	DB(const std::string &filename);
 	~DB();
 	
 	const bool Open(const std::string &filename);

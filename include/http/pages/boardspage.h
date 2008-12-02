@@ -7,7 +7,7 @@
 class BoardsPage:public IPageHandler,public IDatabase
 {
 public:
-	BoardsPage(const std::string &templatestr):IPageHandler(templatestr)	{}
+	BoardsPage(const std::string &templatestr):IPageHandler(templatestr,"boards.htm")	{}
 	
 	IPageHandler *New()	{ return new BoardsPage(m_template); }
 

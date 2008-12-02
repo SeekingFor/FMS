@@ -197,3 +197,15 @@ const bool IPageHandler::ValidateFormPassword(const std::map<std::string,std::st
 		return false;
 	}
 }
+
+const bool IPageHandler::WillHandleURI(const std::string &uri)
+{
+	if(uri.find(m_pagename)!=std::string::npos)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}

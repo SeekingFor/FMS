@@ -7,7 +7,7 @@
 class PeerMaintenancePage:public IPageHandler,public IDatabase
 {
 public:
-	PeerMaintenancePage(const std::string &templatestr):IPageHandler(templatestr)	{}
+	PeerMaintenancePage(const std::string &templatestr):IPageHandler(templatestr,"peermaintenance.htm")	{}
 
 	IPageHandler *New()	{ return new PeerMaintenancePage(m_template); }
 

@@ -261,14 +261,14 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 
 	// search drop down
 	content+="<div style=\"text-align:center;margin-bottom:5px;\">";
-	content+="<form name=\"frmsearch\" method=\"POST\" action=\"peertrust.htm?"+BuildQueryString(0,"","","",localidentityid)+"\">";
+	content+="<form name=\"frmsearch\" method=\"POST\" action=\""+m_pagename+"?"+BuildQueryString(0,"","","",localidentityid)+"\">";
 	content+="<input type=\"text\" name=\"namesearch\" value=\""+SanitizeOutput(namesearch)+"\">";
 	content+="<input type=\"submit\" value=\"Search\">";
 	content+="</form>";
 	content+="</div>";
 
 	content+="<div style=\"text-align:center;\">";
-	content+="<form name=\"frmlocalidentity\" method=\"POST\" action=\"peertrust.htm?"+BuildQueryString(startrow,namesearch,sortby,sortorder,-1)+"\">";
+	content+="<form name=\"frmlocalidentity\" method=\"POST\" action=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,sortby,sortorder,-1)+"\">";
 	content+="Load Trust List of ";
 	content+=CreateLocalIdentityDropDown("localidentityid",localidentityid);
 	content+="<input type=\"submit\" value=\"Load List\">";
@@ -285,14 +285,14 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 		content+="<input type=\"hidden\" name=\"namesearch\" value=\""+SanitizeOutput(namesearch)+"\">";
 	}
 	content+="<table class=\"small90\">";
-	content+="<tr><th><a href=\"peertrust.htm?"+BuildQueryString(startrow,namesearch,"Name",ReverseSort("Name",sortby,sortorder),localidentityid)+"\">Name</a></th>";
-	content+="<th><a href=\"peertrust.htm?"+BuildQueryString(startrow,namesearch,"tblIdentityTrust.LocalMessageTrust",ReverseSort("tblIdentityTrust.LocalMessageTrust",sortby,sortorder),localidentityid)+"\">Local Message Trust</a></th>";
+	content+="<tr><th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"Name",ReverseSort("Name",sortby,sortorder),localidentityid)+"\">Name</a></th>";
+	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"tblIdentityTrust.LocalMessageTrust",ReverseSort("tblIdentityTrust.LocalMessageTrust",sortby,sortorder),localidentityid)+"\">Local Message Trust</a></th>";
 	content+="<th>Message Comment</th>";
-	content+="<th><a href=\"peertrust.htm?"+BuildQueryString(startrow,namesearch,"PeerMessageTrust",ReverseSort("PeerMessageTrust",sortby,sortorder),localidentityid)+"\">Peer Message Trust</a></th>";
-	content+="<th><a href=\"peertrust.htm?"+BuildQueryString(startrow,namesearch,"tblIdentityTrust.LocalTrustListTrust",ReverseSort("tblIdentityTrust.LocalTrustListTrust",sortby,sortorder),localidentityid)+"\">Local Trust List Trust</a></th>";
+	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"PeerMessageTrust",ReverseSort("PeerMessageTrust",sortby,sortorder),localidentityid)+"\">Peer Message Trust</a></th>";
+	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"tblIdentityTrust.LocalTrustListTrust",ReverseSort("tblIdentityTrust.LocalTrustListTrust",sortby,sortorder),localidentityid)+"\">Local Trust List Trust</a></th>";
 	content+="<th>Trust Comment</th>";
-	content+="<th><a href=\"peertrust.htm?"+BuildQueryString(startrow,namesearch,"PeerTrustListTrust",ReverseSort("PeerTrustListTrust",sortby,sortorder),localidentityid)+"\">Peer Trust List Trust</a></th>";
-	content+="<th><a href=\"peertrust.htm?"+BuildQueryString(startrow,namesearch,"MessageCount",ReverseSort("MessageCount",sortby,sortorder),localidentityid)+"\">Message Count</a></th>";
+	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"PeerTrustListTrust",ReverseSort("PeerTrustListTrust",sortby,sortorder),localidentityid)+"\">Peer Trust List Trust</a></th>";
+	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"MessageCount",ReverseSort("MessageCount",sortby,sortorder),localidentityid)+"\">Message Count</a></th>";
 	content+="</tr>\r\n";
 	
 	// get count of identities we are showing
@@ -425,7 +425,7 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 		if(startrow>0)
 		{
 			StringFunctions::Convert(startrow-rowsperpage,tempstr);
-			content+="<td colspan=\"3\" align=\"left\"><a href=\"peertrust.htm?"+BuildQueryString(startrow-rowsperpage,namesearch,sortby,sortorder,localidentityid)+"\"><-- Previous Page</a></td>";
+			content+="<td colspan=\"3\" align=\"left\"><a href=\""+m_pagename+"?"+BuildQueryString(startrow-rowsperpage,namesearch,sortby,sortorder,localidentityid)+"\"><-- Previous Page</a></td>";
 			cols+=3;
 		}
 		if(startrow+rowsperpage<identitycount)
@@ -435,7 +435,7 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 				content+="<td></td>";
 				cols++;
 			}
-			content+="<td colspan=\"3\" align=\"right\"><a href=\"peertrust.htm?"+BuildQueryString(startrow+rowsperpage,namesearch,sortby,sortorder,localidentityid)+"\">Next Page --></a></td>";
+			content+="<td colspan=\"3\" align=\"right\"><a href=\""+m_pagename+"?"+BuildQueryString(startrow+rowsperpage,namesearch,sortby,sortorder,localidentityid)+"\">Next Page --></a></td>";
 		}
 		content+="</tr>";
 	}
@@ -482,17 +482,5 @@ const std::string PeerTrustPage::ReverseSort(const std::string &sortname, const 
 	else
 	{
 		return currentsortorder;
-	}
-}
-
-const bool PeerTrustPage::WillHandleURI(const std::string &uri)
-{
-	if(uri.find("peertrust.")!=std::string::npos)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
 	}
 }

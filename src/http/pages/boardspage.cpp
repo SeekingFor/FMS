@@ -75,23 +75,29 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 			std::vector<std::string> descriptions;
 			std::vector<std::string> oldsavemessages;
 			std::vector<std::string> savemessages;
+			std::vector<std::string> oldforums;
+			std::vector<std::string> forums;
 
 			CreateArgArray(queryvars,"boardid",boardids);
 			CreateArgArray(queryvars,"oldboarddescription",olddescriptions);
 			CreateArgArray(queryvars,"boarddescription",descriptions);
 			CreateArgArray(queryvars,"oldsavereceivedmessages",oldsavemessages);
 			CreateArgArray(queryvars,"savereceivedmessages",savemessages);
+			CreateArgArray(queryvars,"oldforum",oldforums);
+			CreateArgArray(queryvars,"forum",forums);
 
 			olddescriptions.resize(boardids.size(),"");
 			descriptions.resize(boardids.size(),"");
 			oldsavemessages.resize(boardids.size(),"");
 			savemessages.resize(boardids.size(),"");
+			oldforums.resize(boardids.size(),"");
+			forums.resize(boardids.size(),"");
 
-			SQLite3DB::Statement updatest=m_db->Prepare("UPDATE tblBoard SET BoardDescription=?, SaveReceivedMessages=? WHERE BoardID=?;");
+			SQLite3DB::Statement updatest=m_db->Prepare("UPDATE tblBoard SET BoardDescription=?, SaveReceivedMessages=?, Forum=? WHERE BoardID=?;");
 			
 			for(int i=0; i<boardids.size(); i++)
 			{
-				if(olddescriptions[i]!=descriptions[i] || oldsavemessages[i]!=savemessages[i])
+				if(olddescriptions[i]!=descriptions[i] || oldsavemessages[i]!=savemessages[i] || oldforums[i]!=forums[i])
 				{
 					updatest.Bind(0,descriptions[i]);
 					if(savemessages[i]!="true")
@@ -102,9 +108,17 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 					{
 						updatest.Bind(1,"true");
 					}
+					if(forums[i]!="true")
+					{
+						updatest.Bind(2,"false");
+					}
+					else
+					{
+						updatest.Bind(2,"true");
+					}
 					boardid=0;
 					StringFunctions::Convert(boardids[i],boardid);
-					updatest.Bind(2,boardid);
+					updatest.Bind(3,boardid);
 					updatest.Step();
 					updatest.Reset();
 				}
@@ -154,7 +168,7 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 	st.Finalize();
 
 
-	sql="SELECT BoardID,BoardName,BoardDescription,SaveReceivedMessages,AddedMethod FROM tblBoard WHERE BoardID NOT IN (SELECT BoardID FROM tblAdministrationBoard)";
+	sql="SELECT BoardID,BoardName,BoardDescription,SaveReceivedMessages,AddedMethod,Forum FROM tblBoard WHERE BoardID NOT IN (SELECT BoardID FROM tblAdministrationBoard)";
 	if(boardsearch!="")
 	{
 		sql+=" AND (BoardName LIKE '%' || ? || '%' OR BoardDescription LIKE '%' || ? || '%')";
@@ -170,7 +184,7 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 	}
 	st.Step();
 
-	content+="<table>";
+	content+="<table class=\"small90\">";
 
 	content+="<tr>";
 	content+="<td colspan=\"3\"><center>";
@@ -190,7 +204,7 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 
 	content+="<tr><td colspan=\"4\"><hr><form name=\"frmboards\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"</td></tr>";
 	content+="<tr>";
-	content+="<th>Name</th><th>Description</th><th>Save Received Messages *</th><th>Added Method</th>";
+	content+="<th>Name</th><th>Description</th><th>Save Received Messages *</th><th>Forum</th><th>Added Method</th>";
 	content+="</tr>";	
 	while(st.RowReturned() && rownum<rowsperpage)
 	{
@@ -200,12 +214,14 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 		std::string boarddescription="";
 		std::string savereceivedmessages="";
 		std::string addedmethod="";
+		std::string forum="";
 
 		st.ResultText(0,boardidstr);
 		st.ResultText(1,boardname);
 		st.ResultText(2,boarddescription);
 		st.ResultText(3,savereceivedmessages);
 		st.ResultText(4,addedmethod);
+		st.ResultText(5,forum);
 
 		StringFunctions::Convert(rownum,rownumstr);
 
@@ -223,7 +239,16 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 		}
 		content+=">";
 		content+="</td>";
-		content+="<td class=\"smaller\">"+SanitizeOutput(addedmethod)+"</td>";
+		content+="<td>";
+		content+="<input type=\"hidden\" name=\"oldforum["+rownumstr+"]\" value=\""+forum+"\">";
+		content+="<input type=\"checkbox\" name=\"forum["+rownumstr+"]\" value=\"true\"";
+		if(forum=="true")
+		{
+			content+=" CHECKED";
+		}
+		content+=">";
+		content+="</td>";
+		content+="<td>"+SanitizeOutput(addedmethod)+"</td>";
 		content+="</tr>\r\n";
 		st.Step();
 		rownum++;
@@ -238,17 +263,17 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 		if(startrow>0)
 		{
 			StringFunctions::Convert(startrow-rowsperpage,tempstr);
-			content+="<td colspan=\"1\" align=\"left\"><a href=\"boards.htm?"+BuildQueryString(startrow-rowsperpage,boardsearch)+"\"><-- Previous Page</a></td>";
-			cols+=1;
+			content+="<td colspan=\"2\" style=\"text-align:left;\"><a href=\"boards.htm?"+BuildQueryString(startrow-rowsperpage,boardsearch)+"\"><-- Previous Page</a></td>";
+			cols+=2;
 		}
 		if(startrow+rowsperpage<boardcount)
 		{
-			while(cols<3)
+			while(cols<4)
 			{
 				content+="<td></td>";
 				cols++;
 			}
-			content+="<td colspan=\"1\" align=\"right\"><a href=\"boards.htm?"+BuildQueryString(startrow+rowsperpage,boardsearch)+"\">Next Page --></a></td>";
+			content+="<td colspan=\"1\" style=\"text-align:left;\"><a href=\"boards.htm?"+BuildQueryString(startrow+rowsperpage,boardsearch)+"\">Next Page --></a></td>";
 		}
 		content+="</tr>";
 	}

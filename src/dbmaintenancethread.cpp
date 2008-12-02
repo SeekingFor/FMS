@@ -1,6 +1,7 @@
 #include "../include/dbmaintenancethread.h"
 #include "../include/stringfunctions.h"
 #include "../include/option.h"
+#include "../include/threadbuilder.h"
 
 #include <Poco/Timestamp.h>
 #include <Poco/Timespan.h>
@@ -36,12 +37,62 @@ DBMaintenanceThread::DBMaintenanceThread()
 void DBMaintenanceThread::Do10MinuteMaintenance()
 {
 
+	ThreadBuilder tb;
+	SQLite3DB::Statement boardst=m_db->Prepare("SELECT BoardID FROM tblBoard WHERE Forum='true';");
+	// select messages for a board that aren't in a thread
+	SQLite3DB::Statement selectst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblMessage \
+												INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID\
+												LEFT JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID \
+												LEFT JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID\
+												WHERE tblMessageBoard.BoardID=? AND tblThread.BoardID IS NULL;");
+
+	boardst.Step();
+	while(boardst.RowReturned())
+	{
+		int boardid=-1;
+
+		boardst.ResultInt(0,boardid);
+
+		selectst.Bind(0,boardid);
+		selectst.Step();
+
+		while(selectst.RowReturned())
+		{
+			int messageid=-1;
+
+			selectst.ResultInt(0,messageid);
+
+			tb.Build(messageid,boardid,true);
+
+			selectst.Step();
+		}
+		selectst.Reset();
+
+		boardst.Step();
+	}
+
+	// now rebuild threads where the message has been deleted
+	SQLite3DB::Statement st=m_db->Prepare("SELECT tblThreadPost.MessageID, tblThread.BoardID FROM tblThreadPost INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID LEFT JOIN tblMessage ON tblThreadPost.MessageID=tblMessage.MessageID WHERE tblMessage.MessageID IS NULL;");
+	st.Step();
+	while(st.RowReturned())
+	{
+		int messageid=-1;
+		int boardid=-1;
+
+		st.ResultInt(0,messageid);
+		st.ResultInt(1,boardid);
+
+		tb.Build(messageid,boardid,true);
+
+		st.Step();
+	}
+
 	m_log->debug("PeriodicDBMaintenance::Do10MinuteMaintenance");
 }
 
 void DBMaintenanceThread::Do30MinuteMaintenance()
 {
-
+	// UNCOMMENT method in run when code is placed here
 	m_log->debug("PeriodicDBMaintenance::Do30MinuteMaintenance");
 }
 
@@ -283,6 +334,7 @@ void DBMaintenanceThread::run()
 	m_log->debug("DBMaintenanceThread::run thread started.");
 
 	Poco::DateTime now;
+	int i=0;
 
 	do
 	{
@@ -293,11 +345,13 @@ void DBMaintenanceThread::run()
 			Do10MinuteMaintenance();
 			m_last10minute=Poco::Timestamp();
 		}
+		/*
 		if((m_last30minute+Poco::Timespan(0,0,30,0,0))<=now)
 		{
 			Do30MinuteMaintenance();
 			m_last30minute=Poco::Timestamp();
 		}
+		*/
 		if((m_last1hour+Poco::Timespan(0,1,0,0,0))<=now)
 		{
 			Do1HourMaintenance();
@@ -314,7 +368,12 @@ void DBMaintenanceThread::run()
 			m_last1day=Poco::Timestamp();
 		}
 
-		Poco::Thread::sleep(1000);
+		i=0;
+		while(i++<5 && !IsCancelled())
+		{
+			Poco::Thread::sleep(1000);
+		}
+
 	}while(!IsCancelled());
 
 	m_log->debug("DBMaintenanceThread::run thread exiting.");

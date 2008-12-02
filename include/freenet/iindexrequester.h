@@ -14,6 +14,8 @@
 #include <Poco/Timestamp.h>
 #include <Poco/Timespan.h>
 
+#include <algorithm>
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif
@@ -82,7 +84,7 @@ void IIndexRequester<IDTYPE>::FCPConnected()
 	}
 	if(m_fcpuniquename.find("|")!=std::string::npos)
 	{
-		m_log->fatal("IIndexRequester<IDTYPE>::FCPConnected fcpuniquename contains | character!  This is not a valid character!");
+		m_log->fatal("IIndexRequester<IDTYPE>::FCPConnected fcpuniquename "+m_fcpuniquename+" contains | character!  This is not a valid character!");
 	}
 
 	m_lastreceived=Poco::Timestamp();
@@ -208,11 +210,16 @@ void IIndexRequester<IDTYPE>::RegisterWithThread(FreenetMasterThread *thread)
 template <class IDTYPE>
 void IIndexRequester<IDTYPE>::RemoveFromRequestList(const IDTYPE id)
 {
+/*
 	typename std::vector<IDTYPE>::iterator i=m_requesting.begin();
 	while(i!=m_requesting.end() && (*i)!=id)
 	{
 		i++;
 	}
+*/
+	// better
+	typename std::vector<IDTYPE>::iterator i=std::find(m_requesting.begin(),m_requesting.end(),id);
+
 	if(i!=m_requesting.end())
 	{
 		m_requesting.erase(i);

@@ -18,33 +18,29 @@ src/base64.cpp
 src/bitmapvalidator.cpp
 src/board.cpp
 src/boardlist.cpp
-src/db
 src/dbconversions.cpp
 src/dbmaintenancethread.cpp
 src/dbsetup.cpp
 src/fmsapp.cpp
-src/freenet
 src/global.cpp
 src/hex.cpp
-src/http
 src/ipaddressacl.cpp
 src/localidentity.cpp
 src/main.cpp
 src/message.cpp
 src/messagelist.cpp
-src/nntp
+src/messagethread.cpp
 src/option.cpp
 src/optionssetup.cpp
 src/socketdefines.cpp
 src/stringfunctions.cpp
-src/threadwrapper
+src/threadbuilder.cpp
 src/db/sqlite3db.cpp
 src/db/sqlite3recordset.cpp
 src/db/sqlite3statement.cpp
 src/freenet/boardlistinserter.cpp
 src/freenet/boardlistrequester.cpp
 src/freenet/boardlistxml.cpp
-src/freenet/captcha
 src/freenet/fcpv2.cpp
 src/freenet/fileinserter.cpp
 src/freenet/fmsversionrequester.cpp
@@ -71,7 +67,6 @@ src/freenet/trustlistinserter.cpp
 src/freenet/trustlistrequester.cpp
 src/freenet/trustlistxml.cpp
 src/freenet/unkeyedidcreator.cpp
-src/freenet/captcha/easybmp
 src/freenet/captcha/simplecaptcha.cpp
 src/freenet/captcha/easybmp/EasyBMP.cpp
 src/freenet/captcha/easybmp/EasyBMP_Font.cpp
@@ -81,14 +76,19 @@ src/http/httpthread.cpp
 src/http/identityexportxml.cpp
 src/http/ipagehandler.cpp
 src/http/multipartparser.cpp
-src/http/pages
 src/http/pages/addpeerpage.cpp
 src/http/pages/announceidentitypage.cpp
 src/http/pages/boardspage.cpp
+src/http/pages/browseboardspage.cpp
+src/http/pages/browsemessagespage.cpp
 src/http/pages/confirmpage.cpp
 src/http/pages/controlboardpage.cpp
 src/http/pages/createidentitypage.cpp
 src/http/pages/execquerypage.cpp
+src/http/pages/forumcreatepostpage.cpp
+src/http/pages/forummainpage.cpp
+src/http/pages/forumthreadspage.cpp
+src/http/pages/forumviewthreadpage.cpp
 src/http/pages/homepage.cpp
 src/http/pages/insertedfilespage.cpp
 src/http/pages/localidentitiespage.cpp
@@ -98,9 +98,9 @@ src/http/pages/peermaintenancepage.cpp
 src/http/pages/peertrustpage.cpp
 src/http/pages/recentlyaddedpage.cpp
 src/http/pages/showcaptchapage.cpp
+src/http/pages/showimagepage.cpp
 src/http/pages/versioninfopage.cpp
 src/nntp/extensiontrust.cpp
-src/nntp/mime
 src/nntp/nntpconnection.cpp
 src/nntp/nntplistener.cpp
 src/nntp/uwildmat.cpp
@@ -211,6 +211,7 @@ IF(NOT WIN32)
 ENDIF(NOT WIN32)
 
 IF(SQLITE3_LIBRARY)
+	MESSAGE(STATUS "Linking against system SQLite3 library.")
 	TARGET_LINK_LIBRARIES(fms ${SQLITE3_LIBRARY})
 ELSE(SQLITE3_LIBRARY)
 	IF(NOT USE_BUNDLED_SQLITE)

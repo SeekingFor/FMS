@@ -7,7 +7,7 @@
 class AnnounceIdentityPage:public IPageHandler,public IDatabase
 {
 public:
-	AnnounceIdentityPage(const std::string &templatestr):IPageHandler(templatestr)	{}
+	AnnounceIdentityPage(const std::string &templatestr):IPageHandler(templatestr,"announceidentity.htm")	{}
 
 	IPageHandler *New()	{ return new AnnounceIdentityPage(m_template); }
 

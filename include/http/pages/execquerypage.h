@@ -7,7 +7,7 @@
 class ExecQueryPage:public IPageHandler,public IDatabase
 {
 public:
-	ExecQueryPage(const std::string &templatestr):IPageHandler(templatestr)		{}
+	ExecQueryPage(const std::string &templatestr):IPageHandler(templatestr,"execquery.htm")		{}
 
 	IPageHandler *New()	{ return new ExecQueryPage(m_template); }
 

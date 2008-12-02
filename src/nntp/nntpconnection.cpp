@@ -17,11 +17,10 @@
 	#include <xmem.h>
 #endif
 
-NNTPConnection::NNTPConnection(SOCKET sock)
+NNTPConnection::NNTPConnection(SOCKET sock):m_socket(sock)
 {
-	std::string tempval;
+	std::string tempval("");
 
-	m_socket=sock;
 	m_tempbuffer.resize(32768);
 	
 	m_status.m_isposting=false;

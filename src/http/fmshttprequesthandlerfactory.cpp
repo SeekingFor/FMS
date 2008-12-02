@@ -18,6 +18,13 @@
 #include "../../include/http/pages/peertrustpage.h"
 #include "../../include/http/pages/versioninfopage.h"
 #include "../../include/http/pages/recentlyaddedpage.h"
+#include "../../include/http/pages/browseboardspage.h"
+#include "../../include/http/pages/browsemessagespage.h"
+#include "../../include/http/pages/forummainpage.h"
+#include "../../include/http/pages/showimagepage.h"
+#include "../../include/http/pages/forumthreadspage.h"
+#include "../../include/http/pages/forumviewthreadpage.h"
+#include "../../include/http/pages/forumcreatepostpage.h"
 
 FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory()
 {
@@ -39,6 +46,24 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory()
 		m_log->error("HTTPThread::HTTPThread could not open template.htm");
 	}
 
+	// load forum template
+	std::string forumtemplate="<html><head></head><body><a href=\"home.htm\">Home</a><br><h1>Could not open forum-template.htm!  Place in program directory and restart!</h1><br>[CONTENT]</body></html>";
+	infile=fopen("forum-template.htm","rb");
+	if(infile)
+	{
+		fseek(infile,0,SEEK_END);
+		long len=ftell(infile);
+		std::vector<char> data(len,0);
+		fseek(infile,0,SEEK_SET);
+		fread(&data[0],1,len,infile);
+		fclose(infile);
+		forumtemplate.assign(data.begin(),data.end());
+	}
+	else
+	{
+		m_log->error("HTTPThread::HTTPThread could not open forum-template.htm");
+	}
+
 	// push back page handlers
 	m_pagehandlers.push_back(new OptionsPage(templatestr));
 	m_pagehandlers.push_back(new CreateIdentityPage(templatestr));
@@ -56,6 +81,13 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory()
 	m_pagehandlers.push_back(new PeerTrustPage(templatestr));
 	m_pagehandlers.push_back(new VersionInfoPage(templatestr));
 	m_pagehandlers.push_back(new RecentlyAddedPage(templatestr));
+	m_pagehandlers.push_back(new BrowseBoardsPage(templatestr));
+	m_pagehandlers.push_back(new BrowseMessagesPage(templatestr));
+	m_pagehandlers.push_back(new ShowImagePage());
+	m_pagehandlers.push_back(new ForumMainPage(forumtemplate));
+	m_pagehandlers.push_back(new ForumThreadsPage(forumtemplate));
+	m_pagehandlers.push_back(new ForumViewThreadPage(forumtemplate));
+	m_pagehandlers.push_back(new ForumCreatePostPage(forumtemplate));
 	// homepage must be last - catch all page handler
 	m_pagehandlers.push_back(new HomePage(templatestr));
 

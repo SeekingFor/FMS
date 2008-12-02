@@ -7,7 +7,7 @@
 class HomePage:public IPageHandler,public IDatabase
 {
 public:
-	HomePage(const std::string &templatestr):IPageHandler(templatestr) {}
+	HomePage(const std::string &templatestr):IPageHandler(templatestr,"index.htm") {}
 
 	IPageHandler *New()	{ return new HomePage(m_template); }
 

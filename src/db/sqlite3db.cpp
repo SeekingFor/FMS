@@ -12,7 +12,7 @@ DB::DB()
 	Initialize();
 }
 
-DB::DB(std::string filename)
+DB::DB(const std::string &filename)
 {
 	Initialize();
 	Open(filename);
@@ -22,7 +22,7 @@ DB::~DB()
 {
 	if(IsOpen())
 	{
-		Close();	
+		Close();
 	}
 }
 
@@ -39,12 +39,12 @@ const bool DB::Close()
 		}
 		else
 		{
-			return false;	
+			return false;
 		}
 	}
 	else
 	{
-		return false;	
+		return false;
 	}
 }
 
@@ -60,7 +60,7 @@ const bool DB::Execute(const std::string &sql)
 		}
 		else
 		{
-			return false;	
+			return false;
 		}
 	}
 	else
@@ -82,7 +82,7 @@ const bool DB::ExecuteInsert(const std::string &sql, long &insertid)
 		}
 		else
 		{
-			return false;	
+			return false;
 		}
 	}
 	else
@@ -106,7 +106,7 @@ const int DB::GetLastError(std::string &errormessage)
 	}
 	else
 	{
-		return SQLITE_OK;	
+		return SQLITE_OK;
 	}
 }
 
@@ -119,7 +119,7 @@ void DB::Initialize()
 const bool DB::IsOpen()
 {
 	Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
-	return m_db ? true : false; 
+	return m_db ? true : false;
 }
 
 const bool DB::Open(const std::string &filename)
@@ -138,12 +138,12 @@ const bool DB::Open(const std::string &filename)
 		}
 		else
 		{
-			return false;	
+			return false;
 		}
 	}
 	else
 	{
-		return false;	
+		return false;
 	}
 }
 

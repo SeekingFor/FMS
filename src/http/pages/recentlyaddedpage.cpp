@@ -81,15 +81,3 @@ const std::string RecentlyAddedPage::GeneratePage(const std::string &method, con
 
 	return StringFunctions::Replace(m_template,"[CONTENT]",content);
 }
-
-const bool RecentlyAddedPage::WillHandleURI(const std::string &uri)
-{
-	if(uri.find("recentlyadded.")!=std::string::npos)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}

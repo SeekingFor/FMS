@@ -65,6 +65,8 @@ const bool MessageInserter::HandlePutFailed(FCPMessage &message)
 		st.Step();
 	}
 
+	m_log->trace("MessageInserter::HandlePutFailed error code "+message["Code"]+" fatal="+message["Fatal"]);
+
 	RemoveFromInsertList(idparts[1]);
 
 	return true;

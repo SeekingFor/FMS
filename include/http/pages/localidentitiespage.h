@@ -7,7 +7,7 @@
 class LocalIdentitiesPage:public IPageHandler,public IDatabase
 {
 public:
-	LocalIdentitiesPage(const std::string &templatestr):IPageHandler(templatestr)	{}
+	LocalIdentitiesPage(const std::string &templatestr):IPageHandler(templatestr,"localidentities.htm")	{}
 
 	IPageHandler *New()	{ return new LocalIdentitiesPage(m_template); }
 

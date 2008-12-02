@@ -7,7 +7,7 @@
 class ControlBoardPage:public IPageHandler,public IDatabase
 {
 public:
-	ControlBoardPage(const std::string &templatestr):IPageHandler(templatestr)	{}
+	ControlBoardPage(const std::string &templatestr):IPageHandler(templatestr,"controlboard.htm")	{}
 
 	IPageHandler *New()	{ return new ControlBoardPage(m_template); }
 

@@ -7,7 +7,7 @@
 class InsertedFilesPage:public IPageHandler,public IDatabase
 {
 public:
-	InsertedFilesPage(const std::string &templatestr):IPageHandler(templatestr)		{}
+	InsertedFilesPage(const std::string &templatestr):IPageHandler(templatestr,"insertedfiles.htm")		{}
 
 	IPageHandler *New()	{ return new InsertedFilesPage(m_template); }
 

@@ -104,13 +104,19 @@ void SetupDB()
 			major=1;
 			minor=13;
 		}
+		if(major==1 && minor==13)
+		{
+			ConvertDB0113To0114();
+			major=1;
+			minor=14;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,13);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,14);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=13;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=14;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -283,13 +289,14 @@ void SetupDB()
 				BoardDescription		TEXT,\
 				DateAdded				DATETIME,\
 				SaveReceivedMessages	BOOL CHECK(SaveReceivedMessages IN('true','false')) DEFAULT 'true',\
-				AddedMethod				TEXT\
+				AddedMethod				TEXT,\
+				Forum					TEXT CHECK(Forum IN('true','false')) DEFAULT 'false'\
 				);");
 
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod) VALUES('fms','Freenet Message System','2007-12-01 12:00:00','Initial Board');");
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod) VALUES('freenet','Discussion about Freenet','2007-12-01 12:00:00','Initial Board');");
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod) VALUES('public','Public discussion','2007-12-01 12:00:00','Initial Board');");
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod) VALUES('test','Test board','2007-12-01 12:00:00','Initial Board');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('fms','Freenet Message System','2007-12-01 12:00:00','Initial Board','true');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('freenet','Discussion about Freenet','2007-12-01 12:00:00','Initial Board','true');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('public','Public discussion','2007-12-01 12:00:00','Initial Board','true');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('test','Test board','2007-12-01 12:00:00','Initial Board','true');");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessage(\
 				MessageID			INTEGER PRIMARY KEY,\
@@ -301,7 +308,8 @@ void SetupDB()
 				MessageUUID			TEXT UNIQUE,\
 				ReplyBoardID		INTEGER,\
 				Body				TEXT,\
-				MessageIndex		INTEGER\
+				MessageIndex		INTEGER,\
+				Read				INTEGER CHECK(Read IN(0,1)) DEFAULT 0\
 				);");
 
 	db->Execute("CREATE INDEX IF NOT EXISTS idxMessage_IdentityID ON tblMessage (IdentityID);");
@@ -313,6 +321,7 @@ void SetupDB()
 				);");
 
 	db->Execute("CREATE INDEX IF NOT EXISTS idxMessageReplyTo_MessageID ON tblMessageReplyTo (MessageID);");
+	db->Execute("CREATE INDEX IF NOT EXISTS idxMessageReplyTo_ReplyToMessageUUID ON tblMessageReplyTo (ReplyToMessageUUID);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageBoard(\
 				MessageID			INTEGER,\
@@ -389,7 +398,35 @@ void SetupDB()
 				Day					DATE,\
 				RequestIndex		INTEGER,\
 				Found				BOOL CHECK(Found IN('true','false')) DEFAULT 'false'\
-				);");	
+				);");
+
+	// begin thread db schema
+	db->Execute("CREATE TABLE IF NOT EXISTS tblThread(\
+				ThreadID		INTEGER PRIMARY KEY,\
+				BoardID			INTEGER,\
+				FirstMessageID	INTEGER,\
+				LastMessageID	INTEGER\
+				);");
+
+	db->Execute("CREATE INDEX IF NOT EXISTS idxThread_BoardID ON tblThread(BoardID);");
+	db->Execute("CREATE INDEX IF NOT EXISTS idxThread_FirstMessageID ON tblThread(FirstMessageID);");
+	db->Execute("CREATE INDEX IF NOT EXISTS idxThread_LastMessageID ON tblThread(LastMessageID);");
+
+	db->Execute("CREATE TABLE IF NOT EXISTS tblThreadPost(\
+				ThreadID		INTEGER,\
+				MessageID		INTEGER,\
+				PostOrder		INTEGER\
+				);");
+
+	db->Execute("CREATE INDEX IF NOT EXISTS idxThreadPost_ThreadID ON tblThreadPost(ThreadID);");
+	db->Execute("CREATE INDEX IF NOT EXISTS idxThreadPost_MessageID ON tblThreadPost(MessageID);");
+
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgDeleteOnThread AFTER DELETE ON tblThread\
+				FOR EACH ROW\
+				BEGIN\
+					DELETE FROM tblThreadPost WHERE ThreadID=old.ThreadID;\
+				END;");
+	// end thread db schema
 
 	// MessageInserter will insert a record into this temp table which the MessageListInserter will query for and insert a MessageList when needed
 	db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpMessageListInsert(\

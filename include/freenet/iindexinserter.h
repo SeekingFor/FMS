@@ -73,7 +73,7 @@ void IIndexInserter<IDTYPE>::FCPConnected()
 	}
 	if(m_fcpuniquename.find("|")!=std::string::npos)
 	{
-		m_log->fatal("IIndexInserter<IDTYPE>::FCPConnected fcpuniquename contains | character!  This is not a valid character!");
+		m_log->fatal("IIndexInserter<IDTYPE>::FCPConnected fcpuniquename : "+m_fcpuniquename+" contains | character!  This is not a valid character!");
 	}
 
 	m_inserting.clear();
@@ -91,6 +91,8 @@ const bool IIndexInserter<IDTYPE>::HandleMessage(FCPMessage &message)
 
 	if(message["Identifier"].find(m_fcpuniquename)==0)
 	{
+		m_log->trace("IIndexInserter<IDTYPE>::HandleMessage "+m_fcpuniquename+" received "+message.GetName()+"  ID="+message["Identifier"]+"  URI="+message["URI"]);
+
 		if(message.GetName()=="URIGenerated")
 		{
 			return true;

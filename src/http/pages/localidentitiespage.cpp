@@ -33,7 +33,7 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 
 	content+="<hr>";
 
-	content+="<table><tr><th>Name</th><th>Single Use</th><th>Publish Trust List</th><th>Publish Board List</th><th>Publish Freesite</th><th>Min Message Delay</th><th>Max Message Delay</th><th>Announced? *</th></tr>";
+	content+="<table class=\"small90\"><tr><th>Name</th><th>Single Use</th><th>Publish Trust List</th><th>Publish Board List</th><th>Publish Freesite</th><th>Min Message Delay</th><th>Max Message Delay</th><th>Announced? *</th></tr>";
 
 	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID,tblLocalIdentity.Name,tblLocalIdentity.PublicKey,tbLLocalIdentity.PublishTrustList,tblLocalIdentity.SingleUse,tblLocalIdentity.PublishBoardList,tblIdentity.IdentityID,tblLocalIdentity.PublishFreesite,tblLocalIdentity.MinMessageDelay,tblLocalIdentity.MaxMessageDelay FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey ORDER BY tblLocalIdentity.Name;");
 	st.Step();
@@ -116,7 +116,7 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 	}
 
 	content+="</table>";
-	content+="<p class=\"paragraph\">* An identity is considered successfully announced when you have downloaded a trust list from someone that contains the identity.  The number in parenthesis is how many trust lists that identity appears in.</p>";
+	content+="<p class=\"paragraph\">* An identity is considered successfully announced when you have downloaded a trust list from someone that contains the identity.  You must trust other identities' trust lists for this to happen.  The number in parenthesis is how many trust lists the identity appears in.</p>";
 	content+="<p class=\"paragraph\">Single Use Identities will automatically be deleted 7 days after creation.</p>";
 	content+="<p class=\"paragraph\">Messages that each identity sends may be delayed by a random number of minutes between min and max.  Set both to 0 to send messages as soon as possible.</p>";
 

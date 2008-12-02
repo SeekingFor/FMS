@@ -66,6 +66,10 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 			content+="You can see the release info <a href=\"versioninfo.htm?Major="+majorstr+"&Minor="+minorstr+"&Release="+releasestr+"\">here</a><br>";
 			showgenericupdate=false;
 		}
+		else
+		{
+			content+="<a href=\"versioninfo.htm\">Release info</a><br>";
+		}
 
 	}
 

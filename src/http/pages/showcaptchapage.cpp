@@ -13,7 +13,10 @@ void ShowCaptchaPage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco:
 	std::map<std::string,std::string> queryvars;
 	CreateQueryVarMap(request,queryvars);
 
-	response.setChunkedTransferEncoding(true);
+	if(request.getVersion()==Poco::Net::HTTPRequest::HTTP_1_1)
+	{
+		response.setChunkedTransferEncoding(true);
+	}
 
 	std::string content="";
 	if(queryvars.find("UUID")!=queryvars.end())

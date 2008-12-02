@@ -168,7 +168,7 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	date-=Poco::Timespan(m_daysbackward,0,0,0,0);
 	StringFunctions::Convert(localidentityid,localidentityidstr);
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT Day, InsertIndex, MessageXML, PrivateKey FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE tblLocalIdentity.LocalIdentityID=? AND Day>=?;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT Day, InsertIndex, MessageXML, PrivateKey FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE tblLocalIdentity.LocalIdentityID=? AND Day>=? AND tblMessageInserts.MessageUUID IS NOT NULL;");
 	st.Bind(0,localidentityid);
 	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Step();

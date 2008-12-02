@@ -7,12 +7,11 @@
 class PeerTrustPage:public IPageHandler,public IDatabase
 {
 public:
-	PeerTrustPage(const std::string &templatestr):IPageHandler(templatestr)		{}
+	PeerTrustPage(const std::string &templatestr):IPageHandler(templatestr,"peertrust.htm")		{}
 
 	IPageHandler *New()	{ return new PeerTrustPage(m_template); }
 
 private:
-	const bool WillHandleURI(const std::string &uri);
 	const std::string GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars);
 
 	const std::string GetClassString(const std::string &trustlevel);

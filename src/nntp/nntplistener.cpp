@@ -159,7 +159,7 @@ void NNTPListener::StartListen()
 							}
 							else
 							{
-								m_log->error("NNTPListener::StartListen socket listen failed");
+								m_log->error("NNTPListener::StartListen socket listen failed on "+sa.toString());
 								#ifdef _WIN32
 								closesocket(sock);
 								#else
@@ -169,7 +169,7 @@ void NNTPListener::StartListen()
 						}
 						else
 						{
-							m_log->error("NNTPListener::StartListen socket bind failed");
+							m_log->error("NNTPListener::StartListen socket bind failed on "+sa.toString());
 							#ifdef _WIN32
 							closesocket(sock);
 							#else
@@ -179,7 +179,7 @@ void NNTPListener::StartListen()
 					}
 					else
 					{
-						m_log->error("NNTPListener::StartListen couldn't create socket");
+						m_log->error("NNTPListener::StartListen couldn't create socket on "+sa.toString());
 					}
 				}
 				catch(Poco::Exception &e)

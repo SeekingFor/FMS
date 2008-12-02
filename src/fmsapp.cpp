@@ -262,6 +262,10 @@ void FMSApp::StartThreads()
 	{
 		logger().trace("FMSApp::StartThreads starting HTTPThread");
 		m_threads.Start(new HTTPThread());
+		if(isInteractive())
+		{
+			std::cout << "Started HTTP Thread" << std::endl;
+		}
 	}
 	else
 	{
@@ -274,6 +278,10 @@ void FMSApp::StartThreads()
 	{
 		logger().trace("FMSApp::StartThreads starting NNTPListener");
 		m_threads.Start(new NNTPListener());
+		if(isInteractive())
+		{
+			std::cout << "Started NNTP Thread" << std::endl;
+		}
 	}
 	else
 	{
@@ -286,6 +294,10 @@ void FMSApp::StartThreads()
 	{
 		logger().trace("FMSApp::StartThreads starting FreenetMasterThread");
 		m_threads.Start(new FreenetMasterThread());
+		if(isInteractive())
+		{
+			std::cout << "Started Freenet FCP Thread" << std::endl;
+		}
 	}
 	else
 	{

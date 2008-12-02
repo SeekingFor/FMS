@@ -89,7 +89,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 	content+="<tr><td colspan=\"4\"><center>Select Identity : ";
 	content+=CreateLocalIdentityDropDown("localidentityid","");
 	content+="</td></tr>";
-	content+="<tr><td colspan=\"4\"><center>Type the answers of a few of the following puzzles.  You don't need to get them all correct, but remember that they are case sensitive.  Getting announced will take some time.  DO NOT continuously solve captchas.  Solve 30 at most, wait a day, and if your identity has not been announced, repeat until it is.</td></tr>";
+	content+="<tr><td colspan=\"4\"><center>Type the answers of a few of the following puzzles.  You don't need to get them all correct, but remember that they are case sensitive.  Getting announced will take some time and you must assign trust to other identities to see yourself announced.  DO NOT continuously solve captchas.  Solve 30 at most, wait a day, and if your identity has not been announced, repeat until it is.</td></tr>";
 	content+="<tr>";
 
 	date-=Poco::Timespan(1,0,0,0,0);
@@ -98,7 +98,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 
 	if(st.RowReturned()==false)
 	{
-		content+="<td colspan=\"4\"><center>You must wait for some puzzles to be downloaded.  Check back later.</td>";
+		content+="<td colspan=\"4\"><center>You must wait for some puzzles to be downloaded.  Make sure you have assigned trust to some other identities' trust lists and check back later.</td>";
 	}
 	
 	while(st.RowReturned() && shown<20)
