@@ -79,8 +79,6 @@ src/http/multipartparser.cpp
 src/http/pages/addpeerpage.cpp
 src/http/pages/announceidentitypage.cpp
 src/http/pages/boardspage.cpp
-src/http/pages/browseboardspage.cpp
-src/http/pages/browsemessagespage.cpp
 src/http/pages/confirmpage.cpp
 src/http/pages/controlboardpage.cpp
 src/http/pages/createidentitypage.cpp

@@ -62,10 +62,17 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 		st.Bind(0,threadid);
 		st.Step();
 
+		SQLite3DB::Statement deleteotherst=m_db->Prepare("DELETE FROM tblThread WHERE ThreadID IN (SELECT tblThread.ThreadID FROM tblThreadPost INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblThread.BoardID=? AND tblThreadPost.MessageID=?);");
+
 		count=0;
 		st=m_db->Prepare("INSERT INTO tblThreadPost(ThreadID,MessageID,PostOrder) VALUES(?,?,?);");
 		for(std::vector<MessageThread::threadnode>::const_iterator i=m_threadmessages.begin(); i!=m_threadmessages.end(); i++, count++)
 		{
+			deleteotherst.Bind(0,boardid);
+			deleteotherst.Bind(1,(*i).m_messageid);
+			deleteotherst.Step();
+			deleteotherst.Reset();
+
 			st.Bind(0,threadid);
 			st.Bind(1,(*i).m_messageid);
 			st.Bind(2,count);

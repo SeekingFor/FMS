@@ -26,7 +26,7 @@ const std::string AnnounceIdentityPage::CreateLocalIdentityDropDown(const std::s
 		st.ResultText(1,name);
 		st.ResultText(2,pubkey);
 
-		rval+="<option value=\""+id+"\" title=\""+pubkey+"\">"+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"</option>";
+		rval+="<option value=\""+id+"\" title=\""+pubkey+"\""+(selected==id?" selected":"")+">"+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"</option>";
 		st.Step();
 	}
 	rval+="</select>";
@@ -47,11 +47,11 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 	std::string pubkey="";
 	int requestindex=0;
 	bool willshow=false;
+	std::string localidentityidstr="";
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="announce" && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement insert=m_db->Prepare("INSERT INTO tblIdentityIntroductionInserts(LocalIdentityID,Day,UUID,Solution) VALUES(?,?,?,?);");
-		std::string localidentityidstr="";
 		int localidentityid=0;
 		std::vector<std::string> uuids;
 		std::vector<std::string> days;
@@ -87,7 +87,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"announce\">";
 	content+="<table>";
 	content+="<tr><td colspan=\"4\"><center>Select Identity : ";
-	content+=CreateLocalIdentityDropDown("localidentityid","");
+	content+=CreateLocalIdentityDropDown("localidentityid",localidentityidstr);
 	content+="</td></tr>";
 	content+="<tr><td colspan=\"4\"><center>Type the answers of a few of the following puzzles.  You don't need to get them all correct, but remember that they are case sensitive.  Getting announced will take some time and you must assign trust to other identities to see yourself announced.  DO NOT continuously solve captchas.  Solve 30 at most, wait a day, and if your identity has not been announced, repeat until it is.</td></tr>";
 	content+="<tr>";

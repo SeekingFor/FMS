@@ -18,8 +18,6 @@
 #include "../../include/http/pages/peertrustpage.h"
 #include "../../include/http/pages/versioninfopage.h"
 #include "../../include/http/pages/recentlyaddedpage.h"
-#include "../../include/http/pages/browseboardspage.h"
-#include "../../include/http/pages/browsemessagespage.h"
 #include "../../include/http/pages/forummainpage.h"
 #include "../../include/http/pages/showimagepage.h"
 #include "../../include/http/pages/forumthreadspage.h"
@@ -81,8 +79,6 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory()
 	m_pagehandlers.push_back(new PeerTrustPage(templatestr));
 	m_pagehandlers.push_back(new VersionInfoPage(templatestr));
 	m_pagehandlers.push_back(new RecentlyAddedPage(templatestr));
-	m_pagehandlers.push_back(new BrowseBoardsPage(templatestr));
-	m_pagehandlers.push_back(new BrowseMessagesPage(templatestr));
 	m_pagehandlers.push_back(new ShowImagePage());
 	m_pagehandlers.push_back(new ForumMainPage(forumtemplate));
 	m_pagehandlers.push_back(new ForumThreadsPage(forumtemplate));

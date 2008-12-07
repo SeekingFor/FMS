@@ -39,6 +39,8 @@ protected:
 
 	// replaces html elements with encoded characters (i.e. < becomes &lt;)
 	const std::string SanitizeOutput(const std::string &input);
+	// don't replace space with &nbsp;, because browser might convert to unicode non breaking space character
+	const std::string SanitizeTextAreaOutput(const std::string &input);
 
 	std::string m_template;
 	std::string m_pagename;

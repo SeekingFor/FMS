@@ -24,12 +24,12 @@ keep the same database unless otherwise noted in the release information.
 
 INSTALLATION
 ------------
-Place the binary, any templates, and the fonts directory in a directory of your
-choice.  Windows users may need to download the runtime DLLs available from the
-fms Freesite and place in the fms directory if they are not already installed
-on the system.  On the first run, a database file will also be created in this
-directory.  Make sure the user that runs FMS has read/write access to this
-directory.
+Place the binary, any templates, and the fonts and images directories in a
+directory of your choice.  Windows users may need to download the runtime DLLs
+available from the fms Freesite and place in the fms directory if they are not
+already installed on the system.  On the first run, a database file will also
+be created in this directory.  Make sure the user that runs FMS has read/write
+access to this directory.
 
 RUNNING
 -------
@@ -64,6 +64,8 @@ WEB INTERFACE
 -------------
 By default, a web interface for administration will be running at http://
 localhost:8080.  You can use the interface to configure and administer FMS.
+There is also a forum built into the web interface so you can read and send
+messages without needing to use a newsreader.
 
 NNTP CONFIGURATION
 ------------------

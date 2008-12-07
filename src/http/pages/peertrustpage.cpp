@@ -23,7 +23,7 @@ const std::string PeerTrustPage::BuildQueryString(const long startrow, const std
 		{
 			returnval+="&";
 		}
-		returnval+="namesearch="+namesearch;
+		returnval+="namesearch="+StringFunctions::UriEncode(namesearch);
 	}
 
 	if(sortby!="")

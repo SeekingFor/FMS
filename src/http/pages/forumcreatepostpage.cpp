@@ -118,7 +118,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 				replyst.ResultText(0,subject);
 				replyst.ResultText(1,body);
 
-				if(subject.size()<3 || (subject.substr(0,2)!="re:" && subject.substr(0,2)!="Re:"))
+				if(subject.size()<3 || (subject.substr(0,3)!="re:" && subject.substr(0,3)!="Re:"))
 				{
 					subject="Re: "+subject;
 				}
@@ -184,7 +184,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 		content+="<table class=\"createpost\">";
 		content+="<tr><td class=\"identity\">From</td><td>"+LocalIdentityDropDown("localidentityid",localidentityidstr)+"</td></tr>";
 		content+="<tr><td class=\"subject\">Subject</td><td><input type=\"text\" name=\"subject\" maxlength=\"60\" size=\"60\" value=\""+SanitizeOutput(subject)+"\"></td></tr>";
-		content+="<tr><td class=\"body\">Message</td><td><textarea name=\"body\" cols=\"80\" rows=\"30\">"+SanitizeOutput(body)+"</textarea></td></tr>";
+		content+="<tr><td class=\"body\">Message</td><td><textarea name=\"body\" cols=\"80\" rows=\"30\">"+SanitizeTextAreaOutput(body)+"</textarea></td></tr>";
 		content+="<tr><td colspan=\"2\" class=\"send\"><input type=\"submit\" value=\"Send\"></td></tr>";
 		content+="</table>\r\n";
 		content+="</form>";

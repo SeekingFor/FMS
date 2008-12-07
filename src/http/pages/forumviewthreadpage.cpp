@@ -10,6 +10,8 @@ const std::string ForumViewThreadPage::FixBody(const std::string &body)
 	static std::string whitespace=" \t\r\n";
 	std::string output=body;
 
+	output=StringFunctions::Replace(output,"\r\n","\n");
+
 	// put \n after 80 contiguous characters in the body
 	std::string::size_type prevpos=0;
 	std::string::size_type pos=output.find_first_of(whitespace);
@@ -42,6 +44,7 @@ const std::string ForumViewThreadPage::GeneratePage(const std::string &method, c
 	std::string boardidstr="";
 	std::string currentpagestr="";
 	std::string boardname="";
+	std::string firstunreadidstr="";
 
 	if(queryvars.find("threadid")!=queryvars.end())
 	{
@@ -57,6 +60,14 @@ const std::string ForumViewThreadPage::GeneratePage(const std::string &method, c
 	}
 
 	content+=CreateForumHeader();
+
+	SQLite3DB::Statement firstunreadst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblThreadPost INNER JOIN tblMessage ON tblThreadPost.MessageID=tblMessage.MessageID WHERE ThreadID=? AND tblMessage.Read=0;");
+	firstunreadst.Bind(0,threadidstr);
+	firstunreadst.Step();
+	if(firstunreadst.RowReturned())
+	{
+		firstunreadst.ResultText(0,firstunreadidstr);
+	}
 
 	SQLite3DB::Statement updateread=m_db->Prepare("UPDATE tblMessage SET Read=1 WHERE tblMessage.MessageID IN (SELECT MessageID FROM tblThreadPost WHERE ThreadID=?);");
 	updateread.Bind(0,threadidstr);
@@ -76,6 +87,12 @@ const std::string ForumViewThreadPage::GeneratePage(const std::string &method, c
 	content+="<table class=\"forumheader\">";
 	content+="<tr>";
 	content+="<td> Forum : <a href=\"forumthreads.htm?boardid="+boardidstr+"&currentpage="+currentpagestr+"\">"+SanitizeOutput(boardname)+"</a></td>";
+	if(firstunreadidstr!="")
+	{
+		content+="<td>";
+		content+="<a href=\"#"+firstunreadidstr+"\">First Unread Message</a>";
+		content+="</td>";
+	}
 	content+="</tr>";
 	content+="</table>\r\n";
 
@@ -123,7 +140,7 @@ const std::string ForumViewThreadPage::GeneratePage(const std::string &method, c
 
 			content+="<table class=\"trust\">";
 			content+="<tr>";
-			content+="<td colspan=\"3\" style=\"text-align:center;\"><a href=\"peertrust.htm?namesearch="+name+"\">Trust</a></td>";
+			content+="<td colspan=\"3\" style=\"text-align:center;\"><a href=\"peertrust.htm?namesearch="+StringFunctions::UriEncode(name)+"\">Trust</a></td>";
 			content+="</tr>";
 			content+="<tr>";
 			content+="<td></td><td>Local</td><td>Peer</td>";

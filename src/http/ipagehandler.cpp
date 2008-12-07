@@ -152,6 +152,16 @@ const std::string IPageHandler::SanitizeOutput(const std::string &input)
 	return output;
 }
 
+const std::string IPageHandler::SanitizeTextAreaOutput(const std::string &input)
+{
+	// must do & first because all other elements have & in them!
+	std::string output=StringFunctions::Replace(input,"&","&amp;");
+	output=StringFunctions::Replace(output,"<","&lt;");
+	output=StringFunctions::Replace(output,">","&gt;");
+	output=StringFunctions::Replace(output,"\"","&quot;");
+	return output;
+}
+
 const bool IPageHandler::ValidateFormPassword(const std::map<std::string,std::string> &vars)
 {
 	Poco::DateTime date;
