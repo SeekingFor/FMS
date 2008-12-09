@@ -17,10 +17,10 @@ This option requires the FreeImage library to be installed.
 
 UPGRADING
 ---------
-It is always a good idea to make a copy of your current FMS installation before
-continuing.  First shut down FMS, make a copy of the directory, and then
-replace all files except the database with those from the new version.  You may
-keep the same database unless otherwise noted in the release information.
+*ALWAYS* make a copy of your current FMS installation before continuing.  First
+shut down FMS, make a copy of the directory, and then replace all files except
+the database with those from the new version.  You may keep the same database
+unless otherwise noted in the release information.
 
 INSTALLATION
 ------------

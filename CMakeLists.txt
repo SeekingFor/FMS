@@ -107,6 +107,9 @@ src/nntp/mime/MimeChar.cpp
 src/nntp/mime/MimeCode.cpp
 src/nntp/mime/MimeType.cpp
 src/threadwrapper/threadedexector.cpp
+src/unicode/ConvertUTF.c
+src/unicode/unicodeformatter.cpp
+src/unicode/utfconversion.cpp
 )
 
 SET(FMS_PLATFORM_SRC )

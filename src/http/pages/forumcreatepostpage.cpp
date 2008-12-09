@@ -1,6 +1,7 @@
 #include "../../../include/http/pages/forumcreatepostpage.h"
 #include "../../../include/stringfunctions.h"
 #include "../../../include/message.h"
+#include "../../../include/unicode/unicodeformatter.h"
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -61,6 +62,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 		{
 			body=(*queryvars.find("body")).second;
 			body=StringFunctions::Replace(body,"\r\n","\n");
+			UnicodeFormatter::LineWrap(body,80,">",body);
 		}
 		else
 		{
@@ -148,6 +150,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 					}
 					body+="\n";
 				}
+
 			}
 		}
 	}

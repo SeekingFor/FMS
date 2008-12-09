@@ -1,5 +1,6 @@
 #include "../../../include/http/pages/forumviewthreadpage.h"
 #include "../../../include/stringfunctions.h"
+#include "../../../include/unicode/unicodeformatter.h"
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -12,6 +13,8 @@ const std::string ForumViewThreadPage::FixBody(const std::string &body)
 
 	output=StringFunctions::Replace(output,"\r\n","\n");
 
+	UnicodeFormatter::LineWrap(output,80,"",output);
+	/*
 	// put \n after 80 contiguous characters in the body
 	std::string::size_type prevpos=0;
 	std::string::size_type pos=output.find_first_of(whitespace);
@@ -30,6 +33,7 @@ const std::string ForumViewThreadPage::FixBody(const std::string &body)
 		output.insert(prevpos+80,"\n");
 		prevpos+=81;
 	}
+	*/
 
 	output=StringFunctions::Replace(output,"<","&lt;");
 	output=StringFunctions::Replace(output,">","&gt;");
