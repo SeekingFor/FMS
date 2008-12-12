@@ -44,8 +44,6 @@ std::string SiteInserter::GenerateIndex(const std::string &htmltemplate, const l
 {
 	std::string content="";
 
-	content+="<h3>My last few posts</h3>";
-
 	SQLite3DB::Statement boardst=m_db->Prepare("SELECT tblBoard.BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=? ORDER BY tblBoard.BoardName COLLATE NOCASE;");
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.Body, tblMessage.Subject, tblMessage.MessageID FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID INNER JOIN tblLocalIdentity ON tblIdentity.PublicKey=tblLocalIdentity.PublicKey WHERE tblLocalIdentity.LocalIdentityID=? ORDER BY tblMessage.MessageDate DESC, tblMessage.MessageTime DESC LIMIT 0,10;");
 	st.Bind(0,localidentityid);

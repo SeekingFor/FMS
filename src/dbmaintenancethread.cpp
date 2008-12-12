@@ -2,6 +2,7 @@
 #include "../include/stringfunctions.h"
 #include "../include/option.h"
 #include "../include/threadbuilder.h"
+#include "../include/dbsetup.h"
 
 #include <Poco/Timestamp.h>
 #include <Poco/Timespan.h>
@@ -36,6 +37,15 @@ DBMaintenanceThread::DBMaintenanceThread()
 
 void DBMaintenanceThread::Do10MinuteMaintenance()
 {
+	std::string ll="";
+	Option::Instance()->Get("LogLevel",ll);
+
+	// TODO - remove after corruption issue fixed
+	if(ll=="8")
+	{
+		std::string dbres=TestDBIntegrity();
+		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() start TestDBIntegrity returned "+dbres);
+	}
 
 	ThreadBuilder tb;
 	SQLite3DB::Statement boardst=m_db->Prepare("SELECT BoardID FROM tblBoard WHERE Forum='true';");
@@ -71,6 +81,13 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 		boardst.Step();
 	}
 
+	// TODO - remove after corruption issue fixed
+	if(ll=="8")
+	{
+		std::string dbres=TestDBIntegrity();
+		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() middle TestDBIntegrity returned "+dbres);
+	}
+
 	// now rebuild threads where the message has been deleted
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblThreadPost.MessageID, tblThread.BoardID FROM tblThreadPost INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID LEFT JOIN tblMessage ON tblThreadPost.MessageID=tblMessage.MessageID WHERE tblMessage.MessageID IS NULL;");
 	st.Step();
@@ -85,6 +102,13 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 		tb.Build(messageid,boardid,true);
 
 		st.Step();
+	}
+
+	// TODO - remove after corruption issue fixed
+	if(ll=="8")
+	{
+		std::string dbres=TestDBIntegrity();
+		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() end TestDBIntegrity returned "+dbres);
 	}
 
 	m_log->debug("PeriodicDBMaintenance::Do10MinuteMaintenance");

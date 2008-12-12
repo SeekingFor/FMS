@@ -602,11 +602,45 @@ const bool VerifyDB()
 		}
 		else
 		{
-			return false;
+			// try to reindex and vacuum database in case of index corruption
+			st=db->Prepare("REINDEX;");
+			st.Step();
+			st=db->Prepare("VACUUM;");
+			st.Step();
+
+			// check integrity again
+			st=db->Prepare("PRAGMA integrity_check;");
+			st.Step();
+			st.ResultText(0,res);
+			if(res=="ok")
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 	}
 	else
 	{
 		return false;
 	}
+}
+
+const std::string TestDBIntegrity()
+{
+	std::string result="";
+
+	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
+	SQLite3DB::Statement st=db->Prepare("PRAGMA integrity_check;");
+	st.Step();
+	while(st.RowReturned())
+	{
+		std::string text="";
+		st.ResultText(0,text);
+		result+=text;
+		st.Step();
+	}
+	return result;
 }

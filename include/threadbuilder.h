@@ -2,8 +2,9 @@
 #define _threadbuilder_
 
 #include "idatabase.h"
+#include "ilogger.h"
 
-class ThreadBuilder:public IDatabase
+class ThreadBuilder:public IDatabase,ILogger
 {
 public:
 
