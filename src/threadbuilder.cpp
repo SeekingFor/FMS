@@ -29,7 +29,7 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 	mt.Load(messageid,boardid,bydate);
 	m_threadmessages=mt.GetNodes();
 
-	// find threadid of this thread if it already exists in a thread
+	// find threadid of this mesage if it already exists in a thread
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblThread.ThreadID FROM tblThread INNER JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE tblThread.BoardID=? AND tblThreadPost.MessageID=?;");
 	st.Bind(0,boardid);
 	st.Bind(1,messageid);
@@ -121,31 +121,11 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 			deleteotherst.Step();
 			deleteotherst.Reset();
 
-			// TODO - remove after corruption issue fixed
-			if(ll=="8")
-			{
-				std::string dbres=TestDBIntegrity();
-				if(dbres!="ok")
-				{
-					m_log->trace("ThreadBuilder::Build after delete other TestDBIntegrity returned "+dbres);
-				}
-			}
-
 			st4.Bind(0,threadid);
 			st4.Bind(1,(*i).m_messageid);
 			st4.Bind(2,count);
 			st4.Step();
 			st4.Reset();
-
-			// TODO - remove after corruption issue fixed
-			if(ll=="8")
-			{
-				std::string dbres=TestDBIntegrity();
-				if(dbres!="ok")
-				{
-					m_log->trace("ThreadBuilder::Build after insert TestDBIntegrity returned "+dbres);
-				}
-			}
 		}
 	}
 	else

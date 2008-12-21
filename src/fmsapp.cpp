@@ -181,6 +181,7 @@ int FMSApp::main(const std::vector<std::string> &args)
 	else
 	{
 		logger().information("FMS startup v"FMS_VERSION);
+		logger().information("Using SQLite "SQLITE_VERSION);
 
 		std::string tempval="";
 		Option::Instance()->Get("VacuumOnStartup",tempval);

@@ -38,7 +38,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 		replytomessageidstr=(*queryvars.find("replytomessageid")).second;
 	}
 
-	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="send")
+	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="send" && ValidateFormPassword(queryvars))
 	{
 		if(queryvars.find("localidentityid")!=queryvars.end() && (*queryvars.find("localidentityid")).second!="")
 		{
@@ -112,13 +112,15 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 	{
 		if(replytomessageidstr!="")
 		{
-			SQLite3DB::Statement replyst=m_db->Prepare("SELECT Subject, Body FROM tblMessage WHERE MessageID=?;");
+			std::string fromname="";
+			SQLite3DB::Statement replyst=m_db->Prepare("SELECT Subject, Body, FromName FROM tblMessage WHERE MessageID=?;");
 			replyst.Bind(0,replytomessageidstr);
 			replyst.Step();
 			if(replyst.RowReturned())
 			{
 				replyst.ResultText(0,subject);
 				replyst.ResultText(1,body);
+				replyst.ResultText(2,fromname);
 
 				if(subject.size()<3 || (subject.substr(0,3)!="re:" && subject.substr(0,3)!="Re:"))
 				{
@@ -150,6 +152,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 					}
 					body+="\n";
 				}
+				body=fromname+" wrote:\n"+body;
 
 			}
 		}
@@ -184,6 +187,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 		content+="<input type=\"hidden\" name=\"threadid\" value=\""+threadidstr+"\">";
 		content+="<input type=\"hidden\" name=\"replytomessageid\" value=\""+replytomessageidstr+"\">";
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"send\">";
+		content+=CreateFormPassword();
 		content+="<table class=\"createpost\">";
 		content+="<tr><td class=\"identity\">From</td><td>"+LocalIdentityDropDown("localidentityid",localidentityidstr)+"</td></tr>";
 		content+="<tr><td class=\"subject\">Subject</td><td><input type=\"text\" name=\"subject\" maxlength=\"60\" size=\"60\" value=\""+SanitizeOutput(subject)+"\"></td></tr>";

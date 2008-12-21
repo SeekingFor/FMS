@@ -177,7 +177,7 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 			if(CheckDateNotFuture(xml.GetDate(i))==false)
 			{
 				addmessage=false;
-				m_log->error("MessageListRequester::HandleAllData date for message is in future! "+xml.GetDate(i));
+				m_log->error(m_fcpuniquename+"::HandleAllData date for message is in future! "+xml.GetDate(i));
 			}
 
 			if(addmessage==true && CheckDateWithinMaxDays(xml.GetDate(i))==false)
@@ -240,7 +240,7 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 				if(CheckDateNotFuture(xml.GetExternalDate(i))==false)
 				{
 					addmessage=false;
-					m_log->error("MessageListRequester::HandleAllData date for external message is in future! "+xml.GetExternalDate(i));
+					m_log->error(m_fcpuniquename+"::HandleAllData date for external message is in future! "+xml.GetExternalDate(i));
 				}
 
 				if(addmessage==true && CheckDateWithinMaxDays(xml.GetExternalDate(i))==false)
@@ -278,7 +278,7 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->debug("MessageListRequester::HandleAllData parsed MessageList XML file : "+message["Identifier"]);
+		m_log->debug(m_fcpuniquename+"::HandleAllData parsed MessageList XML file : "+message["Identifier"]);
 	}
 	else
 	{
@@ -290,7 +290,7 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->error("MessageListRequester::HandleAllData error parsing MessageList XML file : "+message["Identifier"]);
+		m_log->error(m_fcpuniquename+"::HandleAllData error parsing MessageList XML file : "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -328,7 +328,7 @@ const bool MessageListRequester::HandleGetFailed(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->error("MessageListRequester::HandleGetFailed fatal error code="+message["Code"]+" requesting "+message["Identifier"]);
+		m_log->error(m_fcpuniquename+"::HandleGetFailed fatal error code="+message["Code"]+" requesting "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -339,11 +339,15 @@ const bool MessageListRequester::HandleGetFailed(FCPMessage &message)
 
 void MessageListRequester::Initialize()
 {
-	m_fcpuniquename="MessageListRequester";
+	m_fcpuniquename="ActiveMessageListRequester";
 	std::string tempval="";
 
 	m_maxrequests=0;
 	Option::Instance()->GetInt("MaxMessageListRequests",m_maxrequests);
+
+	// active identities get 1/2 of the max requests option + any remaining if not evenly divisible - inactive identities get 1/2
+	m_maxrequests=(m_maxrequests/2)+(m_maxrequests%2);
+
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
@@ -386,6 +390,7 @@ void MessageListRequester::Initialize()
 void MessageListRequester::PopulateIDList()
 {
 	Poco::DateTime date;
+	Poco::DateTime yesterday=date-Poco::Timespan(1,0,0,0,0);
 	int id;
 
 	SQLite3DB::Statement st;
@@ -393,11 +398,11 @@ void MessageListRequester::PopulateIDList()
 	// select identities we want to query (we've seen them today) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
 	if(m_localtrustoverrides==false)
 	{
-		st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (LocalMessageTrust IS NULL OR LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust')) AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity INNER JOIN vwIdentityStats ON tblIdentity.IdentityID=vwIdentityStats.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (vwIdentityStats.LastMessageDate>='"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust IS NULL OR LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust')) AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	}
 	else
 	{
-		st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity INNER JOIN vwIdentityStats ON tblIdentity.IdentityID=vwIdentityStats.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (vwIdentityStats.LastMessageDate>='"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	}
 	st.Step();
 

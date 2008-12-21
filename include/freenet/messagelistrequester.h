@@ -12,8 +12,8 @@ public:
 	MessageListRequester(FCPv2 *fcp);
 
 private:
-	void Initialize();
-	void PopulateIDList();
+	virtual void Initialize();
+	virtual void PopulateIDList();
 	void StartRequest(const long &id);
 	void StartRedirectRequest(FCPMessage &message);
 	const bool HandleAllData(FCPMessage &message);

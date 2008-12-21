@@ -104,6 +104,9 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 		st.Step();
 	}
 
+	// delete threads that have no messages
+	m_db->Execute("DELETE FROM tblThread WHERE ThreadID IN (SELECT tblThread.ThreadID FROM tblThread LEFT JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE tblThreadPost.ThreadID IS NULL);");
+
 	// TODO - remove after corruption issue fixed
 	if(ll=="8")
 	{

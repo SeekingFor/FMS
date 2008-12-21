@@ -53,6 +53,7 @@ src/freenet/identityintroductionrequester.cpp
 src/freenet/identityintroductionxml.cpp
 src/freenet/identityrequester.cpp
 src/freenet/identityxml.cpp
+src/freenet/inactivemessagelistrequester.cpp
 src/freenet/introductionpuzzleinserter.cpp
 src/freenet/introductionpuzzlerequester.cpp
 src/freenet/introductionpuzzlexml.cpp
@@ -67,6 +68,7 @@ src/freenet/trustlistinserter.cpp
 src/freenet/trustlistrequester.cpp
 src/freenet/trustlistxml.cpp
 src/freenet/unkeyedidcreator.cpp
+src/freenet/unknownidentityrequester.cpp
 src/freenet/captcha/simplecaptcha.cpp
 src/freenet/captcha/easybmp/EasyBMP.cpp
 src/freenet/captcha/easybmp/EasyBMP_Font.cpp

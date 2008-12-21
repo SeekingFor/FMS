@@ -430,6 +430,7 @@ void SetupDB()
 
 	// MessageInserter will insert a record into this temp table which the MessageListInserter will query for and insert a MessageList when needed
 	db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpMessageListInsert(\
+				MessageListInsertID	INTEGER PRIMARY KEY,\
 				LocalIdentityID		INTEGER,\
 				Date				DATETIME\
 				);");

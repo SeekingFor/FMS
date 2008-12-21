@@ -114,7 +114,7 @@ const bool IdentityRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->debug("IdentityRequester::HandleAllData parsed Identity XML file : "+message["Identifier"]);
+		m_log->debug(m_fcpuniquename+"::HandleAllData parsed Identity XML file : "+message["Identifier"]);
 	}
 	else
 	{
@@ -126,7 +126,7 @@ const bool IdentityRequester::HandleAllData(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->error("IdentityRequester::HandleAllData error parsing Identity XML file : "+message["Identifier"]);
+		m_log->error(m_fcpuniquename+"::HandleAllData error parsing Identity XML file : "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -157,7 +157,7 @@ const bool IdentityRequester::HandleGetFailed(FCPMessage &message)
 		st.Step();
 		st.Finalize();
 
-		m_log->error("IdentityRequester::HandleGetFailed fatal error requesting "+message["Identifier"]);
+		m_log->error(m_fcpuniquename+"::HandleGetFailed fatal error requesting "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list
@@ -169,8 +169,12 @@ const bool IdentityRequester::HandleGetFailed(FCPMessage &message)
 
 void IdentityRequester::Initialize()
 {
-	m_fcpuniquename="IdentityRequester";
+	m_fcpuniquename="KnownIdentityRequester";
 	Option::Instance()->GetInt("MaxIdentityRequests",m_maxrequests);
+
+	// known identities get 4/5 + any remaining if not evenly divisible - unknown identities get 1/5 of the max requests option
+	m_maxrequests=((m_maxrequests*4)/5)+(m_maxrequests%5);
+
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
@@ -190,7 +194,7 @@ void IdentityRequester::PopulateIDList()
 	date.assign(date.year(),date.month(),date.day(),0,0,0);
 
 	// select identities we want to query (haven't seen yet today) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
-	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND (LastSeen IS NULL OR LastSeen<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen IS NOT NULL AND LastSeen<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"' ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	st.Step();
 
 	m_ids.clear();

@@ -10,8 +10,8 @@ public:
 	IdentityRequester(FCPv2 *fcp);
 
 private:
-	void Initialize();
-	void PopulateIDList();				// clear and re-populate m_ids with identities we want to query
+	virtual void Initialize();
+	virtual void PopulateIDList();				// clear and re-populate m_ids with identities we want to query
 	void StartRequest(const long &identityid);
 	const bool HandleAllData(FCPMessage &message);
 	const bool HandleGetFailed(FCPMessage &message);

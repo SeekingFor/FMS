@@ -124,10 +124,19 @@ const bool MessageListInserter::HandlePutSuccessful(FCPMessage &message)
 		st.Bind(1,localidentityid);
 		st.Step();
 
-		// delete any record from tmpMessageListInsert
-		st=m_db->Prepare("DELETE FROM tmpMessageListInsert WHERE LocalIdentityID=?;");
+		// delete only a single record from tmpMessageListInsert
+		st=m_db->Prepare("SELECT MessageListInsertID FROM tmpMessageListInsert WHERE LocalIdentityID=?;");
 		st.Bind(0,localidentityid);
 		st.Step();
+		if(st.RowReturned())
+		{
+			int id=-1;
+			st.ResultInt(0,id);
+
+			st=m_db->Prepare("DELETE FROM tmpMessageListInsert WHERE MessageListInsertID=?;");
+			st.Bind(0,id);
+			st.Step();
+		}
 
 		RemoveFromInsertList(localidentityid);
 

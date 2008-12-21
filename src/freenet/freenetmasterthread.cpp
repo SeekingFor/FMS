@@ -4,6 +4,7 @@
 #include "../../include/freenet/unkeyedidcreator.h"
 #include "../../include/freenet/identityinserter.h"
 #include "../../include/freenet/identityrequester.h"
+#include "../../include/freenet/unknownidentityrequester.h"
 #include "../../include/freenet/introductionpuzzleinserter.h"
 #include "../../include/freenet/identityintroductionrequester.h"
 #include "../../include/freenet/introductionpuzzlerequester.h"
@@ -11,6 +12,7 @@
 #include "../../include/freenet/trustlistinserter.h"
 #include "../../include/freenet/trustlistrequester.h"
 #include "../../include/freenet/messagelistrequester.h"
+#include "../../include/freenet/inactivemessagelistrequester.h"
 #include "../../include/freenet/messagelistinserter.h"
 #include "../../include/freenet/messagerequester.h"
 #include "../../include/freenet/messageinserter.h"
@@ -296,6 +298,7 @@ void FreenetMasterThread::Setup()
 	m_registrables.push_back(new UnkeyedIDCreator(&m_fcp));
 	m_registrables.push_back(new IdentityInserter(&m_fcp));
 	m_registrables.push_back(new IdentityRequester(&m_fcp));
+	m_registrables.push_back(new UnknownIdentityRequester(&m_fcp));
 	m_registrables.push_back(new IntroductionPuzzleInserter(&m_fcp));
 	m_registrables.push_back(new IdentityIntroductionRequester(&m_fcp));
 	m_registrables.push_back(new IntroductionPuzzleRequester(&m_fcp));
@@ -304,6 +307,7 @@ void FreenetMasterThread::Setup()
 	m_registrables.push_back(new TrustListRequester(&m_fcp));
 	m_registrables.push_back(new MessageListInserter(&m_fcp));
 	m_registrables.push_back(new MessageListRequester(&m_fcp));
+	m_registrables.push_back(new InactiveMessageListRequester(&m_fcp));
 	m_registrables.push_back(new MessageInserter(&m_fcp));
 	m_registrables.push_back(new MessageRequester(&m_fcp));
 	m_registrables.push_back(new BoardListInserter(&m_fcp));
