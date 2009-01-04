@@ -7,12 +7,12 @@ class FileInserter:public IIndexInserter<long>
 {
 public:
 	FileInserter();
-	FileInserter(FCPv2 *fcp);
+	FileInserter(FCPv2::Connection *fcp);
 
 private:
 	void Initialize();
-	const bool HandlePutSuccessful(FCPMessage &message);
-	const bool HandlePutFailed(FCPMessage &message);
+	const bool HandlePutSuccessful(FCPv2::Message &message);
+	const bool HandlePutFailed(FCPv2::Message &message);
 	const bool StartInsert(const long &fileinsertid);
 	void CheckForNeededInsert();
 

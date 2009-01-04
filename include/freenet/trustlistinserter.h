@@ -14,12 +14,12 @@ class TrustListInserter:public IFreenetRegistrable,public IFCPConnected,public I
 {
 public:
 	TrustListInserter();
-	TrustListInserter(FCPv2 *fcp);
+	TrustListInserter(FCPv2::Connection *fcp);
 
 	void FCPConnected();
 	void FCPDisconnected();
 
-	const bool HandleMessage(FCPMessage &message);
+	const bool HandleMessage(FCPv2::Message &message);
 
 	void Process();
 

@@ -7,7 +7,7 @@ class UnknownIdentityRequester:public IdentityRequester
 {
 public:
 	UnknownIdentityRequester();
-	UnknownIdentityRequester(FCPv2 *fcp);
+	UnknownIdentityRequester(FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

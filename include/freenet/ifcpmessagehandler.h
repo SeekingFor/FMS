@@ -14,7 +14,7 @@ public:
 		\param message FCP message to handle
 		\return true if the message was handled, false if it was not
 	*/
-	virtual const bool HandleMessage(FCPMessage &message)=0;
+	virtual const bool HandleMessage(FCPv2::Message &message)=0;
 };
 
 #endif	// _ifcpmessagehandler_

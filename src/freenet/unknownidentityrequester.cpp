@@ -10,7 +10,7 @@ UnknownIdentityRequester::UnknownIdentityRequester()
 	Initialize();
 }
 
-UnknownIdentityRequester::UnknownIdentityRequester(FCPv2 *fcp):IdentityRequester(fcp)
+UnknownIdentityRequester::UnknownIdentityRequester(FCPv2::Connection *fcp):IdentityRequester(fcp)
 {
 	Initialize();
 }

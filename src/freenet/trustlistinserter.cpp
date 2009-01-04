@@ -16,7 +16,7 @@ TrustListInserter::TrustListInserter()
 	Initialize();
 }
 
-TrustListInserter::TrustListInserter(FCPv2 *fcp):IFCPConnected(fcp)
+TrustListInserter::TrustListInserter(FCPv2::Connection *fcp):IFCPConnected(fcp)
 {
 	Initialize();
 }
@@ -49,7 +49,7 @@ void TrustListInserter::FCPDisconnected()
 
 }
 
-const bool TrustListInserter::HandleMessage(FCPMessage &message)
+const bool TrustListInserter::HandleMessage(FCPv2::Message &message)
 {
 
 	if(message["Identifier"].find("TrustListInserter")==0)
@@ -133,7 +133,7 @@ void TrustListInserter::RegisterWithThread(FreenetMasterThread *thread)
 
 void TrustListInserter::StartInsert(const long localidentityid, const std::string &privatekey)
 {
-	FCPMessage message;
+	FCPv2::Message message;
 	TrustListXML xml;
 	std::string data;
 	std::string datasizestr;
@@ -257,11 +257,11 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	message["Identifier"]="TrustListInserter|"+localidentityidstr+"|"+indexstr+"|"+message["URI"];
 	message["UploadFrom"]="direct";
 	message["DataLength"]=datasizestr;
-	m_fcp->SendMessage(message);
-	m_fcp->SendRaw(data.c_str(),data.size());
+	m_fcp->Send(message);
+	m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 
 	// insert to USK
-	message.Reset();
+	message.Clear();
 	message.SetName("ClientPutComplexDir");
 	message["URI"]="USK"+privatekey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|TrustList/0/";
 	message["Identifier"]="TrustListInserterUSK|"+message["URI"];
@@ -269,8 +269,8 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	message["Files.0.Name"]="TrustList.xml";
 	message["Files.0.UplaodFrom"]="direct";
 	message["Files.0.DataLength"]=datasizestr;
-	m_fcp->SendMessage(message);
-	m_fcp->SendRaw(data.c_str(),data.size());
+	m_fcp->Send(message);
+	m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 
 	m_db->Execute("UPDATE tblLocalIdentity SET InsertingTrustList='true' WHERE LocalIdentityID="+localidentityidstr+";");
 

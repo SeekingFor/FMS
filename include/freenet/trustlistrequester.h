@@ -7,14 +7,14 @@ class TrustListRequester:public IIndexRequester<long>//public IFreenetRegistrabl
 {
 public:
 	TrustListRequester();
-	TrustListRequester(FCPv2 *fcp);
+	TrustListRequester(FCPv2::Connection *fcp);
 
 private:
 	void Initialize();
 	void PopulateIDList();				// clear and re-populate m_ids with identities we want to query
 	void StartRequest(const long &identityid);
-	const bool HandleAllData(FCPMessage &message);
-	const bool HandleGetFailed(FCPMessage &message);
+	const bool HandleAllData(FCPv2::Message &message);
+	const bool HandleGetFailed(FCPv2::Message &message);
 
 };
 

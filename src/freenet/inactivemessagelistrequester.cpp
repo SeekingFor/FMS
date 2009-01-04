@@ -11,7 +11,7 @@ InactiveMessageListRequester::InactiveMessageListRequester()
 	Initialize();
 }
 
-InactiveMessageListRequester::InactiveMessageListRequester(FCPv2 *fcp):MessageListRequester(fcp)
+InactiveMessageListRequester::InactiveMessageListRequester(FCPv2::Connection *fcp):MessageListRequester(fcp)
 {
 	Initialize();
 }
@@ -25,7 +25,7 @@ void InactiveMessageListRequester::Initialize()
 	Option::Instance()->GetInt("MaxMessageListRequests",m_maxrequests);
 
 	// inactive identities get 1/2 of the max requests option -  active identities get 1/2 + any remaining if not evenly divisible
-	m_maxrequests=(m_maxrequests/2)+(m_maxrequests%2);
+	m_maxrequests=(m_maxrequests/2);
 
 	if(m_maxrequests<1)
 	{

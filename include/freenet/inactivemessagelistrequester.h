@@ -9,7 +9,7 @@ class InactiveMessageListRequester:public MessageListRequester
 {
 public:
 	InactiveMessageListRequester();
-	InactiveMessageListRequester(FCPv2 *fcp);
+	InactiveMessageListRequester(FCPv2::Connection *fcp);
 
 private:
 	virtual void Initialize();

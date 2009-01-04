@@ -10,7 +10,7 @@ MessageInserter::MessageInserter()
 	Initialize();
 }
 
-MessageInserter::MessageInserter(FCPv2 *fcp):IIndexInserter<std::string>(fcp)
+MessageInserter::MessageInserter(FCPv2::Connection *fcp):IIndexInserter<std::string>(fcp)
 {
 	Initialize();
 }
@@ -46,7 +46,7 @@ void MessageInserter::CheckForNeededInsert()
 	}
 }
 
-const bool MessageInserter::HandlePutFailed(FCPMessage &message)
+const bool MessageInserter::HandlePutFailed(FCPv2::Message &message)
 {
 	int index;
 	int localidentityid;
@@ -72,7 +72,7 @@ const bool MessageInserter::HandlePutFailed(FCPMessage &message)
 	return true;
 }
 
-const bool MessageInserter::HandlePutSuccessful(FCPMessage &message)
+const bool MessageInserter::HandlePutSuccessful(FCPv2::Message &message)
 {
 	MessageXML xml;
 	Poco::DateTime date;
@@ -149,7 +149,7 @@ const bool MessageInserter::StartInsert(const std::string &messageuuid)
 		std::string xmlsizestr;
 		std::string privatekey;
 		std::string publickey;
-		FCPMessage message;
+		FCPv2::Message message;
 		std::string indexstr;
 		int index=0;
 		
@@ -208,8 +208,8 @@ const bool MessageInserter::StartInsert(const std::string &messageuuid)
 		message["Identifier"]=m_fcpuniquename+"|"+messageuuid+"|"+idstr+"|"+indexstr+"|"+xmlfile.GetMessageID()+"|"+message["URI"];
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmlsizestr;
-		m_fcp->SendMessage(message);
-		m_fcp->SendRaw(xml.c_str(),xml.size());
+		m_fcp->Send(message);
+		m_fcp->Send(std::vector<char>(xml.begin(),xml.end()));
 
 		m_inserting.push_back(messageuuid);
 

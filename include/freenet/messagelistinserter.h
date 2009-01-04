@@ -7,12 +7,12 @@ class MessageListInserter:public IIndexInserter<long>
 {
 public:
 	MessageListInserter();
-	MessageListInserter(FCPv2 *fcp);
+	MessageListInserter(FCPv2::Connection *fcp);
 
 private:
 	void Initialize();
-	const bool HandlePutSuccessful(FCPMessage &message);
-	const bool HandlePutFailed(FCPMessage &message);
+	const bool HandlePutSuccessful(FCPv2::Message &message);
+	const bool HandlePutFailed(FCPv2::Message &message);
 	const bool StartInsert(const long &localidentityid);
 	void CheckForNeededInsert();
 

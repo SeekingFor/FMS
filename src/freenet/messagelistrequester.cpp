@@ -15,7 +15,7 @@ MessageListRequester::MessageListRequester()
 	Initialize();
 }
 
-MessageListRequester::MessageListRequester(FCPv2 *fcp):IIndexRequester<long>(fcp)
+MessageListRequester::MessageListRequester(FCPv2::Connection *fcp):IIndexRequester<long>(fcp)
 {
 	Initialize();
 }
@@ -97,7 +97,7 @@ void MessageListRequester::GetBoardList(std::map<std::string,bool> &boards)
 	}
 }
 
-const bool MessageListRequester::HandleAllData(FCPMessage &message)
+const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 {	
 	SQLite3DB::Statement st;
 	SQLite3DB::Statement trustst;
@@ -121,23 +121,16 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 	StringFunctions::Convert(idparts[2],index);
 
 	// wait for all data to be received from connection
-	while(m_fcp->Connected() && m_fcp->ReceiveBufferSize()<datalength)
-	{
-		m_fcp->Update(1);
-	}
+	m_fcp->WaitForBytes(1000,datalength);
 
 	// if we got disconnected- return immediately
-	if(m_fcp->Connected()==false)
+	if(m_fcp->IsConnected()==false)
 	{
 		return false;
 	}
 
 	// receive the file
-	data.resize(datalength);
-	if(data.size()>0)
-	{
-		m_fcp->ReceiveRaw(&data[0],datalength);
-	}
+	m_fcp->Receive(data,datalength);
 
 	// parse file into xml and update the database
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
@@ -300,7 +293,7 @@ const bool MessageListRequester::HandleAllData(FCPMessage &message)
 
 }
 
-const bool MessageListRequester::HandleGetFailed(FCPMessage &message)
+const bool MessageListRequester::HandleGetFailed(FCPv2::Message &message)
 {
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
@@ -416,13 +409,13 @@ void MessageListRequester::PopulateIDList()
 	}
 }
 
-void MessageListRequester::StartRedirectRequest(FCPMessage &message)
+void MessageListRequester::StartRedirectRequest(FCPv2::Message &message)
 {
 	std::vector<std::string> parts;
 	std::string indexstr="";
 	std::string identityidstr="";
 	std::string datestr="";
-	FCPMessage newmessage;
+	FCPv2::Message newmessage;
 
 	// get the new edition #
 	StringFunctions::Split(message["RedirectURI"],"/",parts);
@@ -450,14 +443,14 @@ void MessageListRequester::StartRedirectRequest(FCPMessage &message)
 	newmessage["ReturnType"]="direct";
 	newmessage["MaxSize"]="1000000";
 
-	m_fcp->SendMessage(newmessage);
+	m_fcp->Send(newmessage);
 
 }
 
 void MessageListRequester::StartRequest(const long &id)
 {
 	Poco::DateTime now;
-	FCPMessage message;
+	FCPv2::Message message;
 	std::string publickey;
 	int index=0;
 	std::string indexstr;
@@ -500,7 +493,7 @@ void MessageListRequester::StartRequest(const long &id)
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";
 
-		m_fcp->SendMessage(message);
+		m_fcp->Send(message);
 
 		m_requesting.push_back(id);
 	}

@@ -18,7 +18,7 @@ public:
 	FreenetMasterThread();
 	~FreenetMasterThread();
 	
-	const bool HandleMessage(FCPMessage &message);
+	const bool HandleMessage(FCPv2::Message &message);
 
 	void run();
 
@@ -34,7 +34,7 @@ private:
 
 	std::string m_fcphost;
 	int m_fcpport;
-	FCPv2 m_fcp;
+	FCPv2::Connection m_fcp;
 	std::vector<IFreenetRegistrable *> m_registrables;
 	std::vector<IPeriodicProcessor *> m_processors;
 	std::vector<IFCPConnected *> m_fcpconnected;

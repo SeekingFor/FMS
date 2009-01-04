@@ -14,7 +14,7 @@ UnkeyedIDCreator::UnkeyedIDCreator()
 	Initialize();
 }
 
-UnkeyedIDCreator::UnkeyedIDCreator(FCPv2 *fcp):IFCPConnected(fcp)
+UnkeyedIDCreator::UnkeyedIDCreator(FCPv2::Connection *fcp):IFCPConnected(fcp)
 {
 	Initialize();
 }
@@ -42,10 +42,10 @@ void UnkeyedIDCreator::CheckForUnkeyedID()
 		long id=rs.GetInt(0);
 		idstr << id;
 
-		FCPMessage message;
+		FCPv2::Message message;
 		message.SetName("GenerateSSK");
 		message["Identifier"]="UnkeyedIDRequest|"+idstr.str();
-		m_fcp->SendMessage(message);
+		m_fcp->Send(message);
 
 		m_waiting=true;
 
@@ -56,7 +56,7 @@ void UnkeyedIDCreator::CheckForUnkeyedID()
 
 }
 
-const bool UnkeyedIDCreator::HandleMessage(FCPMessage &message)
+const bool UnkeyedIDCreator::HandleMessage(FCPv2::Message &message)
 {
 	if(message["Identifier"].find("UnkeyedIDRequest")==0)
 	{

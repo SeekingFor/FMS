@@ -8,32 +8,11 @@
 
 const std::string ForumViewThreadPage::FixBody(const std::string &body)
 {
-	static std::string whitespace=" \t\r\n";
 	std::string output=body;
 
 	output=StringFunctions::Replace(output,"\r\n","\n");
 
 	UnicodeFormatter::LineWrap(output,80,"",output);
-	/*
-	// put \n after 80 contiguous characters in the body
-	std::string::size_type prevpos=0;
-	std::string::size_type pos=output.find_first_of(whitespace);
-	while(pos!=std::string::npos)
-	{
-		while(pos-prevpos>80)
-		{
-			output.insert(prevpos+80,"\n");
-			prevpos+=81;	// 81 because of the extra newline we just inserted
-		}
-		prevpos=pos;
-		pos=output.find_first_of(whitespace,pos+1);
-	}
-	while(output.size()-prevpos>80)	// check the last line of the message (no whitespace after it)
-	{
-		output.insert(prevpos+80,"\n");
-		prevpos+=81;
-	}
-	*/
 
 	output=StringFunctions::Replace(output,"<","&lt;");
 	output=StringFunctions::Replace(output,">","&gt;");
@@ -73,9 +52,18 @@ const std::string ForumViewThreadPage::GeneratePage(const std::string &method, c
 		firstunreadst.ResultText(0,firstunreadidstr);
 	}
 
-	SQLite3DB::Statement updateread=m_db->Prepare("UPDATE tblMessage SET Read=1 WHERE tblMessage.MessageID IN (SELECT MessageID FROM tblThreadPost WHERE ThreadID=?);");
-	updateread.Bind(0,threadidstr);
-	updateread.Step();
+	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="markunread")
+	{
+		SQLite3DB::Statement updateread=m_db->Prepare("UPDATE tblMessage SET Read=0 WHERE tblMessage.MessageID IN (SELECT MessageID FROM tblThreadPost WHERE ThreadID=?);");
+		updateread.Bind(0,threadidstr);
+		updateread.Step();
+	}
+	else
+	{
+		SQLite3DB::Statement updateread=m_db->Prepare("UPDATE tblMessage SET Read=1 WHERE tblMessage.MessageID IN (SELECT MessageID FROM tblThreadPost WHERE ThreadID=?);");
+		updateread.Bind(0,threadidstr);
+		updateread.Step();
+	}
 
 	SQLite3DB::Statement trustst=m_db->Prepare("SELECT LocalMessageTrust, LocalTrustListTrust, PeerMessageTrust, PeerTrustListTrust, Name FROM tblIdentity WHERE IdentityID=?;");
 
@@ -97,6 +85,9 @@ const std::string ForumViewThreadPage::GeneratePage(const std::string &method, c
 		content+="<a href=\"#"+firstunreadidstr+"\">First Unread Message</a>";
 		content+="</td>";
 	}
+	content+="<td>";
+	content+="<a href=\""+m_pagename+"?formaction=markunread&threadid="+threadidstr+"&boardid="+boardidstr+"&currentpage="+currentpagestr+"\">Mark Unread</a>";
+	content+="</td>";
 	content+="</tr>";
 	content+="</table>\r\n";
 

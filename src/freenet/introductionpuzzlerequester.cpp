@@ -19,12 +19,12 @@ IntroductionPuzzleRequester::IntroductionPuzzleRequester()
 	Initialize();
 }
 
-IntroductionPuzzleRequester::IntroductionPuzzleRequester(FCPv2 *fcp):IIndexRequester<long>(fcp)
+IntroductionPuzzleRequester::IntroductionPuzzleRequester(FCPv2::Connection *fcp):IIndexRequester<long>(fcp)
 {
 	Initialize();
 }
 
-const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
+const bool IntroductionPuzzleRequester::HandleAllData(FCPv2::Message &message)
 {
 	Poco::DateTime now;
 	SQLite3DB::Statement st;
@@ -42,23 +42,16 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 	StringFunctions::Convert(idparts[2],index);
 
 	// wait for all data to be received from connection
-	while(m_fcp->Connected() && m_fcp->ReceiveBufferSize()<datalength)
-	{
-		m_fcp->Update(1);
-	}
+	m_fcp->WaitForBytes(1000,datalength);
 
 	// if we got disconnected- return immediately
-	if(m_fcp->Connected()==false)
+	if(m_fcp->IsConnected()==false)
 	{
 		return false;
 	}
 
 	// receive the file
-	data.resize(datalength);
-	if(data.size()>0)
-	{
-		m_fcp->ReceiveRaw(&data[0],datalength);
-	}
+	m_fcp->Receive(data,datalength);
 
 	// parse file into xml and update the database
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
@@ -158,7 +151,7 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPMessage &message)
 
 }
 
-const bool IntroductionPuzzleRequester::HandleGetFailed(FCPMessage &message)
+const bool IntroductionPuzzleRequester::HandleGetFailed(FCPv2::Message &message)
 {
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
@@ -237,7 +230,7 @@ void IntroductionPuzzleRequester::PopulateIDList()
 void IntroductionPuzzleRequester::StartRequest(const long &identityid)
 {
 	Poco::DateTime now;
-	FCPMessage message;
+	FCPv2::Message message;
 	std::string publickey;
 	int index;
 	std::string indexstr;
@@ -278,7 +271,7 @@ void IntroductionPuzzleRequester::StartRequest(const long &identityid)
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";		// 1 MB
 
-		m_fcp->SendMessage(message);
+		m_fcp->Send(message);
 		
 		m_requesting.push_back(identityid);
 	}

@@ -11,12 +11,12 @@ FMSVersionRequester::FMSVersionRequester()
 	Initialize();
 }
 
-FMSVersionRequester::FMSVersionRequester(FCPv2 *fcp):IFCPConnected(fcp)
+FMSVersionRequester::FMSVersionRequester(FCPv2::Connection *fcp):IFCPConnected(fcp)
 {
 	Initialize();
 }
 
-const bool FMSVersionRequester::HandleAllData(FCPMessage &message)
+const bool FMSVersionRequester::HandleAllData(FCPv2::Message &message)
 {
 	std::vector<char> data;
 	long datalength;
@@ -25,23 +25,16 @@ const bool FMSVersionRequester::HandleAllData(FCPMessage &message)
 	StringFunctions::Convert(message["DataLength"],datalength);
 
 	// wait for all data to be received from connection
-	while(m_fcp->Connected() && m_fcp->ReceiveBufferSize()<datalength)
-	{
-		m_fcp->Update(1);
-	}
+	m_fcp->WaitForBytes(1000,datalength);
 
 	// if we got disconnected- return immediately
-	if(m_fcp->Connected()==false)
+	if(m_fcp->IsConnected()==false)
 	{
 		return false;
 	}
 
 	// receive the file
-	data.resize(datalength);
-	if(data.size()>0)
-	{
-		m_fcp->ReceiveRaw(&data[0],datalength);
-	}
+	m_fcp->Receive(data,datalength);
 
 	// update latest edition #
 	std::vector<std::string> parts;
@@ -76,7 +69,7 @@ const bool FMSVersionRequester::HandleAllData(FCPMessage &message)
 	return true;
 }
 
-const bool FMSVersionRequester::HandleGetFailed(FCPMessage &message)
+const bool FMSVersionRequester::HandleGetFailed(FCPv2::Message &message)
 {
 	std::vector<std::string> parts;
 	StringFunctions::Split(message["Identifier"],"/",parts);
@@ -95,7 +88,7 @@ const bool FMSVersionRequester::HandleGetFailed(FCPMessage &message)
 	return true;
 }
 
-const bool FMSVersionRequester::HandleMessage(FCPMessage &message)
+const bool FMSVersionRequester::HandleMessage(FCPv2::Message &message)
 {
 	if(message["Identifier"].find(m_fcpuniquename)==0)
 	{
@@ -154,7 +147,7 @@ void FMSVersionRequester::RegisterWithThread(FreenetMasterThread *thread)
 
 void FMSVersionRequester::StartRequest()
 {
-	FCPMessage message;
+	FCPv2::Message message;
 	std::string key="";
 	std::string editionstr="0";
 	int edition=0;
@@ -174,6 +167,6 @@ void FMSVersionRequester::StartRequest()
 	message["ReturnType"]="direct";
 	message["MaxSize"]="30000";		// 30K
 
-	m_fcp->SendMessage(message);
+	m_fcp->Send(message);
 
 }

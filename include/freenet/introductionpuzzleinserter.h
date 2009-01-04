@@ -10,15 +10,15 @@ class IntroductionPuzzleInserter:public IIndexInserter<long>
 {
 public:
 	IntroductionPuzzleInserter();
-	IntroductionPuzzleInserter(FCPv2 *fcp);
+	IntroductionPuzzleInserter(FCPv2::Connection *fcp);
 
 private:
 	void Initialize();
 	void CheckForNeededInsert();
 	const bool StartInsert(const long &localidentityid);
 	void GenerateCaptcha(std::string &encodeddata, std::string &solution);
-	const bool HandlePutSuccessful(FCPMessage &message);
-	const bool HandlePutFailed(FCPMessage &message);
+	const bool HandlePutSuccessful(FCPv2::Message &message);
+	const bool HandlePutFailed(FCPv2::Message &message);
 
 	Poco::DateTime m_lastchecked;
 	int m_maxpuzzleinserts;

@@ -7,13 +7,13 @@ To compile, run these commands from the source directory:
 cmake -D I_HAVE_READ_THE_README=ON .
 make
 
-If you want to use the bundled SQLite3 library, add a -D USE_BUNDLED_SQLITE=ON
-to the cmake command.  Use of the bundled SQLite3 library is on by default when
-compiling on a Mac.  To turn off charset conversion to UTF-8 when sending
-messages, add a -D DO_CHARSET_CONVERSION=OFF.  Compiling with charset
-conversion turned on is recommended.  If you would like to compile using the
-alternate captchas, add a -D ALTERNATE_CAPTCHA=ON to the cmake command line.
-This option requires the FreeImage library to be installed.
+Compiling with the bundled SQLite library is on by default.  If you do not want
+to use the bundled SQLite library, add a -D USE_BUNDLED_SQLITE=OFF to the cmake
+command.  To turn off charset conversion to UTF-8 when sending messages, add a
+-D DO_CHARSET_CONVERSION=OFF.  Compiling with charset conversion turned on is
+recommended.  If you would like to compile using the alternate captchas, add a
+-D ALTERNATE_CAPTCHA=ON to the cmake command line. This option requires the
+FreeImage library to be installed.
 
 UPGRADING
 ---------
@@ -41,6 +41,11 @@ and /unregisterService will uninstall the service.  Use the /displayName=name
 argument when installing the service to set the service name to whatever you
 want.  You will need to manually start the service unless you change the
 startup type in the service properties.
+
+FMS must run a good portion of the day every day to work properly.  The slower
+your Freenet connection is, the longer FMS must be run to find the
+communications of other identities.  You will not have a good experience only
+running FMS a few hours a day.
 
 If you are experiencing a problem with FMS that you can't solve, and you've
 already rebooted your machine, restarted FMS, and have reproduced the problem

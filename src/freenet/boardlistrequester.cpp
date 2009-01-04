@@ -13,7 +13,7 @@ BoardListRequester::BoardListRequester()
 	Initialize();
 }
 
-BoardListRequester::BoardListRequester(FCPv2 *fcp):IIndexRequester<long>(fcp)
+BoardListRequester::BoardListRequester(FCPv2::Connection *fcp):IIndexRequester<long>(fcp)
 {
 	Initialize();
 }
@@ -48,7 +48,7 @@ std::string BoardListRequester::GetIdentityName(const long identityid)
 	}
 }
 
-const bool BoardListRequester::HandleAllData(FCPMessage &message)
+const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 {	
 	Poco::DateTime now;
 	SQLite3DB::Statement st;
@@ -68,23 +68,16 @@ const bool BoardListRequester::HandleAllData(FCPMessage &message)
 	identityname=GetIdentityName(identityid);
 
 	// wait for all data to be received from connection
-	while(m_fcp->Connected() && m_fcp->ReceiveBufferSize()<datalength)
-	{
-		m_fcp->Update(1);
-	}
+	m_fcp->WaitForBytes(1000,datalength);
 
 	// if we got disconnected- return immediately
-	if(m_fcp->Connected()==false)
+	if(m_fcp->IsConnected()==false)
 	{
 		return false;
 	}
 
 	// receive the file
-	data.resize(datalength);
-	if(data.size()>0)
-	{
-		m_fcp->ReceiveRaw(&data[0],datalength);
-	}
+	m_fcp->Receive(data,datalength);
 
 	// parse file into xml and update the database
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
@@ -163,7 +156,7 @@ const bool BoardListRequester::HandleAllData(FCPMessage &message)
 
 }
 
-const bool BoardListRequester::HandleGetFailed(FCPMessage &message)
+const bool BoardListRequester::HandleGetFailed(FCPv2::Message &message)
 {
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
@@ -264,7 +257,7 @@ void BoardListRequester::PopulateIDList()
 void BoardListRequester::StartRequest(const long &identityid)
 {
 	Poco::DateTime now;
-	FCPMessage message;
+	FCPv2::Message message;
 	std::string publickey;
 	std::string indexstr;
 	int index;
@@ -303,7 +296,7 @@ void BoardListRequester::StartRequest(const long &identityid)
 		message["ReturnType"]="direct";
 		message["MaxSize"]="100000";			// 100 KB
 
-		m_fcp->SendMessage(message);
+		m_fcp->Send(message);
 
 		m_requesting.push_back(identityid);
 

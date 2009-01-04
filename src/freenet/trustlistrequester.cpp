@@ -15,12 +15,12 @@ TrustListRequester::TrustListRequester()
 	Initialize();
 }
 
-TrustListRequester::TrustListRequester(FCPv2 *fcp):IIndexRequester<long>(fcp)
+TrustListRequester::TrustListRequester(FCPv2::Connection *fcp):IIndexRequester<long>(fcp)
 {
 	Initialize();
 }
 
-const bool TrustListRequester::HandleAllData(FCPMessage &message)
+const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 {
 	Poco::DateTime now;
 	SQLite3DB::Statement st;
@@ -41,23 +41,16 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 	StringFunctions::Convert(idparts[2],index);
 
 	// wait for all data to be received from connection
-	while(m_fcp->Connected() && m_fcp->ReceiveBufferSize()<datalength)
-	{
-		m_fcp->Update(1);
-	}
+	m_fcp->WaitForBytes(1000,datalength);
 
 	// if we got disconnected- return immediately
-	if(m_fcp->Connected()==false)
+	if(m_fcp->IsConnected()==false)
 	{
 		return false;
 	}
 
 	// receive the file
-	data.resize(datalength);
-	if(data.size()>0)
-	{
-		m_fcp->ReceiveRaw(&data[0],datalength);
-	}
+	m_fcp->Receive(data,datalength);
 
 	// get count of identities added in last 24 hours
 	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE DateAdded>=?;");
@@ -238,7 +231,7 @@ const bool TrustListRequester::HandleAllData(FCPMessage &message)
 
 }
 
-const bool TrustListRequester::HandleGetFailed(FCPMessage &message)
+const bool TrustListRequester::HandleGetFailed(FCPv2::Message &message)
 {
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
@@ -315,7 +308,7 @@ void TrustListRequester::PopulateIDList()
 void TrustListRequester::StartRequest(const long &identityid)
 {
 	Poco::DateTime now;
-	FCPMessage message;
+	FCPv2::Message message;
 	std::string publickey;
 	int index;
 	std::string indexstr;
@@ -354,7 +347,7 @@ void TrustListRequester::StartRequest(const long &identityid)
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";			// 1 MB
 
-		m_fcp->SendMessage(message);
+		m_fcp->Send(message);
 
 		m_requesting.push_back(identityid);
 	}

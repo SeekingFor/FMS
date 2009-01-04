@@ -12,7 +12,7 @@ public:
 private:
 
 	static std::wstring m_unicodenewline;
-	static wchar_t m_unicodewhitespace[];
+	static std::wstring::value_type m_unicodewhitespace[];
 
 };
 

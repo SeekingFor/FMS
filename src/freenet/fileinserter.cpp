@@ -9,7 +9,7 @@ FileInserter::FileInserter()
 	Initialize();
 }
 
-FileInserter::FileInserter(FCPv2 *fcp):IIndexInserter<long>(fcp)
+FileInserter::FileInserter(FCPv2::Connection *fcp):IIndexInserter<long>(fcp)
 {
 	Initialize();
 }
@@ -30,7 +30,7 @@ void FileInserter::CheckForNeededInsert()
 	}
 }
 
-const bool FileInserter::HandlePutFailed(FCPMessage &message)
+const bool FileInserter::HandlePutFailed(FCPv2::Message &message)
 {
 	std::vector<std::string> idparts;
 	long fileinsertid;
@@ -46,7 +46,7 @@ const bool FileInserter::HandlePutFailed(FCPMessage &message)
 
 }
 
-const bool FileInserter::HandlePutSuccessful(FCPMessage &message)
+const bool FileInserter::HandlePutSuccessful(FCPv2::Message &message)
 {
 	std::vector<std::string> idparts;
 	long fileinsertid;
@@ -71,7 +71,7 @@ void FileInserter::Initialize()
 
 const bool FileInserter::StartInsert(const long &fileinsertid)
 {
-	FCPMessage message;
+	FCPv2::Message message;
 	std::string fileinsertidstr="";
 	std::string sizestr="";
 	std::string filename="";
@@ -105,8 +105,8 @@ const bool FileInserter::StartInsert(const long &fileinsertid)
 	message["Identifier"]=m_fcpuniquename+"|"+fileinsertidstr;
 	message["UploadFrom"]="direct";
 	message["DataLength"]=sizestr;
-	m_fcp->SendMessage(message);
-	m_fcp->SendRaw(&data[0],data.size());
+	m_fcp->Send(message);
+	m_fcp->Send(data);
 
 	m_inserting.push_back(fileinsertid);
 

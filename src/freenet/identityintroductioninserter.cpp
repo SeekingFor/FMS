@@ -15,7 +15,7 @@ IdentityIntroductionInserter::IdentityIntroductionInserter()
 	Initialize();
 }
 
-IdentityIntroductionInserter::IdentityIntroductionInserter(FCPv2 *fcp):IFCPConnected(fcp)
+IdentityIntroductionInserter::IdentityIntroductionInserter(FCPv2::Connection *fcp):IFCPConnected(fcp)
 {
 	Initialize();
 }
@@ -42,7 +42,7 @@ void IdentityIntroductionInserter::FCPDisconnected()
 
 }
 
-const bool IdentityIntroductionInserter::HandleMessage(FCPMessage &message)
+const bool IdentityIntroductionInserter::HandleMessage(FCPv2::Message &message)
 {
 
 	if(message["Identifier"].find("IdentityIntroductionInserter")==0)
@@ -115,12 +115,11 @@ void IdentityIntroductionInserter::RegisterWithThread(FreenetMasterThread *threa
 
 void IdentityIntroductionInserter::StartInsert(const long localidentityid, const std::string &day, const std::string &UUID, const std::string &solution)
 {
-	FCPMessage message;
+	FCPv2::Message message;
 	IdentityIntroductionXML xml;
 	std::string publickey;
 	std::string data;
 	std::string datasizestr;
-//	std::vector<unsigned char> hash;
 	std::string encodedhash;
 	
 	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey FROM tblLocalIdentity WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND LocalIdentityID=?;");
@@ -140,18 +139,14 @@ void IdentityIntroductionInserter::StartInsert(const long localidentityid, const
 		encodedhash=Poco::DigestEngine::digestToHex(sha1.digest());
 		StringFunctions::UpperCase(encodedhash,encodedhash);
 
-//		hash.resize(20);
-//		sha1((unsigned char *)solution.c_str(),solution.size(),&hash[0]);
-//		Hex::Encode(hash,encodedhash);
-
 		message.SetName("ClientPut");
 		message["URI"]="KSK@"+m_messagebase+"|"+day+"|"+UUID+"|"+encodedhash+".xml";
 		message["Identifier"]="IdentityIntroductionInserter|"+message["URI"];
 		message["UploadFrom"]="direct";
 		message["DataLength"]=datasizestr;
 
-		m_fcp->SendMessage(message);
-		m_fcp->SendRaw(data.c_str(),data.size());
+		m_fcp->Send(message);
+		m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 
 		m_inserting=true;
 	}

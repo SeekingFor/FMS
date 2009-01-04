@@ -15,7 +15,7 @@ MessageListInserter::MessageListInserter()
 	Initialize();
 }
 
-MessageListInserter::MessageListInserter(FCPv2 *fcp):IIndexInserter<long>(fcp)
+MessageListInserter::MessageListInserter(FCPv2::Connection *fcp):IIndexInserter<long>(fcp)
 {
 	Initialize();
 }
@@ -60,7 +60,7 @@ void MessageListInserter::CheckForNeededInsert()
 
 }
 
-const bool MessageListInserter::HandlePutFailed(FCPMessage &message)
+const bool MessageListInserter::HandlePutFailed(FCPv2::Message &message)
 {
 	std::vector<std::string> idparts;
 	long localidentityid;
@@ -97,7 +97,7 @@ const bool MessageListInserter::HandlePutFailed(FCPMessage &message)
 
 }
 
-const bool MessageListInserter::HandlePutSuccessful(FCPMessage &message)
+const bool MessageListInserter::HandlePutSuccessful(FCPv2::Message &message)
 {
 	Poco::DateTime now;
 	std::vector<std::string> idparts;
@@ -162,7 +162,7 @@ void MessageListInserter::Initialize()
 
 const bool MessageListInserter::StartInsert(const long &localidentityid)
 {
-	FCPMessage message;
+	FCPv2::Message message;
 	Poco::DateTime date;
 	Poco::DateTime now;
 	std::string privatekey;
@@ -262,10 +262,10 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		message["Identifier"]=m_fcpuniquename+"|"+localidentityidstr+"|"+indexstr+"|"+message["URI"];
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmlsizestr;
-		m_fcp->SendMessage(message);
-		m_fcp->SendRaw(xmlstr.c_str(),xmlstr.size());
+		m_fcp->Send(message);
+		m_fcp->Send(std::vector<char>(xmlstr.begin(),xmlstr.end()));
 
-		message.Reset();
+		message.Clear();
 		message.SetName("ClientPutComplexDir");
 		message["URI"]="USK"+privatekey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|MessageList/0/";
 		message["Identifier"]=m_fcpuniquename+"USK|"+message["URI"];
@@ -273,8 +273,8 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		message["Files.0.Name"]="MessageList.xml";
 		message["Files.0.UploadFrom"]="direct";
 		message["Files.0.DataLength"]=xmlsizestr;
-		m_fcp->SendMessage(message);
-		m_fcp->SendRaw(xmlstr.c_str(),xmlstr.size());
+		m_fcp->Send(message);
+		m_fcp->Send(std::vector<char>(xmlstr.begin(),xmlstr.end()));
 
 		m_inserting.push_back(localidentityid);
 		m_lastinsertedxml[localidentityid]=xmlstr;

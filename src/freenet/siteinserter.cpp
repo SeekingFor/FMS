@@ -14,7 +14,7 @@ SiteInserter::SiteInserter()
 	Initialize();
 }
 
-SiteInserter::SiteInserter(FCPv2 *fcp):IIndexInserter<long>(fcp)
+SiteInserter::SiteInserter(FCPv2::Connection *fcp):IIndexInserter<long>(fcp)
 {
 	Initialize();
 }
@@ -354,7 +354,7 @@ const std::string SiteInserter::GetClassString(const std::string &trustlevel)
 	}
 }
 
-const bool SiteInserter::HandlePutFailed(FCPMessage &message)
+const bool SiteInserter::HandlePutFailed(FCPv2::Message &message)
 {
 	std::vector<std::string> idparts;
 	long localidentityid;
@@ -369,7 +369,7 @@ const bool SiteInserter::HandlePutFailed(FCPMessage &message)
 	return true;
 }
 
-const bool SiteInserter::HandlePutSuccessful(FCPMessage &message)
+const bool SiteInserter::HandlePutSuccessful(FCPv2::Message &message)
 {
 	std::vector<std::string> idparts;
 	std::vector<std::string> uriparts;
@@ -418,7 +418,7 @@ const std::string SiteInserter::SanitizeOutput(const std::string &input)
 
 const bool SiteInserter::StartInsert(const long &localidentityid)
 {
-	FCPMessage message;
+	FCPv2::Message message;
 	std::string localidentityidstr="";
 	std::string sizestr="";
 	std::string uskkey="";
@@ -450,12 +450,12 @@ const bool SiteInserter::StartInsert(const long &localidentityid)
 		filenum++;
 	}
 
-	m_fcp->SendMessage(message);
+	m_fcp->Send(message);
 
 	// send data of each page
 	for(std::map<std::string,std::string>::iterator pagei=pages.begin(); pagei!=pages.end(); pagei++)
 	{
-		m_fcp->SendRaw(&(*pagei).second[0],(*pagei).second.size());
+		m_fcp->Send(std::vector<char>((*pagei).second.begin(),(*pagei).second.end()));
 	}
 
 	m_inserting.push_back(localidentityid);

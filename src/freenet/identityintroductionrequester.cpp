@@ -19,7 +19,7 @@ IdentityIntroductionRequester::IdentityIntroductionRequester()
 	Initialize();
 }
 
-IdentityIntroductionRequester::IdentityIntroductionRequester(FCPv2 *fcp):IFCPConnected(fcp)
+IdentityIntroductionRequester::IdentityIntroductionRequester(FCPv2::Connection *fcp):IFCPConnected(fcp)
 {
 	Initialize();
 }
@@ -35,7 +35,7 @@ void IdentityIntroductionRequester::FCPDisconnected()
 	
 }
 
-const bool IdentityIntroductionRequester::HandleAllData(FCPMessage &message)
+const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 {
 	FreenetSSK ssk;
 	Poco::DateTime date;
@@ -48,23 +48,16 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPMessage &message)
 	StringFunctions::Convert(message["DataLength"],datalength);
 
 	// wait for all data to be received from connection
-	while(m_fcp->Connected() && m_fcp->ReceiveBufferSize()<datalength)
-	{
-		m_fcp->Update(1);
-	}
+	m_fcp->WaitForBytes(1000,datalength);
 
 	// if we got disconnected- return immediately
-	if(m_fcp->Connected()==false)
+	if(m_fcp->IsConnected()==false)
 	{
 		return false;
 	}
 
 	// receive the file
-	data.resize(datalength);
-	if(data.size()>0)
-	{
-		m_fcp->ReceiveRaw(&data[0],datalength);
-	}
+	m_fcp->Receive(data,datalength);
 
 	// parse file into xml and update the database
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
@@ -123,7 +116,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPMessage &message)
 	return true;
 }
 
-const bool IdentityIntroductionRequester::HandleGetFailed(FCPMessage &message)
+const bool IdentityIntroductionRequester::HandleGetFailed(FCPv2::Message &message)
 {
 	std::vector<std::string> idparts;
 
@@ -146,7 +139,7 @@ const bool IdentityIntroductionRequester::HandleGetFailed(FCPMessage &message)
 	return true;
 }
 
-const bool IdentityIntroductionRequester::HandleMessage(FCPMessage &message)
+const bool IdentityIntroductionRequester::HandleMessage(FCPv2::Message &message)
 {
 
 	if(message["Identifier"].find("IdentityIntroductionRequester")==0)
@@ -280,7 +273,7 @@ void IdentityIntroductionRequester::StartRequest(const std::string &UUID)
 	std::string day;
 	std::string solution;
 	std::string encodedhash;
-	FCPMessage message;
+	FCPv2::Message message;
 	SQLite3DB::Statement st=m_db->Prepare("SELECT Day, PuzzleSolution FROM tblIntroductionPuzzleInserts WHERE FoundSolution='false' AND UUID=?;");
 	st.Bind(0,UUID);
 	st.Step();
@@ -303,7 +296,7 @@ void IdentityIntroductionRequester::StartRequest(const std::string &UUID)
 		message["ReturnType"]="direct";
 		message["MaxSize"]="10000";
 
-		m_fcp->SendMessage(message);
+		m_fcp->Send(message);
 
 		m_requesting.push_back(UUID);
 

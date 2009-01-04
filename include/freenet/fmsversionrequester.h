@@ -14,19 +14,19 @@ class FMSVersionRequester:public IFreenetRegistrable,public IFCPConnected,public
 {
 public:
 	FMSVersionRequester();
-	FMSVersionRequester(FCPv2 *fcp);
+	FMSVersionRequester(FCPv2::Connection *fcp);
 
 	void FCPConnected()			{}
 	void FCPDisconnected()		{}
-	const bool HandleMessage(FCPMessage &message);
+	const bool HandleMessage(FCPv2::Message &message);
 
 	void Process();
 
 	void RegisterWithThread(FreenetMasterThread *thread);
 
 private:
-	const bool HandleAllData(FCPMessage &message);
-	const bool HandleGetFailed(FCPMessage &message);
+	const bool HandleAllData(FCPv2::Message &message);
+	const bool HandleGetFailed(FCPv2::Message &message);
 	void Initialize();
 	void StartRequest();
 

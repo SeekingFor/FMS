@@ -7,12 +7,12 @@ class SiteInserter:public IIndexInserter<long>
 {
 public:
 	SiteInserter();
-	SiteInserter(FCPv2 *fcp);
+	SiteInserter(FCPv2::Connection *fcp);
 
 private:
 	void Initialize();
-	const bool HandlePutSuccessful(FCPMessage &message);
-	const bool HandlePutFailed(FCPMessage &message);
+	const bool HandlePutSuccessful(FCPv2::Message &message);
+	const bool HandlePutFailed(FCPv2::Message &message);
 	const bool StartInsert(const long &localidentityid);
 	void CheckForNeededInsert();
 	const std::string SanitizeOutput(const std::string &input);

@@ -14,7 +14,7 @@ BoardListInserter::BoardListInserter()
 	Initialize();
 }
 
-BoardListInserter::BoardListInserter(FCPv2 *fcp):IIndexInserter<long>(fcp)
+BoardListInserter::BoardListInserter(FCPv2::Connection *fcp):IIndexInserter<long>(fcp)
 {
 	Initialize();
 }
@@ -45,7 +45,7 @@ void BoardListInserter::CheckForNeededInsert()
 	}
 }
 
-const bool BoardListInserter::HandlePutFailed(FCPMessage &message)
+const bool BoardListInserter::HandlePutFailed(FCPv2::Message &message)
 {
 	std::vector<std::string> idparts;
 	long localidentityid;
@@ -69,7 +69,7 @@ const bool BoardListInserter::HandlePutFailed(FCPMessage &message)
 	return true;
 }
 
-const bool BoardListInserter::HandlePutSuccessful(FCPMessage &message)
+const bool BoardListInserter::HandlePutSuccessful(FCPv2::Message &message)
 {
 	Poco::DateTime now;
 	std::vector<std::string> idparts;
@@ -108,7 +108,7 @@ const bool BoardListInserter::StartInsert(const long &localidentityid)
 	Poco::DateTime daysback;
 	Poco::DateTime now;
 	BoardListXML xml;
-	FCPMessage message;
+	FCPv2::Message message;
 	std::string data;
 	std::string datasizestr;
 	std::string privatekey="";
@@ -172,8 +172,8 @@ const bool BoardListInserter::StartInsert(const long &localidentityid)
 	message["Identifier"]=m_fcpuniquename+"|"+localidentityidstr+"|"+indexstr+"|"+message["URI"];
 	message["UploadFrom"]="direct";
 	message["DataLength"]=datasizestr;
-	m_fcp->SendMessage(message);
-	m_fcp->SendRaw(data.c_str(),data.size());
+	m_fcp->Send(message);
+	m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 
 	m_inserting.push_back(localidentityid);
 

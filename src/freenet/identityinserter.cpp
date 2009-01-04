@@ -15,7 +15,7 @@ IdentityInserter::IdentityInserter()
 	Initialize();
 }
 
-IdentityInserter::IdentityInserter(FCPv2 *fcp):IFCPConnected(fcp)
+IdentityInserter::IdentityInserter(FCPv2::Connection *fcp):IFCPConnected(fcp)
 {
 	Initialize();
 }
@@ -55,7 +55,7 @@ void IdentityInserter::FCPDisconnected()
 	
 }
 
-const bool IdentityInserter::HandleMessage(FCPMessage &message)
+const bool IdentityInserter::HandleMessage(FCPv2::Message &message)
 {
 
 	if(message["Identifier"].find("IdentityInserter")==0)
@@ -154,7 +154,7 @@ void IdentityInserter::StartInsert(const long localidentityid)
 	if(rs.Empty()==false)
 	{
 		IdentityXML idxml;
-		FCPMessage mess;
+		FCPv2::Message mess;
 		Poco::DateTime now;
 		std::string messagebase;
 		std::string data;
@@ -232,8 +232,8 @@ void IdentityInserter::StartInsert(const long localidentityid)
 		mess["Identifier"]="IdentityInserter|"+idstring+"|"+indexstr+"|"+mess["URI"];
 		mess["UploadFrom"]="direct";
 		mess["DataLength"]=datasizestr;
-		m_fcp->SendMessage(mess);
-		m_fcp->SendRaw(data.c_str(),data.size());
+		m_fcp->Send(mess);
+		m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 
 		m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='true' WHERE LocalIdentityID="+idstring+";");
 

@@ -7,8 +7,8 @@
 #include "../sqlite3db.h"
 #include "../../threadwrapper/singleton.h"
 
-#if SQLITE_VERSION_NUMBER<3005000
-#error "Your version of SQLite is too old!  3.5.0 or later is required."
+#if SQLITE_VERSION_NUMBER<3006006
+#error "Your version of SQLite is too old!  3.6.6.2 or later is required."
 #endif
 
 namespace SQLite3DB

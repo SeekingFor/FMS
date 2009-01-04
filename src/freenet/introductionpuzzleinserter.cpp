@@ -22,7 +22,7 @@ IntroductionPuzzleInserter::IntroductionPuzzleInserter():IIndexInserter<long>()
 	Initialize();
 }
 
-IntroductionPuzzleInserter::IntroductionPuzzleInserter(FCPv2 *fcp):IIndexInserter<long>(fcp)
+IntroductionPuzzleInserter::IntroductionPuzzleInserter(FCPv2::Connection *fcp):IIndexInserter<long>(fcp)
 {
 	Initialize();
 }
@@ -106,7 +106,7 @@ void IntroductionPuzzleInserter::GenerateCaptcha(std::string &encodeddata, std::
 
 }
 
-const bool IntroductionPuzzleInserter::HandlePutFailed(FCPMessage &message)
+const bool IntroductionPuzzleInserter::HandlePutFailed(FCPv2::Message &message)
 {
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
@@ -132,7 +132,7 @@ const bool IntroductionPuzzleInserter::HandlePutFailed(FCPMessage &message)
 	return true;
 }
 
-const bool IntroductionPuzzleInserter::HandlePutSuccessful(FCPMessage &message)
+const bool IntroductionPuzzleInserter::HandlePutSuccessful(FCPv2::Message &message)
 {
 	Poco::DateTime now;
 	SQLite3DB::Statement st;
@@ -187,7 +187,7 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 	IntroductionPuzzleXML xml;
 	std::string encodedpuzzle="";
 	std::string solutionstring="";
-	FCPMessage message;
+	FCPv2::Message message;
 	std::string xmldata="";
 	std::string xmldatasizestr="";
 	std::string privatekey="";
@@ -257,11 +257,11 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		message["Identifier"]=m_fcpuniquename+"|"+idstring+"|"+indexstr+"|"+xml.GetUUID()+"|"+message["URI"];
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmldatasizestr;
-		m_fcp->SendMessage(message);
-		m_fcp->SendRaw(xmldata.c_str(),xmldata.size());
+		m_fcp->Send(message);
+		m_fcp->Send(std::vector<char>(xmldata.begin(),xmldata.end()));
 
 		// insert to USK
-		message.Reset();
+		message.Clear();
 		message.SetName("ClientPutComplexDir");
 		message["URI"]="USK"+privatekey.substr(3)+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|IntroductionPuzzle/0/";
 		message["Identifier"]=m_fcpuniquename+"USK|"+message["URI"];
@@ -269,8 +269,8 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		message["Files.0.Name"]="IntroductionPuzzle.xml";
 		message["Files.0.UplaodFrom"]="direct";
 		message["Files.0.DataLength"]=xmldatasizestr;
-		m_fcp->SendMessage(message);
-		m_fcp->SendRaw(xmldata.c_str(),xmldata.size());
+		m_fcp->Send(message);
+		m_fcp->Send(std::vector<char>(xmldata.begin(),xmldata.end()));
 
 		m_db->Execute("INSERT INTO tblIntroductionPuzzleInserts(UUID,Type,MimeType,LocalIdentityID,PuzzleData,PuzzleSolution) VALUES('"+xml.GetUUID()+"','captcha','image/bmp',"+idstring+",'"+encodedpuzzle+"','"+solutionstring+"');");
 

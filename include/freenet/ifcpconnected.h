@@ -10,10 +10,10 @@ class IFCPConnected
 {
 public:
 	IFCPConnected():m_fcp(NULL) {}
-	IFCPConnected(FCPv2 *fcp):m_fcp(fcp)	{}
+	IFCPConnected(FCPv2::Connection *fcp):m_fcp(fcp)	{}
 	
-	virtual void SetFCPConnection(FCPv2 *fcp)	{ m_fcp=fcp; }
-	virtual FCPv2 *GetFCPConnection()			{ return m_fcp; }
+	virtual void SetFCPConnection(FCPv2::Connection *fcp)	{ m_fcp=fcp; }
+	virtual FCPv2::Connection *GetFCPConnection()			{ return m_fcp; }
 	
 	/**
 		\brief called when the FCP connection becomes disconnected
@@ -29,7 +29,7 @@ public:
 	virtual void FCPConnected()=0;
 	
 protected:
-	FCPv2 *m_fcp;
+	FCPv2::Connection *m_fcp;
 };
 
 #endif	// _ifcpconnected_

@@ -14,11 +14,11 @@ class IdentityIntroductionRequester:public IFreenetRegistrable,public IFCPConnec
 {
 public:
 	IdentityIntroductionRequester();
-	IdentityIntroductionRequester(FCPv2 *fcp);
+	IdentityIntroductionRequester(FCPv2::Connection *fcp);
 
 	void FCPDisconnected();
 	void FCPConnected();
-	const bool HandleMessage(FCPMessage &message);
+	const bool HandleMessage(FCPv2::Message &message);
 
 	void Process();
 
@@ -30,8 +30,8 @@ private:
 	void StartRequest(const std::string &UUID);
 	void PopulateIDList();
 	void RemoveFromRequestList(const std::string &UUID);
-	const bool HandleGetFailed(FCPMessage &message);
-	const bool HandleAllData(FCPMessage &message);
+	const bool HandleGetFailed(FCPv2::Message &message);
+	const bool HandleAllData(FCPv2::Message &message);
 
 	Poco::DateTime m_tempdate;
 	std::map<long,bool> m_ids;

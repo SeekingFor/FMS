@@ -14,12 +14,12 @@ class IdentityIntroductionInserter:public IFreenetRegistrable,public IFCPConnect
 {
 public:
 	IdentityIntroductionInserter();
-	IdentityIntroductionInserter(FCPv2 *fcp);
+	IdentityIntroductionInserter(FCPv2::Connection *fcp);
 
 	void FCPConnected();
 	void FCPDisconnected();
 
-	const bool HandleMessage(FCPMessage &message);
+	const bool HandleMessage(FCPv2::Message &message);
 
 	void Process();
 

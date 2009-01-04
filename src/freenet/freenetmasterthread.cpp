@@ -95,7 +95,7 @@ const bool FreenetMasterThread::FCPConnect()
 
 		std::string clientname="FMSClient-"+uuid.toString();
 		// send ClientHello message to node
-		m_fcp.SendMessage("ClientHello",2,"Name",clientname.c_str(),"ExpectedVersion","2.0");
+		m_fcp.Send(FCPv2::Message("ClientHello",2,"Name",clientname.c_str(),"ExpectedVersion","2.0"));
 
 		m_log->information("FreenetMasterThread::FCPConnect connected to node");
 
@@ -108,7 +108,7 @@ const bool FreenetMasterThread::FCPConnect()
 
 }
 
-const bool FreenetMasterThread::HandleMessage(FCPMessage &message)
+const bool FreenetMasterThread::HandleMessage(FCPv2::Message &message)
 {
 	if(message.GetName()=="NodeHello")
 	{
@@ -136,7 +136,7 @@ const bool FreenetMasterThread::HandleMessage(FCPMessage &message)
 		if(handled==false)
 		{
 			std::string info("");
-			for(std::map<std::string,std::string>::iterator mi=message.begin(); mi!=message.end(); mi++)
+			for(std::map<std::string,std::string>::iterator mi=message.GetFields().begin(); mi!=message.GetFields().end(); mi++)
 			{
 				info+="\t\t\t\t"+(*mi).first+"="+(*mi).second+"\r\n";
 			}
@@ -147,15 +147,11 @@ const bool FreenetMasterThread::HandleMessage(FCPMessage &message)
 			{
 				long length;
 				StringFunctions::Convert(message["DataLength"],length);
-				while(m_fcp.Connected() && m_fcp.ReceiveBufferSize()<length)
+				m_fcp.WaitForBytes(1000,length);
+
+				if(m_fcp.IsConnected() && length>0)
 				{
-					m_fcp.Update(1);
-				}
-				if(m_fcp.Connected() && length>0)
-				{
-					char *data=new char[length];
-					m_fcp.ReceiveRaw(data,length);
-					delete [] data;
+					m_fcp.ReceiveIgnore(length);
 				}
 			}
 		}
@@ -192,7 +188,7 @@ void FreenetMasterThread::run()
 	Poco::DateTime lastreceivedmessage;
 	Poco::DateTime lastconnected;
 	Poco::DateTime now;
-	FCPMessage message;
+	FCPv2::Message message;
 	bool done=false;
 
 	lastconnected-=Poco::Timespan(0,0,1,0,0);
@@ -205,7 +201,7 @@ void FreenetMasterThread::run()
 	{
 		try
 		{
-			if(m_fcp.Connected()==false)
+			if(m_fcp.IsConnected()==false)
 			{
 				// wait at least 1 minute since last successful connect
 				now=Poco::Timestamp();
@@ -235,13 +231,13 @@ void FreenetMasterThread::run()
 			// fcp is connected
 			else
 			{
-				m_fcp.Update(1);
+				m_fcp.Update(1000);
 
 				// check for message on receive buffer and handle it
-				if(m_fcp.ReceiveBufferSize()>0)
+				if(m_fcp.MessageReady()==true)
 				{
-					message.Reset();
-					message=m_fcp.ReceiveMessage();
+					message.Clear();
+					m_fcp.Receive(message);
 
 					if(message.GetName()!="")
 					{
@@ -264,7 +260,7 @@ void FreenetMasterThread::run()
 					m_fcp.Disconnect();
 				}
 
-				if(m_fcp.Connected()==false)
+				if(m_fcp.IsConnected()==false)
 				{
 					m_log->information("FreenetMasterThread::Run Disconnected from Freenet node.");
 				}

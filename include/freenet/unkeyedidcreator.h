@@ -18,9 +18,9 @@ class UnkeyedIDCreator:public IFreenetRegistrable,public IFCPConnected,public IF
 {
 public:
 	UnkeyedIDCreator();
-	UnkeyedIDCreator(FCPv2 *fcp);
+	UnkeyedIDCreator(FCPv2::Connection *fcp);
 
-	const bool HandleMessage(FCPMessage &message);
+	const bool HandleMessage(FCPv2::Message &message);
 
 	void FCPDisconnected();
 	void FCPConnected();

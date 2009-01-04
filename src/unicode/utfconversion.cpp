@@ -3,7 +3,7 @@
 namespace UTFConversion
 {
 
-const bool FromUTF8(const std::vector<char> &utf8string, std::wstring &wcstring)
+const bool FromUTF8(const std::vector<std::string::value_type> &utf8string, std::wstring &wcstring)
 {
 	if(utf8string.size()==0)
 	{
@@ -11,7 +11,7 @@ const bool FromUTF8(const std::vector<char> &utf8string, std::wstring &wcstring)
 		return true;
 	}
 
-	std::vector<wchar_t> dest(utf8string.size(),0);		// dest will never be bigger than the input but could be smaller
+	std::vector<std::wstring::value_type> dest(utf8string.size(),0);		// dest will never be bigger than the input but could be smaller
 	
 	const UTF8 *sourcestart=reinterpret_cast<const UTF8 *>(&utf8string[0]);
 	const UTF8 *sourceend=sourcestart+utf8string.size();
@@ -40,7 +40,7 @@ const bool FromUTF8(const std::vector<char> &utf8string, std::wstring &wcstring)
 
 		if(rval!=conversionOK)
 		{
-			return false;	
+			return false;
 		}
 		
 		wcstring.assign(dest.begin(),dest.end()-(destend-deststart));
@@ -48,7 +48,7 @@ const bool FromUTF8(const std::vector<char> &utf8string, std::wstring &wcstring)
 	}
 	else
 	{
-		return false;	
+		return false;
 	}
 
 	return true;
@@ -57,7 +57,15 @@ const bool FromUTF8(const std::vector<char> &utf8string, std::wstring &wcstring)
 const bool FromUTF8(const std::string &utf8string, std::wstring &wcstring)
 {
 
-	return FromUTF8(std::vector<char>(utf8string.begin(),utf8string.end()),wcstring);
+	if(utf8string.size()>0)
+	{
+		return FromUTF8(std::vector<std::string::value_type>(utf8string.begin(),utf8string.end()),wcstring);
+	}
+	else
+	{
+		wcstring.assign(L"");
+		return true;
+	}
 
 }
 
@@ -69,11 +77,11 @@ const bool ToUTF8(const std::wstring &wcstring, std::string &utf8string)
 		return true;
 	}
 
-	std::vector<wchar_t> source(wcstring.begin(),wcstring.end());
+	std::vector<std::wstring::value_type> source(wcstring.begin(),wcstring.end());
 	
-	if(sizeof(wchar_t)==2)
+	if(sizeof(std::wstring::value_type)==2)
 	{
-		std::vector<char> dest(wcstring.size()*2,0);
+		std::vector<std::string::value_type> dest(wcstring.size()*2,0);
 		
 		const UTF16 *sourcestart=reinterpret_cast<const UTF16 *>(&source[0]);
 		const UTF16 *sourceend=sourcestart+source.size();
@@ -85,15 +93,15 @@ const bool ToUTF8(const std::wstring &wcstring, std::string &utf8string)
 		
 		if(rval!=conversionOK)
 		{
-			return false;	
+			return false;
 		}
 		
 		utf8string.assign(dest.begin(),dest.end()-(destend-deststart));
 		
 	}
-	else if(sizeof(wchar_t)==4)
+	else if(sizeof(std::wstring::value_type)==4)
 	{
-		std::vector<char> dest(wcstring.size()*4,0);
+		std::vector<std::string::value_type> dest(wcstring.size()*4,0);
 		
 		const UTF32 *sourcestart=reinterpret_cast<const UTF32 *>(&source[0]);
 		const UTF32 *sourceend=sourcestart+source.size();
@@ -105,7 +113,7 @@ const bool ToUTF8(const std::wstring &wcstring, std::string &utf8string)
 		
 		if(rval!=conversionOK)
 		{
-			return false;	
+			return false;
 		}
 		
 		utf8string.assign(dest.begin(),dest.end()-(destend-deststart));

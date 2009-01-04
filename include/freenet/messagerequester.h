@@ -7,14 +7,14 @@ class MessageRequester:public IIndexRequester<std::string>
 {
 public:
 	MessageRequester();
-	MessageRequester(FCPv2 *fcp);
+	MessageRequester(FCPv2::Connection *fcp);
 
 private:
 	void Initialize();
 	void PopulateIDList();
 	void StartRequest(const std::string &requestid);
-	const bool HandleAllData(FCPMessage &message);
-	const bool HandleGetFailed(FCPMessage &message);
+	const bool HandleAllData(FCPv2::Message &message);
+	const bool HandleGetFailed(FCPv2::Message &message);
 
 	const long GetBoardID(const std::string &boardname, const std::string &identityname);
 	const bool SaveToBoard(const std::string &boardname);

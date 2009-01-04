@@ -16,7 +16,7 @@ MessageRequester::MessageRequester()
 	Initialize();
 }
 
-MessageRequester::MessageRequester(FCPv2 *fcp):IIndexRequester<std::string>(fcp)
+MessageRequester::MessageRequester(FCPv2::Connection *fcp):IIndexRequester<std::string>(fcp)
 {
 	Initialize();
 }
@@ -85,7 +85,7 @@ const std::string MessageRequester::GetIdentityName(const long identityid)
 	}
 }
 
-const bool MessageRequester::HandleAllData(FCPMessage &message)
+const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 {
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
@@ -104,23 +104,16 @@ const bool MessageRequester::HandleAllData(FCPMessage &message)
 	StringFunctions::Convert(idparts[4],index);
 
 	// wait for all data to be received from connection
-	while(m_fcp->Connected() && m_fcp->ReceiveBufferSize()<datalength)
-	{
-		m_fcp->Update(1);
-	}
+	m_fcp->WaitForBytes(1000,datalength);
 
 	// if we got disconnected- return immediately
-	if(m_fcp->Connected()==false)
+	if(m_fcp->IsConnected()==false)
 	{
 		return false;
 	}
 
 	// receive the file
-	data.resize(datalength);
-	if(data.size()>0)
-	{
-		m_fcp->ReceiveRaw(&data[0],datalength);
-	}
+	m_fcp->Receive(data,datalength);
 
 	// mark this index as received
 	st=m_db->Prepare("UPDATE tblMessageRequests SET Found='true' WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
@@ -291,7 +284,7 @@ const bool MessageRequester::HandleAllData(FCPMessage &message)
 	return true;
 }
 
-const bool MessageRequester::HandleGetFailed(FCPMessage &message)
+const bool MessageRequester::HandleGetFailed(FCPv2::Message &message)
 {
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
@@ -479,7 +472,7 @@ const bool MessageRequester::SaveToBoard(const std::string &boardname)
 
 void MessageRequester::StartRequest(const std::string &requestid)
 {
-	FCPMessage message;
+	FCPv2::Message message;
 	std::vector<std::string> parts;
 	std::string tempval;
 	long identityid;
@@ -507,7 +500,7 @@ void MessageRequester::StartRequest(const std::string &requestid)
 		message["MaxSize"]="1000000";		// 1 MB
 		message["MaxRetries"]="-1";			// use ULPR since we are fairly sure message exists since the author says it does
 
-		m_fcp->SendMessage(message);
+		m_fcp->Send(message);
 
 		m_requesting.push_back(requestid);
 

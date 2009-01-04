@@ -8,12 +8,12 @@ class MessageInserter:public IIndexInserter<std::string>
 {
 public:
 	MessageInserter();
-	MessageInserter(FCPv2 *fcp);
+	MessageInserter(FCPv2::Connection *fcp);
 
 private:
 	void Initialize();
-	const bool HandlePutSuccessful(FCPMessage &message);
-	const bool HandlePutFailed(FCPMessage &message);
+	const bool HandlePutSuccessful(FCPv2::Message &message);
+	const bool HandlePutFailed(FCPv2::Message &message);
 	const bool StartInsert(const std::string &messageuuid);
 	void CheckForNeededInsert();
 

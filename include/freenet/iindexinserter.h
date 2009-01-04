@@ -23,12 +23,12 @@ class IIndexInserter:public IFreenetRegistrable,public IFCPConnected,public IFCP
 {
 public:
 	IIndexInserter();
-	IIndexInserter(FCPv2 *fcp);
+	IIndexInserter(FCPv2::Connection *fcp);
 	virtual ~IIndexInserter()		{}
 
 	virtual void FCPConnected();
 	virtual void FCPDisconnected();
-	virtual const bool HandleMessage(FCPMessage &message);
+	virtual const bool HandleMessage(FCPv2::Message &message);
 
 	virtual void Process();
 
@@ -37,8 +37,8 @@ public:
 protected:
 	void InitializeIIndexInserter();
 	virtual void Initialize()=0;		// initialize m_fcpuniquename
-	virtual const bool HandlePutSuccessful(FCPMessage &message)=0;
-	virtual const bool HandlePutFailed(FCPMessage &message)=0;
+	virtual const bool HandlePutSuccessful(FCPv2::Message &message)=0;
+	virtual const bool HandlePutFailed(FCPv2::Message &message)=0;
 	virtual const bool StartInsert(const IDTYPE &id)=0;
 	virtual void CheckForNeededInsert()=0;
 	virtual void RemoveFromInsertList(const IDTYPE id);
@@ -58,7 +58,7 @@ IIndexInserter<IDTYPE>::IIndexInserter()
 }
 
 template <class IDTYPE>
-IIndexInserter<IDTYPE>::IIndexInserter(FCPv2 *fcp):IFCPConnected(fcp)
+IIndexInserter<IDTYPE>::IIndexInserter(FCPv2::Connection *fcp):IFCPConnected(fcp)
 {
 	InitializeIIndexInserter();
 }
@@ -86,7 +86,7 @@ void IIndexInserter<IDTYPE>::FCPDisconnected()
 }
 
 template <class IDTYPE>
-const bool IIndexInserter<IDTYPE>::HandleMessage(FCPMessage &message)
+const bool IIndexInserter<IDTYPE>::HandleMessage(FCPv2::Message &message)
 {
 
 	if(message["Identifier"].find(m_fcpuniquename)==0)

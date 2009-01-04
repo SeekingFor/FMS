@@ -25,12 +25,12 @@ class IIndexRequester:public IFreenetRegistrable,public IFCPConnected,public IFC
 {
 public:
 	IIndexRequester();
-	IIndexRequester(FCPv2 *fcp);
+	IIndexRequester(FCPv2::Connection *fcp);
 	virtual ~IIndexRequester()		{}
 
 	virtual void FCPConnected();
 	virtual void FCPDisconnected();
-	virtual const bool HandleMessage(FCPMessage &message);
+	virtual const bool HandleMessage(FCPv2::Message &message);
 
 	virtual void Process();
 
@@ -41,8 +41,8 @@ protected:
 	virtual void Initialize()=0;		// initialize m_maxrequests and m_fcpuniquename
 	virtual void PopulateIDList()=0;
 	virtual void StartRequest(const IDTYPE &id)=0;
-	virtual const bool HandleAllData(FCPMessage &message)=0;
-	virtual const bool HandleGetFailed(FCPMessage &message)=0;
+	virtual const bool HandleAllData(FCPv2::Message &message)=0;
+	virtual const bool HandleGetFailed(FCPv2::Message &message)=0;
 	virtual void RemoveFromRequestList(const IDTYPE id);
 
 	Poco::DateTime m_tempdate;
@@ -65,7 +65,7 @@ IIndexRequester<IDTYPE>::IIndexRequester()
 }
 
 template <class IDTYPE>
-IIndexRequester<IDTYPE>::IIndexRequester(FCPv2 *fcp):IFCPConnected(fcp)
+IIndexRequester<IDTYPE>::IIndexRequester(FCPv2::Connection *fcp):IFCPConnected(fcp)
 {
 	InitializeIIndexRequester();
 }
@@ -100,7 +100,7 @@ void IIndexRequester<IDTYPE>::FCPDisconnected()
 }
 
 template <class IDTYPE>
-const bool IIndexRequester<IDTYPE>::HandleMessage(FCPMessage &message)
+const bool IIndexRequester<IDTYPE>::HandleMessage(FCPv2::Message &message)
 {
 
 	if(message["Identifier"].find(m_fcpuniquename)==0)
@@ -210,14 +210,6 @@ void IIndexRequester<IDTYPE>::RegisterWithThread(FreenetMasterThread *thread)
 template <class IDTYPE>
 void IIndexRequester<IDTYPE>::RemoveFromRequestList(const IDTYPE id)
 {
-/*
-	typename std::vector<IDTYPE>::iterator i=m_requesting.begin();
-	while(i!=m_requesting.end() && (*i)!=id)
-	{
-		i++;
-	}
-*/
-	// better
 	typename std::vector<IDTYPE>::iterator i=std::find(m_requesting.begin(),m_requesting.end(),id);
 
 	if(i!=m_requesting.end())
