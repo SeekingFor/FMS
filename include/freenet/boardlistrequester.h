@@ -6,8 +6,8 @@
 class BoardListRequester:public IIndexRequester<long>
 {
 public:
-	BoardListRequester();
-	BoardListRequester(FCPv2::Connection *fcp);
+	BoardListRequester(SQLite3DB::DB *db);
+	BoardListRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

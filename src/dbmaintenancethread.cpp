@@ -22,32 +22,25 @@ DBMaintenanceThread::DBMaintenanceThread()
 	m_last1day=Poco::Timestamp();
 	m_last1day-=Poco::Timespan(0,23,51,0,0);
 
-	m_deletemessagesolderthan=180;
-	std::string tempval="180";
-	Option::Instance()->Get("DeleteMessagesOlderThan",tempval);
-	StringFunctions::Convert(tempval,m_deletemessagesolderthan);
 
-	m_messagedownloadmaxdaysbackward=5;
-	tempval="5";
-	Option::Instance()->Get("MessageDownloadMaxDaysBackward",tempval);
-	StringFunctions::Convert(tempval,m_messagedownloadmaxdaysbackward);
 
 }
 
 
 void DBMaintenanceThread::Do10MinuteMaintenance()
 {
-	std::string ll="";
-	Option::Instance()->Get("LogLevel",ll);
+	Option option(m_db);
+	std::string ll("");
+	option.Get("LogLevel",ll);
 
 	// TODO - remove after corruption issue fixed
 	if(ll=="8")
 	{
-		std::string dbres=TestDBIntegrity();
+		std::string dbres=TestDBIntegrity(m_db);
 		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() start TestDBIntegrity returned "+dbres);
 	}
 
-	ThreadBuilder tb;
+	ThreadBuilder tb(m_db);
 	SQLite3DB::Statement boardst=m_db->Prepare("SELECT BoardID FROM tblBoard WHERE Forum='true';");
 	// select messages for a board that aren't in a thread
 	SQLite3DB::Statement selectst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblMessage \
@@ -84,7 +77,7 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 	// TODO - remove after corruption issue fixed
 	if(ll=="8")
 	{
-		std::string dbres=TestDBIntegrity();
+		std::string dbres=TestDBIntegrity(m_db);
 		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() middle TestDBIntegrity returned "+dbres);
 	}
 
@@ -110,7 +103,7 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 	// TODO - remove after corruption issue fixed
 	if(ll=="8")
 	{
-		std::string dbres=TestDBIntegrity();
+		std::string dbres=TestDBIntegrity(m_db);
 		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() end TestDBIntegrity returned "+dbres);
 	}
 
@@ -125,6 +118,8 @@ void DBMaintenanceThread::Do30MinuteMaintenance()
 
 void DBMaintenanceThread::Do1HourMaintenance()
 {
+
+	m_db->Execute("BEGIN;");
 	// recalculate all trust levels - this is CPU instensive
 	// do 1 identity at a time as doing it with 1 UPDATE statement locks that database for the duration
 	SQLite3DB::Statement st=m_db->Prepare("SELECT TargetIdentityID,PeerMessageTrust,PeerTrustListTrust FROM vwCalculatedPeerTrust;");
@@ -182,11 +177,15 @@ void DBMaintenanceThread::Do1HourMaintenance()
 	// insert all identities not in trust list already
 	m_db->Execute("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity WHERE LocalIdentityID || '_' || IdentityID NOT IN (SELECT LocalIdentityID || '_' || IdentityID FROM tblIdentityTrust);");
 
+	m_db->Execute("COMMIT;");
+
 	m_log->debug("PeriodicDBMaintenance::Do1HourMaintenance");
 }
 
 void DBMaintenanceThread::Do6HourMaintenance()
 {
+
+	m_db->Execute("BEGIN;");
 
 	// if we remove a board and the reply boardid is still set to it, we need to replace it with a boardid that does exist
 	SQLite3DB::Statement st=m_db->Prepare("SELECT MessageID FROM tblMessage WHERE ReplyBoardID NOT IN (SELECT BoardID FROM tblBoard);");
@@ -216,12 +215,16 @@ void DBMaintenanceThread::Do6HourMaintenance()
 		st.Step();
 	}
 
+	m_db->Execute("COMMIT;");
+
 	m_log->debug("PeriodicDBMaintenance::Do6HourMaintenance");
 }
 
 void DBMaintenanceThread::Do1DayMaintenance()
 {
 	Poco::DateTime date;
+
+	m_db->Execute("BEGIN;");
 
 	// delete all puzzles 2 or more days old
 	date=Poco::Timestamp();
@@ -352,6 +355,8 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	m_db->Execute("DELETE FROM tblIdentityTrust WHERE LocalIdentityID NOT IN (SELECT LocalIdentityID FROM tblLocalIdentity);");
 	m_db->Execute("DELETE FROM tblIdentityTrust WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity);");
 
+	m_db->Execute("COMMIT;");
+
 	m_log->debug("PeriodicDBMaintenance::Do1DayMaintenance");
 
 }
@@ -359,6 +364,21 @@ void DBMaintenanceThread::Do1DayMaintenance()
 void DBMaintenanceThread::run()
 {
 	m_log->debug("DBMaintenanceThread::run thread started.");
+
+	LoadDatabase();
+	Option option(m_db);
+	std::string tempval("");
+
+	m_deletemessagesolderthan=180;
+	tempval="180";
+	option.Get("DeleteMessagesOlderThan",tempval);
+	StringFunctions::Convert(tempval,m_deletemessagesolderthan);
+
+	m_messagedownloadmaxdaysbackward=5;
+	tempval="5";
+	option.Get("MessageDownloadMaxDaysBackward",tempval);
+	StringFunctions::Convert(tempval,m_messagedownloadmaxdaysbackward);
+
 
 	Poco::DateTime now;
 	int i=0;

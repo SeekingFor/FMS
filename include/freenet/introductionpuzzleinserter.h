@@ -9,8 +9,8 @@
 class IntroductionPuzzleInserter:public IIndexInserter<long>
 {
 public:
-	IntroductionPuzzleInserter();
-	IntroductionPuzzleInserter(FCPv2::Connection *fcp);
+	IntroductionPuzzleInserter(SQLite3DB::DB *db);
+	IntroductionPuzzleInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

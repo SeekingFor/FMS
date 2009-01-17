@@ -6,6 +6,8 @@
 class MessageThread:public IDatabase
 {
 public:
+	MessageThread(SQLite3DB::DB *db):IDatabase(db)			{}
+
 	struct threadnode
 	{
 		long m_messageid;

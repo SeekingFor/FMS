@@ -6,8 +6,8 @@
 class MessageListInserter:public IIndexInserter<long>
 {
 public:
-	MessageListInserter();
-	MessageListInserter(FCPv2::Connection *fcp);
+	MessageListInserter(SQLite3DB::DB *db);
+	MessageListInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

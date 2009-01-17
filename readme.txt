@@ -15,6 +15,12 @@ recommended.  If you would like to compile using the alternate captchas, add a
 -D ALTERNATE_CAPTCHA=ON to the cmake command line. This option requires the
 FreeImage library to be installed.
 
+Query logging may be turned on by adding a -D QUERY_LOG=ON.  This will create a
+file called query.log in the working directory.  Straight SQL statements will
+be captured, as well as the setup of prepared statements.  Each step through a
+prepared statement is also logged, but the details are not, so there should be
+no sensitive information in this log file.
+
 UPGRADING
 ---------
 *ALWAYS* make a copy of your current FMS installation before continuing.  First

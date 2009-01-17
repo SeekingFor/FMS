@@ -5,12 +5,12 @@
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/Timestamp.h>
 
-MessageInserter::MessageInserter()
+MessageInserter::MessageInserter(SQLite3DB::DB *db):IIndexInserter<std::string>(db)
 {
 	Initialize();
 }
 
-MessageInserter::MessageInserter(FCPv2::Connection *fcp):IIndexInserter<std::string>(fcp)
+MessageInserter::MessageInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexInserter<std::string>(db,fcp)
 {
 	Initialize();
 }

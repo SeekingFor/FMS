@@ -3,31 +3,18 @@
 
 #include "../include/dbsetup.h"
 #include "../include/stringfunctions.h"
-#include "../include/option.h"
 
 const bool ThreadBuilder::Build(const long messageid, const long boardid, const bool bydate)
 {
 	int count=0;
 	int threadid=-1;
-	MessageThread mt;
+	MessageThread mt(m_db);
 	std::vector<MessageThread::threadnode> m_threadmessages;
-
-	std::string ll="";
-	Option::Instance()->Get("LogLevel",ll);
-
-	// TODO - remove after corruption issue fixed
-	if(ll=="8")
-	{
-		std::string dbres=TestDBIntegrity();
-		std::string messageidstr="";
-		std::string boardidstr="";
-		StringFunctions::Convert(messageid,messageidstr);
-		StringFunctions::Convert(boardid,boardidstr);
-		m_log->trace("ThreadBuilder::Build start TestDBIntegrity("+messageidstr+","+boardidstr+") returned "+dbres);
-	}
 
 	mt.Load(messageid,boardid,bydate);
 	m_threadmessages=mt.GetNodes();
+
+	m_db->Execute("BEGIN;");
 
 	// find threadid of this mesage if it already exists in a thread
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblThread.ThreadID FROM tblThread INNER JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE tblThread.BoardID=? AND tblThreadPost.MessageID=?;");
@@ -68,16 +55,6 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 		}
 	}
 
-	// TODO - remove after corruption issue fixed
-	if(ll=="8")
-	{
-		std::string dbres=TestDBIntegrity();
-		if(dbres!="ok")
-		{
-			m_log->trace("ThreadBuilder::Build middle TestDBIntegrity returned "+dbres);
-		}
-	}
-
 	if(m_threadmessages.size()>0)
 	{
 		SQLite3DB::Statement st2=m_db->Prepare("UPDATE tblThread SET FirstMessageID=?, LastMessageID=? WHERE ThreadID=?;");
@@ -86,29 +63,9 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 		st2.Bind(2,threadid);
 		st2.Step();
 
-		// TODO - remove after corruption issue fixed
-		if(ll=="8")
-		{
-			std::string dbres=TestDBIntegrity();
-			if(dbres!="ok")
-			{
-				m_log->trace("ThreadBuilder::Build after thread update TestDBIntegrity returned "+dbres);
-			}
-		}
-
 		SQLite3DB::Statement st3=m_db->Prepare("DELETE FROM tblThreadPost WHERE ThreadID=?;");
 		st3.Bind(0,threadid);
 		st3.Step();
-
-		// TODO - remove after corruption issue fixed
-		if(ll=="8")
-		{
-			std::string dbres=TestDBIntegrity();
-			if(dbres!="ok")
-			{
-				m_log->trace("ThreadBuilder::Build after thread post delete TestDBIntegrity returned "+dbres);
-			}
-		}
 
 		SQLite3DB::Statement deleteotherst=m_db->Prepare("DELETE FROM tblThread WHERE ThreadID IN (SELECT tblThread.ThreadID FROM tblThreadPost INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblThread.BoardID=? AND tblThreadPost.MessageID=?);");
 
@@ -137,12 +94,7 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 		m_log->trace("ThreadBuilder::Build deleted thread");
 	}
 
-	// TODO - remove after corruption issue fixed
-	if(ll=="8")
-	{
-		std::string dbres=TestDBIntegrity();
-		m_log->trace("ThreadBuilder::Build end TestDBIntegrity returned "+dbres);
-	}
+	m_db->Execute("COMMIT;");
 
 	return true;
 

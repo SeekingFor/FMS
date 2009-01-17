@@ -4,12 +4,12 @@
 	#include <xmem.h>
 #endif
 
-FileInserter::FileInserter()
+FileInserter::FileInserter(SQLite3DB::DB *db):IIndexInserter<long>(db)
 {
 	Initialize();
 }
 
-FileInserter::FileInserter(FCPv2::Connection *fcp):IIndexInserter<long>(fcp)
+FileInserter::FileInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexInserter<long>(db,fcp)
 {
 	Initialize();
 }

@@ -6,8 +6,8 @@
 class FileInserter:public IIndexInserter<long>
 {
 public:
-	FileInserter();
-	FileInserter(FCPv2::Connection *fcp);
+	FileInserter(SQLite3DB::DB *db);
+	FileInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

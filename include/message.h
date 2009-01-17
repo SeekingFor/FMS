@@ -9,9 +9,9 @@
 class Message:public IDatabase,public ILogger
 {
 public:
-	Message();
-	Message(const long messageid);
-	Message(const std::string &messageuuid);
+	Message(SQLite3DB::DB *db);
+	Message(SQLite3DB::DB *db, const long messageid);
+	Message(SQLite3DB::DB *db, const std::string &messageuuid);
 
 	const long GetMessageID() const					{ return m_messageid; }
 	const std::string GetMessageUUID() const		{ return m_messageuuid; }

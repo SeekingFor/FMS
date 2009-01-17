@@ -8,8 +8,8 @@
 class IntroductionPuzzleRequester:public IIndexRequester<long>
 {
 public:
-	IntroductionPuzzleRequester();
-	IntroductionPuzzleRequester(FCPv2::Connection *fcp);
+	IntroductionPuzzleRequester(SQLite3DB::DB *db);
+	IntroductionPuzzleRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

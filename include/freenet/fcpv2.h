@@ -115,6 +115,8 @@ public:
 		\brief Gets the string representing this message in FCP
 
 		This string is what is actually sent/received from the node through FCP
+
+		\return The FCP message string
 	*/
 	const std::string GetFCPString() const;
 
@@ -138,13 +140,13 @@ public:
 	/**
 		\brief Construct connection with an existing socket
 
-		\param sock An existing socket connection to a Freenet node
+		\param sock An existing open socket connection to a Freenet node
 	*/
 	Connection(const int sock);
 	/**
-		\brief Default constructor
+		\brief Default destructor
 
-		The deconstructor will close the connection if it is open
+		The destructor will close the connection if it is open
 	*/
 	~Connection();
 
@@ -265,7 +267,7 @@ public:
 		\brief Waits until the receive buffer contains a specified number of bytes
 		
 		This will continuously call Update until either the specific number of bytes have been received,
-		or the connection becomes disconnected
+		or the connection becomes disconnected.
 		
 		\param ms The number of milliseconds for each call to Update
 		\param len The number of bytes to wait for

@@ -1,15 +1,16 @@
 #ifndef _option_
 #define _option_
 
-#include "db/sqlite3db.h"
+#include "idatabase.h"
 
 #include <sstream>
-#include "threadwrapper/singleton.h"
 
 //just a wrapper around the database for the options table
-class Option:public Singleton<Option>
+class Option:public IDatabase
 {
 public:
+	Option(SQLite3DB::DB *db):IDatabase(db)			{}
+
 	const bool Get(const std::string &option, std::string &value);
 	const bool GetInt(const std::string &option, int &value);
 	template<class T>
@@ -26,14 +27,14 @@ void Option::Set(const std::string &option, const T &value)
 	std::string tempval;
 	if(Get(option,tempval)==true)
 	{
-		SQLite3DB::Statement st=SQLite3DB::DB::Instance()->Prepare("UPDATE tblOption SET OptionValue=? WHERE Option=?;");
+		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblOption SET OptionValue=? WHERE Option=?;");
 		st.Bind(0,valuestr.str());
 		st.Bind(1,option);
 		st.Step();
 	}
 	else
 	{
-		SQLite3DB::Statement st=SQLite3DB::DB::Instance()->Prepare("INSERT INTO tblOption(Option,OptionValue) VALUES(?,?);");
+		SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblOption(Option,OptionValue) VALUES(?,?);");
 		st.Bind(0,option);
 		st.Bind(1,valuestr.str());
 		st.Step();

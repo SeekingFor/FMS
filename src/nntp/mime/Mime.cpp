@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <cstring>
+#include <cstdio>
 
 #ifndef _WIN32
 	#define stricmp strcasecmp

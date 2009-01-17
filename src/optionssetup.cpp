@@ -7,14 +7,15 @@
 #include <string>
 #include <sstream>
 
-void SetupDefaultOptions()
+void SetupDefaultOptions(SQLite3DB::DB *db)
 {
 	// OptionValue should always be inserted as a string, even if the option really isn't a string - just to keep the field data type consistent
 
+	db->Execute("BEGIN;");
+
 	std::ostringstream tempstr;	// must set tempstr to "" between db inserts
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	SQLite3DB::Statement st=db->Prepare("INSERT INTO tblOption(Option,OptionValue) VALUES(?,?);");
-	SQLite3DB::Statement upd=db->Prepare("UPDATE tblOption SET Section=?, SortOrder=?, ValidValues=?, OptionDescription=? WHERE Option=?;");
+	SQLite3DB::Statement upd=db->Prepare("UPDATE tblOption SET Section=?, SortOrder=?, ValidValues=?, OptionDescription=?, DisplayType=?, DisplayParam1=?, DisplayParam2=?, Mode=? WHERE Option=?;");
 	int order=0;
 
 	// LogLevel
@@ -28,7 +29,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2,"1|1 - Fatal Errors|2|2 - Critical Errors|3|3 - Errors|4|4 - Warnings|5|5 - Notices|6|6 - Informational Messages|7|7 - Debug Messages|8|8 - Trace Messages");
 	upd.Bind(3,"The maximum logging level that will be written to file.  Higher levels will include all messages from the previous levels.");
-	upd.Bind(4,"LogLevel");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"LogLevel");
 	upd.Step();
 	upd.Reset();
 
@@ -40,7 +45,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2,"true|true|false|false");
 	upd.Bind(3,"VACUUM the database every time FMS starts.  This will defragment the free space in the database and create a smaller database file.  Vacuuming the database can be CPU and disk intensive.");
-	upd.Bind(4,"VacuumOnStartup");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"VacuumOnStartup");
 	upd.Step();
 	upd.Reset();
 
@@ -52,7 +61,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"A unique string shared by all clients who want to communicate with each other.  This should not be changed unless you want to create your own separate communications network.");
-	upd.Bind(4,"MessageBase");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"MessageBase");
 	upd.Step();
 	upd.Reset();
 
@@ -64,7 +77,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"The USK key which contains information about the latest version of FMS.");
-	upd.Bind(4,"FMSVersionKey");
+	upd.Bind(4,"textbox");
+	upd.Bind(5,"80");
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"FMSVersionKey");
 	upd.Step();
 	upd.Reset();
 
@@ -76,7 +93,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"The latest found edition of the FMS version USK.");
-	upd.Bind(4,"FMSVersionEdition");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"FMSVersionEdition");
 	upd.Step();
 	upd.Reset();
 
@@ -89,7 +110,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2,"true|true|false|false");
 	upd.Bind(3,"Start NNTP server.");
-	upd.Bind(4,"StartNNTP");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"StartNNTP");
 	upd.Step();
 	upd.Reset();
 
@@ -102,7 +127,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"The port that the NNTP service will listen for incoming connections.");
-	upd.Bind(4,"NNTPListenPort");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"NNTPListenPort");
 	upd.Step();
 	upd.Reset();
 
@@ -115,7 +144,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"A comma separated list of valid IPv4 or IPv6 addresses/hostnames that the NNTP service will try to bind to.");
-	upd.Bind(4,"NNTPBindAddresses");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"NNTPBindAddresses");
 	upd.Step();
 	upd.Reset();
 
@@ -127,7 +160,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2,"true|true|false|false");
 	upd.Bind(3,"Allow posting messages from NNTP.  Setting to false will make the newsgroups read only.");
-	upd.Bind(4,"NNTPAllowPost");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"NNTPAllowPost");
 	upd.Step();
 	upd.Reset();
 
@@ -139,7 +176,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2,"true|true|false|false");
 	upd.Bind(3,"Start HTTP server.  WARNING: If you turn this off, you won't be able to access the administration pages.");
-	upd.Bind(4,"StartHTTP");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"StartHTTP");
 	upd.Step();
 	upd.Reset();
 
@@ -151,7 +192,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Port HTTP server will listen on.");
-	upd.Bind(4,"HTTPListenPort");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"HTTPListenPort");
 	upd.Step();
 	upd.Reset();
 
@@ -163,7 +208,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Comma separated list of addresses and/or subnet masks that are allowed access to the administration pages.  Default is localhost only. + allows a host, - denies a host.");
-	upd.Bind(4,"HTTPAccessControl");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"HTTPAccessControl");
 	upd.Step();
 	upd.Reset();
 
@@ -176,7 +225,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2,"true|true|false|false");
 	upd.Bind(3,"Set to true to start the Freenet Updater thread and connect to Freenet.  Set to false to prevent communication with Freenet.");
-	upd.Bind(4,"StartFreenetUpdater");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"StartFreenetUpdater");
 	upd.Step();
 	upd.Reset();
 
@@ -189,7 +242,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Host name or address of Freenet node.");
-	upd.Bind(4,"FCPHost");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"FCPHost");
 	upd.Step();
 	upd.Reset();
 
@@ -202,7 +259,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"The port that Freenet is listening for FCP connections on.");
-	upd.Bind(4,"FCPPort");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"FCPPort");
 	upd.Step();
 	upd.Reset();
 
@@ -214,7 +275,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"The port that Freenet is listening for http connections on.");
-	upd.Bind(4,"FProxyPort");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"FProxyPort");
 	upd.Step();
 	upd.Reset();
 
@@ -226,7 +291,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Maximum number of concurrent requests for new Identity xml files");
-	upd.Bind(4,"MaxIdentityRequests");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"MaxIdentityRequests");
 	upd.Step();
 	upd.Reset();
 
@@ -238,7 +307,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Maximum number of concurrent identities requesting IdentityIntroduction xml files.  Each identity may have multiple requests pending.");
-	upd.Bind(4,"MaxIdentityIntroductionRequests");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"MaxIdentityIntroductionRequests");
 	upd.Step();
 	upd.Reset();
 
@@ -250,7 +323,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Maximum number of concurrent requests for new IntroductionPuzzle xml files");
-	upd.Bind(4,"MaxIntroductionPuzzleRequests");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"MaxIntroductionPuzzleRequests");
 	upd.Step();
 	upd.Reset();
 
@@ -262,7 +339,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Maximum number of concurrent requests for new Trust Lists");
-	upd.Bind(4,"MaxTrustListRequests");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"MaxTrustListRequests");
 	upd.Step();
 	upd.Reset();
 
@@ -274,7 +355,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Maximum number of concurrent requests for new Message Lists");
-	upd.Bind(4,"MaxMessageListRequests");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"MaxMessageListRequests");
 	upd.Step();
 	upd.Reset();
 
@@ -286,7 +371,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Maximum number of concurrent requests for new Messages");
-	upd.Bind(4,"MaxMessageRequests");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"MaxMessageRequests");
 	upd.Step();
 	upd.Reset();
 
@@ -298,7 +387,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"The maximum number of concurrent requests for new Board Lists.  Set to 0 to disable.");
-	upd.Bind(4,"MaxBoardListRequests");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"MaxBoardListRequests");
 	upd.Step();
 	upd.Reset();
 
@@ -310,7 +403,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Specifies a local message trust level that a peer must have before its messages will be downloaded.");
-	upd.Bind(4,"MinLocalMessageTrust");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"MinLocalMessageTrust");
 	upd.Step();
 	upd.Reset();
 
@@ -322,7 +419,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Specifies a peer message trust level that a peer must have before its messages will be downloaded.");
-	upd.Bind(4,"MinPeerMessageTrust");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"MinPeerMessageTrust");
 	upd.Step();
 	upd.Reset();
 
@@ -334,7 +435,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Specifies a local trust list trust level that a peer must have before its trust list will be included in the weighted average.  Any peers below this number will be excluded from the results.");
-	upd.Bind(4,"MinLocalTrustListTrust");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"MinLocalTrustListTrust");
 	upd.Step();
 	upd.Reset();
 
@@ -346,7 +451,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Specifies a peer trust list trust level that a peer must have before its trust list will be included in the weighted average.  Any peers below this number will be excluded from the results.");
-	upd.Bind(4,"MinPeerTrustListTrust");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"MinPeerTrustListTrust");
 	upd.Step();
 	upd.Reset();
 
@@ -358,7 +467,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2,"true|true|false|false");
 	upd.Bind(3,"Set to true if you want your local trust levels to override the peer levels when determining which identities you will poll.");
-	upd.Bind(4,"LocalTrustOverridesPeerTrust");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"LocalTrustOverridesPeerTrust");
 	upd.Step();
 	upd.Reset();
 
@@ -370,7 +483,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"The maximum number of days backward that messages will be downloaded from each identity");
-	upd.Bind(4,"MessageDownloadMaxDaysBackward");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"MessageDownloadMaxDaysBackward");
 	upd.Step();
 	upd.Reset();
 
@@ -382,7 +499,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"The number of days backward that messages you have inserted will appear in your MessageLists");
-	upd.Bind(4,"MessageListDaysBackward");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"MessageListDaysBackward");
 	upd.Step();
 	upd.Reset();
 
@@ -394,7 +515,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"The maximum number of messages you will download from each peer on a given day.");
-	upd.Bind(4,"MaxPeerMessagesPerDay");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"MaxPeerMessagesPerDay");
 	upd.Step();
 	upd.Reset();
 
@@ -406,7 +531,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"The maximum number of boards a received message may be sent to.  Boards over this limit will be ignored.");
-	upd.Bind(4,"MaxBoardsPerMessage");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"MaxBoardsPerMessage");
 	upd.Step();
 	upd.Reset();
 
@@ -418,7 +547,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2,"true|true|false|false");
 	upd.Bind(3,"Set to true to automatically save messages posted to new boards.  Set to false to ignore messages to new boards.");
-	upd.Bind(4,"SaveMessagesFromNewBoards");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"SaveMessagesFromNewBoards");
 	upd.Step();
 	upd.Reset();
 
@@ -430,7 +563,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"How much the local message trust level of an identity should change when you reply to one of their messages.");
-	upd.Bind(4,"ChangeMessageTrustOnReply");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"ChangeMessageTrustOnReply");
 	upd.Step();
 	upd.Reset();
 
@@ -442,7 +579,11 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2,"true|true|false|false");
 	upd.Bind(3,"Set to true to automatically create new identities when you send a message using a new name.  If you set this to false, posting messages will fail until you manually create the identity.");
-	upd.Bind(4,"AddNewPostFromIdentities");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"AddNewPostFromIdentities");
 	upd.Step();
 	upd.Reset();
 
@@ -454,8 +595,14 @@ void SetupDefaultOptions()
 	upd.Bind(1,order++);
 	upd.Bind(2);
 	upd.Bind(3,"Automatically delete messages older than this many days.");
-	upd.Bind(4,"DeleteMessagesOlderThan");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"DeleteMessagesOlderThan");
 	upd.Step();
 	upd.Reset();
+
+	db->Execute("COMMIT;");
 
 }

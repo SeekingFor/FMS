@@ -8,8 +8,8 @@
 class MessageListRequester:public IIndexRequester<long>
 {
 public:
-	MessageListRequester();
-	MessageListRequester(FCPv2::Connection *fcp);
+	MessageListRequester(SQLite3DB::DB *db);
+	MessageListRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	virtual void Initialize();

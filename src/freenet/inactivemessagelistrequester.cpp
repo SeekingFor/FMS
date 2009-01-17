@@ -6,12 +6,12 @@
 	#include <xmem.h>
 #endif
 
-InactiveMessageListRequester::InactiveMessageListRequester()
+InactiveMessageListRequester::InactiveMessageListRequester(SQLite3DB::DB *db):MessageListRequester(db)
 {
 	Initialize();
 }
 
-InactiveMessageListRequester::InactiveMessageListRequester(FCPv2::Connection *fcp):MessageListRequester(fcp)
+InactiveMessageListRequester::InactiveMessageListRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):MessageListRequester(db,fcp)
 {
 	Initialize();
 }
@@ -22,7 +22,8 @@ void InactiveMessageListRequester::Initialize()
 	std::string tempval="";
 
 	m_maxrequests=0;
-	Option::Instance()->GetInt("MaxMessageListRequests",m_maxrequests);
+	Option option(m_db);
+	option.GetInt("MaxMessageListRequests",m_maxrequests);
 
 	// inactive identities get 1/2 of the max requests option -  active identities get 1/2 + any remaining if not evenly divisible
 	m_maxrequests=(m_maxrequests/2);
@@ -38,7 +39,7 @@ void InactiveMessageListRequester::Initialize()
 	}
 
 	tempval="";
-	Option::Instance()->Get("LocalTrustOverridesPeerTrust",tempval);
+	option.Get("LocalTrustOverridesPeerTrust",tempval);
 	if(tempval=="true")
 	{
 		m_localtrustoverrides=true;
@@ -49,7 +50,7 @@ void InactiveMessageListRequester::Initialize()
 	}
 
 	tempval="";
-	Option::Instance()->Get("SaveMessagesFromNewBoards",tempval);
+	option.Get("SaveMessagesFromNewBoards",tempval);
 	if(tempval=="true")
 	{
 		m_savetonewboards=true;
@@ -61,7 +62,7 @@ void InactiveMessageListRequester::Initialize()
 
 	m_messagedownloadmaxdaysbackward=5;
 	tempval="5";
-	Option::Instance()->Get("MessageDownloadMaxDaysBackward",tempval);
+	option.Get("MessageDownloadMaxDaysBackward",tempval);
 	StringFunctions::Convert(tempval,m_messagedownloadmaxdaysbackward);
 
 }

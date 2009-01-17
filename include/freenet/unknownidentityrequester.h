@@ -6,8 +6,8 @@
 class UnknownIdentityRequester:public IdentityRequester
 {
 public:
-	UnknownIdentityRequester();
-	UnknownIdentityRequester(FCPv2::Connection *fcp);
+	UnknownIdentityRequester(SQLite3DB::DB *db);
+	UnknownIdentityRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

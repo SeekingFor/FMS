@@ -2,12 +2,11 @@
 #define _forumpage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class ForumPage:public IPageHandler,public IDatabase
+class ForumPage:public IPageHandler
 {
 public:
-	ForumPage(const std::string &templatestr, const std::string &pagename):IPageHandler(templatestr,pagename)	{}
+	ForumPage(SQLite3DB::DB *db, const std::string &templatestr, const std::string &pagename):IPageHandler(db,templatestr,pagename)	{}
 
 	virtual IPageHandler *New()=0;	// returns a new instance of the object
 

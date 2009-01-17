@@ -13,8 +13,8 @@
 class TrustListInserter:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
 public:
-	TrustListInserter();
-	TrustListInserter(FCPv2::Connection *fcp);
+	TrustListInserter(SQLite3DB::DB *db);
+	TrustListInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 	void FCPConnected();
 	void FCPDisconnected();

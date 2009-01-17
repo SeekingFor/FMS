@@ -2,14 +2,13 @@
 #define _peertrustpage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class PeerTrustPage:public IPageHandler,public IDatabase
+class PeerTrustPage:public IPageHandler
 {
 public:
-	PeerTrustPage(const std::string &templatestr):IPageHandler(templatestr,"peertrust.htm")		{}
+	PeerTrustPage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"peertrust.htm")		{}
 
-	IPageHandler *New()	{ return new PeerTrustPage(m_template); }
+	IPageHandler *New()	{ return new PeerTrustPage(m_db,m_template); }
 
 private:
 	const std::string GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars);

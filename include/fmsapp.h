@@ -2,13 +2,14 @@
 #define _fmsapp_
 
 #include "threadwrapper/threadedexecutor.h"
+#include "ithreaddatabase.h"
 
 #include <Poco/Util/ServerApplication.h>
 
 #include <map>
 
 // main FMS application class
-class FMSApp:public Poco::Util::ServerApplication
+class FMSApp:public Poco::Util::ServerApplication,public IThreadDatabase
 {
 public:
 	FMSApp();

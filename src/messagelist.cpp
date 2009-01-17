@@ -27,7 +27,7 @@ void MessageList::LoadRange(const long lowmessageid, const long highmessageid, c
 	{
 		int result;
 		st.ResultInt(0,result);
-		push_back(Message(result));
+		push_back(Message(m_db,result));
 		st.Step();
 	}
 

@@ -2,14 +2,13 @@
 #define _recentlyaddedpage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class RecentlyAddedPage:public IPageHandler,public IDatabase
+class RecentlyAddedPage:public IPageHandler
 {
 public:
-	RecentlyAddedPage(const std::string &templatestr):IPageHandler(templatestr,"recentlyadded.htm")		{}
+	RecentlyAddedPage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"recentlyadded.htm")		{}
 
-	IPageHandler *New()	{ return new RecentlyAddedPage(m_template); }
+	IPageHandler *New()	{ return new RecentlyAddedPage(m_db,m_template); }
 
 private:
 	const std::string GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars);

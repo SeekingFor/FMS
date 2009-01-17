@@ -1,11 +1,9 @@
 #ifndef _sqlite3db_
 #define _sqlite3db_
 
-#include <Poco/Mutex.h>
 #include <sqlite3.h>
 #include <string>
 #include "../sqlite3db.h"
-#include "../../threadwrapper/singleton.h"
 
 #if SQLITE_VERSION_NUMBER<3006006
 #error "Your version of SQLite is too old!  3.6.6.2 or later is required."
@@ -14,7 +12,7 @@
 namespace SQLite3DB
 {
 
-class DB:public Singleton<DB>
+class DB
 {
 public:
 	DB();
@@ -37,8 +35,6 @@ public:
 	const int SetBusyTimeout(const int ms);		// sets busy timeout in ms.  SQLite will wait for a lock up to this many ms before returning SQLITE_BUSY
 
 	sqlite3 *GetDB() { return m_db; }
-
-	Poco::FastMutex m_mutex;			// public so that recordset and statment can lock this mutex themselves
 
 private:
 	void Initialize();

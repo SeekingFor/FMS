@@ -5,9 +5,11 @@
 	#include <xmem.h>
 #endif
 
-const std::string OptionsPage::CreateDropDown(const std::string &name, const std::vector<std::string> &items, const std::string &selecteditem)
+int OptionsPage::m_mode=1;
+
+const std::string OptionsPage::CreateDropDown(const std::string &name, const std::vector<std::string> &items, const std::string &selecteditem, const std::string &param1, const std::string &param2)
 {
-	std::string rval="";
+	std::string rval("");
 
 	rval+="<select name=\""+name+"\">";
 
@@ -34,12 +36,49 @@ const std::string OptionsPage::CreateDropDown(const std::string &name, const std
 	return rval;
 }
 
+const std::string OptionsPage::CreateTextArea(const std::string &name, const std::string &currentvalue, const std::string &param1, const std::string &param2)
+{
+	std::string html("");
+
+	html+="<textarea name=\""+name+"\"";
+	if(param1!="")
+	{
+		html+=" cols=\""+param1+"\"";
+	}
+	if(param2!="")
+	{
+		html+=" rows=\""+param2+"\"";
+	}
+	html+=">";
+	html+=SanitizeTextAreaOutput(currentvalue);
+	html+="</textarea>";
+
+	return html;
+}
+
+const std::string OptionsPage::CreateTextBox(const std::string &name, const std::string &currentvalue, const std::string &param1, const std::string &param2)
+{
+	std::string html("");
+
+	html+="<input type=\"text\" name=\""+name+"\" value=\""+currentvalue+"\"";
+	if(param1!="")
+	{
+		html+=" size=\""+param1+"\"";
+	}
+	if(param2!="")
+	{
+		html+=" maxlength=\""+param2+"\"";
+	}
+	html+=">";
+
+	return html;
+
+}
+
 const std::string OptionsPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
-	std::string content="<h2 style=\"text-align:center;\">Options</h2>\r\n";
-	content+="<form name=\"frmoptions\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"save\">";
-	content+=CreateFormPassword();
-	content+="<table><tr><th>Option</th><th>Value</th><th>Description</th></tr>";
+	std::string content("");
+	std::string sql("");
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="save" && ValidateFormPassword(queryvars))
 	{
@@ -64,20 +103,59 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 
 	}
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT Option,OptionValue,OptionDescription,Section,ValidValues FROM tblOption ORDER BY SortOrder;");
+	if(queryvars.find("mode")!=queryvars.end())
+	{
+		if((*queryvars.find("mode")).second=="2")
+		{
+			m_mode=2;
+		}
+		else
+		{
+			m_mode=1;
+		}
+	}
+
+	content+="<h2 style=\"text-align:center;\">Options</h2>\r\n";
+	content+="<div style=\"text-align:center;\">";
+	if(m_mode==1)
+	{
+		content+="Simple | <a href=\""+m_pagename+"?mode=2\">Advanced</a>";
+	}
+	else
+	{
+		content+="<a href=\""+m_pagename+"?mode=1\">Simple</a> | Advanced</a>";
+	}
+	content+="</div>";
+
+	content+="<form name=\"frmoptions\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"save\">";
+	content+=CreateFormPassword();
+	content+="<table>\r\n";
+
+	if(m_mode==1)
+	{
+		sql="SELECT Option,OptionValue,OptionDescription,Section,ValidValues,DisplayType,DisplayParam1,DisplayParam2 FROM tblOption WHERE Mode='simple' ORDER BY SortOrder;";
+	}
+	else
+	{
+		sql="SELECT Option,OptionValue,OptionDescription,Section,ValidValues,DisplayType,DisplayParam1,DisplayParam2 FROM tblOption ORDER BY SortOrder;";
+	}
+	SQLite3DB::Statement st=m_db->Prepare(sql);
 	st.Step();
 
 	int count=0;
 	std::string countstr;
-	std::string lastsection="";
+	std::string lastsection("");
 	while(st.RowReturned())
 	{
-		std::string option;
-		std::string value;
-		std::string description;
-		std::string section;
-		std::string validvalues;
+		std::string option("");
+		std::string value("");
+		std::string description("");
+		std::string section("");
+		std::string validvalues("");
 		std::vector<std::string> validvaluevec;
+		std::string displaytype("");
+		std::string displayparam1("");
+		std::string displayparam2("");
 
 		st.ResultText(0,option);
 		st.ResultText(1,value);
@@ -88,6 +166,9 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 			st.ResultText(4,validvalues);
 			StringFunctions::Split(validvalues,"|",validvaluevec);
 		}
+		st.ResultText(5,displaytype);
+		st.ResultText(6,displayparam1);
+		st.ResultText(7,displayparam2);
 
 		if(section!=lastsection)
 		{
@@ -99,24 +180,44 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 
 		StringFunctions::Convert(count,countstr);
 		content+="<tr>";
-		content+="<td valign=\"top\"><input type=\"hidden\" name=\"option["+countstr+"]\" value=\""+option+"\">"+option+"</td>";
+		content+="<td valign=\"top\" class=\"optionname\"><input type=\"hidden\" name=\"option["+countstr+"]\" value=\""+option+"\">"+option+"</td>";
 		content+="<td valign=\"top\"><input type=\"hidden\" name=\"oldvalue["+countstr+"]\" value=\""+value+"\">";
 
+		if(displaytype=="textbox")
+		{
+			content+=CreateTextBox("value["+countstr+"]",value,displayparam1,displayparam2);
+		}
+		else if(displaytype=="select")
+		{
+			content+=CreateDropDown("value["+countstr+"]",validvaluevec,value,displayparam1,displayparam2);
+		}
+		else if(displaytype=="textarea")
+		{
+			content+=CreateTextArea("value["+countstr+"]",value,displayparam1,displayparam2);
+		}
+		else
+		{
+			content+="Currently Unsupported";
+		}
+
+		/*
 		if(validvaluevec.size()>0)
 		{
 			content+=CreateDropDown("value["+countstr+"]",validvaluevec,value);
 		}
 		else if(value!="true" && value!="false")
 		{
-			content+="<input type=\"text\" name=\"value["+countstr+"]\" value=\""+value+"\"></td>";
+			content+="<input type=\"text\" name=\"value["+countstr+"]\" value=\""+value+"\">";
 		}
 		else
 		{
 			content+=CreateTrueFalseDropDown("value["+countstr+"]",value);
 		}
+		*/
 
-		content+="<td valign=\"top\">"+description+"</td>";
-		content+="</tr>";
+		content+="</td></tr>\r\n";
+		content+="<tr><td valign=\"top\" class=\"optiondescription\" colspan=\"2\">"+description+"</td>";
+		content+="</tr>\r\n";
 		st.Step();
 		count++;
 	}

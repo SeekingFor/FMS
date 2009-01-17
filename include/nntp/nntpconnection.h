@@ -6,6 +6,7 @@
 #include "../ilogger.h"
 #include "../message.h"
 #include "../localidentity.h"
+#include "../ithreaddatabase.h"
 
 #include <string>
 #include <vector>
@@ -21,7 +22,7 @@
 	#include <arpa/inet.h>
 #endif
 
-class NNTPConnection:public CancelableRunnable,public ILogger
+class NNTPConnection:public CancelableRunnable,public ILogger,public IThreadDatabase
 {
 public:
 	NNTPConnection(SOCKET sock);
@@ -46,6 +47,8 @@ private:
 	};
 	struct ClientStatus
 	{
+		ClientStatus(SQLite3DB::DB *db):m_authuser(db)		{}
+
 		ClientMode m_mode;
 		bool m_allowpost;
 		bool m_isposting;

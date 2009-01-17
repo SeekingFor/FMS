@@ -26,33 +26,24 @@ const bool UnicodeFormatter::LineWrap(const std::string &utf8input, const int li
 			if(ignorechars.size()==0 || wcstring.find_first_of(wcignorechars,currentpos)!=currentpos)
 			{
 				lastnewlinepos=wcstring.rfind(m_unicodenewline,currentpos+linelength);
+				whitespacepos=wcstring.find_last_of(m_unicodewhitespace,currentpos+linelength);
 				// newline found within line length - we don't need to wrap
 				if(lastnewlinepos!=std::wstring::npos && lastnewlinepos>=currentpos)
 				{
 					currentpos=lastnewlinepos+1;
 				}
-				// newline doesn't exist at all - force one in
-				else if(lastnewlinepos==std::wstring::npos)
+				// whitespace found within line length - erase whitespace and insert newline
+				else if((lastnewlinepos<currentpos || lastnewlinepos==std::wstring::npos) && whitespacepos!=std::wstring::npos && whitespacepos>=currentpos)
+				{
+					wcstring.erase(whitespacepos,1);
+					wcstring.insert(whitespacepos,m_unicodenewline);
+					currentpos=whitespacepos+m_unicodenewline.length();
+				}
+				// whitespace or newline not found within line length - force newline at line length
+				else
 				{
 					wcstring.insert(currentpos+linelength,m_unicodenewline);
 					currentpos+=linelength+m_unicodenewline.length();
-				}
-				else
-				{
-					whitespacepos=wcstring.find_last_of(m_unicodewhitespace,currentpos+linelength);
-					// whitespace found within line length - erase whitespace and insert newline
-					if(whitespacepos!=std::wstring::npos && whitespacepos>=currentpos)
-					{
-						wcstring.erase(whitespacepos,1);
-						wcstring.insert(whitespacepos,m_unicodenewline);
-						currentpos=whitespacepos+m_unicodenewline.length();
-					}
-					// whitespace not found within line length - force newline at line length
-					else
-					{
-						wcstring.insert(currentpos+linelength,m_unicodenewline);
-						currentpos+=linelength+m_unicodenewline.length();
-					}
 				}
 			}
 			else

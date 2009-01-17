@@ -10,12 +10,12 @@
 	#include <xmem.h>
 #endif
 
-IdentityIntroductionInserter::IdentityIntroductionInserter()
+IdentityIntroductionInserter::IdentityIntroductionInserter(SQLite3DB::DB *db):IDatabase(db)
 {
 	Initialize();
 }
 
-IdentityIntroductionInserter::IdentityIntroductionInserter(FCPv2::Connection *fcp):IFCPConnected(fcp)
+IdentityIntroductionInserter::IdentityIntroductionInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp):IDatabase(db),IFCPConnected(fcp)
 {
 	Initialize();
 }
@@ -91,7 +91,8 @@ const bool IdentityIntroductionInserter::HandleMessage(FCPv2::Message &message)
 void IdentityIntroductionInserter::Initialize()
 {
 	m_inserting=false;
-	Option::Instance()->Get("MessageBase",m_messagebase);
+	Option option(m_db);
+	option.Get("MessageBase",m_messagebase);
 }
 
 void IdentityIntroductionInserter::Process()

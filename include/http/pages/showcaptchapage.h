@@ -4,13 +4,14 @@
 #include "../ipagehandler.h"
 #include "../../idatabase.h"
 
-class ShowCaptchaPage:public IPageHandler,public IDatabase
+class ShowCaptchaPage:public IPageHandler
 {
 public:
+	ShowCaptchaPage(SQLite3DB::DB *db):IPageHandler(db)				{}
 
 	void handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response);
 
-	IPageHandler *New()	{ return new ShowCaptchaPage; }
+	IPageHandler *New()	{ return new ShowCaptchaPage(m_db); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

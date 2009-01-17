@@ -12,6 +12,7 @@ ENDIF(APPLE)
 OPTION(DO_CHARSET_CONVERSION "Do charset conversion on sent messages to UTF-8.  This requires libiconv." ON)
 OPTION(I_HAVE_READ_THE_README "I have fully read and understood the readme.txt." OFF)
 OPTION(ALTERNATE_CAPTCHA "Use alternate captcha.  This requires the FreeImage library." OFF)
+OPTION(QUERY_LOG "Log all database queries made by FMS." OFF)
 
 SET(FMS_SRC
 src/base64.cpp
@@ -99,6 +100,7 @@ src/http/pages/peertrustpage.cpp
 src/http/pages/recentlyaddedpage.cpp
 src/http/pages/showcaptchapage.cpp
 src/http/pages/showimagepage.cpp
+src/http/pages/showpendingmessagepage.cpp
 src/http/pages/versioninfopage.cpp
 src/nntp/extensiontrust.cpp
 src/nntp/nntpconnection.cpp
@@ -274,3 +276,7 @@ ENDIF(ALTERNATE_CAPTCHA)
 IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 	INCLUDE_DIRECTORIES(AFTER /usr/local/include)
 ENDIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+
+IF(QUERY_LOG)
+	ADD_DEFINITIONS(-DQUERY_LOG)
+ENDIF(QUERY_LOG)

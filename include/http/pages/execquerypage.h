@@ -2,14 +2,13 @@
 #define _execquerypage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class ExecQueryPage:public IPageHandler,public IDatabase
+class ExecQueryPage:public IPageHandler
 {
 public:
-	ExecQueryPage(const std::string &templatestr):IPageHandler(templatestr,"execquery.htm")		{}
+	ExecQueryPage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"execquery.htm")		{}
 
-	IPageHandler *New()	{ return new ExecQueryPage(m_template); }
+	IPageHandler *New()	{ return new ExecQueryPage(m_db,m_template); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

@@ -13,8 +13,8 @@
 class FMSVersionRequester:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
 public:
-	FMSVersionRequester();
-	FMSVersionRequester(FCPv2::Connection *fcp);
+	FMSVersionRequester(SQLite3DB::DB *db);
+	FMSVersionRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 	void FCPConnected()			{}
 	void FCPDisconnected()		{}

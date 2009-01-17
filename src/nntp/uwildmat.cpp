@@ -67,6 +67,9 @@
 #include "../../include/nntp/uwildmat.h"
 #include <string>
 #include <cstring>
+#ifndef _WIN32
+#include <stdint.h>
+#endif
 
 #define ABORT -1
 

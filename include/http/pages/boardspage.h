@@ -2,14 +2,13 @@
 #define _boardspage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class BoardsPage:public IPageHandler,public IDatabase
+class BoardsPage:public IPageHandler
 {
 public:
-	BoardsPage(const std::string &templatestr):IPageHandler(templatestr,"boards.htm")	{}
+	BoardsPage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"boards.htm")	{}
 	
-	IPageHandler *New()	{ return new BoardsPage(m_template); }
+	IPageHandler *New()	{ return new BoardsPage(m_db,m_template); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

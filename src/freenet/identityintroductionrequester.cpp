@@ -14,12 +14,12 @@
 	#include <xmem.h>
 #endif
 
-IdentityIntroductionRequester::IdentityIntroductionRequester()
+IdentityIntroductionRequester::IdentityIntroductionRequester(SQLite3DB::DB *db):IDatabase(db)
 {
 	Initialize();
 }
 
-IdentityIntroductionRequester::IdentityIntroductionRequester(FCPv2::Connection *fcp):IFCPConnected(fcp)
+IdentityIntroductionRequester::IdentityIntroductionRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IDatabase(db),IFCPConnected(fcp)
 {
 	Initialize();
 }
@@ -178,7 +178,8 @@ const bool IdentityIntroductionRequester::HandleMessage(FCPv2::Message &message)
 void IdentityIntroductionRequester::Initialize()
 {
 	m_maxrequests=0;
-	Option::Instance()->GetInt("MaxIdentityIntroductionRequests",m_maxrequests);
+	Option option(m_db);
+	option.GetInt("MaxIdentityIntroductionRequests",m_maxrequests);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
@@ -188,7 +189,7 @@ void IdentityIntroductionRequester::Initialize()
 	{
 		m_log->warning("Option MaxIdentityIntroductionRequests is currently set at more than 100.  This value might be incorrectly configured.");
 	}
-	Option::Instance()->Get("MessageBase",m_messagebase);
+	option.Get("MessageBase",m_messagebase);
 	m_tempdate=Poco::Timestamp();
 }
 

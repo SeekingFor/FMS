@@ -26,9 +26,11 @@ const std::string PeerDetailsPage::GeneratePage(const std::string &method, const
 	std::string publishtrustlist="";
 	std::string messagebase="";
 
+	Option option(m_db);
 	std::string fproxyport="8888";
-	Option::Instance()->Get("FProxyPort",fproxyport);
-	Option::Instance()->Get("MessageBase",messagebase);
+	option.Get("FProxyPort",fproxyport);
+	option.Get("MessageBase",messagebase);
+	option.Get("FCPHost",fcphost);
 
 	if(queryvars.find("identityid")!=queryvars.end() && (*queryvars.find("identityid")).second!="")
 	{
@@ -56,8 +58,6 @@ const std::string PeerDetailsPage::GeneratePage(const std::string &method, const
 		del.Bind(0,identityid);
 		del.Step();
 	}
-
-	Option::Instance()->Get("FCPHost",fcphost);
 
 	SQLite3DB::Statement st=m_db->Prepare("SELECT Name,PublicKey,DateAdded,LastSeen,AddedMethod,Hidden,FreesiteEdition,PublishTrustList FROM tblIdentity WHERE IdentityID=?;");
 	st.Bind(0,identityid);

@@ -1,5 +1,7 @@
 #include "../../../include/http/pages/showimagepage.h"
 
+#include <cstdio>
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif

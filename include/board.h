@@ -10,10 +10,10 @@
 class Board:public ILogger,public IDatabase
 {
 public:
-	Board();
-	Board(const long boardid);
-	Board(const std::string &boardname);
-	Board(const long boardid, const std::string &boardname, const std::string &boarddescription, const std::string datecreated, const long lowmessageid, const long highmessageid, const long messagecount, const bool savereceivedmessages, const std::string &addedmethod);
+	Board(SQLite3DB::DB *db);
+	Board(SQLite3DB::DB *db, const long boardid);
+	Board(SQLite3DB::DB *db, const std::string &boardname);
+	Board(SQLite3DB::DB *db, const long boardid, const std::string &boardname, const std::string &boarddescription, const std::string datecreated, const long lowmessageid, const long highmessageid, const long messagecount, const bool savereceivedmessages, const std::string &addedmethod);
 
 	const bool Load(const long boardid);
 	const bool Load(const std::string &boardname);

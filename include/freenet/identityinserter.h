@@ -13,8 +13,8 @@
 class IdentityInserter:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
 public:
-	IdentityInserter();
-	IdentityInserter(FCPv2::Connection *fcp);
+	IdentityInserter(SQLite3DB::DB *db);
+	IdentityInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 	void FCPConnected();
 	void FCPDisconnected();

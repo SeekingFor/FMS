@@ -4,17 +4,18 @@
 #include <Poco/DateTime.h>
 #include <Poco/Timespan.h>
 #include <Poco/DateTimeFormatter.h>
+#include <cstdio>
 
 #ifdef XMEM
 	#include <xmem.h>
 #endif
 
-SiteInserter::SiteInserter()
+SiteInserter::SiteInserter(SQLite3DB::DB *db):IIndexInserter<long>(db)
 {
 	Initialize();
 }
 
-SiteInserter::SiteInserter(FCPv2::Connection *fcp):IIndexInserter<long>(fcp)
+SiteInserter::SiteInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexInserter<long>(db,fcp)
 {
 	Initialize();
 }

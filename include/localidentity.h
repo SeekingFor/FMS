@@ -6,7 +6,7 @@
 class LocalIdentity:public IDatabase
 {
 public:
-	LocalIdentity();
+	LocalIdentity(SQLite3DB::DB *db);
 
 	const bool Load(const int id);
 	const bool Load(const std::string &name);

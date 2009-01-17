@@ -17,8 +17,8 @@
 class UnkeyedIDCreator:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IDatabase,public IPeriodicProcessor,public ILogger
 {
 public:
-	UnkeyedIDCreator();
-	UnkeyedIDCreator(FCPv2::Connection *fcp);
+	UnkeyedIDCreator(SQLite3DB::DB *db);
+	UnkeyedIDCreator(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 	const bool HandleMessage(FCPv2::Message &message);
 

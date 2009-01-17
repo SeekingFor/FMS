@@ -24,8 +24,8 @@ template <class IDTYPE>
 class IIndexRequester:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
 public:
-	IIndexRequester();
-	IIndexRequester(FCPv2::Connection *fcp);
+	IIndexRequester(SQLite3DB::DB *db);
+	IIndexRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 	virtual ~IIndexRequester()		{}
 
 	virtual void FCPConnected();
@@ -59,13 +59,13 @@ protected:
 };
 
 template <class IDTYPE>
-IIndexRequester<IDTYPE>::IIndexRequester()
+IIndexRequester<IDTYPE>::IIndexRequester(SQLite3DB::DB *db):IDatabase(db)
 {
 	InitializeIIndexRequester();
 }
 
 template <class IDTYPE>
-IIndexRequester<IDTYPE>::IIndexRequester(FCPv2::Connection *fcp):IFCPConnected(fcp)
+IIndexRequester<IDTYPE>::IIndexRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IDatabase(db),IFCPConnected(fcp)
 {
 	InitializeIIndexRequester();
 }
@@ -143,8 +143,9 @@ void IIndexRequester<IDTYPE>::InitializeIIndexRequester()
 {
 	m_maxrequests=-1;
 	m_fcpuniquename="";
+	Option option(m_db);
 
-	Option::Instance()->Get("MessageBase",m_messagebase);
+	option.Get("MessageBase",m_messagebase);
 	m_tempdate=Poco::Timestamp();
 	m_lastreceived=Poco::Timestamp();
 	m_lastpopulated=Poco::Timestamp();

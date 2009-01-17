@@ -6,8 +6,8 @@
 class IdentityRequester:public IIndexRequester<long>
 {
 public:
-	IdentityRequester();
-	IdentityRequester(FCPv2::Connection *fcp);
+	IdentityRequester(SQLite3DB::DB *db);
+	IdentityRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	virtual void Initialize();

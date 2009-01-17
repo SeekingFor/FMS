@@ -40,6 +40,8 @@ void NNTPListener::run()
 
 	m_log->debug("NNTPListener::run thread started.");
 
+	LoadDatabase();
+
 	StartListen();
 
 	do
@@ -104,19 +106,22 @@ void NNTPListener::run()
 void NNTPListener::StartListen()
 {
 	
-	std::string bindaddresses;
 	std::vector<std::string> listenaddresses;
+	std::string bindaddresses;	
 	std::string nntpport;
-	if(Option::Instance()->Get("NNTPListenPort",nntpport)==false)
+	Option option(m_db);
+
+	if(option.Get("NNTPListenPort",nntpport)==false)
 	{
 		nntpport="1119";
-		Option::Instance()->Set("NNTPListenPort",nntpport);
+		option.Set("NNTPListenPort",nntpport);
 	}
-	if(Option::Instance()->Get("NNTPBindAddresses",bindaddresses)==false)
+	if(option.Get("NNTPBindAddresses",bindaddresses)==false)
 	{
 		bindaddresses="127.0.0.1";
-		Option::Instance()->Set("NNTPBindAddresses",bindaddresses);
+		option.Set("NNTPBindAddresses",bindaddresses);
 	}
+
 	StringFunctions::Split(bindaddresses,",",listenaddresses);
 	
 	for(std::vector<std::string>::iterator i=listenaddresses.begin(); i!=listenaddresses.end(); i++)

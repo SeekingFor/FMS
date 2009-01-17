@@ -13,6 +13,7 @@
 class BoardList:public std::vector<Board>,public ILogger,public IDatabase
 {
 public:
+	BoardList(SQLite3DB::DB *db):IDatabase(db)		{}
 	
 	/**
 		\brief Loads all known boards

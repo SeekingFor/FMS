@@ -8,6 +8,7 @@
 class MessageList:public std::vector<Message>,public ILogger,public IDatabase
 {
 public:
+	MessageList(SQLite3DB::DB *db):IDatabase(db)			{}
 	
 	/**
 		\brief Loads all messages with an id between lowmessageid and highmessageid inclusive

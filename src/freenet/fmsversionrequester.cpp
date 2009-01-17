@@ -6,12 +6,12 @@
 #include <Poco/Timestamp.h>
 #include <Poco/Timespan.h>
 
-FMSVersionRequester::FMSVersionRequester()
+FMSVersionRequester::FMSVersionRequester(SQLite3DB::DB *db):IDatabase(db)
 {
 	Initialize();
 }
 
-FMSVersionRequester::FMSVersionRequester(FCPv2::Connection *fcp):IFCPConnected(fcp)
+FMSVersionRequester::FMSVersionRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IDatabase(db),IFCPConnected(fcp)
 {
 	Initialize();
 }
@@ -42,7 +42,8 @@ const bool FMSVersionRequester::HandleAllData(FCPv2::Message &message)
 	if(parts.size()>2)
 	{
 		std::string editionstr=parts[2];
-		Option::Instance()->Set("FMSVersionEdition",editionstr);
+		Option option(m_db);
+		option.Set("FMSVersionEdition",editionstr);
 	}
 
 	// parse file into xml and update the database
@@ -80,7 +81,8 @@ const bool FMSVersionRequester::HandleGetFailed(FCPv2::Message &message)
 		if(parts.size()>2)
 		{
 			std::string editionstr=parts[2];
-			Option::Instance()->Set("FMSVersionEdition",editionstr);
+			Option option(m_db);
+			option.Set("FMSVersionEdition",editionstr);
 		}
 		m_log->debug("FMSVersionRequester::HandleGetFailed Fatal GetFailed for "+message["Identifier"]);
 	}
@@ -152,8 +154,9 @@ void FMSVersionRequester::StartRequest()
 	std::string editionstr="0";
 	int edition=0;
 	
-	Option::Instance()->Get("FMSVersionKey",key);
-	if(Option::Instance()->Get("FMSVersionEdition",editionstr))
+	Option option(m_db);
+	option.Get("FMSVersionKey",key);
+	if(option.Get("FMSVersionEdition",editionstr))
 	{
 		StringFunctions::Convert(editionstr,edition);
 		edition++;

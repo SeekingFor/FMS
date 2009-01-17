@@ -2,14 +2,13 @@
 #define _insertedfilespage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class InsertedFilesPage:public IPageHandler,public IDatabase
+class InsertedFilesPage:public IPageHandler
 {
 public:
-	InsertedFilesPage(const std::string &templatestr):IPageHandler(templatestr,"insertedfiles.htm")		{}
+	InsertedFilesPage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"insertedfiles.htm")		{}
 
-	IPageHandler *New()	{ return new InsertedFilesPage(m_template); }
+	IPageHandler *New()	{ return new InsertedFilesPage(m_db,m_template); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

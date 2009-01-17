@@ -10,12 +10,12 @@
 	#include <xmem.h>
 #endif
 
-MessageListInserter::MessageListInserter()
+MessageListInserter::MessageListInserter(SQLite3DB::DB *db):IIndexInserter<long>(db)
 {
 	Initialize();
 }
 
-MessageListInserter::MessageListInserter(FCPv2::Connection *fcp):IIndexInserter<long>(fcp)
+MessageListInserter::MessageListInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexInserter<long>(db,fcp)
 {
 	Initialize();
 }
@@ -152,11 +152,12 @@ const bool MessageListInserter::HandlePutSuccessful(FCPv2::Message &message)
 
 void MessageListInserter::Initialize()
 {
-	std::string tempval;
-
+	std::string tempval("");
 	m_fcpuniquename="MessageListInserter";
 	m_daysbackward=0;
-	Option::Instance()->Get("MessageListDaysBackward",tempval);
+	Option option(m_db);
+
+	option.Get("MessageListDaysBackward",tempval);
 	StringFunctions::Convert(tempval,m_daysbackward);
 }
 

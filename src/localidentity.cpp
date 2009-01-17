@@ -4,7 +4,7 @@
 	#include <xmem.h>
 #endif
 
-LocalIdentity::LocalIdentity()
+LocalIdentity::LocalIdentity(SQLite3DB::DB *db):IDatabase(db)
 {
 	Initialize();
 }

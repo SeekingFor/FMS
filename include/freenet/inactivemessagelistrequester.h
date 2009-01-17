@@ -8,8 +8,8 @@
 class InactiveMessageListRequester:public MessageListRequester
 {
 public:
-	InactiveMessageListRequester();
-	InactiveMessageListRequester(FCPv2::Connection *fcp);
+	InactiveMessageListRequester(SQLite3DB::DB *db);
+	InactiveMessageListRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	virtual void Initialize();

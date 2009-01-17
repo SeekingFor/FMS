@@ -6,8 +6,8 @@
 class TrustListRequester:public IIndexRequester<long>//public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
 public:
-	TrustListRequester();
-	TrustListRequester(FCPv2::Connection *fcp);
+	TrustListRequester(SQLite3DB::DB *db);
+	TrustListRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

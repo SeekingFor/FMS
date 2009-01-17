@@ -1,5 +1,13 @@
 #include "../../include/db/sqlite3db/sqlite3statement.h"
 
+#ifdef QUERY_LOG
+#include <Poco/Logger.h>
+#include <Poco/FormattingChannel.h>
+#include <Poco/PatternFormatter.h>
+#include <Poco/FileChannel.h>
+#include "../../include/stringfunctions.h"
+#endif
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif
@@ -7,6 +15,7 @@
 namespace SQLite3DB
 {
 
+Poco::FastMutex Statement::m_mutex;
 std::map<sqlite3_stmt *, long> Statement::m_statementcount;
 
 Statement::Statement():m_statement(0),m_parametercount(0),m_resultcolumncount(0),m_rowreturned(false),m_lastinsertrowid(-1)
@@ -21,6 +30,7 @@ Statement::Statement(sqlite3_stmt *statement):m_statement(statement),m_rowreturn
 
 	if(m_statement)
 	{
+		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 		m_statementcount[m_statement]++;
 	}
 }
@@ -134,7 +144,7 @@ void Statement::Finalize()
 {
 	if(m_statement)
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(DB::Instance()->m_mutex);
+		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 		m_statementcount[m_statement]--;
 		if(m_statementcount[m_statement]<=0)
 		{
@@ -159,7 +169,7 @@ Statement &Statement::operator=(const Statement &rhs)
 
 		if(m_statement)
 		{
-			Poco::ScopedLock<Poco::FastMutex> g(DB::Instance()->m_mutex);
+			Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 			m_statementcount[m_statement]++;
 		}
 	}
@@ -170,7 +180,6 @@ const bool Statement::Reset()
 {
 	if(Valid())
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(DB::Instance()->m_mutex);
 		if(sqlite3_reset(m_statement)==SQLITE_OK)
 		{
 			return true;
@@ -287,8 +296,13 @@ const bool Statement::Step(const bool saveinsertrowid)
 	m_rowreturned=false;
 	if(Valid())
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(DB::Instance()->m_mutex);
 		int result=sqlite3_step(m_statement);
+#ifdef QUERY_LOG
+		size_t temp=reinterpret_cast<size_t>(m_statement);
+		std::string tempstr("");
+		StringFunctions::Convert(temp,tempstr);
+		Poco::Logger::get("querylog").information("Step : "+tempstr);
+#endif
 		if(result==SQLITE_OK || result==SQLITE_ROW || result==SQLITE_DONE)
 		{
 			if(result==SQLITE_ROW)
@@ -297,7 +311,7 @@ const bool Statement::Step(const bool saveinsertrowid)
 			}
 			if(saveinsertrowid)
 			{
-				m_lastinsertrowid=sqlite3_last_insert_rowid(DB::Instance()->GetDB());
+				m_lastinsertrowid=sqlite3_last_insert_rowid(sqlite3_db_handle(m_statement));
 			}
 			return true;
 		}
@@ -314,7 +328,6 @@ const bool Statement::Step(const bool saveinsertrowid)
 
 const bool Statement::Valid()
 {
-	Poco::ScopedLock<Poco::FastMutex> g(DB::Instance()->m_mutex);
 	return m_statement ? true : false ;
 }
 

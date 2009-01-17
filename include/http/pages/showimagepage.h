@@ -6,10 +6,11 @@
 class ShowImagePage:public IPageHandler
 {
 public:
+	ShowImagePage(SQLite3DB::DB *db):IPageHandler(m_db)			{}
 
 	void handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response);
 
-	IPageHandler *New()	{ return new ShowImagePage; }
+	IPageHandler *New()	{ return new ShowImagePage(m_db); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

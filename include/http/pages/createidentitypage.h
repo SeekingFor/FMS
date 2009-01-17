@@ -2,14 +2,13 @@
 #define _createidentitypage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class CreateIdentityPage:public IPageHandler,public IDatabase
+class CreateIdentityPage:public IPageHandler
 {
 public:
-	CreateIdentityPage(const std::string &templatestr):IPageHandler(templatestr,"createidentity.htm")	{}
+	CreateIdentityPage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"createidentity.htm")	{}
 
-	IPageHandler *New()	{ return new CreateIdentityPage(m_template); }
+	IPageHandler *New()	{ return new CreateIdentityPage(m_db,m_template); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

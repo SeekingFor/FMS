@@ -6,8 +6,8 @@
 class MessageRequester:public IIndexRequester<std::string>
 {
 public:
-	MessageRequester();
-	MessageRequester(FCPv2::Connection *fcp);
+	MessageRequester(SQLite3DB::DB *db);
+	MessageRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

@@ -9,12 +9,12 @@
 	#include <xmem.h>
 #endif
 
-BoardListInserter::BoardListInserter()
+BoardListInserter::BoardListInserter(SQLite3DB::DB *db):IIndexInserter<long>(db)
 {
 	Initialize();
 }
 
-BoardListInserter::BoardListInserter(FCPv2::Connection *fcp):IIndexInserter<long>(fcp)
+BoardListInserter::BoardListInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexInserter<long>(db,fcp)
 {
 	Initialize();
 }

@@ -10,12 +10,12 @@
 	#include <xmem.h>
 #endif
 
-TrustListRequester::TrustListRequester()
+TrustListRequester::TrustListRequester(SQLite3DB::DB *db):IIndexRequester<long>(db)
 {
 	Initialize();
 }
 
-TrustListRequester::TrustListRequester(FCPv2::Connection *fcp):IIndexRequester<long>(fcp)
+TrustListRequester::TrustListRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexRequester<long>(db,fcp)
 {
 	Initialize();
 }
@@ -108,6 +108,8 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 			}
 		}
 		st.Finalize();
+
+		m_db->Execute("BEGIN;");
 
 		// drop all existing peer trust from this identity - we will rebuild it when we go through each trust in the xml file
 		st=m_db->Prepare("DELETE FROM tblPeerTrust WHERE IdentityID=?;");
@@ -209,6 +211,8 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		st.Step();
 		st.Finalize();
 
+		m_db->Execute("COMMIT;");
+
 		m_log->debug("TrustListRequester::HandleAllData parsed TrustList XML file : "+message["Identifier"]);
 	}
 	else
@@ -266,9 +270,10 @@ void TrustListRequester::Initialize()
 {
 	std::string tempval="";
 	m_fcpuniquename="TrustListRequester";
-
 	m_maxrequests=0;
-	Option::Instance()->GetInt("MaxIdentityRequests",m_maxrequests);
+	Option option(m_db);
+
+	option.GetInt("MaxIdentityRequests",m_maxrequests);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;

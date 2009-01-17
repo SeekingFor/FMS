@@ -17,9 +17,8 @@
 	#include <xmem.h>
 #endif
 
-NNTPConnection::NNTPConnection(SOCKET sock):m_socket(sock)
+NNTPConnection::NNTPConnection(SOCKET sock):m_socket(sock),m_status(0)
 {
-	std::string tempval("");
 
 	m_tempbuffer.resize(32768);
 	
@@ -29,12 +28,6 @@ NNTPConnection::NNTPConnection(SOCKET sock):m_socket(sock)
 	m_status.m_messageid=-1;
 	m_status.m_mode=MODE_NONE;
 	m_status.m_authenticated=false;
-
-	Option::Instance()->Get("NNTPAllowPost",tempval);
-	if(tempval=="true")
-	{
-		m_status.m_allowpost=true;
-	}
 
 }
 
@@ -96,7 +89,7 @@ const bool NNTPConnection::HandleAuthInfoCommand(const NNTPCommand &command)
 		}
 		if(arg=="USER")
 		{
-			LocalIdentity localid;
+			LocalIdentity localid(m_db);
 			if(localid.Load(name))
 			{
 				m_status.m_authuser=localid;
@@ -273,7 +266,7 @@ const bool NNTPConnection::HandleGetTrustCommand(const NNTPCommand &command)
 					nntpname+=command.m_arguments[i];
 				}
 
-				TrustExtension tr(m_status.m_authuser.GetID());
+				TrustExtension tr(m_db,m_status.m_authuser.GetID());
 
 				if(type=="MESSAGE")
 				{
@@ -341,7 +334,7 @@ const bool NNTPConnection::HandleGetTrustListCommand(const NNTPCommand &command)
 {
 	if(m_status.m_authenticated)
 	{
-		TrustExtension tr(m_status.m_authuser.GetID());
+		TrustExtension tr(m_db,m_status.m_authuser.GetID());
 		std::map<std::string,TrustExtension::trust> trustlist;
 		if(tr.GetTrustList(trustlist))
 		{
@@ -410,7 +403,7 @@ const bool NNTPConnection::HandleGroupCommand(const NNTPCommand &command)
 {
 	if(command.m_arguments.size()==1)
 	{
-		Board board;
+		Board board(m_db);
 		if(board.Load(command.m_arguments[0])==true)
 		{
 			std::ostringstream tempstr;
@@ -462,7 +455,7 @@ const bool NNTPConnection::HandleLastCommand(const NNTPCommand &command)
 	{
 		if(m_status.m_messageid!=-1)
 		{
-			Message mess;
+			Message mess(m_db);
 
 			if(mess.LoadPrevious(m_status.m_messageid,m_status.m_boardid))
 			{
@@ -532,7 +525,7 @@ const bool NNTPConnection::HandleListCommand(const NNTPCommand &command)
 	{
 		bool show;
 		std::ostringstream tempstr;
-		BoardList bl;
+		BoardList bl(m_db);
 		bl.Load();
 
 		SendBufferedLine("215 list of newsgroups follows");
@@ -563,7 +556,7 @@ const bool NNTPConnection::HandleListCommand(const NNTPCommand &command)
 	{
 		bool show;
 		std::ostringstream tempstr;
-		BoardList bl;
+		BoardList bl(m_db);
 		bl.Load();
 
 		SendBufferedLine("215 list of newsgroups follows");
@@ -616,7 +609,7 @@ const bool NNTPConnection::HandleListGroupCommand(const NNTPCommand &command)
 {
 
 	std::ostringstream tempstr;
-	Board board;
+	Board board(m_db);
 	bool validgroup=false;
 	int lownum=-1;
 	int highnum=-1;
@@ -685,7 +678,7 @@ const bool NNTPConnection::HandleListGroupCommand(const NNTPCommand &command)
 		tempstr << "211 " << board.GetMessageCount() << " " << board.GetLowMessageID() << " " << board.GetHighMessageID() << " " << board.GetBoardName();
 		SendBufferedLine(tempstr.str());
 
-		MessageList ml;
+		MessageList ml(m_db);
 		ml.LoadRange(lownum,highnum,board.GetBoardID());
 
 		for(std::vector<Message>::iterator i=ml.begin(); i!=ml.end(); i++)
@@ -791,7 +784,7 @@ const bool NNTPConnection::HandleNewGroupsCommand(const NNTPCommand &command)
 			}
 		}
 
-		BoardList bl;
+		BoardList bl(m_db);
 
 		bl.LoadNew(Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 
@@ -826,7 +819,7 @@ const bool NNTPConnection::HandleNextCommand(const NNTPCommand &command)
 	{
 		if(m_status.m_messageid!=-1)
 		{
-			Message mess;
+			Message mess(m_db);
 
 			if(mess.LoadNext(m_status.m_messageid,m_status.m_boardid))
 			{
@@ -916,7 +909,7 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 
 	if(messageuuid!="")
 	{
-		Message mess;
+		Message mess(m_db);
 		if(mess.Load(messageuuid))
 		{
 			SendBufferedLine("224 Overview information follows");
@@ -930,13 +923,13 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 	}
 	else
 	{
-		Board bd;
+		Board bd(m_db);
 		if(m_status.m_boardid!=-1 && bd.Load(m_status.m_boardid))
 		{
 			// single message
 			if(highmessageid==-2)
 			{
-				Message mess;
+				Message mess(m_db);
 				if(mess.Load(lowmessageid,m_status.m_boardid))
 				{
 					SendBufferedLine("224 Overview information follows");
@@ -951,7 +944,7 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 			// range with no upper bound
 			else if(highmessageid==-1)
 			{
-				MessageList ml;
+				MessageList ml(m_db);
 				ml.LoadRange(lowmessageid,bd.GetHighMessageID(),m_status.m_boardid);
 				if(ml.size()>0)
 				{
@@ -970,7 +963,7 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 			// range with upper and lower bound
 			else if(highmessageid>=lowmessageid)
 			{
-				MessageList ml;
+				MessageList ml(m_db);
 				ml.LoadRange(lowmessageid,highmessageid,m_status.m_boardid);
 				if(ml.size()>0)
 				{
@@ -1019,7 +1012,7 @@ const bool NNTPConnection::HandlePostCommand(const NNTPCommand &command)
 
 void NNTPConnection::HandlePostedMessage(const std::string &message)
 {
-	Message mess;
+	Message mess(m_db);
 
 	if(mess.ParseNNTPMessage(message))
 	{
@@ -1193,7 +1186,7 @@ const bool NNTPConnection::HandleSetTrustCommand(const NNTPCommand &command)
 					valid=true;
 				}
 
-				TrustExtension tr(m_status.m_authuser.GetID());
+				TrustExtension tr(m_db,m_status.m_authuser.GetID());
 
 				if(type=="MESSAGE")
 				{
@@ -1276,6 +1269,17 @@ void NNTPConnection::run()
 	struct timeval tv;
 	fd_set writefs,readfs;
 	int rval;
+	std::string tempval("");
+
+	LoadDatabase();
+
+	m_status.m_authuser.SetDB(m_db);
+	Option option(m_db);
+	option.Get("NNTPAllowPost",tempval);
+	if(tempval=="true")
+	{
+		m_status.m_allowpost=true;
+	}
 
 	// seed random number generater for this thread
 	srand(time(NULL));
@@ -1400,7 +1404,7 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 		successcode="223";
 	}
 
-	Message message;
+	Message message(m_db);
 	int messageid=m_status.m_messageid;
 	std::string articleid="";
 	int type=0;	// default to current messageid, 1=messageid, 2=articleid

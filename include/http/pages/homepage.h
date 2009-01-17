@@ -2,14 +2,13 @@
 #define _homepage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class HomePage:public IPageHandler,public IDatabase
+class HomePage:public IPageHandler
 {
 public:
-	HomePage(const std::string &templatestr):IPageHandler(templatestr,"index.htm") {}
+	HomePage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"index.htm") {}
 
-	IPageHandler *New()	{ return new HomePage(m_template); }
+	IPageHandler *New()	{ return new HomePage(m_db,m_template); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

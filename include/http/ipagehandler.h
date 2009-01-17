@@ -2,6 +2,7 @@
 #define _ipagehandler_
 
 #include "../ilogger.h"
+#include "../idatabase.h"
 
 #include <Poco/Net/HTTPRequestHandler.h>
 #include <Poco/Net/HTTPServerRequest.h>
@@ -12,11 +13,11 @@
 #include <map>
 #include <vector>
 
-class IPageHandler:public Poco::Net::HTTPRequestHandler,public ILogger
+class IPageHandler:public Poco::Net::HTTPRequestHandler,public ILogger,public IDatabase
 {
 public:
-	IPageHandler()	{}
-	IPageHandler(const std::string &templatestr, const std::string &pagename):m_template(templatestr),m_pagename(pagename)	{  }
+	IPageHandler(SQLite3DB::DB *db):IDatabase(db)		{}
+	IPageHandler(SQLite3DB::DB *db, const std::string &templatestr, const std::string &pagename):IDatabase(db),m_template(templatestr),m_pagename(pagename)	{  }
 	virtual ~IPageHandler()	{}
 	virtual const bool WillHandleURI(const std::string &uri);
 

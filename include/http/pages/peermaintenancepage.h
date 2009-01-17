@@ -2,14 +2,13 @@
 #define _peermaintenancepage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class PeerMaintenancePage:public IPageHandler,public IDatabase
+class PeerMaintenancePage:public IPageHandler
 {
 public:
-	PeerMaintenancePage(const std::string &templatestr):IPageHandler(templatestr,"peermaintenance.htm")	{}
+	PeerMaintenancePage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"peermaintenance.htm")	{}
 
-	IPageHandler *New()	{ return new PeerMaintenancePage(m_template); }
+	IPageHandler *New()	{ return new PeerMaintenancePage(m_db,m_template); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

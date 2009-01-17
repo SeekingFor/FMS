@@ -2,14 +2,13 @@
 #define _controlboardpage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class ControlBoardPage:public IPageHandler,public IDatabase
+class ControlBoardPage:public IPageHandler
 {
 public:
-	ControlBoardPage(const std::string &templatestr):IPageHandler(templatestr,"controlboard.htm")	{}
+	ControlBoardPage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"controlboard.htm")	{}
 
-	IPageHandler *New()	{ return new ControlBoardPage(m_template); }
+	IPageHandler *New()	{ return new ControlBoardPage(m_db,m_template); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

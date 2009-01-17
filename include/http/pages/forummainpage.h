@@ -6,9 +6,9 @@
 class ForumMainPage:public ForumPage
 {
 public:
-	ForumMainPage(const std::string &templatestr):ForumPage(templatestr,"forummain.htm")	{}
+	ForumMainPage(SQLite3DB::DB *db,const std::string &templatestr):ForumPage(db,templatestr,"forummain.htm")	{}
 
-	IPageHandler *New()	{ return new ForumMainPage(m_template); }
+	IPageHandler *New()	{ return new ForumMainPage(m_db,m_template); }
 
 private:
 	const std::string GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars);

@@ -6,8 +6,8 @@
 class SiteInserter:public IIndexInserter<long>
 {
 public:
-	SiteInserter();
-	SiteInserter(FCPv2::Connection *fcp);
+	SiteInserter(SQLite3DB::DB *db);
+	SiteInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

@@ -43,7 +43,7 @@ void BoardList::Load()
 			savereceived=false;
 		}
 
-		push_back(Board(boardid,boardname,boarddescription,dateadded,lowmessageid,highmessageid,messagecount,savereceived,addedmethod));
+		push_back(Board(m_db,boardid,boardname,boarddescription,dateadded,lowmessageid,highmessageid,messagecount,savereceived,addedmethod));
 		st.Step();
 	}
 }
@@ -60,7 +60,7 @@ void BoardList::LoadNew(const std::string &date)
 	while(st.RowReturned())
 	{
 		st.ResultInt(0,tempint);
-		push_back(Board(tempint));
+		push_back(Board(m_db,tempint));
 		st.Step();
 	}
 }

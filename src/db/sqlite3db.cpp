@@ -1,5 +1,12 @@
 #include "../../include/db/sqlite3db.h"
 
+#ifdef QUERY_LOG
+#include <Poco/Logger.h>
+#include <Poco/PatternFormatter.h>
+#include <Poco/FileChannel.h>
+#include "../../include/stringfunctions.h"
+#endif
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif
@@ -30,7 +37,12 @@ const bool DB::Close()
 {
 	if(IsOpen())
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
+		sqlite3_stmt *st=0;
+		while((st=sqlite3_next_stmt(m_db,0))!=0)
+		{
+			sqlite3_finalize(st);
+		}
+
 		m_lastresult=sqlite3_close(m_db);
 		if(m_lastresult==SQLITE_OK)
 		{
@@ -52,8 +64,10 @@ const bool DB::Execute(const std::string &sql)
 {
 	if(IsOpen())
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 		m_lastresult=sqlite3_exec(m_db,sql.c_str(),NULL,NULL,NULL);
+#ifdef QUERY_LOG
+		Poco::Logger::get("querylog").information("Execute : "+sql);
+#endif
 		if(m_lastresult==SQLITE_OK)
 		{
 			return true;
@@ -73,8 +87,10 @@ const bool DB::ExecuteInsert(const std::string &sql, long &insertid)
 {
 	if(IsOpen())
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 		m_lastresult=sqlite3_exec(m_db,sql.c_str(),NULL,NULL,NULL);
+#ifdef QUERY_LOG
+		Poco::Logger::get("querylog").information("Execute Insert : "+sql);
+#endif
 		if(m_lastresult==SQLITE_OK)
 		{
 			insertid=sqlite3_last_insert_rowid(m_db);
@@ -95,7 +111,6 @@ const int DB::GetLastError(std::string &errormessage)
 {
 	if(IsOpen())
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 		int errcode=sqlite3_errcode(m_db);
 		const char *errmsg=sqlite3_errmsg(m_db);
 		if(errmsg)
@@ -118,7 +133,6 @@ void DB::Initialize()
 
 const bool DB::IsOpen()
 {
-	Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 	return m_db ? true : false;
 }
 
@@ -130,7 +144,6 @@ const bool DB::Open(const std::string &filename)
 	}
 	if(IsOpen()==false)
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 		m_lastresult=sqlite3_open(filename.c_str(),&m_db);
 		if(m_lastresult==SQLITE_OK)
 		{
@@ -151,9 +164,14 @@ Statement DB::Prepare(const std::string &sql)
 {
 	if(IsOpen())
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 		sqlite3_stmt *statement=NULL;
 		m_lastresult=sqlite3_prepare_v2(m_db,sql.c_str(),sql.size(),&statement,NULL);
+#ifdef QUERY_LOG
+		size_t temp=reinterpret_cast<size_t>(statement);
+		std::string tempstr("");
+		StringFunctions::Convert(temp,tempstr);
+		Poco::Logger::get("querylog").information("Prepare : "+sql+" "+tempstr);
+#endif
 		if(m_lastresult==SQLITE_OK)
 		{
 			return Statement(statement);
@@ -173,10 +191,12 @@ Recordset DB::Query(const std::string &sql)
 {
 	if(IsOpen())
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 		char **rs=NULL;
 		int rows,cols;
 		m_lastresult=sqlite3_get_table(m_db,sql.c_str(),&rs,&rows,&cols,NULL);
+#ifdef QUERY_LOG
+		Poco::Logger::get("querylog").information("Query : "+sql);
+#endif
 		if(m_lastresult==SQLITE_OK)
 		{
 			return Recordset(rs,rows,cols);
@@ -197,7 +217,6 @@ const int DB::SetBusyTimeout(const int ms)
 {
 	if(IsOpen())
 	{
-		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
 		m_lastresult=sqlite3_busy_timeout(m_db,ms);
 		return m_lastresult;
 	}

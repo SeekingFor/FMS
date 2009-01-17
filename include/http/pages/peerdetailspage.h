@@ -2,14 +2,13 @@
 #define _peerdetailspage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class PeerDetailsPage:public IPageHandler,public IDatabase
+class PeerDetailsPage:public IPageHandler
 {
 public:
-	PeerDetailsPage(const std::string templatestr):IPageHandler(templatestr,"peerdetails.htm")	{}
+	PeerDetailsPage(SQLite3DB::DB *db, const std::string templatestr):IPageHandler(db,templatestr,"peerdetails.htm")	{}
 
-	IPageHandler *New()	{ return new PeerDetailsPage(m_template); }
+	IPageHandler *New()	{ return new PeerDetailsPage(m_db,m_template); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

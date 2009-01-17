@@ -108,8 +108,23 @@ void FMSApp::initialize(Poco::Util::Application &self)
 	}
 	int rval=chdir(m_workingdirectory.c_str());
 
-	SetupDB();
-	SetupDefaultOptions();
+#ifdef QUERY_LOG
+	{
+		Poco::AutoPtr<Poco::FormattingChannel> formatter=new Poco::FormattingChannel(new Poco::PatternFormatter("%Y-%m-%d %H:%M:%S | %t"));
+		Poco::AutoPtr<Poco::FileChannel> fc=new Poco::FileChannel("query.log");
+		fc->setProperty("rotation","daily");
+		fc->setProperty("times","utc");
+		fc->setProperty("archive","timestamp");
+		fc->setProperty("purgeCount","5");
+		fc->setProperty("compress","true");
+		formatter->setChannel(fc);
+		Poco::Logger::create("querylog",formatter,Poco::Message::PRIO_INFORMATION);
+	}
+#endif
+
+	LoadDatabase();
+	SetupDB(m_db);
+	SetupDefaultOptions(m_db);
 	initializeLogger();
 	config().setString("application.logger","logfile");
 }
@@ -119,7 +134,9 @@ void FMSApp::initializeLogger()
 	int initiallevel=Poco::Message::PRIO_TRACE;
 
 	std::string tempval="";
-	if(Option::Instance()->Get("LogLevel",tempval))
+	Option option(m_db);
+
+	if(option.Get("LogLevel",tempval))
 	{
 		StringFunctions::Convert(tempval,initiallevel);
 	}
@@ -153,6 +170,7 @@ void FMSApp::initializeLogger()
 	setLogger(Poco::Logger::create("logfile",formatter,Poco::Message::PRIO_INFORMATION));
 	Poco::Logger::get("logfile").information("LogLevel set to "+tempval);
 	Poco::Logger::get("logfile").setLevel(initiallevel);
+
 }
 
 int FMSApp::main(const std::vector<std::string> &args)
@@ -162,7 +180,7 @@ int FMSApp::main(const std::vector<std::string> &args)
 	// so we need to set the working directory again
 	int rval=chdir(m_workingdirectory.c_str());
 
-	if(VerifyDB()==false)
+	if(VerifyDB(m_db)==false)
 	{
 		std::cout << "The FMS database failed verification.  It is most likely corrupt!" << std::endl;
 		logger().fatal("The FMS database failed verification.  It is most likely corrupt!");
@@ -183,12 +201,13 @@ int FMSApp::main(const std::vector<std::string> &args)
 		logger().information("FMS startup v"FMS_VERSION);
 		logger().information("Using SQLite "SQLITE_VERSION);
 
-		std::string tempval="";
-		Option::Instance()->Get("VacuumOnStartup",tempval);
+		std::string tempval("");
+		Option option(m_db);
+		option.Get("VacuumOnStartup",tempval);
 		if(tempval=="true")
 		{
 			logger().information("VACUUMing database");
-			SQLite3DB::DB::Instance()->Execute("VACUUM;");
+			m_db->Execute("VACUUM;");
 		}
 
 		StartThreads();
@@ -220,10 +239,11 @@ void FMSApp::setOptions()
 {
 	for(std::map<std::string,std::string>::iterator i=m_setoptions.begin(); i!=m_setoptions.end(); i++)
 	{
-		std::string tempval="";
-		if(Option::Instance()->Get((*i).first,tempval))
+		std::string tempval("");
+		Option option(m_db);
+		if(option.Get((*i).first,tempval))
 		{
-			Option::Instance()->Set((*i).first,(*i).second);
+			option.Set((*i).first,(*i).second);
 			std::cout << "Option " << (*i).first << " set to " << (*i).second << std::endl;
 		}
 		else
@@ -235,7 +255,7 @@ void FMSApp::setOptions()
 
 void FMSApp::showOptions()
 {
-	SQLite3DB::Statement st=SQLite3DB::DB::Instance()->Prepare("SELECT Option, OptionValue FROM tblOption;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT Option, OptionValue FROM tblOption;");
 	st.Step();
 	while(st.RowReturned())
 	{
@@ -252,13 +272,14 @@ void FMSApp::showOptions()
 
 void FMSApp::StartThreads()
 {
-	std::string tempval="";
+	std::string tempval("");
+	Option option(m_db);
 
 	// always start the DB maintenance thread
 	logger().trace("FMSApp::StartThreads starting DBMaintenanceThread");
 	m_threads.Start(new DBMaintenanceThread());
 
-	Option::Instance()->Get("StartHTTP",tempval);
+	option.Get("StartHTTP",tempval);
 	if(tempval=="true")
 	{
 		logger().trace("FMSApp::StartThreads starting HTTPThread");
@@ -274,7 +295,7 @@ void FMSApp::StartThreads()
 	}
 
 	tempval="";
-	Option::Instance()->Get("StartNNTP",tempval);
+	option.Get("StartNNTP",tempval);
 	if(tempval=="true")
 	{
 		logger().trace("FMSApp::StartThreads starting NNTPListener");
@@ -290,7 +311,7 @@ void FMSApp::StartThreads()
 	}
 
 	tempval="";
-	Option::Instance()->Get("StartFreenetUpdater",tempval);
+	option.Get("StartFreenetUpdater",tempval);
 	if(tempval=="true")
 	{
 		logger().trace("FMSApp::StartThreads starting FreenetMasterThread");

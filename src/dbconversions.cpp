@@ -5,10 +5,9 @@
 #include <Poco/Timestamp.h>
 #include <Poco/DateTimeFormatter.h>
 
-void ConvertDB0100To0101()
+void ConvertDB0100To0101(SQLite3DB::DB *db)
 {
 	// added unique constraint to public and private key
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	db->Execute("CREATE TEMPORARY TABLE tblLocalIdentityTemp AS SELECT * FROM tblLocalIdentity;");
 	db->Execute("DROP TABLE IF EXISTS tblLocalIdentity;");
 	db->Execute("CREATE TABLE IF NOT EXISTS tblLocalIdentity(\
@@ -35,10 +34,9 @@ void ConvertDB0100To0101()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=1;");
 }
 
-void ConvertDB0101To0103()
+void ConvertDB0101To0103(SQLite3DB::DB *db)
 {
 	// remove default 50 from trust fields and set default to NULL
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	db->Execute("CREATE TEMPORARY TABLE tblIdentityTemp AS SELECT * FROM tblIdentity;");
 	db->Execute("DROP TABLE IF EXISTS tblIdentity;");
 	db->Execute("CREATE TABLE IF NOT EXISTS tblIdentity(\
@@ -64,11 +62,10 @@ void ConvertDB0101To0103()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=3;");
 }
 
-void ConvertDB0103To0104()
+void ConvertDB0103To0104(SQLite3DB::DB *db)
 {
 	// add MessageIndex to tblMessage
 	Poco::Timestamp date;
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	db->Execute("ALTER TABLE tblMessage ADD COLUMN MessageIndex	INTEGER;");
 	db->Execute("CREATE UNIQUE INDEX IF NOT EXISTS idxMessageRequest ON tblMessageRequests(IdentityID,Day,RequestIndex);");
 	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN DateCreated DATETIME;");
@@ -76,11 +73,10 @@ void ConvertDB0103To0104()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=4;");
 }
 
-void ConvertDB0104To0105()
+void ConvertDB0104To0105(SQLite3DB::DB *db)
 {
 	// add AddedMethod, MessageTrustComment, TrustListTrustComment to tblIdentity
 	// add MessageTrustComment,TrustListTrustComment to tblPeerTrust
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	db->Execute("ALTER TABLE tblIdentity ADD COLUMN AddedMethod TEXT;");
 	db->Execute("ALTER TABLE tblIdentity ADD COLUMN MessageTrustComment TEXT;");
 	db->Execute("ALTER TABLE tblIdentity ADD COLUMN TrustListTrustComment TEXT;");
@@ -89,37 +85,33 @@ void ConvertDB0104To0105()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=5;");
 }
 
-void ConvertDB0105To0106()
+void ConvertDB0105To0106(SQLite3DB::DB *db)
 {
 	// add Publish Freesite
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN PublishFreesite BOOL CHECK(PublishFreesite IN('true','false')) DEFAULT 'false';");
 	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN LastInsertedFreesite DATETIME;");
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=6;");
 }
 
-void ConvertDB0106To0107()
+void ConvertDB0106To0107(SQLite3DB::DB *db)
 {
 	// add AddedMethod to tblBoard
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	db->Execute("ALTER TABLE tblBoard ADD COLUMN AddedMethod TEXT;");
 	db->Execute("ALTER TABLE tblIdentity ADD COLUMN Hidden BOOL CHECK(Hidden IN('true','false')) DEFAULT 'false';");
 	db->Execute("UPDATE tblIdentity SET Hidden='false' WHERE Hidden IS NULL;");
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=7;");
 }
 
-void ConvertDB0107To0108()
+void ConvertDB0107To0108(SQLite3DB::DB *db)
 {
 	// add FreesiteEdition to tblLocalIdentity and tblIdentity
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN FreesiteEdition INTEGER;");
 	db->Execute("ALTER TABLE tblIdentity ADD COLUMN FreesiteEdition INTEGER;");
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=8;");
 }
 
-void ConvertDB0108To0109()
+void ConvertDB0108To0109(SQLite3DB::DB *db)
 {
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFileInserts(\
 			FileInsertID		INTEGER PRIMARY KEY,\
 			MessageUUID			TEXT,\
@@ -131,14 +123,13 @@ void ConvertDB0108To0109()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=9;");
 }
 
-void ConvertDB0109To0110()
+void ConvertDB0109To0110(SQLite3DB::DB *db)
 {
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	db->Execute("ALTER TABLE tblFileInserts ADD COLUMN MimeType TEXT;");
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=10;");
 }
 
-void ConvertDB0110To0111()
+void ConvertDB0110To0111(SQLite3DB::DB *db)
 {
 	/*
 	Drop MessageTrustComment, TrustListTrustComment FROM tblIdentity
@@ -148,7 +139,6 @@ void ConvertDB0110To0111()
 
 	Add SendDate to tblMessageInserts
 	*/
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 
 	db->Execute("ALTER TABLE tblMessageInserts ADD COLUMN SendDate DATETIME;");
 
@@ -205,13 +195,12 @@ void ConvertDB0110To0111()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=11;");
 }
 
-void ConvertDB0111To0112()
+void ConvertDB0111To0112(SQLite3DB::DB *db)
 {
 	/*
 		Add Section, SortOrder, ValidValues to tblOption
 		Add PurgeDate to tblIdentity
 	*/
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 
 	db->Execute("ALTER TABLE tblOption ADD COLUMN Section TEXT;");
 	db->Execute("ALTER TABLE tblOption ADD COLUMN SortOrder INTEGER;");
@@ -222,10 +211,9 @@ void ConvertDB0111To0112()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=12;");
 }
 
-void ConvertDB0112To0113()
+void ConvertDB0112To0113(SQLite3DB::DB *db)
 {
 	// Add Tries and Key (for anonymous messages) to tblMessageRequests	
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 
 	db->Execute("ALTER TABLE tblMessageRequests ADD COLUMN Tries INTEGER DEFAULT 0;");
 	db->Execute("ALTER TABLE tblMessageRequests ADD COLUMN Key TEXT;");
@@ -233,9 +221,8 @@ void ConvertDB0112To0113()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=13;");
 }
 
-void ConvertDB0113To0114()
+void ConvertDB0113To0114(SQLite3DB::DB *db)
 {
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 
 	db->Execute("ALTER TABLE tblBoard ADD COLUMN Forum TEXT CHECK(Forum IN ('true','false')) DEFAULT 'false';");
 	db->Execute("ALTER TABLE tblMessage ADD COLUMN Read INTEGER CHECK(Read IN (0,1)) DEFAULT 0;");
@@ -243,9 +230,19 @@ void ConvertDB0113To0114()
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=14;");
 }
 
-void FixCapitalBoardNames()
+void ConvertDB0114To0115(SQLite3DB::DB *db)
 {
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
+
+	db->Execute("ALTER TABLE tblOption ADD COLUMN DisplayType TEXT CHECK (DisplayType IN ('textbox','textarea','select','multiselect')) DEFAULT 'textbox';");
+	db->Execute("ALTER TABLE tblOption ADD COLUMN DisplayParam1 TEXT;");
+	db->Execute("ALTER TABLE tblOption ADD COLUMN DisplayParam2 TEXT;");
+	db->Execute("ALTER TABLE tblOption ADD COLUMN Mode TEXT CHECK (Mode IN ('simple','advanced')) DEFAULT 'simple';");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=15;");
+}
+
+void FixCapitalBoardNames(SQLite3DB::DB *db)
+{
 
 	SQLite3DB::Statement st=db->Prepare("SELECT BoardID,BoardName FROM tblBoard WHERE BoardID NOT IN (SELECT BoardID FROM tblAdministrationBoard);");
 	SQLite3DB::Statement st2=db->Prepare("SELECT BoardID FROM tblBoard WHERE BoardName=?;");

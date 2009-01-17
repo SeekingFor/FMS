@@ -3,11 +3,11 @@
 
 #include "threadwrapper/cancelablerunnable.h"
 #include "ilogger.h"
-#include "idatabase.h"
+#include "ithreaddatabase.h"
 
 #include <Poco/DateTime.h>
 
-class DBMaintenanceThread:public CancelableRunnable,public ILogger,public IDatabase
+class DBMaintenanceThread:public CancelableRunnable,public ILogger,public IThreadDatabase
 {
 public:
 	DBMaintenanceThread();

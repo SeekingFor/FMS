@@ -7,16 +7,11 @@
 #include <Poco/Timespan.h>
 #include <Poco/DateTimeFormatter.h>
 
-void SetupDB()
+void SetupDB(SQLite3DB::DB *db)
 {
 
 	Poco::DateTime date;
 	std::string tempval="";
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
-
-	db->Open("fms.db3");
-	db->SetBusyTimeout(20000);		// set timeout to 20 seconds
-	db->Execute("PRAGMA synchronous = FULL;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblDBVersion(\
 				Major				INTEGER,\
@@ -34,89 +29,95 @@ void SetupDB()
 		st.Finalize();
 		if(major==1 && minor==0)
 		{
-			ConvertDB0100To0101();
+			ConvertDB0100To0101(db);
 			major=1;
 			minor=1;
 		}
 		if(major==1 && (minor==1 || minor==2))
 		{
-			ConvertDB0101To0103();
+			ConvertDB0101To0103(db);
 			major=1;
 			minor=3;
 		}
 		if(major==1 && minor==3)
 		{
-			ConvertDB0103To0104();
+			ConvertDB0103To0104(db);
 			major=1;
 			minor=4;
 		}
 		if(major==1 && minor==4)
 		{
-			ConvertDB0104To0105();
+			ConvertDB0104To0105(db);
 			major=1;
 			minor=5;
 		}
 		if(major==1 && minor==5)
 		{
-			ConvertDB0105To0106();
+			ConvertDB0105To0106(db);
 			major=1;
 			minor=6;
 		}
 		if(major==1 && minor==6)
 		{
-			ConvertDB0106To0107();
+			ConvertDB0106To0107(db);
 			major=1;
 			minor=7;
 		}
 		if(major==1 && minor==7)
 		{
-			ConvertDB0107To0108();
+			ConvertDB0107To0108(db);
 			major=1;
 			minor=8;
 		}
 		if(major==1 && minor==8)
 		{
-			ConvertDB0108To0109();
+			ConvertDB0108To0109(db);
 			major=1;
 			minor=9;
 		}
 		if(major==1 && minor==9)
 		{
-			ConvertDB0109To0110();
+			ConvertDB0109To0110(db);
 			major=1;
 			minor=10;
 		}
 		if(major==1 && minor==10)
 		{
-			ConvertDB0110To0111();
+			ConvertDB0110To0111(db);
 			major=1;
 			minor=11;
 		}
 		if(major==1 && minor==11)
 		{
-			ConvertDB0111To0112();
+			ConvertDB0111To0112(db);
 			major=1;
 			minor=12;
 		}
 		if(major==1 && minor==12)
 		{
-			ConvertDB0112To0113();
+			ConvertDB0112To0113(db);
 			major=1;
 			minor=13;
 		}
 		if(major==1 && minor==13)
 		{
-			ConvertDB0113To0114();
+			ConvertDB0113To0114(db);
 			major=1;
 			minor=14;
+		}
+		if(major==1 && minor==14)
+		{
+			ConvertDB0114To0115(db);
+			major=1;
+			minor=15;
 		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,14);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,15);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=14;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=15;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -136,7 +137,11 @@ void SetupDB()
 				OptionDescription	TEXT,\
 				Section				TEXT,\
 				SortOrder			INTEGER,\
-				ValidValues			TEXT\
+				ValidValues			TEXT,\
+				DisplayType			TEXT CHECK (DisplayType IN ('textbox','textarea','select','multiselect')) DEFAULT 'textbox',\
+				DisplayParam1		TEXT,\
+				DisplayParam2		TEXT,\
+				Mode				TEXT CHECK (Mode IN ('simple','advanced')) DEFAULT 'simple'\
 				);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblLocalIdentity(\
@@ -293,10 +298,10 @@ void SetupDB()
 				Forum					TEXT CHECK(Forum IN('true','false')) DEFAULT 'false'\
 				);");
 
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('fms','Freenet Message System','2007-12-01 12:00:00','Initial Board','true');");
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('freenet','Discussion about Freenet','2007-12-01 12:00:00','Initial Board','true');");
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('public','Public discussion','2007-12-01 12:00:00','Initial Board','true');");
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('test','Test board','2007-12-01 12:00:00','Initial Board','true');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('fms','Freenet Message System','2007-12-01 12:00:00','Seed Board','true');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('freenet','Discussion about Freenet','2007-12-01 12:00:00','Seed Board','true');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('public','Public discussion','2007-12-01 12:00:00','Seed Board','true');");
+	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('test','Test board','2007-12-01 12:00:00','Seed Board','true');");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessage(\
 				MessageID			INTEGER PRIMARY KEY,\
@@ -428,24 +433,6 @@ void SetupDB()
 				END;");
 	// end thread db schema
 
-	// MessageInserter will insert a record into this temp table which the MessageListInserter will query for and insert a MessageList when needed
-	db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpMessageListInsert(\
-				MessageListInsertID	INTEGER PRIMARY KEY,\
-				LocalIdentityID		INTEGER,\
-				Date				DATETIME\
-				);");
-
-	// A temporary table that will hold a local identity id of the last identity who was loaded in the trust list page
-	db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpLocalIdentityPeerTrustPage(\
-				LocalIdentityID		INTEGER\
-				);");
-
-	// Temporary table for form passwords
-	db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpFormPassword(\
-				Date			DATETIME,\
-				Password		TEXT\
-				);");
-
 	// low / high / message count for each board
 	db->Execute("CREATE VIEW IF NOT EXISTS vwBoardStats AS \
 				SELECT tblBoard.BoardID AS 'BoardID', IFNULL(MIN(MessageID),0) AS 'LowMessageID', IFNULL(MAX(MessageID),0) AS 'HighMessageID', COUNT(MessageID) AS 'MessageCount' \
@@ -560,37 +547,36 @@ void SetupDB()
 
 	date=Poco::Timestamp();
 	// insert SomeDude's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@NuBL7aaJ6Cn4fB7GXFb9Zfi8w1FhPyW3oKgU9TweZMw,iXez4j3qCpd596TxXiJgZyTq9o-CElEuJxm~jNNZAuA,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Initial Identity');");
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@NuBL7aaJ6Cn4fB7GXFb9Zfi8w1FhPyW3oKgU9TweZMw,iXez4j3qCpd596TxXiJgZyTq9o-CElEuJxm~jNNZAuA,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert Shadow Panther's public key - haven't seen in a while - disabling for now
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@~mimyB1kmH4f7Cgsd2wM2Qv2NxrZHRMM6IY8~7EWRVQ,fxTKkR0TYhgMYb-vEGAv55sMOxCGD2xhE4ZxWHxdPz4,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Initial Identity');");
+	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@~mimyB1kmH4f7Cgsd2wM2Qv2NxrZHRMM6IY8~7EWRVQ,fxTKkR0TYhgMYb-vEGAv55sMOxCGD2xhE4ZxWHxdPz4,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert garfield's public key -haven't seen in a while - disabling for now
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@T8l1IEGU4-PoASFzgc2GYhIgRzUvZsKdoQWeuLHuTmM,QLxAPfkGis8l5NafNpSCdbxzXhBlu9WL8svcqJw9Mpo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Initial Identity');");
+	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@T8l1IEGU4-PoASFzgc2GYhIgRzUvZsKdoQWeuLHuTmM,QLxAPfkGis8l5NafNpSCdbxzXhBlu9WL8svcqJw9Mpo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert alek's public key - haven't seen in a while - disabling for now
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@lTjeI6V0lQsktXqaqJ6Iwk4TdsHduQI54rdUpHfhGbg,0oTYfrxxx8OmdU1~60gqpf3781qzEicM4Sz97mJsBM4,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Initial Identity');");
+	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@lTjeI6V0lQsktXqaqJ6Iwk4TdsHduQI54rdUpHfhGbg,0oTYfrxxx8OmdU1~60gqpf3781qzEicM4Sz97mJsBM4,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert Luke771's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@mdXK~ZVlfTZhF1SLBrvZ--i0vOsOpa~w9wv~~psQ-04,gXonsXKc7aexKSO8Gt8Fwre4Qgmmbt2WueO7VzxNKkk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Initial Identity');");
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@mdXK~ZVlfTZhF1SLBrvZ--i0vOsOpa~w9wv~~psQ-04,gXonsXKc7aexKSO8Gt8Fwre4Qgmmbt2WueO7VzxNKkk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert falafel's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@IxVqeqM0LyYdTmYAf5z49SJZUxr7NtQkOqVYG0hvITw,RM2wnMn5zAufCMt5upkkgq25B1elfBAxc7htapIWg1c,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Initial Identity');");
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@IxVqeqM0LyYdTmYAf5z49SJZUxr7NtQkOqVYG0hvITw,RM2wnMn5zAufCMt5upkkgq25B1elfBAxc7htapIWg1c,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert cptn_insano's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@bloE1LJ~qzSYUkU2nt7sB9kq060D4HTQC66pk5Q8NpA,DOOASUnp0kj6tOdhZJ-h5Tk7Ka50FSrUgsH7tCG1usU,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Initial Identity');");
-	// insert Flink's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@q2TtkNBOuuniyJ56~8NSopCs3ttwe5KlB31ugZtWmXA,6~PzIupS8YK7L6oFNpXGKJmHT2kBMDfwTg73nHdNur8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Initial Identity');");
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@bloE1LJ~qzSYUkU2nt7sB9kq060D4HTQC66pk5Q8NpA,DOOASUnp0kj6tOdhZJ-h5Tk7Ka50FSrUgsH7tCG1usU,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	// insert Flink's public key - haven't seen in a while - disabling for now
+	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@q2TtkNBOuuniyJ56~8NSopCs3ttwe5KlB31ugZtWmXA,6~PzIupS8YK7L6oFNpXGKJmHT2kBMDfwTg73nHdNur8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert Kane's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@Ofm~yZivDJ5Z2fSzZbMiLEUUQaIc0KHRdZMBTaPLO6I,WLm4s4hNbOOurJ6ijfOq4odz7-dN7uTUvYxJRwWnlMI,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Initial Identity');");
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@Ofm~yZivDJ5Z2fSzZbMiLEUUQaIc0KHRdZMBTaPLO6I,WLm4s4hNbOOurJ6ijfOq4odz7-dN7uTUvYxJRwWnlMI,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// inserts boardstat's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@aYWBb6zo2AM13XCNhsmmRKMANEx6PG~C15CWjdZziKA,X1pAG4EIqR1gAiyGFVZ1iiw-uTlh460~rFACJ7ZHQXk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Initial Identity');");
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@aYWBb6zo2AM13XCNhsmmRKMANEx6PG~C15CWjdZziKA,X1pAG4EIqR1gAiyGFVZ1iiw-uTlh460~rFACJ7ZHQXk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 
 	// TODO remove sometime after 0.1.17
-	FixCapitalBoardNames();
+	FixCapitalBoardNames(db);
 
 	// run analyze - may speed up some queries
 	db->Execute("ANALYZE;");
 
 }
 
-const bool VerifyDB()
+const bool VerifyDB(SQLite3DB::DB *db)
 {
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	SQLite3DB::Statement st=db->Prepare("PRAGMA integrity_check;");
 	st.Step();
 	if(st.RowReturned())
@@ -629,11 +615,10 @@ const bool VerifyDB()
 	}
 }
 
-const std::string TestDBIntegrity()
+const std::string TestDBIntegrity(SQLite3DB::DB *db)
 {
 	std::string result="";
 
-	SQLite3DB::DB *db=SQLite3DB::DB::Instance();
 	SQLite3DB::Statement st=db->Prepare("PRAGMA integrity_check;");
 	st.Step();
 	while(st.RowReturned())

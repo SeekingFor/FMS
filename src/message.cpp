@@ -18,12 +18,12 @@
 	#include <xmem.h>
 #endif
 
-Message::Message()
+Message::Message(SQLite3DB::DB *db):IDatabase(db)
 {
 	Initialize();
 }
 
-Message::Message(const long messageid)
+Message::Message(SQLite3DB::DB *db, const long messageid):IDatabase(db)
 {
 	Load(messageid);
 }
@@ -400,9 +400,11 @@ void Message::Initialize()
 	m_inreplyto.clear();
 	m_fileattachments.clear();
 	m_changemessagetrustonreply=0;
-	Option::Instance()->Get("ChangeMessageTrustOnReply",tempval);
+	Option option(m_db);
+
+	option.Get("ChangeMessageTrustOnReply",tempval);
 	StringFunctions::Convert(tempval,m_changemessagetrustonreply);
-	Option::Instance()->Get("AddNewPostFromIdentities",tempval);
+	option.Get("AddNewPostFromIdentities",tempval);
 	if(tempval=="true")
 	{
 		m_addnewpostfromidentities=true;
@@ -412,10 +414,10 @@ void Message::Initialize()
 		m_addnewpostfromidentities=false;
 	}
 	tempval="50";
-	Option::Instance()->Get("MinLocalMessageTrust",tempval);
+	option.Get("MinLocalMessageTrust",tempval);
 	StringFunctions::Convert(tempval,m_minlocalmessagetrust);
 	tempval="51";
-	Option::Instance()->Get("MinLocalTrustListTrust",tempval);
+	option.Get("MinLocalTrustListTrust",tempval);
 	StringFunctions::Convert(tempval,m_minlocaltrustlisttrust);
 }
 

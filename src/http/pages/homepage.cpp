@@ -11,13 +11,15 @@
 const std::string HomePage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 
+	Option option(m_db);
+
 	std::string messagecountstr="";
 	std::string filecountstr="";
 	std::string fcphost="127.0.0.1";
 	std::string fproxyport="8888";
 
-	Option::Instance()->Get("FCPHost",fcphost);
-	Option::Instance()->Get("FProxyPort",fproxyport);
+	option.Get("FCPHost",fcphost);
+	option.Get("FProxyPort",fproxyport);
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="shutdown" && ValidateFormPassword(queryvars))
 	{
@@ -87,7 +89,12 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 	{
 		st.ResultText(0,messagecountstr);
 	}
-	content+="Messages waiting to be inserted:"+messagecountstr+"<br>";
+	content+="Messages waiting to be inserted:"+messagecountstr;
+	if (messagecountstr!="0") //show link to message page
+	{
+		content+=" (<a href=\"showpendingmessage.htm\">show messages</a>)";
+	}
+	content+="<br>";
 	st=m_db->Prepare("SELECT COUNT(*) FROM tblFileInserts WHERE Key IS NULL;");
 	st.Step();
 	if(st.RowReturned())
@@ -95,7 +102,6 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 		st.ResultText(0,filecountstr);
 	}
 	content+="Files waiting to be inserted:"+filecountstr+"<br>";
-
 	content+="<p class=\"paragraph\">";
 	content+="<form name=\"frmshutdown\" method=\"POST\">";
 	content+=CreateFormPassword();

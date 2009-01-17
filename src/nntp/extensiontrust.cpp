@@ -5,12 +5,12 @@
 	#include <xmem.h>
 #endif
 
-TrustExtension::TrustExtension()
+TrustExtension::TrustExtension(SQLite3DB::DB *db):IDatabase(db)
 {
 	m_localidentityid=-1;
 }
 
-TrustExtension::TrustExtension(const int &localidentityid)
+TrustExtension::TrustExtension(SQLite3DB::DB *db, const int &localidentityid):IDatabase(db)
 {
 	m_localidentityid=localidentityid;
 }

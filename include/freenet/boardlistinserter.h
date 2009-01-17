@@ -6,8 +6,8 @@
 class BoardListInserter:public IIndexInserter<long>
 {
 public:
-	BoardListInserter();
-	BoardListInserter(FCPv2::Connection *fcp);
+	BoardListInserter(SQLite3DB::DB *db);
+	BoardListInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

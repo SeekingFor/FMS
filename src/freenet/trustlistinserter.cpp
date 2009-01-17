@@ -11,12 +11,12 @@
 	#include <xmem.h>
 #endif
 
-TrustListInserter::TrustListInserter()
+TrustListInserter::TrustListInserter(SQLite3DB::DB *db):IDatabase(db)
 {
 	Initialize();
 }
 
-TrustListInserter::TrustListInserter(FCPv2::Connection *fcp):IFCPConnected(fcp)
+TrustListInserter::TrustListInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp):IDatabase(db),IFCPConnected(fcp)
 {
 	Initialize();
 }
@@ -108,7 +108,8 @@ const bool TrustListInserter::HandleMessage(FCPv2::Message &message)
 
 void TrustListInserter::Initialize()
 {
-	Option::Instance()->Get("MessageBase",m_messagebase);
+	Option option(m_db);
+	option.Get("MessageBase",m_messagebase);
 	m_lastchecked=Poco::Timestamp();
 }
 

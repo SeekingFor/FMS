@@ -9,12 +9,12 @@
 	#include <xmem.h>
 #endif
 
-UnkeyedIDCreator::UnkeyedIDCreator()
+UnkeyedIDCreator::UnkeyedIDCreator(SQLite3DB::DB *db):IDatabase(db)
 {
 	Initialize();
 }
 
-UnkeyedIDCreator::UnkeyedIDCreator(FCPv2::Connection *fcp):IFCPConnected(fcp)
+UnkeyedIDCreator::UnkeyedIDCreator(SQLite3DB::DB *db, FCPv2::Connection *fcp):IDatabase(db),IFCPConnected(fcp)
 {
 	Initialize();
 }

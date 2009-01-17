@@ -6,20 +6,22 @@
 #include "../threadwrapper/threadedexecutor.h"
 #include "../socketdefines.h"
 #include "../ilogger.h"
+#include "../ithreaddatabase.h"
 
 /**
 	\brief Listens for NNTP connections
 */
-class NNTPListener:public CancelableRunnable,public ILogger
+class NNTPListener:public CancelableRunnable,public ILogger,public IThreadDatabase
 {
 public:
 	NNTPListener();
 	~NNTPListener();
 
 	void run();
-	void StartListen();
 
 private:
+
+	void StartListen();
 
 	unsigned short m_listenport;
 	std::vector<SOCKET> m_listensockets;

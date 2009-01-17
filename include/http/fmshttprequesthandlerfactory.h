@@ -4,14 +4,15 @@
 #include "ipagehandler.h"
 #include "../ipaddressacl.h"
 #include "../ilogger.h"
+#include "../idatabase.h"
 
 #include <Poco/Net/HTTPRequestHandlerFactory.h>
 #include <Poco/Net/HTTPServerRequest.h>
 
-class FMSHTTPRequestHandlerFactory:public Poco::Net::HTTPRequestHandlerFactory,public ILogger
+class FMSHTTPRequestHandlerFactory:public Poco::Net::HTTPRequestHandlerFactory,public ILogger,public IDatabase
 {
 public:
-	FMSHTTPRequestHandlerFactory();
+	FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db);
 	~FMSHTTPRequestHandlerFactory();
 
 	Poco::Net::HTTPRequestHandler *createRequestHandler(const Poco::Net::HTTPServerRequest &request);

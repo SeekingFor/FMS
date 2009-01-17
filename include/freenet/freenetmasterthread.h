@@ -2,6 +2,7 @@
 #define _freenetmasterthread_
 
 #include "../ilogger.h"
+#include "../ithreaddatabase.h"
 #include "ifreenetregistrable.h"
 #include "ifcpmessagehandler.h"
 #include "ifcpconnected.h"
@@ -12,7 +13,7 @@
 // forward declaration
 class IFreenetRegistrable;
 
-class FreenetMasterThread:public CancelableRunnable,public ILogger, public IFCPMessageHandler
+class FreenetMasterThread:public CancelableRunnable,public ILogger, public IFCPMessageHandler, public IThreadDatabase
 {
 public:
 	FreenetMasterThread();

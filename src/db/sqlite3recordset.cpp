@@ -90,7 +90,6 @@ void Recordset::Open(const std::string &sql, DB *db)
 	Free();
 	m_currentrow=0;
 
-	Poco::ScopedLock<Poco::FastMutex> g(DB::Instance()->m_mutex);
 	if(sqlite3_get_table(db->GetDB(),sql.c_str(),&m_rs,&m_rows,&m_cols,NULL)==SQLITE_OK)
 	{
 	}

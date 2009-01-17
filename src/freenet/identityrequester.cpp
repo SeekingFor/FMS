@@ -12,12 +12,12 @@
 	#include <xmem.h>
 #endif
 
-IdentityRequester::IdentityRequester()
+IdentityRequester::IdentityRequester(SQLite3DB::DB *db):IIndexRequester<long>(db)
 {
 	Initialize();
 }
 
-IdentityRequester::IdentityRequester(FCPv2::Connection *fcp):IIndexRequester<long>(fcp)
+IdentityRequester::IdentityRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexRequester<long>(db,fcp)
 {
 	Initialize();
 }
@@ -163,7 +163,8 @@ const bool IdentityRequester::HandleGetFailed(FCPv2::Message &message)
 void IdentityRequester::Initialize()
 {
 	m_fcpuniquename="KnownIdentityRequester";
-	Option::Instance()->GetInt("MaxIdentityRequests",m_maxrequests);
+	Option option(m_db);
+	option.GetInt("MaxIdentityRequests",m_maxrequests);
 
 	// known identities get 4/5 + any remaining if not evenly divisible - unknown identities get 1/5 of the max requests option
 	m_maxrequests=((m_maxrequests*4)/5)+(m_maxrequests%5);

@@ -16,14 +16,18 @@
 HTTPThread::HTTPThread()
 {
 	m_listenport=8080;
-	std::string portstr;
-	Option::Instance()->Get("HTTPListenPort",portstr);
-	StringFunctions::Convert(portstr,m_listenport);
 }
 
 void HTTPThread::run()
 {
 	m_log->debug("HTTPThread::run thread started.");
+
+	LoadDatabase();
+	Option option(m_db);
+
+	std::string portstr("8080");
+	option.Get("HTTPListenPort",portstr);
+	StringFunctions::Convert(portstr,m_listenport);
 
 	try
 	{
@@ -31,7 +35,7 @@ void HTTPThread::run()
 		Poco::Net::HTTPServerParams* pParams = new Poco::Net::HTTPServerParams;
 		pParams->setMaxQueued(30);
 		pParams->setMaxThreads(5);
-		Poco::Net::HTTPServer srv(new FMSHTTPRequestHandlerFactory,sock,pParams);
+		Poco::Net::HTTPServer srv(new FMSHTTPRequestHandlerFactory(m_db),sock,pParams);
 
 		srv.start();
 		m_log->trace("Started HTTPServer");

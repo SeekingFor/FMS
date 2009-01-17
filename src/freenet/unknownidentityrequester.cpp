@@ -5,20 +5,22 @@
 	#include <xmem.h>
 #endif
 
-UnknownIdentityRequester::UnknownIdentityRequester()
+UnknownIdentityRequester::UnknownIdentityRequester(SQLite3DB::DB *db):IdentityRequester(db)
 {
 	Initialize();
 }
 
-UnknownIdentityRequester::UnknownIdentityRequester(FCPv2::Connection *fcp):IdentityRequester(fcp)
+UnknownIdentityRequester::UnknownIdentityRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IdentityRequester(db,fcp)
 {
 	Initialize();
 }
 
 void UnknownIdentityRequester::Initialize()
 {
+	Option option(m_db);
+
 	m_fcpuniquename="UnknownIdentityRequester";
-	Option::Instance()->GetInt("MaxIdentityRequests",m_maxrequests);
+	option.GetInt("MaxIdentityRequests",m_maxrequests);
 
 	// unknown identities get 1/5 of the max requests option - known identities get 4/5 + any remaining if not evenly divisible
 	m_maxrequests=(m_maxrequests/5);

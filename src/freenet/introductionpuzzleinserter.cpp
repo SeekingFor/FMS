@@ -17,12 +17,12 @@
 	#include <xmem.h>
 #endif
 
-IntroductionPuzzleInserter::IntroductionPuzzleInserter():IIndexInserter<long>()
+IntroductionPuzzleInserter::IntroductionPuzzleInserter(SQLite3DB::DB *db):IIndexInserter<long>(db)
 {
 	Initialize();
 }
 
-IntroductionPuzzleInserter::IntroductionPuzzleInserter(FCPv2::Connection *fcp):IIndexInserter<long>(fcp)
+IntroductionPuzzleInserter::IntroductionPuzzleInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexInserter<long>(db,fcp)
 {
 	Initialize();
 }
@@ -224,7 +224,8 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 			}
 		}
 
-		Option::Instance()->Get("MessageBase",messagebase);
+		Option option(m_db);
+		option.Get("MessageBase",messagebase);
 
 		GenerateCaptcha(encodedpuzzle,solutionstring);
 		if(encodedpuzzle.size()==0)

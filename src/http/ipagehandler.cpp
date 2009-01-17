@@ -1,7 +1,6 @@
 #include "../../include/http/ipagehandler.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/http/multipartparser.h"
-#include "../../include/db/sqlite3db.h"
 
 #include <Poco/Net/HTMLForm.h>
 #include <Poco/UUIDGenerator.h>
@@ -54,7 +53,7 @@ const std::string IPageHandler::CreateFormPassword()
 	{
 	}
 
-	SQLite3DB::Statement st=SQLite3DB::DB::Instance()->Prepare("INSERT INTO tmpFormPassword(Date,Password) VALUES(?,?);");
+	SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tmpFormPassword(Date,Password) VALUES(?,?);");
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 	st.Bind(1,uuid.toString());
 	st.Step();
@@ -167,14 +166,14 @@ const bool IPageHandler::ValidateFormPassword(const std::map<std::string,std::st
 	Poco::DateTime date;
 	date-=Poco::Timespan(0,1,0,0,0);
 
-	SQLite3DB::Statement st=SQLite3DB::DB::Instance()->Prepare("DELETE FROM tmpFormPassword WHERE Date<?;");
+	SQLite3DB::Statement st=m_db->Prepare("DELETE FROM tmpFormPassword WHERE Date<?;");
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 	st.Step();
 
 	std::map<std::string,std::string>::const_iterator i=vars.find("formpassword");
 	if(i!=vars.end())
 	{
-		st=SQLite3DB::DB::Instance()->Prepare("SELECT COUNT(*) FROM tmpFormPassword WHERE Password=?;");
+		st=m_db->Prepare("SELECT COUNT(*) FROM tmpFormPassword WHERE Password=?;");
 		st.Bind(0,(*i).second);
 		st.Step();
 		if(st.RowReturned())

@@ -13,8 +13,8 @@
 class IdentityIntroductionRequester:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
 public:
-	IdentityIntroductionRequester();
-	IdentityIntroductionRequester(FCPv2::Connection *fcp);
+	IdentityIntroductionRequester(SQLite3DB::DB *db);
+	IdentityIntroductionRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 	void FCPDisconnected();
 	void FCPConnected();

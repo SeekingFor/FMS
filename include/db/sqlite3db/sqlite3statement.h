@@ -3,6 +3,8 @@
 
 #include "sqlite3db.h"
 
+#include <Poco/Mutex.h>
+
 #include <vector>
 #include <map>
 
@@ -57,6 +59,7 @@ private:
 	long m_lastinsertrowid;
 
 	static std::map<sqlite3_stmt *, long> m_statementcount;
+	static Poco::FastMutex m_mutex;			// protect all access to m_statementcount
 
 };	//class
 

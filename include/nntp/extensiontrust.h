@@ -6,8 +6,8 @@
 class TrustExtension:public IDatabase
 {
 public:
-	TrustExtension();
-	TrustExtension(const int &localidentityid);
+	TrustExtension(SQLite3DB::DB *db);
+	TrustExtension(SQLite3DB::DB *db, const int &localidentityid);
 
 	struct trust
 	{

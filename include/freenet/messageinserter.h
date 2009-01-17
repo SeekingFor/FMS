@@ -7,8 +7,8 @@
 class MessageInserter:public IIndexInserter<std::string>
 {
 public:
-	MessageInserter();
-	MessageInserter(FCPv2::Connection *fcp);
+	MessageInserter(SQLite3DB::DB *db);
+	MessageInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 
 private:
 	void Initialize();

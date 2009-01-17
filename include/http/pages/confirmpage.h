@@ -6,9 +6,9 @@
 class ConfirmPage:public IPageHandler
 {
 public:
-	ConfirmPage(const std::string &templatestr):IPageHandler(templatestr,"confirm.htm")		{}
+	ConfirmPage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"confirm.htm")		{}
 
-	IPageHandler *New()	{ return new ConfirmPage(m_template); }
+	IPageHandler *New()	{ return new ConfirmPage(m_db,m_template); }
 
 private:
 	const bool WillHandleURI(const std::string &uri);

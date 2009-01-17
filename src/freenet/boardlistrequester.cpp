@@ -8,12 +8,12 @@
 	#include <xmem.h>
 #endif
 
-BoardListRequester::BoardListRequester()
+BoardListRequester::BoardListRequester(SQLite3DB::DB *db):IIndexRequester<long>(db)
 {
 	Initialize();
 }
 
-BoardListRequester::BoardListRequester(FCPv2::Connection *fcp):IIndexRequester<long>(fcp)
+BoardListRequester::BoardListRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexRequester<long>(db,fcp)
 {
 	Initialize();
 }
@@ -192,8 +192,9 @@ void BoardListRequester::Initialize()
 
 	m_fcpuniquename="BoardListRequester";
 	m_maxrequests=0;
+	Option option(m_db);
 
-	Option::Instance()->GetInt("MaxBoardListRequests",m_maxrequests);
+	option.GetInt("MaxBoardListRequests",m_maxrequests);
 	if(m_maxrequests<0)
 	{
 		m_maxrequests=0;
@@ -204,7 +205,7 @@ void BoardListRequester::Initialize()
 		m_log->warning("Option MaxBoardListRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
 
-	Option::Instance()->Get("SaveMessagesFromNewBoards",tempval);
+	option.Get("SaveMessagesFromNewBoards",tempval);
 	if(tempval=="true")
 	{
 		m_savemessagesfromnewboards=true;
@@ -214,7 +215,7 @@ void BoardListRequester::Initialize()
 		m_savemessagesfromnewboards=false;
 	}
 
-	Option::Instance()->Get("LocalTrustOverridesPeerTrust",tempval);
+	option.Get("LocalTrustOverridesPeerTrust",tempval);
 	if(tempval=="true")
 	{
 		m_localtrustoverrides=true;

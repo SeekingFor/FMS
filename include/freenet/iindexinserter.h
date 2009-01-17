@@ -22,8 +22,8 @@ template <class IDTYPE>
 class IIndexInserter:public IFreenetRegistrable,public IFCPConnected,public IFCPMessageHandler,public IPeriodicProcessor,public IDatabase,public ILogger
 {
 public:
-	IIndexInserter();
-	IIndexInserter(FCPv2::Connection *fcp);
+	IIndexInserter(SQLite3DB::DB *db);
+	IIndexInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp);
 	virtual ~IIndexInserter()		{}
 
 	virtual void FCPConnected();
@@ -52,13 +52,13 @@ protected:
 };
 
 template <class IDTYPE>
-IIndexInserter<IDTYPE>::IIndexInserter()
+IIndexInserter<IDTYPE>::IIndexInserter(SQLite3DB::DB *db):IDatabase(db)
 {
 	InitializeIIndexInserter();
 }
 
 template <class IDTYPE>
-IIndexInserter<IDTYPE>::IIndexInserter(FCPv2::Connection *fcp):IFCPConnected(fcp)
+IIndexInserter<IDTYPE>::IIndexInserter(SQLite3DB::DB *db, FCPv2::Connection *fcp):IDatabase(db),IFCPConnected(fcp)
 {
 	InitializeIIndexInserter();
 }
@@ -127,8 +127,9 @@ const bool IIndexInserter<IDTYPE>::HandleMessage(FCPv2::Message &message)
 template <class IDTYPE>
 void IIndexInserter<IDTYPE>::InitializeIIndexInserter()
 {
+	Option option(m_db);
 	m_fcpuniquename="";
-	Option::Instance()->Get("MessageBase",m_messagebase);
+	option.Get("MessageBase",m_messagebase);
 	m_lastchecked=Poco::Timestamp();
 }
 

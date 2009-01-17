@@ -10,12 +10,12 @@
 	#include <xmem.h>
 #endif
 
-MessageListRequester::MessageListRequester()
+MessageListRequester::MessageListRequester(SQLite3DB::DB *db):IIndexRequester<long>(db)
 {
 	Initialize();
 }
 
-MessageListRequester::MessageListRequester(FCPv2::Connection *fcp):IIndexRequester<long>(fcp)
+MessageListRequester::MessageListRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexRequester<long>(db,fcp)
 {
 	Initialize();
 }
@@ -135,6 +135,8 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 	// parse file into xml and update the database
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
+
+		m_db->Execute("BEGIN;");
 
 		SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblMessageRequests WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
 		SQLite3DB::Statement spk=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
@@ -271,6 +273,8 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 		st.Step();
 		st.Finalize();
 
+		m_db->Execute("COMMIT;");
+
 		m_log->debug(m_fcpuniquename+"::HandleAllData parsed MessageList XML file : "+message["Identifier"]);
 	}
 	else
@@ -333,10 +337,11 @@ const bool MessageListRequester::HandleGetFailed(FCPv2::Message &message)
 void MessageListRequester::Initialize()
 {
 	m_fcpuniquename="ActiveMessageListRequester";
-	std::string tempval="";
-
+	std::string tempval("");
 	m_maxrequests=0;
-	Option::Instance()->GetInt("MaxMessageListRequests",m_maxrequests);
+	Option option(m_db);
+
+	option.GetInt("MaxMessageListRequests",m_maxrequests);
 
 	// active identities get 1/2 of the max requests option + any remaining if not evenly divisible - inactive identities get 1/2
 	m_maxrequests=(m_maxrequests/2)+(m_maxrequests%2);
@@ -352,7 +357,7 @@ void MessageListRequester::Initialize()
 	}
 
 	tempval="";
-	Option::Instance()->Get("LocalTrustOverridesPeerTrust",tempval);
+	option.Get("LocalTrustOverridesPeerTrust",tempval);
 	if(tempval=="true")
 	{
 		m_localtrustoverrides=true;
@@ -363,7 +368,7 @@ void MessageListRequester::Initialize()
 	}
 
 	tempval="";
-	Option::Instance()->Get("SaveMessagesFromNewBoards",tempval);
+	option.Get("SaveMessagesFromNewBoards",tempval);
 	if(tempval=="true")
 	{
 		m_savetonewboards=true;
@@ -375,7 +380,7 @@ void MessageListRequester::Initialize()
 
 	m_messagedownloadmaxdaysbackward=5;
 	tempval="5";
-	Option::Instance()->Get("MessageDownloadMaxDaysBackward",tempval);
+	option.Get("MessageDownloadMaxDaysBackward",tempval);
 	StringFunctions::Convert(tempval,m_messagedownloadmaxdaysbackward);
 
 }

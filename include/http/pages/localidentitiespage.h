@@ -2,14 +2,13 @@
 #define _localidentitiespage_
 
 #include "../ipagehandler.h"
-#include "../../idatabase.h"
 
-class LocalIdentitiesPage:public IPageHandler,public IDatabase
+class LocalIdentitiesPage:public IPageHandler
 {
 public:
-	LocalIdentitiesPage(const std::string &templatestr):IPageHandler(templatestr,"localidentities.htm")	{}
+	LocalIdentitiesPage(SQLite3DB::DB *db, const std::string &templatestr):IPageHandler(db,templatestr,"localidentities.htm")	{}
 
-	IPageHandler *New()	{ return new LocalIdentitiesPage(m_template); }
+	IPageHandler *New()	{ return new LocalIdentitiesPage(m_db,m_template); }
 
 	void handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response);
 

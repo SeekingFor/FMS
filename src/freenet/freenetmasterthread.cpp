@@ -34,29 +34,8 @@
 	#include <xmem.h>
 #endif
 
-FreenetMasterThread::FreenetMasterThread()
+FreenetMasterThread::FreenetMasterThread():m_receivednodehello(false)
 {
-
-	if(Option::Instance()->Get("FCPHost",m_fcphost)==false)
-	{
-		m_fcphost="localhost";
-		Option::Instance()->Set("FCPHost",m_fcphost);
-	}
-	if(Option::Instance()->GetInt("FCPPort",m_fcpport)==false)
-	{
-		m_fcpport=9481;
-		Option::Instance()->Set("FCPPort",m_fcpport);
-	}
-	else
-	{
-		if(m_fcpport<1 || m_fcpport>65535)
-		{
-			m_fcpport=9481;
-			Option::Instance()->Set("FCPPort",m_fcpport);
-		}
-	}
-
-	m_receivednodehello=false;
 
 }
 
@@ -195,6 +174,10 @@ void FreenetMasterThread::run()
 
 	m_log->debug("FreenetMasterThread::run thread started.");
 
+	LoadDatabase();
+
+
+
 	Setup();
 
 	do
@@ -288,29 +271,49 @@ void FreenetMasterThread::run()
 void FreenetMasterThread::Setup()
 {
 
+	Option option(m_db);
+	if(option.Get("FCPHost",m_fcphost)==false)
+	{
+		m_fcphost="localhost";
+		option.Set("FCPHost",m_fcphost);
+	}
+	if(option.GetInt("FCPPort",m_fcpport)==false)
+	{
+		m_fcpport=9481;
+		option.Set("FCPPort",m_fcpport);
+	}
+	else
+	{
+		if(m_fcpport<1 || m_fcpport>65535)
+		{
+			m_fcpport=9481;
+			option.Set("FCPPort",m_fcpport);
+		}
+	}
+
 	// seed random number generator
 	srand(time(NULL));
 
-	m_registrables.push_back(new UnkeyedIDCreator(&m_fcp));
-	m_registrables.push_back(new IdentityInserter(&m_fcp));
-	m_registrables.push_back(new IdentityRequester(&m_fcp));
-	m_registrables.push_back(new UnknownIdentityRequester(&m_fcp));
-	m_registrables.push_back(new IntroductionPuzzleInserter(&m_fcp));
-	m_registrables.push_back(new IdentityIntroductionRequester(&m_fcp));
-	m_registrables.push_back(new IntroductionPuzzleRequester(&m_fcp));
-	m_registrables.push_back(new IdentityIntroductionInserter(&m_fcp));
-	m_registrables.push_back(new TrustListInserter(&m_fcp));
-	m_registrables.push_back(new TrustListRequester(&m_fcp));
-	m_registrables.push_back(new MessageListInserter(&m_fcp));
-	m_registrables.push_back(new MessageListRequester(&m_fcp));
-	m_registrables.push_back(new InactiveMessageListRequester(&m_fcp));
-	m_registrables.push_back(new MessageInserter(&m_fcp));
-	m_registrables.push_back(new MessageRequester(&m_fcp));
-	m_registrables.push_back(new BoardListInserter(&m_fcp));
-	m_registrables.push_back(new BoardListRequester(&m_fcp));
-	m_registrables.push_back(new SiteInserter(&m_fcp));
-	m_registrables.push_back(new FileInserter(&m_fcp));
-	m_registrables.push_back(new FMSVersionRequester(&m_fcp));
+	m_registrables.push_back(new UnkeyedIDCreator(m_db,&m_fcp));
+	m_registrables.push_back(new IdentityInserter(m_db,&m_fcp));
+	m_registrables.push_back(new IdentityRequester(m_db,&m_fcp));
+	m_registrables.push_back(new UnknownIdentityRequester(m_db,&m_fcp));
+	m_registrables.push_back(new IntroductionPuzzleInserter(m_db,&m_fcp));
+	m_registrables.push_back(new IdentityIntroductionRequester(m_db,&m_fcp));
+	m_registrables.push_back(new IntroductionPuzzleRequester(m_db,&m_fcp));
+	m_registrables.push_back(new IdentityIntroductionInserter(m_db,&m_fcp));
+	m_registrables.push_back(new TrustListInserter(m_db,&m_fcp));
+	m_registrables.push_back(new TrustListRequester(m_db,&m_fcp));
+	m_registrables.push_back(new MessageListInserter(m_db,&m_fcp));
+	m_registrables.push_back(new MessageListRequester(m_db,&m_fcp));
+	m_registrables.push_back(new InactiveMessageListRequester(m_db,&m_fcp));
+	m_registrables.push_back(new MessageInserter(m_db,&m_fcp));
+	m_registrables.push_back(new MessageRequester(m_db,&m_fcp));
+	m_registrables.push_back(new BoardListInserter(m_db,&m_fcp));
+	m_registrables.push_back(new BoardListRequester(m_db,&m_fcp));
+	m_registrables.push_back(new SiteInserter(m_db,&m_fcp));
+	m_registrables.push_back(new FileInserter(m_db,&m_fcp));
+	m_registrables.push_back(new FMSVersionRequester(m_db,&m_fcp));
 
 	for(std::vector<IFreenetRegistrable *>::iterator i=m_registrables.begin(); i!=m_registrables.end(); i++)
 	{

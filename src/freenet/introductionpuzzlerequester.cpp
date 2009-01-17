@@ -14,12 +14,12 @@
 	#include <xmem.h>
 #endif
 
-IntroductionPuzzleRequester::IntroductionPuzzleRequester()
+IntroductionPuzzleRequester::IntroductionPuzzleRequester(SQLite3DB::DB *db):IIndexRequester<long>(db)
 {
 	Initialize();
 }
 
-IntroductionPuzzleRequester::IntroductionPuzzleRequester(FCPv2::Connection *fcp):IIndexRequester<long>(fcp)
+IntroductionPuzzleRequester::IntroductionPuzzleRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexRequester<long>(db,fcp)
 {
 	Initialize();
 }
@@ -186,7 +186,8 @@ void IntroductionPuzzleRequester::Initialize()
 {
 	m_fcpuniquename="IntroductionPuzzleRequester";
 	m_maxrequests=0;
-	Option::Instance()->GetInt("MaxIntroductionPuzzleRequests",m_maxrequests);
+	Option option(m_db);
+	option.GetInt("MaxIntroductionPuzzleRequests",m_maxrequests);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;

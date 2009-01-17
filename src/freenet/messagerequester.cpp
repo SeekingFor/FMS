@@ -11,12 +11,12 @@
 	#include <xmem.h>
 #endif
 
-MessageRequester::MessageRequester()
+MessageRequester::MessageRequester(SQLite3DB::DB *db):IIndexRequester<std::string>(db)
 {
 	Initialize();
 }
 
-MessageRequester::MessageRequester(FCPv2::Connection *fcp):IIndexRequester<std::string>(fcp)
+MessageRequester::MessageRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexRequester<std::string>(db,fcp)
 {
 	Initialize();
 }
@@ -224,6 +224,8 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 				nntpbody+="\r\n";
 			}
 
+			m_db->Execute("BEGIN;");
+
 			st=m_db->Prepare("INSERT INTO tblMessage(IdentityID,FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,MessageIndex) VALUES(?,?,?,?,?,?,?,?,?);");
 			st.Bind(0,identityid);
 			st.Bind(1,GetIdentityName(identityid));
@@ -272,6 +274,8 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 				//m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"MessageRequester::HandleAddData could not insert message into database.  "+message["Identifier"]);
 			}
 
+			m_db->Execute("COMMIT;");
+
 		}	// if validmessage
 	}
 	else
@@ -319,10 +323,11 @@ const bool MessageRequester::HandleGetFailed(FCPv2::Message &message)
 void MessageRequester::Initialize()
 {
 	m_fcpuniquename="MessageRequester";
-	std::string tempval;
-
+	std::string tempval("");
 	m_maxrequests=0;
-	Option::Instance()->GetInt("MaxMessageRequests",m_maxrequests);
+	Option option(m_db);
+
+	option.GetInt("MaxMessageRequests",m_maxrequests);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
@@ -334,7 +339,7 @@ void MessageRequester::Initialize()
 	}
 
 	m_maxdaysbackward=0;
-	Option::Instance()->GetInt("MessageDownloadMaxDaysBackward",m_maxdaysbackward);
+	option.GetInt("MessageDownloadMaxDaysBackward",m_maxdaysbackward);
 	if(m_maxdaysbackward<0)
 	{
 		m_maxdaysbackward=0;
@@ -346,7 +351,7 @@ void MessageRequester::Initialize()
 	}
 
 	m_maxpeermessages=0;
-	Option::Instance()->GetInt("MaxPeerMessagesPerDay",m_maxpeermessages);
+	option.GetInt("MaxPeerMessagesPerDay",m_maxpeermessages);
 	if(m_maxpeermessages<1)
 	{
 		m_maxpeermessages=1;
@@ -358,7 +363,7 @@ void MessageRequester::Initialize()
 	}
 
 	m_maxboardspermessage=0;
-	Option::Instance()->GetInt("MaxBoardsPerMessage",m_maxboardspermessage);
+	option.GetInt("MaxBoardsPerMessage",m_maxboardspermessage);
 	if(m_maxboardspermessage<1)
 	{
 		m_maxboardspermessage=1;
@@ -369,7 +374,7 @@ void MessageRequester::Initialize()
 		m_log->warning("Option MaxBoardsPerMessage is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
 
-	Option::Instance()->Get("SaveMessagesFromNewBoards",tempval);
+	option.Get("SaveMessagesFromNewBoards",tempval);
 	if(tempval=="true")
 	{
 		m_savemessagesfromnewboards=true;
@@ -379,7 +384,7 @@ void MessageRequester::Initialize()
 		m_savemessagesfromnewboards=false;
 	}
 
-	Option::Instance()->Get("LocalTrustOverridesPeerTrust",tempval);
+	option.Get("LocalTrustOverridesPeerTrust",tempval);
 	if(tempval=="true")
 	{
 		m_localtrustoverrides=true;

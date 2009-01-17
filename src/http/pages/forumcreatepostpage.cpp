@@ -71,7 +71,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 
 		if(error=="")
 		{
-			Message mess;
+			Message mess(m_db);
 			
 			long localidentityid=-1;
 			long boardid=-1;

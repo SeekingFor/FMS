@@ -3,6 +3,8 @@
 #include <sstream>
 #include <algorithm>
 #include <cstdarg>
+#include <cstring>
+#include <cstdlib>
 
 #ifdef _WIN32
 	#include <ws2tcpip.h>

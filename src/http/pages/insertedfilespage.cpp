@@ -10,11 +10,11 @@ const std::string InsertedFilesPage::GeneratePage(const std::string &method, con
 {
 	std::string content="<h2>Inserted Files</h2>";
 
+	Option option(m_db);
 	std::string node="localhost";
-	Option::Instance()->Get("FCPHost",node);
+	option.Get("FCPHost",node);
 	std::string fproxyport="8888";
-	Option::Instance()->Get("FProxyPort",fproxyport);
-
+	option.Get("FProxyPort",fproxyport);
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="removefile" && queryvars.find("fileid")!=queryvars.end() && ValidateFormPassword(queryvars))
 	{
