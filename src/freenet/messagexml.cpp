@@ -64,7 +64,7 @@ std::string MessageXML::GetXML()
 		}
 	}
 
-	return GenerateXML(doc);
+	return GenerateXML(doc,false);
 }
 
 void MessageXML::Initialize()

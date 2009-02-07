@@ -294,7 +294,7 @@ void TrustListRequester::PopulateIDList()
 
 	// select identities we want to query (we've seen them today and they are publishing trust list) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
 	sql="SELECT IdentityID FROM tblIdentity ";
-	sql+="WHERE Name IS NOT NULL AND Name <> '' AND PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND PublishTrustList='true' AND LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust') AND ( PeerTrustListTrust IS NULL OR PeerTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerTrustListTrust') )";
+	sql+="WHERE Name IS NOT NULL AND Name <> '' AND PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND PublishTrustList='true' AND LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust') AND ( PeerTrustListTrust IS NULL OR PeerTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerTrustListTrust') ) AND tblIdentity.FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount')";
 	sql+="ORDER BY LocalTrustListTrust DESC, LastSeen;";
 
 	SQLite3DB::Statement st=m_db->Prepare(sql);

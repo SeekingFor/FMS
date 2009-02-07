@@ -111,13 +111,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=15;
 		}
+		if(major==1 && minor==15)
+		{
+			ConvertDB0115To0116(db);
+			major=1;
+			minor=16;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,15);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,16);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=15;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=16;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -218,7 +224,8 @@ void SetupDB(SQLite3DB::DB *db)
 				PeerTrustListTrust		INTEGER CHECK(PeerTrustListTrust BETWEEN 0 AND 100) DEFAULT NULL,\
 				AddedMethod				TEXT,\
 				Hidden					BOOL CHECK(Hidden IN('true','false')) DEFAULT 'false',\
-				PurgeDate				DATETIME\
+				PurgeDate				DATETIME,\
+				FailureCount			INTEGER CHECK(FailureCount>=0) DEFAULT 0\
 				);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblIdentityRequests(\
@@ -353,7 +360,8 @@ void SetupDB(SQLite3DB::DB *db)
 				FromMessageList		BOOL CHECK(FromMessageList IN('true','false')) DEFAULT 'false',\
 				Found				BOOL CHECK(Found IN('true','false')) DEFAULT 'false',\
 				Tries				INTEGER DEFAULT 0,\
-				Key					TEXT\
+				Key					TEXT,\
+				FromIdentityID		INTEGER\
 				);");
 
 	db->Execute("CREATE UNIQUE INDEX IF NOT EXISTS idxMessageRequest ON tblMessageRequests(IdentityID,Day,RequestIndex);");

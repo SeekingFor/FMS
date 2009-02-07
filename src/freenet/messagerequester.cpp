@@ -274,6 +274,8 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 				//m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"MessageRequester::HandleAddData could not insert message into database.  "+message["Identifier"]);
 			}
 
+			st.Finalize();
+
 			m_db->Execute("COMMIT;");
 
 		}	// if validmessage
@@ -313,6 +315,14 @@ const bool MessageRequester::HandleGetFailed(FCPv2::Message &message)
 
 		m_log->error("MessageRequester::HandleGetFailed fatal error requesting "+message["Identifier"]);
 	}
+
+	// increase the failure count of the identity who gave us this index
+	st=m_db->Prepare("UPDATE tblIdentity SET FailureCount=FailureCount+1 WHERE IdentityID IN (SELECT FromIdentityID FROM tblMessageRequests WHERE IdentityID=? AND Day=? AND RequestIndex=?);");
+	st.Bind(0,identityid);
+	st.Bind(1,idparts[3]);
+	st.Bind(2,index);
+	st.Step();
+	st.Finalize();
 
 	// remove this identityid from request list
 	RemoveFromRequestList(requestid);
@@ -419,7 +429,7 @@ void MessageRequester::PopulateIDList()
 	{
 		sql+="AND (tblIdentity.LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (tblIdentity.LocalMessageTrust IS NULL AND (tblIdentity.PeerMessageTrust IS NULL OR tblIdentity.PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) ";
 	}
-	sql+="AND tblIdentity.Name <> '' ";
+	sql+="AND tblIdentity.Name <> '' AND tblIdentity.FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ";
 	// sort by day descending - in case there is a bunch of messages on a day that keep timing out, we will eventually get to the next day and hopefully find messages there
 	// secondary ascending sort on tries
 	// tertiary sort on request index (so we get low indexes first)
@@ -503,7 +513,8 @@ void MessageRequester::StartRequest(const std::string &requestid)
 		message["Identifier"]=m_fcpuniquename+"|"+requestid+"|"+parts[0]+"|"+parts[1]+"|"+parts[2]+"|"+message["URI"];
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";		// 1 MB
-		message["MaxRetries"]="-1";			// use ULPR since we are fairly sure message exists since the author says it does
+		// don't use ULPR - we wan't to know of failures ASAP so we can mark them as such
+		//message["MaxRetries"]="-1";			// use ULPR since we are fairly sure message exists since the author says it does
 
 		m_fcp->Send(message);
 

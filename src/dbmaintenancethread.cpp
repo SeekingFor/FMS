@@ -79,6 +79,12 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 	{
 		std::string dbres=TestDBIntegrity(m_db);
 		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() middle TestDBIntegrity returned "+dbres);
+		if(dbres!="ok")
+		{
+			m_db->Execute("REINDEX;");
+			dbres=TestDBIntegrity(m_db);
+			m_log->trace("DBMaintenanceThread::Do10MinuteMaintenenace() middle after reindex returned "+dbres);
+		}
 	}
 
 	// now rebuild threads where the message has been deleted
@@ -174,6 +180,9 @@ void DBMaintenanceThread::Do1HourMaintenance()
 		st.Step();
 	}
 
+	st.Finalize();
+	upd.Finalize();
+
 	// insert all identities not in trust list already
 	m_db->Execute("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity WHERE LocalIdentityID || '_' || IdentityID NOT IN (SELECT LocalIdentityID || '_' || IdentityID FROM tblIdentityTrust);");
 
@@ -214,6 +223,10 @@ void DBMaintenanceThread::Do6HourMaintenance()
 		
 		st.Step();
 	}
+
+	st.Finalize();
+	st2.Finalize();
+	upd.Finalize();
 
 	m_db->Execute("COMMIT;");
 
@@ -274,6 +287,7 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	// try to re-attach messages from identities that were previously deleted, but have been since re-added
 	// first get the names from messages that have a NULL IdentityID
 	SQLite3DB::Statement st=m_db->Prepare("SELECT FromName FROM tblMessage WHERE IdentityID IS NULL GROUP BY FromName;");
+	SQLite3DB::Statement findst=m_db->Prepare("SELECT IdentityID,PublicKey FROM tblIdentity WHERE Name=?;");
 	st.Step();
 	while(st.RowReturned())
 	{
@@ -297,27 +311,27 @@ void DBMaintenanceThread::Do1DayMaintenance()
 		}
 
 		// find identities with this name
-		SQLite3DB::Statement st2=m_db->Prepare("SELECT IdentityID,PublicKey FROM tblIdentity WHERE Name=?;");
-		st2.Bind(0,namepart);
-		st2.Step();
-		while(st2.RowReturned())
+		findst.Bind(0,namepart);
+		findst.Step();
+		while(findst.RowReturned())
 		{
 			publickey="";
 			identityid=0;
-			st2.ResultText(1,publickey);
+			findst.ResultText(1,publickey);
 			// check if public key matches 2nd part
 			if(parts.size()>1 && publickey.find(parts[1])==4)
 			{
 				// we have the identity - so update the messages table with the identityid
-				st2.ResultInt(0,identityid);
+				findst.ResultInt(0,identityid);
 
 				SQLite3DB::Statement st3=m_db->Prepare("UPDATE tblMessage SET IdentityID=? WHERE FromName=? AND IdentityID IS NULL;");
 				st3.Bind(0,identityid);
 				st3.Bind(1,name);
 				st3.Step();
 			}
-			st2.Step();
+			findst.Step();
 		}
+		findst.Reset();
 
 		st.Step();
 	}
@@ -354,6 +368,14 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	// delete tblIdentityTrust for local identities and identities that have been deleted
 	m_db->Execute("DELETE FROM tblIdentityTrust WHERE LocalIdentityID NOT IN (SELECT LocalIdentityID FROM tblLocalIdentity);");
 	m_db->Execute("DELETE FROM tblIdentityTrust WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity);");
+
+
+	// reduce failure count for each identity
+	m_db->Execute("UPDATE tblIdentity SET FailureCount=0 WHERE FailureCount<(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
+	m_db->Execute("UPDATE tblIdentity SET FailureCount=FailureCount-(SELECT OptionValue FROM tblOption WHERE OptionName='FailureCountReduction') WHERE FailureCount>=(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
+
+	st.Finalize();
+	findst.Finalize();
 
 	m_db->Execute("COMMIT;");
 

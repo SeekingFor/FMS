@@ -209,13 +209,20 @@ protected:
 		return returntext;
 	}
 
-	const std::string GenerateXML(Poco::AutoPtr<Poco::XML::Document> doc)
+	const std::string GenerateXML(Poco::AutoPtr<Poco::XML::Document> doc, const bool prettyprint=true)
 	{
 		std::ostringstream str;
 		if(doc)
 		{
 			Poco::XML::DOMWriter dr;
-			dr.setOptions(Poco::XML::XMLWriter::WRITE_XML_DECLARATION | Poco::XML::XMLWriter::PRETTY_PRINT);
+			if(prettyprint==true)
+			{
+				dr.setOptions(Poco::XML::XMLWriter::WRITE_XML_DECLARATION | Poco::XML::XMLWriter::PRETTY_PRINT);
+			}
+			else
+			{
+				dr.setOptions(Poco::XML::XMLWriter::WRITE_XML_DECLARATION);
+			}
 			dr.setNewLine(Poco::XML::XMLWriter::NEWLINE_CRLF);
 			dr.writeNode(str,doc);
 		}

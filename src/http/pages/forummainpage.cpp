@@ -14,7 +14,7 @@ const std::string ForumMainPage::GeneratePage(const std::string &method, const s
 	content+="<table class=\"foruminfo\">\r\n";
 	content+="<thead><tr><th>New</th><th>Forum</th><th>Posts</th><th>Last Post</th></tr></thead>\r\n";
 
-	SQLite3DB::Statement newmessagesst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID WHERE tblMessageBoard.BoardID=? AND tblMessage.Read=0 LIMIT 0,1;");
+	SQLite3DB::Statement newmessagesst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblMessageBoard.BoardID=? AND tblThread.BoardID=? AND tblMessage.Read=0 LIMIT 0,1;");
 	SQLite3DB::Statement lastmessagest=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblThread.ThreadID FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblThread.BoardID=? ORDER BY tblMessage.MessageDate || tblMessage.MessageTime DESC LIMIT 0,1;");
 	
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblBoard.BoardID, BoardName, BoardDescription, COUNT(tblThreadPost.MessageID) FROM tblBoard LEFT JOIN tblThread ON tblBoard.BoardID=tblThread.BoardID LEFT JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE Forum='true' GROUP BY tblBoard.BoardID ORDER BY BoardName COLLATE NOCASE;");
@@ -37,6 +37,7 @@ const std::string ForumMainPage::GeneratePage(const std::string &method, const s
 		content+="<td class=\"newposts\">";
 
 		newmessagesst.Bind(0,boardid);
+		newmessagesst.Bind(1,boardid);
 		newmessagesst.Step();
 		if(newmessagesst.RowReturned())
 		{

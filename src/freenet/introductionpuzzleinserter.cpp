@@ -261,7 +261,8 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		m_fcp->Send(message);
 		m_fcp->Send(std::vector<char>(xmldata.begin(),xmldata.end()));
 
-		// insert to USK
+		// insert to USK - not used, but don't remove code yet
+		/*
 		message.Clear();
 		message.SetName("ClientPutComplexDir");
 		message["URI"]="USK"+privatekey.substr(3)+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|IntroductionPuzzle/0/";
@@ -272,6 +273,7 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		message["Files.0.DataLength"]=xmldatasizestr;
 		m_fcp->Send(message);
 		m_fcp->Send(std::vector<char>(xmldata.begin(),xmldata.end()));
+		*/
 
 		m_db->Execute("INSERT INTO tblIntroductionPuzzleInserts(UUID,Type,MimeType,LocalIdentityID,PuzzleData,PuzzleSolution) VALUES('"+xml.GetUUID()+"','captcha','image/bmp',"+idstring+",'"+encodedpuzzle+"','"+solutionstring+"');");
 

@@ -136,12 +136,10 @@ void IIndexInserter<IDTYPE>::InitializeIIndexInserter()
 template <class IDTYPE>
 void IIndexInserter<IDTYPE>::Process()
 {
-	Poco::DateTime now;
-
-	if(m_lastchecked<(now-Poco::Timespan(0,0,1,0,0)))
+	if(m_lastchecked<(Poco::DateTime()-Poco::Timespan(0,0,1,0,0)))
 	{
 		CheckForNeededInsert();
-		m_lastchecked=now;
+		m_lastchecked=Poco::DateTime();
 	}
 }
 

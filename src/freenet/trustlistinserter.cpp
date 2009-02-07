@@ -261,7 +261,8 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	m_fcp->Send(message);
 	m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 
-	// insert to USK
+	// insert to USK - not used, but don't remove code yet
+	/*
 	message.Clear();
 	message.SetName("ClientPutComplexDir");
 	message["URI"]="USK"+privatekey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|TrustList/0/";
@@ -272,6 +273,7 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	message["Files.0.DataLength"]=datasizestr;
 	m_fcp->Send(message);
 	m_fcp->Send(std::vector<char>(data.begin(),data.end()));
+	*/
 
 	m_db->Execute("UPDATE tblLocalIdentity SET InsertingTrustList='true' WHERE LocalIdentityID="+localidentityidstr+";");
 

@@ -241,6 +241,17 @@ void ConvertDB0114To0115(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=15;");
 }
 
+void ConvertDB0115To0116(SQLite3DB::DB *db)
+{
+	// Add FromIdentityID to tblMessageRequests so we know who we got this index from
+	// Add FailureCount
+
+	db->Execute("ALTER TABLE tblMessageRequests ADD COLUMN FromIdentityID INTEGER;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN FailureCount INTEGER CHECK(FailureCount>=0) DEFAULT 0;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=16;");
+}
+
 void FixCapitalBoardNames(SQLite3DB::DB *db)
 {
 

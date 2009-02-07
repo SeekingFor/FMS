@@ -1,7 +1,6 @@
 #include "../../include/freenet/messagelistrequester.h"
 #include "../../include/freenet/messagelistxml.h"
 
-#include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/DateTimeParser.h>
 #include <Poco/Timestamp.h>
@@ -73,41 +72,51 @@ const bool MessageListRequester::CheckDateWithinMaxDays(const std::string &dates
 	}
 }
 
-void MessageListRequester::GetBoardList(std::map<std::string,bool> &boards)
+void MessageListRequester::GetBoardList(std::map<std::string,bool> &boards, const bool forceload)
 {
-	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, SaveReceivedMessages FROM tblBoard;");
-	st.Step();
-	while(st.RowReturned())
+	// only query database when forced, or an 30 minutes have passed since last query
+	if(forceload==true || m_boardscacheupdate+Poco::Timespan(0,0,30,0,0)<=Poco::DateTime())
 	{
-		std::string boardname="";
-		std::string tempval="";
-		st.ResultText(0,boardname);
-		st.ResultText(1,tempval);
-
-		if(tempval=="true")
-		{
-			boards[boardname]=true;
-		}
-		else
-		{
-			boards[boardname]=false;
-		}
-
+		m_boardscache.clear();
+		SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, SaveReceivedMessages FROM tblBoard;");
 		st.Step();
+		while(st.RowReturned())
+		{
+			std::string boardname="";
+			std::string tempval="";
+			st.ResultText(0,boardname);
+			st.ResultText(1,tempval);
+
+			if(tempval=="true")
+			{
+				m_boardscache[boardname]=true;
+			}
+			else
+			{
+				m_boardscache[boardname]=false;
+			}
+
+			st.Step();
+		}
+		m_boardscacheupdate=Poco::DateTime();
 	}
+
+	boards=m_boardscache;
+
 }
 
 const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 {	
 	SQLite3DB::Statement st;
-	SQLite3DB::Statement trustst;
 	std::vector<std::string> idparts;
 	long datalength;
 	std::vector<char> data;
 	MessageListXML xml;
 	long identityid;
+	long fromidentityid;
 	long index;
 	std::map<std::string,bool> boards;	// list of boards and if we will save messages for that board or not
+	std::map<std::string,long> identityids;	// list of identity public keys and their id in the database
 	bool addmessage=false;
 	std::string boardsstr="";
 	std::string datestr="";
@@ -119,6 +128,8 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 	StringFunctions::Convert(message["DataLength"],datalength);
 	StringFunctions::Convert(idparts[1],identityid);
 	StringFunctions::Convert(idparts[2],index);
+
+	fromidentityid=identityid;
 
 	// wait for all data to be received from connection
 	m_fcp->WaitForBytes(1000,datalength);
@@ -138,9 +149,10 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 
 		m_db->Execute("BEGIN;");
 
-		SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblMessageRequests WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
 		SQLite3DB::Statement spk=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
-		SQLite3DB::Statement mst=m_db->Prepare("INSERT INTO tblMessageRequests(IdentityID,Day,RequestIndex,FromMessageList) VALUES(?,?,?,'true');");
+		SQLite3DB::Statement mst=m_db->Prepare("INSERT INTO tblMessageRequests(IdentityID,Day,RequestIndex,FromMessageList,FromIdentityID) VALUES(?,?,?,'true',?);");
+		SQLite3DB::Statement ust=m_db->Prepare("UPDATE tblMessageRequests SET FromIdentityID=? WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
+
 		for(long i=0; i<xml.MessageCount(); i++)
 		{
 
@@ -182,19 +194,25 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 
 			if(addmessage==true)
 			{
-				st.Bind(0,identityid);
-				st.Bind(1,xml.GetDate(i));
-				st.Bind(2,xml.GetIndex(i));
-				st.Step();
-				if(st.RowReturned()==false)
-				{
-					mst.Bind(0,identityid);
-					mst.Bind(1,xml.GetDate(i));
-					mst.Bind(2,xml.GetIndex(i));
-					mst.Step();
-					mst.Reset();
-				}
-				st.Reset();
+				mst.Bind(0,identityid);
+				mst.Bind(1,xml.GetDate(i));
+				mst.Bind(2,xml.GetIndex(i));
+				mst.Bind(3,identityid);
+				mst.Step();
+				mst.Reset();
+
+				// We need to update ID here, in case this index was already inserted from another
+				// identity's message list.  This doesn't reset try count - maybe we should if the from
+				// identity was another identity
+				ust.Bind(0,identityid);
+				ust.Bind(1,identityid);
+				ust.Bind(2,xml.GetDate(i));
+				ust.Bind(3,xml.GetIndex(i));
+				ust.Step();
+				ust.Reset();
+
+				m_requestindexcache[xml.GetDate(i)][identityid].insert(xml.GetIndex(i));
+
 			}
 			else
 			{
@@ -245,19 +263,36 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 
 				if(addmessage==true)
 				{
-					spk.Bind(0,xml.GetExternalIdentity(i));
-					spk.Step();
-					if(spk.RowReturned())
+					int thisidentityid=0;
+					if(identityids.find(xml.GetExternalIdentity(i))!=identityids.end())
 					{
-						int thisidentityid=0;
-						spk.ResultInt(0,thisidentityid);
+						thisidentityid=identityids[xml.GetExternalIdentity(i)];
+					}
+					else
+					{
+						spk.Bind(0,xml.GetExternalIdentity(i));
+						spk.Step();
+
+						if(spk.RowReturned())
+						{
+							spk.ResultInt(0,thisidentityid);
+							identityids[xml.GetExternalIdentity(i)]=thisidentityid;
+						}
+
+						spk.Reset();
+					}
+
+					if(thisidentityid!=0 && m_requestindexcache[xml.GetExternalDate(i)][thisidentityid].find(xml.GetExternalIndex(i))==m_requestindexcache[xml.GetExternalDate(i)][thisidentityid].end())
+					{
 						mst.Bind(0,thisidentityid);
 						mst.Bind(1,xml.GetExternalDate(i));
 						mst.Bind(2,xml.GetExternalIndex(i));
+						mst.Bind(3,fromidentityid);
 						mst.Step();
 						mst.Reset();
+
+						m_requestindexcache[xml.GetExternalDate(i)][thisidentityid].insert(xml.GetExternalIndex(i));
 					}
-					spk.Reset();
 				}
 				else
 				{
@@ -272,6 +307,10 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 		st.Bind(2,index);
 		st.Step();
 		st.Finalize();
+
+		spk.Finalize();
+		mst.Finalize();
+		ust.Finalize();
 
 		m_db->Execute("COMMIT;");
 
@@ -292,6 +331,12 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 
 	// remove this identityid from request list
 	RemoveFromRequestList(identityid);
+
+	// keep 2 days of request indexes in the cache
+	while(m_requestindexcache.size()>2)
+	{
+		m_requestindexcache.erase(m_requestindexcache.begin());
+	}
 
 	return true;
 
@@ -383,6 +428,8 @@ void MessageListRequester::Initialize()
 	option.Get("MessageDownloadMaxDaysBackward",tempval);
 	StringFunctions::Convert(tempval,m_messagedownloadmaxdaysbackward);
 
+	m_boardscacheupdate=Poco::DateTime()-Poco::Timespan(1,0,0,0,0);
+
 }
 
 void MessageListRequester::PopulateIDList()
@@ -396,11 +443,11 @@ void MessageListRequester::PopulateIDList()
 	// select identities we want to query (we've seen them today) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
 	if(m_localtrustoverrides==false)
 	{
-		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity INNER JOIN vwIdentityStats ON tblIdentity.IdentityID=vwIdentityStats.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (vwIdentityStats.LastMessageDate>='"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust IS NULL OR LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust')) AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity INNER JOIN vwIdentityStats ON tblIdentity.IdentityID=vwIdentityStats.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (vwIdentityStats.LastMessageDate>='"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust IS NULL OR LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust')) AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')) AND FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	}
 	else
 	{
-		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity INNER JOIN vwIdentityStats ON tblIdentity.IdentityID=vwIdentityStats.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (vwIdentityStats.LastMessageDate>='"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity INNER JOIN vwIdentityStats ON tblIdentity.IdentityID=vwIdentityStats.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (vwIdentityStats.LastMessageDate>='"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) AND FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	}
 	st.Step();
 

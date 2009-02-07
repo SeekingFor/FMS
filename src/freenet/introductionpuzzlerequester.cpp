@@ -215,7 +215,7 @@ void IntroductionPuzzleRequester::PopulateIDList()
 	st.Finalize();
 
 	// select identities that aren't single use, are publishing a trust list, and have been seen today ( order by trust DESC and limit to limitnum )
-	st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublishTrustList='true' AND PublicKey IS NOT NULL AND PublicKey <> '' AND SingleUse='false' AND (LocalTrustListTrust IS NULL OR LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust')) AND LastSeen>='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"' ORDER BY LocalMessageTrust DESC LIMIT 0,"+limitnum+";");
+	st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublishTrustList='true' AND PublicKey IS NOT NULL AND PublicKey <> '' AND SingleUse='false' AND (LocalTrustListTrust IS NULL OR LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust')) AND LastSeen>='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"' AND FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LocalMessageTrust DESC LIMIT 0,"+limitnum+";");
 	st.Step();
 
 	m_ids.clear();

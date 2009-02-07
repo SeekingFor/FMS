@@ -22,6 +22,14 @@ MessageListInserter::MessageListInserter(SQLite3DB::DB *db, FCPv2::Connection *f
 
 void MessageListInserter::CheckForNeededInsert()
 {
+
+	// more than 10 minutes trying to insert - restart
+	if(m_inserting.size()>0 && (m_laststartedinsert+Poco::Timespan(0,0,10,0,0)<=Poco::DateTime()))
+	{
+		m_log->error("MessageListInserter::CheckForNeededInsert more than 10 minutes have passed without success/failure.  Clearing inserts.");
+		m_inserting.clear();
+	}
+
 	// only do 1 insert at a time
 	if(m_inserting.size()==0)
 	{
@@ -42,7 +50,8 @@ void MessageListInserter::CheckForNeededInsert()
 		sql="SELECT tblLocalIdentity.LocalIdentityID ";
 		sql+="FROM tblLocalIdentity INNER JOIN tblMessageInserts ON tblLocalIdentity.LocalIdentityID=tblMessageInserts.LocalIdentityID ";
 		sql+="WHERE tblMessageInserts.Day>=? AND ((tblLocalIdentity.LastInsertedMessageList<=? OR tblLocalIdentity.LastInsertedMessageList IS NULL OR tblLocalIdentity.LastInsertedMessageList='') OR tblLocalIdentity.LocalIdentityID IN (SELECT LocalIdentityID FROM tmpMessageListInsert)) ";
-		sql+="GROUP BY tblLocalIdentity.LocalIdentityID;";
+		sql+="GROUP BY tblLocalIdentity.LocalIdentityID ";
+		sql+="ORDER BY tblLocalIdentity.LastInsertedMessageList;";
 
 		SQLite3DB::Statement st=m_db->Prepare(sql);
 		st.Bind(0,Poco::DateTimeFormatter::format(previous,"%Y-%m-%d"));
@@ -204,9 +213,10 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	st.Finalize();
 
 
-	st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL ORDER BY MessageDate DESC, MessageTime DESC LIMIT 200;");
+	st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL ORDER BY MessageDate DESC, MessageTime DESC LIMIT 175;");
 	SQLite3DB::Statement st2=m_db->Prepare("SELECT BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
 	st.Step();
+
 	while(st.RowReturned())
 	{
 		std::string day;
@@ -280,10 +290,19 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		m_inserting.push_back(localidentityid);
 		m_lastinsertedxml[localidentityid]=xmlstr;
 
+		m_laststartedinsert=Poco::DateTime();
+
 		return true;
 	}
 	else
 	{
+
+		// xml was the same one that we inserted 30 minutes ago, reset date so we don't continue checking every minute
+		st=m_db->Prepare("UPDATE tblLocalIdentity SET LastInsertedMessageList=? WHERE LocalIdentityID=?;");
+		st.Bind(0,Poco::DateTimeFormatter::format(Poco::DateTime(),"%Y-%m-%d %H:%M:%S"));
+		st.Bind(1,localidentityid);
+		st.Step();
+
 		return false;
 	}
 

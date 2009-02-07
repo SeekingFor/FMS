@@ -51,23 +51,34 @@ const bool MessageInserter::HandlePutFailed(FCPv2::Message &message)
 	int index;
 	int localidentityid;
 	std::vector<std::string> idparts;
-	StringFunctions::Split(message["Identifier"],"|",idparts);
-	StringFunctions::Convert(idparts[2],localidentityid);
-	StringFunctions::Convert(idparts[3],index);
 
-	// fatal put - or data exists - insert bogus index into database so we'll try to insert this message again
-	if(message["Fatal"]=="true" || message["Code"]=="9")
+	// do check to make sure this is the non-editioned SSK - we ignore failure/success for editioned SSK for now
+	if(message["Identifier"].find(".xml")!=std::string::npos)
 	{
-		SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblMessageInserts(LocalIdentityID,Day,InsertIndex,Inserted) VALUES(?,?,?,'true');");
-		st.Bind(0,localidentityid);
-		st.Bind(1,idparts[6]);
-		st.Bind(2,index);
-		st.Step();
+
+		StringFunctions::Split(message["Identifier"],"|",idparts);
+		StringFunctions::Convert(idparts[2],localidentityid);
+		StringFunctions::Convert(idparts[3],index);
+
+		// fatal put - or data exists - insert bogus index into database so we'll try to insert this message again
+		if(message["Fatal"]=="true" || message["Code"]=="9")
+		{
+			SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblMessageInserts(LocalIdentityID,Day,InsertIndex,Inserted) VALUES(?,?,?,'true');");
+			st.Bind(0,localidentityid);
+			st.Bind(1,idparts[6]);
+			st.Bind(2,index);
+			st.Step();
+		}
+
+		m_log->trace("MessageInserter::HandlePutFailed error code "+message["Code"]+" fatal="+message["Fatal"]);
+
+		RemoveFromInsertList(idparts[1]);
+
 	}
-
-	m_log->trace("MessageInserter::HandlePutFailed error code "+message["Code"]+" fatal="+message["Fatal"]);
-
-	RemoveFromInsertList(idparts[1]);
+	else
+	{
+		m_log->trace("MessageInserter::HandlePutFailed for editioned SSK error code "+message["Code"]+ " id "+message["Identifier"]);
+	}
 
 	return true;
 }
@@ -80,50 +91,60 @@ const bool MessageInserter::HandlePutSuccessful(FCPv2::Message &message)
 	int index;
 	std::vector<std::string> idparts;
 
-	StringFunctions::Split(message["Identifier"],"|",idparts);
-	StringFunctions::Convert(idparts[3],index);
-	StringFunctions::Convert(idparts[2],localidentityid);
-
-	SQLite3DB::Statement st=m_db->Prepare("UPDATE tblMessageInserts SET Day=?, InsertIndex=?, Inserted='true' WHERE MessageUUID=?;");
-	st.Bind(0,idparts[6]);
-	st.Bind(1,index);
-	st.Bind(2,idparts[1]);
-	st.Step();
-
-	// insert record into temp table so MessageList will be inserted ASAP
-	date=Poco::Timestamp();
-	st=m_db->Prepare("INSERT INTO tmpMessageListInsert(LocalIdentityID,Date) VALUES(?,?);");
-	st.Bind(0,localidentityid);
-	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
-	st.Step();
-
-	// update the messageuuid to the real messageuuid
-	st=m_db->Prepare("SELECT MessageXML FROM tblMessageInserts WHERE MessageUUID=?;");
-	st.Bind(0,idparts[1]);
-	st.Step();
-	if(st.RowReturned())
+	// do check to make sure this is the non-editioned SSK - we ignore failure/success for editioned SSK for now
+	if(message["Identifier"].find(".xml")!=std::string::npos)
 	{
-		std::string xmldata="";
-		st.ResultText(0,xmldata);
-		xml.ParseXML(xmldata);
-		xml.SetMessageID(idparts[4]);
 
-		SQLite3DB::Statement st2=m_db->Prepare("UPDATE tblMessageInserts SET MessageUUID=?, MessageXML=? WHERE MessageUUID=?;");
-		st2.Bind(0,idparts[4]);
-		st2.Bind(1,xml.GetXML());
-		st2.Bind(2,idparts[1]);
-		st2.Step();
+		StringFunctions::Split(message["Identifier"],"|",idparts);
+		StringFunctions::Convert(idparts[3],index);
+		StringFunctions::Convert(idparts[2],localidentityid);
 
-		//update file insert MessageUUID as well
-		st2=m_db->Prepare("UPDATE tblFileInserts SET MessageUUID=? WHERE MessageUUID=?;");
-		st2.Bind(0,idparts[4]);
-		st2.Bind(1,idparts[1]);
-		st2.Step();
+		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblMessageInserts SET Day=?, InsertIndex=?, Inserted='true' WHERE MessageUUID=?;");
+		st.Bind(0,idparts[6]);
+		st.Bind(1,index);
+		st.Bind(2,idparts[1]);
+		st.Step();
+
+		// insert record into temp table so MessageList will be inserted ASAP
+		date=Poco::Timestamp();
+		st=m_db->Prepare("INSERT INTO tmpMessageListInsert(LocalIdentityID,Date) VALUES(?,?);");
+		st.Bind(0,localidentityid);
+		st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+		st.Step();
+
+		// update the messageuuid to the real messageuuid
+		st=m_db->Prepare("SELECT MessageXML FROM tblMessageInserts WHERE MessageUUID=?;");
+		st.Bind(0,idparts[1]);
+		st.Step();
+		if(st.RowReturned())
+		{
+			std::string xmldata="";
+			st.ResultText(0,xmldata);
+			xml.ParseXML(xmldata);
+			xml.SetMessageID(idparts[4]);
+
+			SQLite3DB::Statement st2=m_db->Prepare("UPDATE tblMessageInserts SET MessageUUID=?, MessageXML=? WHERE MessageUUID=?;");
+			st2.Bind(0,idparts[4]);
+			st2.Bind(1,xml.GetXML());
+			st2.Bind(2,idparts[1]);
+			st2.Step();
+
+			//update file insert MessageUUID as well
+			st2=m_db->Prepare("UPDATE tblFileInserts SET MessageUUID=? WHERE MessageUUID=?;");
+			st2.Bind(0,idparts[4]);
+			st2.Bind(1,idparts[1]);
+			st2.Step();
+		}
+
+		RemoveFromInsertList(idparts[1]);
+
+		m_log->debug("MessageInserter::HandlePutSuccessful successfully inserted message "+message["Identifier"]);
+
 	}
-
-	RemoveFromInsertList(idparts[1]);
-
-	m_log->debug("MessageInserter::HandlePutSuccessful successfully inserted message "+message["Identifier"]);
+	else
+	{
+		m_log->debug("MessageInserter::HandlePutSuccessful for editioned SSK "+message["Identifier"]);
+	}
 
 	return true;
 }
@@ -206,6 +227,16 @@ const bool MessageInserter::StartInsert(const std::string &messageuuid)
 		message.SetName("ClientPut");
 		message["URI"]=privatekey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Message|"+indexstr+".xml";
 		message["Identifier"]=m_fcpuniquename+"|"+messageuuid+"|"+idstr+"|"+indexstr+"|"+xmlfile.GetMessageID()+"|"+message["URI"];
+		message["UploadFrom"]="direct";
+		message["DataLength"]=xmlsizestr;
+		m_fcp->Send(message);
+		m_fcp->Send(std::vector<char>(xml.begin(),xml.end()));
+
+		// test insert as editioned SSK
+		message.Clear();
+		message.SetName("ClientPut");
+		message["URI"]=privatekey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Message|-"+indexstr;
+		message["Identifier"]=m_fcpuniquename+"|"+message["URI"];
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmlsizestr;
 		m_fcp->Send(message);

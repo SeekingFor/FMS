@@ -395,6 +395,38 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Step();
 	upd.Reset();
 
+	st.Bind(0,"MaxFailureCount");
+	st.Bind(1,"1000");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Requests");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"The maximum number of failed message requests an identity must accumulate before you will completely ignore an identity.  Request failures can happen even under the best circumstances, and may accumulate rapidly, so it is best to keep this at a high level to avoid false positives.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"MaxFailureCount");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"FailureCountReduction");
+	st.Bind(1,"500");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Requests");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"Each identity's failure count will be reduced by this amount every day.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"FailureCountReduction");
+	upd.Step();
+	upd.Reset();
+
 	st.Bind(0,"MinLocalMessageTrust");
 	st.Bind(1,"50");
 	st.Step();

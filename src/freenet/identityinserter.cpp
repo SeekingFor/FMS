@@ -84,29 +84,45 @@ const bool IdentityInserter::HandleMessage(FCPv2::Message &message)
 			Poco::DateTime lastdate;
 			int tzdiff=0;
 			Poco::DateTimeParser::tryParse("%Y-%m-%d",idparts[4],lastdate,tzdiff);
-
-			if(lastdate.day()==now.day())
+	
+			// do check to make sure this is the non-editioned SSK - we ignore failure/success for editioned SSK for now
+			if(message["Identifier"].find(".xml")!=std::string::npos)
 			{
-				m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
+				if(lastdate.day()==now.day())
+				{
+					m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
+				}
+				else
+				{
+					m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID="+idparts[1]+";");
+				}
+				m_db->Execute("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
+				m_log->debug("IdentityInserter::HandleMessage inserted Identity xml");
 			}
 			else
 			{
-				m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID="+idparts[1]+";");
+				m_log->trace("IdentityInserter::HandleMessage inserted editioned Identity xml");
 			}
-			m_db->Execute("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
-			m_log->debug("IdentityInserter::HandleMessage inserted Identity xml");
 			return true;
 		}
 
 		if(message.GetName()=="PutFailed")
 		{
-			m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID="+idparts[1]+";");
-			m_log->debug("IdentityInserter::HandleMessage failure inserting Identity xml.  Code="+message["Code"]+" Description="+message["CodeDescription"]);
-			
-			// if code 9 (collision), then insert index into inserted table
-			if(message["Code"]=="9")
+			// do check to make sure this is the non-editioned SSK - we ignore failure/success for editioned SSK for now
+			if(message["Identifier"].find(".xml")!=std::string::npos)
 			{
-				m_db->Execute("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
+				m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID="+idparts[1]+";");
+				m_log->debug("IdentityInserter::HandleMessage failure inserting Identity xml.  Code="+message["Code"]+" Description="+message["CodeDescription"]);
+				
+				// if code 9 (collision), then insert index into inserted table
+				if(message["Code"]=="9")
+				{
+					m_db->Execute("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
+				}
+			}
+			else
+			{
+				m_log->trace("IdentityInserter::HandleMessage PutFailed for editioned SSK error code "+message["Code"]+ " id "+message["Identifier"]);
 			}
 			
 			return true;
@@ -231,6 +247,16 @@ void IdentityInserter::StartInsert(const long localidentityid)
 		mess.SetName("ClientPut");
 		mess["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Identity|"+indexstr+".xml";
 		mess["Identifier"]="IdentityInserter|"+idstring+"|"+indexstr+"|"+mess["URI"];
+		mess["UploadFrom"]="direct";
+		mess["DataLength"]=datasizestr;
+		m_fcp->Send(mess);
+		m_fcp->Send(std::vector<char>(data.begin(),data.end()));
+
+		// test insert as editioned SSK
+		mess.Clear();
+		mess.SetName("ClientPut");
+		mess["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Identity|-"+indexstr;
+		mess["Identifier"]="IdentityInserter|"+mess["URI"];
 		mess["UploadFrom"]="direct";
 		mess["DataLength"]=datasizestr;
 		m_fcp->Send(mess);

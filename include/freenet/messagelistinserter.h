@@ -18,6 +18,7 @@ private:
 
 	long m_daysbackward;
 	std::map<long,std::string> m_lastinsertedxml;	// last xml document inserted for each local identity
+	Poco::DateTime m_laststartedinsert;
 
 };
 
