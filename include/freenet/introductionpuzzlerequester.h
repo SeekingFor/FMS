@@ -18,6 +18,8 @@ private:
 	const bool HandleAllData(FCPv2::Message &message);
 	const bool HandleGetFailed(FCPv2::Message &message);
 
+	static std::string m_validuuidchars;
+
 };
 
 #endif	// _introductionpuzzlerequester_

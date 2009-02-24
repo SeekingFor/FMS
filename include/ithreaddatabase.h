@@ -17,7 +17,7 @@ public:
 	{
 		if(m_db)
 		{
-			delete m_db;	
+			delete m_db;
 		}
 		m_db=new SQLite3DB::DB("fms.db3");
 		m_db->SetBusyTimeout(40000);		// set timeout to 40 seconds

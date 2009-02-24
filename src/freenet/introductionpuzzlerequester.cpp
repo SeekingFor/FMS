@@ -14,6 +14,8 @@
 	#include <xmem.h>
 #endif
 
+std::string IntroductionPuzzleRequester::m_validuuidchars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890~@_-";
+
 IntroductionPuzzleRequester::IntroductionPuzzleRequester(SQLite3DB::DB *db):IIndexRequester<long>(db)
 {
 	Initialize();
@@ -73,7 +75,7 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPv2::Message &message)
 			StringFunctions::SplitMultiple(publickey,"@,",keyparts);
 			StringFunctions::SplitMultiple(xml.GetUUID(),"@",uuidparts);
 
-			if(uuidparts.size()>1 && keyparts.size()>1)
+			if(uuidparts.size()>1 && keyparts.size()>1 && xml.GetUUID().find_first_not_of(m_validuuidchars)==std::string::npos)
 			{
 				keypart=StringFunctions::Replace(StringFunctions::Replace(keyparts[1],"-",""),"~","");
 				if(keypart!=uuidparts[1])

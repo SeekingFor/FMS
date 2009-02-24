@@ -38,7 +38,7 @@ const std::string ExecQueryPage::GeneratePage(const std::string &method, const s
 				content+="<td>";
 				if(rs.GetField(i))
 				{
-					content+=rs.GetField(i);
+					content+=SanitizeOutput(std::string(rs.GetField(i)));
 				}
 				content+="</td>";
 			}

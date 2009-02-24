@@ -7,6 +7,13 @@
 #endif
 
 std::map<std::string,std::vector<char> > ShowImagePage::m_imagecache;
+std::set<std::string> ShowImagePage::m_imagewhitelist;
+
+ShowImagePage::ShowImagePage(SQLite3DB::DB *db):IPageHandler(db)
+{
+	m_imagewhitelist.insert("images/new_posts.png");
+	m_imagewhitelist.insert("images/no_new_posts.png");
+}
 
 void ShowImagePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response)
 {
@@ -21,7 +28,7 @@ void ShowImagePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::N
 	}
 
 	std::string content="";
-	if(queryvars.find("image")!=queryvars.end())
+	if(queryvars.find("image")!=queryvars.end() && m_imagewhitelist.find((*queryvars.find("image")).second)!=m_imagewhitelist.end())
 	{
 		if(m_imagecache.find((*queryvars.find("image")).second)!=m_imagecache.end())
 		{

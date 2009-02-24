@@ -153,7 +153,7 @@ public:
 	/**
 		\brief Creates an FCP connection to a Freenet node
 
-		If the instaciated object has an existing connection open, it will be closed.
+		If the instanciated object has an existing connection open, it will be closed.
 
 		\param fcphost The IP Address, hostname, FQDN, or other resolvable name that points to the Freenet node
 		\param fcpport The port that the Freenet node is listening for FCP connections on

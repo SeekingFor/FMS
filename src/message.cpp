@@ -157,7 +157,7 @@ const std::string Message::GetNNTPHeaders() const
 {
 	std::string rval("");
 
-	rval+="From: "+m_fromname+"\r\n";
+	rval+="From: "+SanitizeFromName(m_fromname)+"\r\n";
 	rval+="Newsgroups: ";
 	for(std::vector<std::string>::const_iterator i=m_boards.begin(); i!=m_boards.end(); i++)
 	{
@@ -825,6 +825,11 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 	}
 
 	return true;
+}
+
+const std::string Message::SanitizeFromName(const std::string &fromname) const
+{
+	return StringFunctions::Replace(fromname,",","_");
 }
 
 const bool Message::StartFreenetInsert()

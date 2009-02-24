@@ -117,13 +117,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=16;
 		}
+		if(major==1 && minor==16)
+		{
+			ConvertDB0116To0117(db);
+			major=1;
+			minor=17;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,16);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,17);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=16;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=17;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -320,6 +326,7 @@ void SetupDB(SQLite3DB::DB *db)
 				MessageUUID			TEXT UNIQUE,\
 				ReplyBoardID		INTEGER,\
 				Body				TEXT,\
+				InsertDate			DATE,\
 				MessageIndex		INTEGER,\
 				Read				INTEGER CHECK(Read IN(0,1)) DEFAULT 0\
 				);");
@@ -431,7 +438,7 @@ void SetupDB(SQLite3DB::DB *db)
 				PostOrder		INTEGER\
 				);");
 
-	db->Execute("CREATE INDEX IF NOT EXISTS idxThreadPost_ThreadID ON tblThreadPost(ThreadID);");
+	db->Execute("CREATE UNIQUE INDEX IF NOT EXISTS idxThreadPost_ThreadMessage ON tblThreadPost(ThreadID,MessageID);");
 	db->Execute("CREATE INDEX IF NOT EXISTS idxThreadPost_MessageID ON tblThreadPost(MessageID);");
 
 	db->Execute("CREATE TRIGGER IF NOT EXISTS trgDeleteOnThread AFTER DELETE ON tblThread\

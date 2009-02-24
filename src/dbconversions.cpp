@@ -252,6 +252,16 @@ void ConvertDB0115To0116(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=16;");
 }
 
+void ConvertDB0116To0117(SQLite3DB::DB *db)
+{
+	// Add InsertDate to tblMessage
+
+	db->Execute("ALTER TABLE tblMessage ADD COLUMN InsertDate DATE;");
+	db->Execute("DROP INDEX IF EXISTS idxThreadPost_ThreadID;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=17;");
+}
+
 void FixCapitalBoardNames(SQLite3DB::DB *db)
 {
 

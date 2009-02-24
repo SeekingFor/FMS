@@ -60,6 +60,7 @@ private:
 	void HandleChangeTrust();
 	void StripAdministrationBoards();	// removes administration boards from boards vector
 	const int FindLocalIdentityID(const std::string &name);
+	const std::string SanitizeFromName(const std::string &fromname) const;
 
 	struct fileattachment
 	{

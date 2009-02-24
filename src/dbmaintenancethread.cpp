@@ -4,6 +4,8 @@
 #include "../include/threadbuilder.h"
 #include "../include/dbsetup.h"
 
+#include <vector>
+
 #include <Poco/Timestamp.h>
 #include <Poco/Timespan.h>
 #include <Poco/DateTimeFormatter.h>
@@ -21,35 +23,57 @@ DBMaintenanceThread::DBMaintenanceThread()
 	m_last6hour-=Poco::Timespan(0,5,42,0,0);
 	m_last1day=Poco::Timestamp();
 	m_last1day-=Poco::Timespan(0,23,51,0,0);
-
-
-
 }
 
 
 void DBMaintenanceThread::Do10MinuteMaintenance()
 {
+	std::vector<std::pair<long,long> > m_unthreadedmessages;
 	Option option(m_db);
 	std::string ll("");
 	option.Get("LogLevel",ll);
 
-	// TODO - remove after corruption issue fixed
-	if(ll=="8")
-	{
-		std::string dbres=TestDBIntegrity(m_db);
-		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() start TestDBIntegrity returned "+dbres);
-	}
-
 	ThreadBuilder tb(m_db);
 	SQLite3DB::Statement boardst=m_db->Prepare("SELECT BoardID FROM tblBoard WHERE Forum='true';");
 	// select messages for a board that aren't in a thread
+	// This query was causing the db to be locked and a journal file created.
+	// build a list of boards and messageids and then use that instead of keeping the query in use
 	SQLite3DB::Statement selectst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblMessage \
-												INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID\
+												INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID \
 												LEFT JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID \
-												LEFT JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID\
-												WHERE tblMessageBoard.BoardID=? AND tblThread.BoardID IS NULL;");
+												WHERE tblMessageBoard.BoardID=? AND tblThreadPost.MessageID IS NULL;");
 
 	boardst.Step();
+	while(boardst.RowReturned())
+	{
+		int boardid=-1;
+		boardst.ResultInt(0,boardid);
+		boardst.Step();
+
+		selectst.Bind(0,boardid);
+		selectst.Step();
+
+		while(selectst.RowReturned())
+		{
+			int messageid=-1;
+
+			selectst.ResultInt(0,messageid);
+
+			m_unthreadedmessages.push_back(std::pair<long,long>(boardid,messageid));
+
+			selectst.Step();
+		}
+		selectst.Reset();
+	}
+	selectst.Finalize();
+	boardst.Finalize();
+
+	for(std::vector<std::pair<long,long> >::iterator i=m_unthreadedmessages.begin(); i!=m_unthreadedmessages.end(); i++)
+	{
+		tb.Build((*i).second,(*i).first,true);
+	}
+	
+	/*
 	while(boardst.RowReturned())
 	{
 		int boardid=-1;
@@ -72,20 +96,9 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 		selectst.Reset();
 
 		boardst.Step();
+		boardst.Reset();
 	}
-
-	// TODO - remove after corruption issue fixed
-	if(ll=="8")
-	{
-		std::string dbres=TestDBIntegrity(m_db);
-		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() middle TestDBIntegrity returned "+dbres);
-		if(dbres!="ok")
-		{
-			m_db->Execute("REINDEX;");
-			dbres=TestDBIntegrity(m_db);
-			m_log->trace("DBMaintenanceThread::Do10MinuteMaintenenace() middle after reindex returned "+dbres);
-		}
-	}
+	*/
 
 	// now rebuild threads where the message has been deleted
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblThreadPost.MessageID, tblThread.BoardID FROM tblThreadPost INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID LEFT JOIN tblMessage ON tblThreadPost.MessageID=tblMessage.MessageID WHERE tblMessage.MessageID IS NULL;");
@@ -111,6 +124,12 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 	{
 		std::string dbres=TestDBIntegrity(m_db);
 		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() end TestDBIntegrity returned "+dbres);
+		if(dbres!="ok")
+		{
+			m_db->Execute("REINDEX;");
+			dbres=TestDBIntegrity(m_db);
+			m_log->trace("DBMaintenanceThread::Do10MinuteMaintenenace() end after reindex returned "+dbres);
+		}
 	}
 
 	m_log->debug("PeriodicDBMaintenance::Do10MinuteMaintenance");

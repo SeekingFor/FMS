@@ -3,10 +3,13 @@
 
 #include "../ipagehandler.h"
 
+#include <map>
+#include <set>
+
 class ShowImagePage:public IPageHandler
 {
 public:
-	ShowImagePage(SQLite3DB::DB *db):IPageHandler(m_db)			{}
+	ShowImagePage(SQLite3DB::DB *db);
 
 	void handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response);
 
@@ -17,6 +20,7 @@ private:
 	const std::string GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars) {return "";}
 
 	static std::map<std::string,std::vector<char> > m_imagecache;
+	static std::set<std::string> m_imagewhitelist;
 
 };
 

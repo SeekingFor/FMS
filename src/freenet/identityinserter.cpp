@@ -79,15 +79,15 @@ const bool IdentityInserter::HandleMessage(FCPv2::Message &message)
 
 		if(message.GetName()=="PutSuccessful")
 		{
-			// a little hack here - if we just inserted index yesterday and it is now the next day - we would have inserted todays date not yesterdays as LastInsertedIdentity.
-			// If this is the case, we will skip updating LastInsertedIdentity so that we can insert this identity again for today
-			Poco::DateTime lastdate;
-			int tzdiff=0;
-			Poco::DateTimeParser::tryParse("%Y-%m-%d",idparts[4],lastdate,tzdiff);
 	
 			// do check to make sure this is the non-editioned SSK - we ignore failure/success for editioned SSK for now
 			if(message["Identifier"].find(".xml")!=std::string::npos)
 			{
+				// a little hack here - if we just inserted index yesterday and it is now the next day - we would have inserted todays date not yesterdays as LastInsertedIdentity.
+				// If this is the case, we will skip updating LastInsertedIdentity so that we can insert this identity again for today
+				Poco::DateTime lastdate;
+				int tzdiff=0;
+				Poco::DateTimeParser::tryParse("%Y-%m-%d",idparts[4],lastdate,tzdiff);
 				if(lastdate.day()==now.day())
 				{
 					m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
@@ -255,7 +255,7 @@ void IdentityInserter::StartInsert(const long localidentityid)
 		// test insert as editioned SSK
 		mess.Clear();
 		mess.SetName("ClientPut");
-		mess["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Identity|-"+indexstr;
+		mess["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Identity-"+indexstr;
 		mess["Identifier"]="IdentityInserter|"+mess["URI"];
 		mess["UploadFrom"]="direct";
 		mess["DataLength"]=datasizestr;

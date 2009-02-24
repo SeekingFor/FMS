@@ -235,7 +235,7 @@ const bool MessageInserter::StartInsert(const std::string &messageuuid)
 		// test insert as editioned SSK
 		message.Clear();
 		message.SetName("ClientPut");
-		message["URI"]=privatekey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Message|-"+indexstr;
+		message["URI"]=privatekey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Message-"+indexstr;
 		message["Identifier"]=m_fcpuniquename+"|"+message["URI"];
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmlsizestr;

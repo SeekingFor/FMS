@@ -20,7 +20,7 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 	mt.Load(messageid,boardid,bydate);
 	m_threadmessages=mt.GetNodes();
 
-	//m_db->Execute("BEGIN;");
+	m_db->Execute("BEGIN;");
 
 	// find threadid of this mesage if it already exists in a thread
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblThread.ThreadID FROM tblThread INNER JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE tblThread.BoardID=? AND tblThreadPost.MessageID=?;");
@@ -95,6 +95,7 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 			st.Reset();
 
 		}
+		st.Finalize();
 
 		// thread doesn't exist - create it
 		if(threadid==-1)
@@ -137,26 +138,15 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 			logmessage+="update bind fmessageid=" + temp1 + " lmessageid=" + temp2 + " threadid=" + temp3 + " | ";
 		}
 
-		SQLite3DB::Statement st3=m_db->Prepare("DELETE FROM tblThreadPost WHERE ThreadID=?;");
-		st3.Bind(0,threadid);
-		st3.Step();
-
-		if(ll=="8")
-		{
-			std::string temp1("");
-			StringFunctions::Convert(threadid,temp1);
-
-			logmessage+="delete bind threadid=" + temp1 + " | ";
-		}
-
-		SQLite3DB::Statement deleteotherst=m_db->Prepare("DELETE FROM tblThread WHERE ThreadID IN (SELECT tblThread.ThreadID FROM tblThreadPost INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblThread.BoardID=? AND tblThreadPost.MessageID=?);");
+		SQLite3DB::Statement deleteotherst=m_db->Prepare("DELETE FROM tblThread WHERE ThreadID IN (SELECT tblThread.ThreadID FROM tblThreadPost INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblThread.ThreadID<>? AND tblThread.BoardID=? AND tblThreadPost.MessageID=?);");
 
 		count=0;
-		SQLite3DB::Statement st4=m_db->Prepare("INSERT INTO tblThreadPost(ThreadID,MessageID,PostOrder) VALUES(?,?,?);");
+		SQLite3DB::Statement st4=m_db->Prepare("INSERT OR REPLACE INTO tblThreadPost(ThreadID,MessageID,PostOrder) VALUES(?,?,?);");
 		for(std::vector<MessageThread::threadnode>::const_iterator i=m_threadmessages.begin(); i!=m_threadmessages.end(); i++, count++)
 		{
-			deleteotherst.Bind(0,boardid);
-			deleteotherst.Bind(1,(*i).m_messageid);
+			deleteotherst.Bind(0,threadid);
+			deleteotherst.Bind(1,boardid);
+			deleteotherst.Bind(2,(*i).m_messageid);
 			deleteotherst.Step();
 			deleteotherst.Reset();
 
@@ -209,7 +199,7 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 
 	st.Finalize();
 
-	//m_db->Execute("COMMIT;");
+	m_db->Execute("COMMIT;");
 
 	if(ll=="8")
 	{

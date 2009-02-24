@@ -135,7 +135,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 			}
 			content+="<td title=\"From "+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"\">";
 			content+="<img src=\"showcaptcha.htm?UUID="+uuid+"\"><br>";
-			content+="<input type=\"hidden\" name=\"uuid["+countstr+"]\" value=\""+uuid+"\">";
+			content+="<input type=\"hidden\" name=\"uuid["+countstr+"]\" value=\""+SanitizeOutput(uuid)+"\">";
 			content+="<input type=\"hidden\" name=\"day["+countstr+"]\" value=\""+day+"\">";
 			content+="<input type=\"text\" name=\"solution["+countstr+"]\">";
 			content+="</td>\r\n";

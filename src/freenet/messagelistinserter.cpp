@@ -213,22 +213,24 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	st.Finalize();
 
 
-	st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL ORDER BY MessageDate DESC, MessageTime DESC LIMIT 175;");
+	st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID, InsertDate FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL ORDER BY MessageDate DESC, MessageTime DESC LIMIT 175;");
 	SQLite3DB::Statement st2=m_db->Prepare("SELECT BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
 	st.Step();
 
 	while(st.RowReturned())
 	{
-		std::string day;
-		int index;
-		std::string publickey;
+		std::string day="";
+		int index=0;
+		std::string publickey="";
 		std::vector<std::string> boardlist;
-		int messageid;
+		int messageid=0;
+		std::string insertdate="";
 		
 		st.ResultText(0,day);
 		st.ResultInt(1,index);
 		st.ResultText(2,publickey);
 		st.ResultInt(3,messageid);
+		st.ResultText(4,insertdate);
 
 		st2.Bind(0,messageid);
 		st2.Step();
@@ -242,7 +244,15 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		}
 		st2.Reset();
 
-		mlxml.AddExternalMessage(publickey,day,index,boardlist);
+		// TODO - remove insertdate empty check sometime after 0.3.32 release and get rid of using day
+		if(insertdate!="")
+		{
+			mlxml.AddExternalMessage(publickey,insertdate,index,boardlist);
+		}
+		else
+		{
+			mlxml.AddExternalMessage(publickey,day,index,boardlist);
+		}
 
 		st.Step();
 	}

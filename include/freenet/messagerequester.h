@@ -25,6 +25,8 @@ private:
 	int m_maxboardspermessage;
 	bool m_savemessagesfromnewboards;
 	bool m_localtrustoverrides;
+
+	static std::string m_validuuidchars;
 	
 };
 

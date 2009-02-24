@@ -11,6 +11,8 @@
 	#include <xmem.h>
 #endif
 
+std::string MessageRequester::m_validuuidchars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890~@_-";
+
 MessageRequester::MessageRequester(SQLite3DB::DB *db):IIndexRequester<std::string>(db)
 {
 	Initialize();
@@ -172,7 +174,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			StringFunctions::SplitMultiple(publickey,"@,",keyparts);
 			StringFunctions::SplitMultiple(xml.GetMessageID(),"@",uuidparts);
 
-			if(uuidparts.size()>1 && keyparts.size()>1)
+			if(uuidparts.size()>1 && keyparts.size()>1 && xml.GetMessageID().find_first_not_of(m_validuuidchars)==std::string::npos)
 			{
 				keypart=StringFunctions::Replace(StringFunctions::Replace(keyparts[1],"-",""),"~","");
 				if(keypart!=uuidparts[1])
@@ -226,7 +228,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 
 			m_db->Execute("BEGIN;");
 
-			st=m_db->Prepare("INSERT INTO tblMessage(IdentityID,FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,MessageIndex) VALUES(?,?,?,?,?,?,?,?,?);");
+			st=m_db->Prepare("INSERT INTO tblMessage(IdentityID,FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,MessageIndex,InsertDate) VALUES(?,?,?,?,?,?,?,?,?,?);");
 			st.Bind(0,identityid);
 			st.Bind(1,GetIdentityName(identityid));
 			st.Bind(2,xml.GetDate());
@@ -236,8 +238,9 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			st.Bind(6,GetBoardID(xml.GetReplyBoard(),GetIdentityName(identityid)));
 			st.Bind(7,nntpbody);
 			st.Bind(8,index);
+			st.Bind(9,idparts[3]);
 			inserted=st.Step(true);
-			int messageid=st.GetLastInsertRowID();
+			long messageid=st.GetLastInsertRowID();
 
 			if(inserted==true)
 			{
