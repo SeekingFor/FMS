@@ -635,6 +635,106 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Step();
 	upd.Reset();
 
+#ifdef FROST_SUPPORT
+
+	st.Bind(0,"DownloadFrostMessages");
+	st.Bind(1,"false");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Frost Support");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Enable downloading of Frost messages.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"DownloadFrostMessages");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"FrostMessageBase");
+	st.Bind(1,"frost");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Frost Support");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"A unique string used by Frost clients who want to communicate with each other.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"FrostMessageBase");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"FrostBoardPrefix");
+	st.Bind(1,"frost.");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Frost Support");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"Messages to boards defined in FMS with this prefix will be downloaded from Frost.  You must manually add boards with this prefix to FMS to download Frost messages from those boards.  The prefix is removed to determine the name of the Frost board to download messages from.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"FrostBoardPrefix");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"FrostSaveAnonymousMessages");
+	st.Bind(1,"true");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Frost Support");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Save Frost messages posted by Anonymous authors.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"FrostSaveAnonymousMessages");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"FrostMessageMaxDaysBackward");
+	st.Bind(1,"5");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Frost Support");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"The maximum number of days backward that Frost messages will be downloaded.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"FrostMessageMaxDaysBackward");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"FrostMaxMessageRequests");
+	st.Bind(1,"20");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Frost Support");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"The maximum number of concurrent requests for new Frost messages.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"FrostMaxMessageRequests");
+	upd.Step();
+	upd.Reset();
+
+#endif	// FROST_SUPPORT
+
 	db->Execute("COMMIT;");
 
 }

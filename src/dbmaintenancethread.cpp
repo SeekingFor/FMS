@@ -40,8 +40,8 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 	// build a list of boards and messageids and then use that instead of keeping the query in use
 	SQLite3DB::Statement selectst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblMessage \
 												INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID \
-												LEFT JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID \
-												WHERE tblMessageBoard.BoardID=? AND tblThreadPost.MessageID IS NULL;");
+												LEFT JOIN (SELECT tblThread.BoardID, tblThreadPost.MessageID FROM tblThread INNER JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE tblThread.BoardID=?) AS temp1 ON tblMessage.MessageID=temp1.MessageID \
+												WHERE tblMessageBoard.BoardID=? AND temp1.BoardID IS NULL;");
 
 	boardst.Step();
 	while(boardst.RowReturned())
@@ -51,6 +51,7 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 		boardst.Step();
 
 		selectst.Bind(0,boardid);
+		selectst.Bind(1,boardid);
 		selectst.Step();
 
 		while(selectst.RowReturned())
@@ -384,14 +385,23 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Step();
 
+	// delete old frost message requests
+	date=Poco::Timestamp();
+	date-=Poco::Timespan(m_frostmaxdaysbackward,0,0,0,0);
+	st=m_db->Prepare("DELETE FROM tblFrostMessageRequests WHERE Day<?;");
+	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+	st.Step();
+
 	// delete tblIdentityTrust for local identities and identities that have been deleted
 	m_db->Execute("DELETE FROM tblIdentityTrust WHERE LocalIdentityID NOT IN (SELECT LocalIdentityID FROM tblLocalIdentity);");
 	m_db->Execute("DELETE FROM tblIdentityTrust WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity);");
 
 
+	// cap failure count
+	m_db->Execute("UPDATE tblIdentity SET FailureCount=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') WHERE FailureCount>(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount');");
 	// reduce failure count for each identity
 	m_db->Execute("UPDATE tblIdentity SET FailureCount=0 WHERE FailureCount<(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
-	m_db->Execute("UPDATE tblIdentity SET FailureCount=FailureCount-(SELECT OptionValue FROM tblOption WHERE OptionName='FailureCountReduction') WHERE FailureCount>=(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
+	m_db->Execute("UPDATE tblIdentity SET FailureCount=FailureCount-(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction') WHERE FailureCount>=(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
 
 	st.Finalize();
 	findst.Finalize();
@@ -420,6 +430,10 @@ void DBMaintenanceThread::run()
 	option.Get("MessageDownloadMaxDaysBackward",tempval);
 	StringFunctions::Convert(tempval,m_messagedownloadmaxdaysbackward);
 
+	m_frostmaxdaysbackward=5;
+	tempval="5";
+	option.Get("FrostMessageMaxDaysBackward",tempval);
+	StringFunctions::Convert(tempval,m_frostmaxdaysbackward);
 
 	Poco::DateTime now;
 	int i=0;

@@ -26,6 +26,11 @@
 	#include <unistd.h>
 #endif
 
+#ifdef FROST_SUPPORT
+	#include <tommath.h>
+	#include <tomcrypt.h>
+#endif
+
 FMSApp::FMSApp():m_displayhelp(false),m_showoptions(false),m_setoption(false),m_logtype("file"),m_workingdirectory("")
 {
 	// get current working dir so we can go to it later
@@ -209,6 +214,11 @@ int FMSApp::main(const std::vector<std::string> &args)
 			logger().information("VACUUMing database");
 			m_db->Execute("VACUUM;");
 		}
+
+#ifdef FROST_SUPPORT
+		ltc_mp=ltm_desc;
+		register_hash(&sha1_desc);
+#endif
 
 		StartThreads();
 

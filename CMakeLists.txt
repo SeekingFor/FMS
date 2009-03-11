@@ -13,6 +13,7 @@ OPTION(DO_CHARSET_CONVERSION "Do charset conversion on sent messages to UTF-8.  
 OPTION(I_HAVE_READ_THE_README "I have fully read and understood the readme.txt." OFF)
 OPTION(ALTERNATE_CAPTCHA "Use alternate captcha.  This requires the FreeImage library." OFF)
 OPTION(QUERY_LOG "Log all database queries made by FMS." OFF)
+OPTION(FROST_SUPPORT "Compile with support for downloading Frost messages." ON)
 
 SET(FMS_SRC
 src/base64.cpp
@@ -133,6 +134,14 @@ ELSE(ALTERNATE_CAPTCHA)
 	MESSAGE(STATUS "You are using the old captcha generator.  Add a -D ALTERNATE_CAPTCHA=ON to the command line to use the alternate captcha generator.")
 ENDIF(ALTERNATE_CAPTCHA)
 
+IF(FROST_SUPPORT)
+# TODO - add source files for frost support
+	SET(FMS_SRC ${FMS_SRC}
+	src/freenet/frostidentity.cpp
+	src/freenet/frostmessagerequester.cpp
+	src/freenet/frostmessagexml.cpp)
+ENDIF(FROST_SUPPORT)
+
 # Get a relative list of include files.
 FILE(GLOB_RECURSE FMS_INC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/*.h)
 
@@ -185,6 +194,7 @@ ENDIF(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 IF(NOT USE_BUNDLED_SQLITE)
 	FIND_LIBRARY(SQLITE3_LIBRARY NAMES sqlite3 sqlite3_s)
 ENDIF(NOT USE_BUNDLED_SQLITE)
+
 FIND_LIBRARY(POCO_FOUNDATION_LIBRARY NAMES PocoFoundation PocoFoundationmt)
 FIND_LIBRARY(POCO_NET_LIBRARY NAMES PocoNet PocoNetmt)
 FIND_LIBRARY(POCO_UTIL_LIBRARY NAMES PocoUtil PocoUtilmt)
@@ -271,6 +281,33 @@ IF(ALTERNATE_CAPTCHA)
 		MESSAGE(FATAL_ERROR "Could not find the FreeImage library.  Set the location manually, or turn off the alternate captchas.")
 	ENDIF(FREEIMAGE_LIBRARY)
 ENDIF(ALTERNATE_CAPTCHA)
+
+IF(FROST_SUPPORT)
+	FIND_LIBRARY(TOMCRYPT_LIBRARY NAMES tomcrypt libtomcrypt)
+	FIND_LIBRARY(TOMMATH_LIBRARY NAMES tommath libtommath)
+	
+	IF(TOMMATH_LIBRARY)
+		TARGET_LINK_LIBRARIES(fms ${TOMMATH_LIBRARY})
+	ELSE(TOMMATH_LIBRARY)
+		#ADD_LIBRARY(tommath ${LIBTOMMATH_SRC})
+		ADD_SUBDIRECTORY(libs/libtommath)
+		TARGET_LINK_LIBRARIES(fms tommath)
+		INCLUDE_DIRECTORIES(libs/libtommath)
+	ENDIF(TOMMATH_LIBRARY)
+	
+	IF(TOMCRYPT_LIBRARY)
+		TARGET_LINK_LIBRARIES(fms ${TOMCRYPT_LIBRARY})
+	ELSE(TOMCRYPT_LIBRARY)
+		#ADD_DEFINITIONS(-DLTC_NO_ASM)
+		#ADD_LIBRARY(tomcrypt ${LIBTOMCRYPT_SRC})
+		ADD_SUBDIRECTORY(libs/libtomcrypt)
+		TARGET_LINK_LIBRARIES(fms tomcrypt)
+		INCLUDE_DIRECTORIES(libs/libtomcrypt/headers)
+	ENDIF(TOMCRYPT_LIBRARY)
+	
+	ADD_DEFINITIONS(-DFROST_SUPPORT)
+	
+ENDIF(FROST_SUPPORT)
 
 # FreeBSD won't find Poco include files without this
 IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")

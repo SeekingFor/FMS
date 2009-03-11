@@ -12,8 +12,8 @@ public:
 
 	MessageXML();
 
-	std::string GetXML();
-	const bool ParseXML(const std::string &xml);
+	virtual std::string GetXML();
+	virtual const bool ParseXML(const std::string &xml);
 
 	struct fileattachment
 	{
@@ -22,15 +22,15 @@ public:
 		int m_size;
 	};
 
-	std::string GetDate()								{ return m_date; }
-	std::string GetTime()								{ return m_time; }
-	std::string GetSubject()							{ return m_subject; }
-	std::string GetMessageID()							{ return m_messageid; }
-	std::string GetReplyBoard()							{ return m_replyboard; }
-	std::string GetBody()								{ return m_body; }
-	std::vector<std::string> GetBoards()				{ return m_boards; }
-	std::map<long,std::string> GetInReplyTo()			{ return m_inreplyto; }
-	std::vector<fileattachment> GetFileAttachments()	{ return m_fileattachments; }
+	const std::string GetDate() const								{ return m_date; }
+	const std::string GetTime() const								{ return m_time; }
+	const std::string GetSubject() const							{ return m_subject; }
+	const std::string GetMessageID() const							{ return m_messageid; }
+	const std::string GetReplyBoard() const							{ return m_replyboard; }
+	const std::string GetBody() const								{ return m_body; }
+	const std::vector<std::string> GetBoards() const				{ return m_boards; }
+	const std::map<long,std::string> GetInReplyTo() const			{ return m_inreplyto; }
+	const std::vector<fileattachment> GetFileAttachments() const	{ return m_fileattachments; }
 
 	void SetDate(const std::string &date)								{ m_date=date; }
 	void SetTime(const std::string &time)								{ m_time=time; }
@@ -42,7 +42,7 @@ public:
 	void AddInReplyTo(const long index, const std::string &messageid)	{ m_inreplyto[index]=messageid; }
 	void AddFileAttachment(const std::string &key, const int size)		{ m_fileattachments.push_back(fileattachment(key,size)); }
 
-private:
+protected:
 	void Initialize();
 
 	std::string m_date;

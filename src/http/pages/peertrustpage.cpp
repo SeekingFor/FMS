@@ -233,6 +233,10 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 	if(queryvars.find("sortby")!=queryvars.end())
 	{
 		sortby=(*queryvars.find("sortby")).second;
+		if(sortby!="Name" && sortby!="tblIdentityTrust.LocalMessageTrust" && sortby!="PeerMessageTrust" && sortby!="tblIdentityTrust.LocalTrustListTrust" && sortby!="PeerTrustListTrust" && sortby!="MessageCount")
+		{
+			sortby="Name";
+		}
 	}
 	else
 	{
@@ -243,6 +247,10 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 	if(queryvars.find("sortorder")!=queryvars.end())
 	{
 		sortorder=(*queryvars.find("sortorder")).second;
+		if(sortorder!="ASC" && sortorder!="DESC")
+		{
+			sortorder="ASC";
+		}
 	}
 	else
 	{

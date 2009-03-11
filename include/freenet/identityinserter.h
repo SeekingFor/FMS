@@ -31,6 +31,7 @@ private:
 	void StartInsert(const long localidentityid);
 
 	Poco::DateTime m_lastchecked;
+	Poco::DateTime m_lastreceivedmessage;
 
 };
 

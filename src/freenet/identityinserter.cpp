@@ -64,6 +64,7 @@ const bool IdentityInserter::HandleMessage(FCPv2::Message &message)
 		std::vector<std::string> idparts;
 
 		StringFunctions::Split(message["Identifier"],"|",idparts);
+		m_lastreceivedmessage=now;
 
 		// no action for URIGenerated
 		if(message.GetName()=="URIGenerated")
@@ -137,6 +138,7 @@ const bool IdentityInserter::HandleMessage(FCPv2::Message &message)
 void IdentityInserter::Initialize()
 {
 	m_lastchecked=Poco::Timestamp();
+	m_lastreceivedmessage=Poco::Timestamp();
 }
 
 void IdentityInserter::Process()
@@ -147,6 +149,17 @@ void IdentityInserter::Process()
 	{
 		CheckForNeededInsert();
 		m_lastchecked=now;
+	}
+
+	if(m_lastreceivedmessage<(now-Poco::Timespan(0,0,10,0,0)))
+	{
+		SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE InsertingIdentity='true';");
+		st.Step();
+		if(st.RowReturned())
+		{
+			m_log->debug("IdentityInserter::Process 10 minutes have passed without an insert response from the node.  Restarting inserts.");
+			m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false';");
+		}
 	}
 
 }

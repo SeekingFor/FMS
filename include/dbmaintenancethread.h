@@ -30,6 +30,7 @@ private:
 
 	long m_deletemessagesolderthan;
 	long m_messagedownloadmaxdaysbackward;
+	long m_frostmaxdaysbackward;
 
 };
 

@@ -21,6 +21,9 @@
 #include "../../include/freenet/siteinserter.h"
 #include "../../include/freenet/fileinserter.h"
 #include "../../include/freenet/fmsversionrequester.h"
+#ifdef FROST_SUPPORT
+	#include "../../include/freenet/frostmessagerequester.h"
+#endif
 
 #include <Poco/UUID.h>
 #include <Poco/UUIDGenerator.h>
@@ -271,6 +274,7 @@ void FreenetMasterThread::run()
 void FreenetMasterThread::Setup()
 {
 
+	std::string temp="";
 	Option option(m_db);
 	if(option.Get("FCPHost",m_fcphost)==false)
 	{
@@ -314,6 +318,14 @@ void FreenetMasterThread::Setup()
 	m_registrables.push_back(new SiteInserter(m_db,&m_fcp));
 	m_registrables.push_back(new FileInserter(m_db,&m_fcp));
 	m_registrables.push_back(new FMSVersionRequester(m_db,&m_fcp));
+#ifdef FROST_SUPPORT
+	temp="";
+	option.Get("DownloadFrostMessages",temp);
+	if(temp=="true")
+	{
+		m_registrables.push_back(new FrostMessageRequester(m_db,&m_fcp));
+	}
+#endif
 
 	for(std::vector<IFreenetRegistrable *>::iterator i=m_registrables.begin(); i!=m_registrables.end(); i++)
 	{

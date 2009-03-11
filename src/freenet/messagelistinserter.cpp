@@ -23,10 +23,11 @@ MessageListInserter::MessageListInserter(SQLite3DB::DB *db, FCPv2::Connection *f
 void MessageListInserter::CheckForNeededInsert()
 {
 
-	// more than 10 minutes trying to insert - restart
-	if(m_inserting.size()>0 && (m_laststartedinsert+Poco::Timespan(0,0,10,0,0)<=Poco::DateTime()))
+	// more than 15 minutes trying to insert - restart
+	if(m_inserting.size()>0 && (m_laststartedinsert+Poco::Timespan(0,0,15,0,0)<=Poco::DateTime()))
 	{
-		m_log->error("MessageListInserter::CheckForNeededInsert more than 10 minutes have passed without success/failure.  Clearing inserts.");
+		m_log->error("MessageListInserter::CheckForNeededInsert more than 15 minutes have passed without success/failure.  Clearing inserts.");
+		m_lastinsertedxml[m_inserting[0]]="";
 		m_inserting.clear();
 	}
 
@@ -49,7 +50,7 @@ void MessageListInserter::CheckForNeededInsert()
 		// query for identities that have messages in the past X days and (we haven't inserted lists for in the past 30 minutes OR identity has a record in tmpMessageListInsert)
 		sql="SELECT tblLocalIdentity.LocalIdentityID ";
 		sql+="FROM tblLocalIdentity INNER JOIN tblMessageInserts ON tblLocalIdentity.LocalIdentityID=tblMessageInserts.LocalIdentityID ";
-		sql+="WHERE tblMessageInserts.Day>=? AND ((tblLocalIdentity.LastInsertedMessageList<=? OR tblLocalIdentity.LastInsertedMessageList IS NULL OR tblLocalIdentity.LastInsertedMessageList='') OR tblLocalIdentity.LocalIdentityID IN (SELECT LocalIdentityID FROM tmpMessageListInsert)) ";
+		sql+="WHERE tblMessageInserts.Day>=? AND ((tblLocalIdentity.LastInsertedMessageList<=? OR tblLocalIdentity.LastInsertedMessageList IS NULL OR tblLocalIdentity.LastInsertedMessageList='') OR tblLocalIdentity.LocalIdentityID IN (SELECT LocalIdentityID FROM tmpMessageListInsert)) AND tblLocalIdentity.PrivateKey IS NOT NULL AND tblLocalIdentity.PrivateKey <> '' ";
 		sql+="GROUP BY tblLocalIdentity.LocalIdentityID ";
 		sql+="ORDER BY tblLocalIdentity.LastInsertedMessageList;";
 
@@ -72,35 +73,31 @@ void MessageListInserter::CheckForNeededInsert()
 const bool MessageListInserter::HandlePutFailed(FCPv2::Message &message)
 {
 	std::vector<std::string> idparts;
-	long localidentityid;
-	long index;
+	//std::vector<std::string> uriparts;
+	long localidentityid=0;
+	long index=0;
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
+	//StringFunctions::Split(message["URI"],"/",uriparts);
 
-	// non USK
-	if(idparts[0]==m_fcpuniquename)
+	StringFunctions::Convert(idparts[1],localidentityid);
+	//StringFunctions::Convert(uriparts[2],index); - URI won't be set for USKs
+
+	if(message["Fatal"]=="true" || message["Code"]=="9")
 	{
-		StringFunctions::Convert(idparts[1],localidentityid);
-		StringFunctions::Convert(idparts[2],index);
-
-		if(message["Fatal"]=="true" || message["Code"]=="9")
-		{
-			SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblMessageListInserts(LocalIdentityID,Day,InsertIndex,Inserted) VALUES(?,?,?,'false');");
-			st.Bind(0,localidentityid);
-			st.Bind(1,idparts[4]);
-			st.Bind(2,index);
-			st.Step();
-		}
-
-		RemoveFromInsertList(localidentityid);
-
-		// reset the last inserted xml doc to nothing so we will try to insert this one again
-		m_lastinsertedxml[localidentityid]="";
+		SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblMessageListInserts(LocalIdentityID,Day,InsertIndex,Inserted) VALUES(?,?,?,'false');");
+		st.Bind(0,localidentityid);
+		st.Bind(1,idparts[2]);
+		st.Bind(2,index);
+		st.Step();
 	}
-	else
-	{
-		m_log->debug("MessageListInserter::HandlePutFailed "+message["Identifier"]);
-	}
+
+	RemoveFromInsertList(localidentityid);
+
+	// reset the last inserted xml doc to nothing so we will try to insert this one again
+	m_lastinsertedxml[localidentityid]="";
+
+	m_log->trace("MessageListInserter::HandlePutFailed insert failed for "+message["Identifier"]);
 
 	return true;
 
@@ -110,51 +107,45 @@ const bool MessageListInserter::HandlePutSuccessful(FCPv2::Message &message)
 {
 	Poco::DateTime now;
 	std::vector<std::string> idparts;
+	std::vector<std::string> uriparts;
 	long localidentityid;
 	long index;
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
+	StringFunctions::Split(message["URI"],"/",uriparts);
 
-	// non USK
-	if(idparts[0]==m_fcpuniquename)
+	StringFunctions::Convert(idparts[1],localidentityid);
+	StringFunctions::Convert(uriparts[2],index);
+
+	SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblMessageListInserts(LocalIdentityID,Day,InsertIndex,Inserted) VALUES(?,?,?,'true');");
+	st.Bind(0,localidentityid);
+	st.Bind(1,idparts[2]);
+	st.Bind(2,index);
+	st.Step();
+
+	now=Poco::Timestamp();
+	st=m_db->Prepare("UPDATE tblLocalIdentity SET LastInsertedMessageList=? WHERE LocalIdentityID=?;");
+	st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
+	st.Bind(1,localidentityid);
+	st.Step();
+
+	// delete only a single record from tmpMessageListInsert
+	st=m_db->Prepare("SELECT MessageListInsertID FROM tmpMessageListInsert WHERE LocalIdentityID=?;");
+	st.Bind(0,localidentityid);
+	st.Step();
+	if(st.RowReturned())
 	{
-		StringFunctions::Convert(idparts[1],localidentityid);
-		StringFunctions::Convert(idparts[2],index);
+		int id=-1;
+		st.ResultInt(0,id);
 
-		SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblMessageListInserts(LocalIdentityID,Day,InsertIndex,Inserted) VALUES(?,?,?,'true');");
-		st.Bind(0,localidentityid);
-		st.Bind(1,idparts[4]);
-		st.Bind(2,index);
+		st=m_db->Prepare("DELETE FROM tmpMessageListInsert WHERE MessageListInsertID=?;");
+		st.Bind(0,id);
 		st.Step();
-
-		now=Poco::Timestamp();
-		st=m_db->Prepare("UPDATE tblLocalIdentity SET LastInsertedMessageList=? WHERE LocalIdentityID=?;");
-		st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
-		st.Bind(1,localidentityid);
-		st.Step();
-
-		// delete only a single record from tmpMessageListInsert
-		st=m_db->Prepare("SELECT MessageListInsertID FROM tmpMessageListInsert WHERE LocalIdentityID=?;");
-		st.Bind(0,localidentityid);
-		st.Step();
-		if(st.RowReturned())
-		{
-			int id=-1;
-			st.ResultInt(0,id);
-
-			st=m_db->Prepare("DELETE FROM tmpMessageListInsert WHERE MessageListInsertID=?;");
-			st.Bind(0,id);
-			st.Step();
-		}
-
-		RemoveFromInsertList(localidentityid);
-
-		m_log->debug("MessageListInserter::HandlePutSuccessful successfully inserted MessageList.");
 	}
-	else
-	{
-		m_log->debug("MessageListInserter::HandlePutSuccessful inserted USK MessageList "+message["Identifier"]);
-	}
+
+	RemoveFromInsertList(localidentityid);
+
+	m_log->debug("MessageListInserter::HandlePutSuccessful successfully inserted MessageList.");
 
 	return true;
 }
@@ -275,9 +266,9 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	// only insert if the last message this identity inserted is different than this message
 	if(m_lastinsertedxml[localidentityid]!=xmlstr)
 	{
-		std::string targeturi="";
 		StringFunctions::Convert(xmlstr.size(),xmlsizestr);
 
+		/*
 		message.SetName("ClientPut");
 		message["URI"]=privatekey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|MessageList|"+indexstr+".xml";
 		message["Identifier"]=m_fcpuniquename+"|"+localidentityidstr+"|"+indexstr+"|"+message["URI"];
@@ -285,11 +276,12 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		message["DataLength"]=xmlsizestr;
 		m_fcp->Send(message);
 		m_fcp->Send(std::vector<char>(xmlstr.begin(),xmlstr.end()));
-
 		message.Clear();
+		*/
+
 		message.SetName("ClientPutComplexDir");
 		message["URI"]="USK"+privatekey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|MessageList/0/";
-		message["Identifier"]=m_fcpuniquename+"USK|"+message["URI"];
+		message["Identifier"]=m_fcpuniquename+"|"+localidentityidstr+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|"+message["URI"];
 		message["DefaultName"]="MessageList.xml";
 		message["Files.0.Name"]="MessageList.xml";
 		message["Files.0.UploadFrom"]="direct";
@@ -301,6 +293,8 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		m_lastinsertedxml[localidentityid]=xmlstr;
 
 		m_laststartedinsert=Poco::DateTime();
+
+		m_log->trace("MessageListInserter::StartInsert started insert of "+message["Identifier"]);
 
 		return true;
 	}

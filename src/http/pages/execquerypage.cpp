@@ -30,6 +30,12 @@ const std::string ExecQueryPage::GeneratePage(const std::string &method, const s
 			}
 			content+="<tr>";
 		}
+		else if(m_db->GetLastResult()!=SQLITE_OK)
+		{
+			std::string error="";
+			m_db->GetLastError(error);
+			content+="<tr><td>"+error+"</td></tr>";
+		}
 		while(!rs.AtEnd())
 		{
 			content+="<tr>";

@@ -420,6 +420,20 @@ void SetupDB(SQLite3DB::DB *db)
 				Found				BOOL CHECK(Found IN('true','false')) DEFAULT 'false'\
 				);");
 
+#ifdef FROST_SUPPORT
+
+	db->Execute("CREATE TABLE IF NOT EXISTS tblFrostMessageRequests(\
+				BoardID				INTEGER,\
+				Day					DATE,\
+				RequestIndex		INTEGER,\
+				Found				BOOL CHECK(Found IN('true','false')) DEFAULT 'false',\
+				Tries				INTEGER DEFAULT 0\
+				);");
+
+	db->Execute("CREATE UNIQUE INDEX IF NOT EXISTS idxFrostMessageRequest ON tblFrostMessageRequests(BoardID,Day,RequestIndex);");
+
+#endif
+
 	// begin thread db schema
 	db->Execute("CREATE TABLE IF NOT EXISTS tblThread(\
 				ThreadID		INTEGER PRIMARY KEY,\
