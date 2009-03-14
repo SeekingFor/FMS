@@ -35,7 +35,7 @@ public:
 
 private:
 
-	typedef enum ClientMode
+	enum ClientMode
 	{
 		MODE_NONE=0,
 		MODE_READER

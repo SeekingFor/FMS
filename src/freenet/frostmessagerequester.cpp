@@ -42,6 +42,8 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 	// receive the file
 	m_fcp->Receive(data,datalength);
 
+	m_db->Execute("BEGIN;");
+
 	// mark this index as received
 	SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblFrostMessageRequests(BoardID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
 	st.Bind(0,idparts[1]);
@@ -99,8 +101,6 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 				nntpbody+="\r\n";
 			}
 
-			m_db->Execute("BEGIN;");
-
 			st=m_db->Prepare("INSERT INTO tblMessage(FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,InsertDate,MessageIndex) VALUES(?,?,?,?,?,?,?,?,?);");
 			st.Bind(0,xml.GetFrostAuthor());
 			st.Bind(1,xml.GetDate());
@@ -138,7 +138,7 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 				}
 				st.Finalize();
 
-				m_log->debug("MessageRequester::HandleAllData parsed Message XML file : "+message["Identifier"]);
+				m_log->debug("FrostMessageRequester::HandleAllData parsed Message XML file : "+message["Identifier"]);
 
 			}
 			else	// couldn't insert - was already in database
@@ -149,7 +149,6 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 			}
 
 			st.Finalize();
-			m_db->Execute("COMMIT;");
 
 		}	// if validmessage
 		else
@@ -163,7 +162,9 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 		m_log->error("FrostMessageRequester::HandleAllData error parsing FrostMessage XML file : "+message["Identifier"]);
 	}
 
-	RemoveFromRequestList(idparts[0]+"|"+idparts[1]+"|"+idparts[2]);
+	m_db->Execute("COMMIT;");
+
+	RemoveFromRequestList(idparts[1]+"|"+idparts[2]+"|"+idparts[3]);
 
 	return true;
 
@@ -178,13 +179,15 @@ const bool FrostMessageRequester::HandleGetFailed(FCPv2::Message &message)
 	{
 		// insert index so we won't try it again
 		SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblFrostMessageRequests(BoardID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
-		st.Bind(0,idparts[0]);
-		st.Bind(1,idparts[2]);
-		st.Bind(2,idparts[1]);
+		st.Bind(0,idparts[1]);
+		st.Bind(1,idparts[3]);
+		st.Bind(2,idparts[2]);
 		st.Step();
 	}
 
 	m_log->debug("FrostMessageRequester::HandleGetFailed handled failure "+message["Code"]+" of "+message["Identifier"]);
+
+	RemoveFromRequestList(idparts[1]+"|"+idparts[2]+"|"+idparts[3]);
 
 	return true;
 

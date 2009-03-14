@@ -289,25 +289,30 @@ const bool FrostMessageXML::ParseXML(const std::string &xml)
 			{
 				if(file->getAttribute("type")=="file")
 				{
-					Poco::XML::Element *keyel=XMLGetFirstChild(file,"key");
-					Poco::XML::Element *sizeel=XMLGetFirstChild(file,"size");
-					Poco::XML::Element *nameel=XMLGetFirstChild(file,"name");
-
-					if(keyel && keyel->firstChild() && sizeel && sizeel->firstChild() && nameel && nameel->firstChild())
+					Poco::XML::Element *fileel=XMLGetFirstChild(file,"File");
+					if(fileel)
 					{
-						int size=-1;
-						std::string key="";
-						
-						StringFunctions::Convert(sizeel->firstChild()->getNodeValue(),size);
-						key=keyel->firstChild()->getNodeValue();
-						key+="/"+nameel->firstChild()->getNodeValue();
+						Poco::XML::Element *keyel=XMLGetFirstChild(fileel,"key");
+						Poco::XML::Element *sizeel=XMLGetFirstChild(fileel,"size");
+						Poco::XML::Element *nameel=XMLGetFirstChild(fileel,"name");
 
-						if(size!=-1 && key!="")
+						if(keyel && keyel->firstChild() && sizeel && sizeel->firstChild() && nameel && nameel->firstChild())
 						{
-							m_fileattachments.push_back(fileattachment(key,size));
-						}
+							int size=-1;
+							std::string key="";
+							std::string name="";
+							
+							StringFunctions::Convert(sizeel->firstChild()->getNodeValue(),size);
+							key=keyel->firstChild()->getNodeValue();
+							name=nameel->firstChild()->getNodeValue();
 
-						m_frostfileattachments.push_back(frostfileattachment(keyel->firstChild()->getNodeValue(),size,nameel->firstChild()->getNodeValue()));
+							if(size!=-1 && key!="")
+							{
+								m_fileattachments.push_back(fileattachment(key,size));
+							}
+
+							m_frostfileattachments.push_back(frostfileattachment(key,size,name));
+						}
 					}
 				}
 				else if(file->getAttribute("type")=="board")
@@ -342,7 +347,7 @@ const bool FrostMessageXML::ParseXML(const std::string &xml)
 
 				}
 
-				file=static_cast<Poco::XML::Element *>(file->nextSibling());
+				file=XMLGetNextSibling(file,"Attachment");
 
 			}
 		}

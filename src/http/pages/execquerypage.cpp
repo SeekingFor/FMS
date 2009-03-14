@@ -34,7 +34,7 @@ const std::string ExecQueryPage::GeneratePage(const std::string &method, const s
 		{
 			std::string error="";
 			m_db->GetLastError(error);
-			content+="<tr><td>"+error+"</td></tr>";
+			content+="<tr><td>"+SanitizeOutput(error)+"</td></tr>";
 		}
 		while(!rs.AtEnd())
 		{

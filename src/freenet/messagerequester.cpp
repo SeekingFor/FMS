@@ -117,6 +117,8 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 	// receive the file
 	m_fcp->Receive(data,datalength);
 
+	m_db->Execute("BEGIN;");
+
 	// mark this index as received
 	st=m_db->Prepare("UPDATE tblMessageRequests SET Found='true' WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
 	st.Bind(0,identityid);
@@ -226,8 +228,6 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 				nntpbody+="\r\n";
 			}
 
-			m_db->Execute("BEGIN;");
-
 			st=m_db->Prepare("INSERT INTO tblMessage(IdentityID,FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,MessageIndex,InsertDate) VALUES(?,?,?,?,?,?,?,?,?,?);");
 			st.Bind(0,identityid);
 			st.Bind(1,GetIdentityName(identityid));
@@ -274,12 +274,12 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			}
 			else	// couldn't insert - was already in database
 			{
-				//m_log->WriteLog(LogFile::LOGLEVEL_ERROR,"MessageRequester::HandleAddData could not insert message into database.  "+message["Identifier"]);
+				std::string errmsg;
+				m_db->GetLastError(errmsg);
+				m_log->debug("MessageRequester::HandleAllData could not insert message into database.  SQLite error "+errmsg);
 			}
 
 			st.Finalize();
-
-			m_db->Execute("COMMIT;");
 
 		}	// if validmessage
 	}
@@ -287,6 +287,8 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 	{
 		m_log->error("MessageRequester::HandleAllData error parsing Message XML file : "+message["Identifier"]);
 	}
+
+	m_db->Execute("COMMIT;");
 
 	RemoveFromRequestList(idparts[1]);
 

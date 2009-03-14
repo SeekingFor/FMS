@@ -153,7 +153,7 @@ void IdentityInserter::Process()
 
 	if(m_lastreceivedmessage<(now-Poco::Timespan(0,0,10,0,0)))
 	{
-		SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE InsertingIdentity='true';");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE InsertingIdentity='true';");
 		st.Step();
 		if(st.RowReturned())
 		{
