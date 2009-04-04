@@ -10,4 +10,8 @@
  */
 #include "tomcrypt.h"
 
+#ifndef __APPLE__
 ltc_math_descriptor ltc_mp;
+#else
+ltc_math_descriptor ltc_mp={0};
+#endif

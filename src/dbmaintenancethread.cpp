@@ -38,10 +38,15 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 	// select messages for a board that aren't in a thread
 	// This query was causing the db to be locked and a journal file created.
 	// build a list of boards and messageids and then use that instead of keeping the query in use
-	SQLite3DB::Statement selectst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblMessage \
+	
+	/*SQLite3DB::Statement selectst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblMessage \
 												INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID \
 												LEFT JOIN (SELECT tblThread.BoardID, tblThreadPost.MessageID FROM tblThread INNER JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE tblThread.BoardID=?) AS temp1 ON tblMessage.MessageID=temp1.MessageID \
-												WHERE tblMessageBoard.BoardID=? AND temp1.BoardID IS NULL;");
+												WHERE tblMessageBoard.BoardID=? AND temp1.BoardID IS NULL;");*/
+	// This query is about 50x faster than the above (roughly tested)
+	SQLite3DB::Statement selectst=m_db->Prepare("SELECT tblMessageBoard.MessageID FROM tblMessageBoard \
+												WHERE tblMessageBoard.BoardID=? AND \
+												tblMessageBoard.MessageID NOT IN (SELECT MessageID FROM tblThreadPost INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblThread.BoardID=?);");
 
 	boardst.Step();
 	while(boardst.RowReturned())
@@ -287,8 +292,9 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	m_db->Execute("DELETE FROM tblLocalIdentityInserts WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 
 	// delete old message list inserts/requests - we don't need them anymore
+	// only delete those older than the max # of days backward we are downloading messages
 	date=Poco::Timestamp();
-	date-=Poco::Timespan(2,0,0,0,0);
+	date-=Poco::Timespan(m_messagedownloadmaxdaysbackward,0,0,0,0);
 	m_db->Execute("DELETE FROM tblMessageListInserts WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 	m_db->Execute("DELETE FROM tblMessageListRequests WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 

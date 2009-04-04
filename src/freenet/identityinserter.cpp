@@ -160,6 +160,7 @@ void IdentityInserter::Process()
 			m_log->debug("IdentityInserter::Process 10 minutes have passed without an insert response from the node.  Restarting inserts.");
 			m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false';");
 		}
+		m_lastreceivedmessage=now;
 	}
 
 }

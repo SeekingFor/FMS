@@ -13,6 +13,7 @@
 #include "../../include/freenet/trustlistrequester.h"
 #include "../../include/freenet/messagelistrequester.h"
 #include "../../include/freenet/inactivemessagelistrequester.h"
+#include "../../include/freenet/oldmessagelistrequester.h"
 #include "../../include/freenet/messagelistinserter.h"
 #include "../../include/freenet/messagerequester.h"
 #include "../../include/freenet/messageinserter.h"
@@ -311,6 +312,7 @@ void FreenetMasterThread::Setup()
 	m_registrables.push_back(new MessageListInserter(m_db,&m_fcp));
 	m_registrables.push_back(new MessageListRequester(m_db,&m_fcp));
 	m_registrables.push_back(new InactiveMessageListRequester(m_db,&m_fcp));
+	m_registrables.push_back(new OldMessageListRequester(m_db,&m_fcp));
 	m_registrables.push_back(new MessageInserter(m_db,&m_fcp));
 	m_registrables.push_back(new MessageRequester(m_db,&m_fcp));
 	m_registrables.push_back(new BoardListInserter(m_db,&m_fcp));

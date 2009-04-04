@@ -52,7 +52,7 @@ const bool FromUTF8(const std::vector<std::string::value_type> &utf8string, std:
 	}
 	else
 	{
-		std::vector<uint32_t> dest2(utf8string.size(),0);
+		std::vector<UTF32> dest2(utf8string.size(),0);
 		UTF32 *deststart=reinterpret_cast<UTF32 *>(&dest2[0]);
 		UTF32 *destend=deststart+dest2.size();
 
@@ -137,7 +137,7 @@ const bool ToUTF8(const std::wstring &wcstring, std::string &utf8string)
 	}
 	else
 	{
-		std::vector<uint32_t> source2(wcstring.begin(),wcstring.end());
+		std::vector<UTF32> source2(wcstring.begin(),wcstring.end());
 		std::vector<std::string::value_type> dest(wcstring.size()*sizeof(std::wstring::value_type),0);
 		
 		const UTF32 *sourcestart=reinterpret_cast<const UTF32 *>(&source2[0]);

@@ -87,8 +87,16 @@
     bit mask & shift operations.
 ------------------------------------------------------------------------ */
 
-typedef unsigned long	UTF32;	/* at least 32 bits */
-typedef unsigned short	UTF16;	/* at least 16 bits */
+#ifdef _WIN32
+#include "../pstdint.h"
+#else
+#include <stdint.h>
+#endif
+
+//typedef unsigned long	UTF32;	/* at least 32 bits */
+typedef uint32_t		UTF32;	/* exactly 32 bits */
+//typedef unsigned short	UTF16;	/* at least 16 bits */
+typedef uint16_t		UTF16;	/* exactly 16 bits */
 typedef unsigned char	UTF8;	/* typically 8 bits */
 typedef unsigned char	Boolean; /* 0 or 1 */
 

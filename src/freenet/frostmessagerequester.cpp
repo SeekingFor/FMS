@@ -185,7 +185,7 @@ const bool FrostMessageRequester::HandleGetFailed(FCPv2::Message &message)
 		st.Step();
 	}
 
-	m_log->debug("FrostMessageRequester::HandleGetFailed handled failure "+message["Code"]+" of "+message["Identifier"]);
+	m_log->trace("FrostMessageRequester::HandleGetFailed handled failure "+message["Code"]+" of "+message["Identifier"]);
 
 	RemoveFromRequestList(idparts[1]+"|"+idparts[2]+"|"+idparts[3]);
 

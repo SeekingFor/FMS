@@ -223,6 +223,8 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 	}
 	content+="<input type=\"hidden\" name=\"param[0]\" value=\"\">";
 	content+="<tr><td colspan=\"3\"><center><input type=\"submit\" value=\"Save\"></form></td></tr>";
+	content+="<tr><td colspan=\"3\"><center><strong>Most options require a restart of FMS to take effect</strong></center></td></tr>";
+
 	content+="</table>";
 	
 	return StringFunctions::Replace(m_template,"[CONTENT]",content);

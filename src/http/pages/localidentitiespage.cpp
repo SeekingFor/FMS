@@ -116,7 +116,7 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 	}
 
 	content+="</table>";
-	content+="<p class=\"paragraph\">* An identity is considered successfully announced when you have downloaded a trust list from someone that contains the identity.  You must trust other identities' trust lists for this to happen.  The number in parenthesis is how many trust lists the identity appears in.</p>";
+	content+="<p class=\"paragraph\">* An identity is considered successfully announced when you have downloaded a trust list from someone that contains the identity.  You must trust other identities' trust lists for this to happen.  The number in parenthesis is how many trust lists the identity appears in.  You may post messages before you are announced.</p>";
 	content+="<p class=\"paragraph\">Single Use Identities will automatically be deleted 7 days after creation.</p>";
 	content+="<p class=\"paragraph\">Messages that each identity sends may be delayed by a random number of minutes between min and max.  Set both to 0 to send messages as soon as possible.</p>";
 

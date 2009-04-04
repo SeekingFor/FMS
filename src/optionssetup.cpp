@@ -363,6 +363,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Step();
 	upd.Reset();
 
+	st.Bind(0,"MaxOldMessageListRequests");
+	st.Bind(1,"1");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Requests");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"Maximum number of concurrent requests for old Message Lists.  You can temporarily set this to a higher value if you are catching up on old messages from many days ago.  After you have downloaded the old messages, you may set this back to a low value.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"MaxOldMessageListRequests");
+	upd.Step();
+	upd.Reset();
+
 	st.Bind(0,"MaxMessageRequests");
 	st.Bind(1,"20");
 	st.Step();
@@ -530,7 +546,7 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(0,"Messages");
 	upd.Bind(1,order++);
 	upd.Bind(2);
-	upd.Bind(3,"The number of days backward that messages you have inserted will appear in your MessageLists");
+	upd.Bind(3,"The number of days backward that messages you have inserted will appear in your Message Lists");
 	upd.Bind(4,"textbox");
 	upd.Bind(5);
 	upd.Bind(6);

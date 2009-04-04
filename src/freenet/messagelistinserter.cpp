@@ -185,9 +185,9 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 
 	while(st.RowReturned())
 	{
-		std::string day;
-		int index;
-		std::string xmlstr;
+		std::string day="";
+		int index=-1;
+		std::string xmlstr="";
 		std::vector<std::string> boards;
 
 		st.ResultText(0,day);
@@ -203,9 +203,52 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	}
 	st.Finalize();
 
+	// Add any other messages from this local identity that were inserted by another client
+	st=m_db->Prepare("SELECT MessageID, InsertDate, MessageIndex \
+					FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID \
+					INNER JOIN tblLocalIdentity ON tblIdentity.PublicKey=tblLocalIdentity.PublicKey\
+					WHERE tblLocalIdentity.LocalIdentityID=? \
+					AND tblMessage.InsertDate>? \
+					AND tblMessage.MessageUUID NOT IN \
+					(SELECT MessageUUID FROM tblMessageInserts WHERE Inserted='true' AND Day>?);");
+	st.Bind(0,localidentityid);
+	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+	st.Bind(2,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+	st.Step();
+
+	SQLite3DB::Statement st2=m_db->Prepare("SELECT BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
+
+	while(st.RowReturned())
+	{
+		std::string day="";
+		int index=-1;
+		int messageid=-1;
+		std::vector<std::string> boardlist;
+
+		st.ResultInt(0,messageid);
+		st.ResultText(1,day);
+		st.ResultInt(2,index);
+		
+		st2.Bind(0,messageid);
+		st2.Step();
+		while(st2.RowReturned())
+		{
+			std::string boardname="";
+			st2.ResultText(0,boardname);
+			StringFunctions::LowerCase(boardname,boardname);
+			boardlist.push_back(boardname);
+			st2.Step();
+		}
+		st2.Reset();
+
+		mlxml.AddMessage(day,index,boardlist);
+
+		st.Step();
+	}
+	st.Finalize();
+
 
 	st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID, InsertDate FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL ORDER BY MessageDate DESC, MessageTime DESC LIMIT 175;");
-	SQLite3DB::Statement st2=m_db->Prepare("SELECT BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
 	st.Step();
 
 	while(st.RowReturned())

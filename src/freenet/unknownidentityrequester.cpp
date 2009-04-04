@@ -41,7 +41,7 @@ void UnknownIdentityRequester::PopulateIDList()
 	int id;
 
 	// select identities we want to query (haven't seen at all) - sort by their trust level (descending)
-	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen IS NULL ORDER BY LocalMessageTrust+LocalTrustListTrust DESC;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen IS NULL ORDER BY RANDOM();");
 	st.Step();
 
 	m_ids.clear();

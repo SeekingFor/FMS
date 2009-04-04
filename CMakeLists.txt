@@ -65,6 +65,7 @@ src/freenet/messagelistrequester.cpp
 src/freenet/messagelistxml.cpp
 src/freenet/messagerequester.cpp
 src/freenet/messagexml.cpp
+src/freenet/oldmessagelistrequester.cpp
 src/freenet/siteinserter.cpp
 src/freenet/trustlistinserter.cpp
 src/freenet/trustlistrequester.cpp
@@ -283,27 +284,21 @@ IF(ALTERNATE_CAPTCHA)
 ENDIF(ALTERNATE_CAPTCHA)
 
 IF(FROST_SUPPORT)
-	FIND_LIBRARY(TOMCRYPT_LIBRARY NAMES tomcrypt libtomcrypt)
 	FIND_LIBRARY(TOMMATH_LIBRARY NAMES tommath libtommath)
 	
 	IF(TOMMATH_LIBRARY)
 		TARGET_LINK_LIBRARIES(fms ${TOMMATH_LIBRARY})
 	ELSE(TOMMATH_LIBRARY)
-		#ADD_LIBRARY(tommath ${LIBTOMMATH_SRC})
 		ADD_SUBDIRECTORY(libs/libtommath)
 		TARGET_LINK_LIBRARIES(fms tommath)
 		INCLUDE_DIRECTORIES(libs/libtommath)
 	ENDIF(TOMMATH_LIBRARY)
 	
-	IF(TOMCRYPT_LIBRARY)
-		TARGET_LINK_LIBRARIES(fms ${TOMCRYPT_LIBRARY})
-	ELSE(TOMCRYPT_LIBRARY)
-		#ADD_DEFINITIONS(-DLTC_NO_ASM)
-		#ADD_LIBRARY(tomcrypt ${LIBTOMCRYPT_SRC})
-		ADD_SUBDIRECTORY(libs/libtomcrypt)
-		TARGET_LINK_LIBRARIES(fms tomcrypt)
-		INCLUDE_DIRECTORIES(libs/libtomcrypt/headers)
-	ENDIF(TOMCRYPT_LIBRARY)
+	# Force use of bundled tomcrypt, as the system library may have been compiled without the features we need
+	ADD_SUBDIRECTORY(libs/libtomcrypt)
+	TARGET_LINK_LIBRARIES(fms tomcrypt)
+	INCLUDE_DIRECTORIES(libs/libtomcrypt/headers)
+
 	
 	ADD_DEFINITIONS(-DFROST_SUPPORT)
 	
