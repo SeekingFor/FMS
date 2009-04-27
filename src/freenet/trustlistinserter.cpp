@@ -195,7 +195,11 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 		st.ResultText(6,dateadded);
 
 		add=false;
-
+		
+		// Add identities to list regardless of last message sent date
+		// If we saw them recently, then they are added, no exceptions
+		add=true;
+		/*
 		// add the identity to the trust list if they have posted a message in the last 30 days
 		countst.Bind(0,identityid);
 		countst.Bind(1,Poco::DateTimeFormatter::format(dateminus30,"%Y-%m-%d"));
@@ -225,6 +229,7 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 				add=true;
 			}
 		}
+		*/
 
 		if(add==true)
 		{

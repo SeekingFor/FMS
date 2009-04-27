@@ -583,8 +583,8 @@ void SetupDB(SQLite3DB::DB *db)
 	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@T8l1IEGU4-PoASFzgc2GYhIgRzUvZsKdoQWeuLHuTmM,QLxAPfkGis8l5NafNpSCdbxzXhBlu9WL8svcqJw9Mpo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert alek's public key - haven't seen in a while - disabling for now
 	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@lTjeI6V0lQsktXqaqJ6Iwk4TdsHduQI54rdUpHfhGbg,0oTYfrxxx8OmdU1~60gqpf3781qzEicM4Sz97mJsBM4,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
-	// insert Luke771's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@mdXK~ZVlfTZhF1SLBrvZ--i0vOsOpa~w9wv~~psQ-04,gXonsXKc7aexKSO8Gt8Fwre4Qgmmbt2WueO7VzxNKkk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	// insert Luke771's public key - haven't seen in a while - disabling for now
+	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@mdXK~ZVlfTZhF1SLBrvZ--i0vOsOpa~w9wv~~psQ-04,gXonsXKc7aexKSO8Gt8Fwre4Qgmmbt2WueO7VzxNKkk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert falafel's public key
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@IxVqeqM0LyYdTmYAf5z49SJZUxr7NtQkOqVYG0hvITw,RM2wnMn5zAufCMt5upkkgq25B1elfBAxc7htapIWg1c,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert cptn_insano's public key

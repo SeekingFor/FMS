@@ -271,6 +271,8 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	m_db->Execute("DELETE FROM tblIntroductionPuzzleRequests WHERE Day<='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 
 	// delete all identities we've never seen and were added more than 20 days ago
+	// number of days needs be to greater than the number of days backwards in the trust list inserter, otherwise we'd delete them and add them again
+	// from another trust list
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(20,0,0,0,0);
 	m_db->Execute("DELETE FROM tblIdentity WHERE LastSeen IS NULL AND DateAdded<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
