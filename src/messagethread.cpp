@@ -23,16 +23,27 @@ void MessageThread::AddChildren(const long messageid, const long level, const lo
 		st.ResultText(1,subject);
 		st.ResultText(2,fromname);
 		st.ResultText(3,datetime);
-		
-		threadnode node;
-		node.m_messageid=childid;
-		node.m_level=level;
-		node.m_subject=subject;
-		node.m_fromname=fromname;
-		node.m_date=datetime;
-		m_nodes.push_back(node);
-		
-		AddChildren(childid,level+1,boardid);
+
+		if(childid!=messageid)
+		{
+			threadnode node;
+			node.m_messageid=childid;
+			node.m_level=level;
+			node.m_subject=subject;
+			node.m_fromname=fromname;
+			node.m_date=datetime;
+			m_nodes.push_back(node);
+
+			AddChildren(childid,level+1,boardid);
+		}
+		else
+		{
+			std::string mid("");
+			std::string bid("");
+			StringFunctions::Convert(messageid,mid);
+			StringFunctions::Convert(boardid,bid);
+			m_log->debug("MessageThread::AddChildren messageid "+mid+" tried to add itself as child in board "+bid);
+		}
 		
 		st.Step();
 	}	

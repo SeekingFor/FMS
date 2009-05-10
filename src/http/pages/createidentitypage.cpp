@@ -8,7 +8,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string CreateIdentityPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string CreateIdentityPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 
@@ -30,21 +30,21 @@ const std::string CreateIdentityPage::GeneratePage(const std::string &method, co
 		// insert all identities not in trust list already
 		m_db->Execute("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity WHERE LocalIdentityID || '_' || IdentityID NOT IN (SELECT LocalIdentityID || '_' || IdentityID FROM tblIdentityTrust);");
 
-		content+="<h2>Created Identity</h2>";
-		content+="You must have at least 1 local identity that has set explicit trust list trust for one or more peers who are publishing trust lists or you will not be able to learn about other identities.";
+		content+="<h2>"+m_trans->Get("web.page.createidentity.createdidentity")+"</h2>";
+		content+=m_trans->Get("web.page.createidentity.aftercreateinstructions");
 	}
 	else
 	{
-		content+="<h2>Create Identity</h2>";
+		content+="<h2>"+m_trans->Get("web.page.createidentity.title")+"</h2>";
 		content+="<form name=\"frmcreateidentity\" method=\"POST\">";
 		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"create\">";
 		content+="Name : <input type=\"text\" name=\"name\" maxlength=\"40\">";
-		content+=" <input type=\"submit\" value=\"Create\">";
+		content+=" <input type=\"submit\" value=\""+m_trans->Get("web.page.createidentity.create")+"\">";
 		content+="</form>";
 	}
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const bool CreateIdentityPage::WillHandleURI(const std::string &uri)

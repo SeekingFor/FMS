@@ -1,13 +1,15 @@
 #include "../../../include/http/pages/optionspage.h"
 #include "../../../include/stringfunctions.h"
 
+#include <Poco/Path.h>
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif
 
 int OptionsPage::m_mode=1;
 
-const std::string OptionsPage::CreateDropDown(const std::string &name, const std::vector<std::string> &items, const std::string &selecteditem, const std::string &param1, const std::string &param2)
+const std::string OptionsPage::CreateDropDown(const std::string &option, const std::string &name, const std::vector<std::string> &items, const std::string &selecteditem, const std::string &param1, const std::string &param2)
 {
 	std::string rval("");
 
@@ -22,13 +24,15 @@ const std::string OptionsPage::CreateDropDown(const std::string &name, const std
 			rval+=" SELECTED";
 		}
 		rval+=">";
+
+		rval+=m_trans->Get("web.option."+option+"."+(*i));
+
+		rval+="</option>";
 		i++;
 		if(i!=items.end())
 		{
-			rval+=(*i);
 			i++;
 		}
-		rval+="</option>";
 	}
 
 	rval+="</select>";
@@ -75,7 +79,7 @@ const std::string OptionsPage::CreateTextBox(const std::string &name, const std:
 
 }
 
-const std::string OptionsPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string OptionsPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content("");
 	std::string sql("");
@@ -98,6 +102,16 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 				update.Bind(1,options[i]);
 				update.Step();
 				update.Reset();
+
+				// load new language immediately
+				if(options[i]=="Language")
+				{
+					Poco::Path tdir;
+					tdir.pushDirectory("translations");
+					tdir=tdir.makeAbsolute();
+					tdir.setFileName(newvalues[i]);
+					m_trans->LoadLocalizedTranslation(tdir.toString());
+				}
 			}
 		}
 
@@ -115,15 +129,15 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 		}
 	}
 
-	content+="<h2 style=\"text-align:center;\">Options</h2>\r\n";
+	content+="<h2 style=\"text-align:center;\">"+m_trans->Get("web.page.options.title")+"</h2>\r\n";
 	content+="<div style=\"text-align:center;\">";
 	if(m_mode==1)
 	{
-		content+="Simple | <a href=\""+m_pagename+"?mode=2\">Advanced</a>";
+		content+=m_trans->Get("web.page.options.simple")+" | <a href=\""+m_pagename+"?mode=2\">"+m_trans->Get("web.page.options.advanced")+"</a>";
 	}
 	else
 	{
-		content+="<a href=\""+m_pagename+"?mode=1\">Simple</a> | Advanced</a>";
+		content+="<a href=\""+m_pagename+"?mode=1\">"+m_trans->Get("web.page.options.simple")+"</a> | "+m_trans->Get("web.page.options.advanced")+"</a>";
 	}
 	content+="</div>";
 
@@ -173,7 +187,7 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 		if(section!=lastsection)
 		{
 			content+="<tr>";
-			content+="<td colspan=\"3\"><h3>"+section+"</h3></td>";
+			content+="<td colspan=\"3\"><h3>"+m_trans->Get("web.option.section."+section)+"</h3></td>";
 			content+="</tr>";
 			lastsection=section;
 		}
@@ -189,7 +203,14 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 		}
 		else if(displaytype=="select")
 		{
-			content+=CreateDropDown("value["+countstr+"]",validvaluevec,value,displayparam1,displayparam2);
+			if(validvaluevec.size()==4 && validvaluevec[0]=="true" && validvaluevec[2]=="false")
+			{
+				content+=CreateTrueFalseDropDown("value["+countstr+"]",value);	
+			}
+			else
+			{
+				content+=CreateDropDown(option,"value["+countstr+"]",validvaluevec,value,displayparam1,displayparam2);
+			}
 		}
 		else if(displaytype=="textarea")
 		{
@@ -216,18 +237,18 @@ const std::string OptionsPage::GeneratePage(const std::string &method, const std
 		*/
 
 		content+="</td></tr>\r\n";
-		content+="<tr><td valign=\"top\" class=\"optiondescription\" colspan=\"2\">"+description+"</td>";
+		content+="<tr><td valign=\"top\" class=\"optiondescription\" colspan=\"2\">"+m_trans->Get("web.option."+option+".description")+"</td>";
 		content+="</tr>\r\n";
 		st.Step();
 		count++;
 	}
 	content+="<input type=\"hidden\" name=\"param[0]\" value=\"\">";
-	content+="<tr><td colspan=\"3\"><center><input type=\"submit\" value=\"Save\"></form></td></tr>";
-	content+="<tr><td colspan=\"3\"><center><strong>Most options require a restart of FMS to take effect</strong></center></td></tr>";
+	content+="<tr><td colspan=\"3\"><center><input type=\"submit\" value=\""+m_trans->Get("web.page.options.save")+"\"></form></td></tr>";
+	content+="<tr><td colspan=\"3\"><center><strong>"+m_trans->Get("web.page.options.requirerestart")+"</strong></center></td></tr>";
 
 	content+="</table>";
 	
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const bool OptionsPage::WillHandleURI(const std::string &uri)

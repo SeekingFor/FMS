@@ -20,7 +20,7 @@ const std::string ForumViewThreadPage::FixBody(const std::string &body)
 	return output;
 }
 
-const std::string ForumViewThreadPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ForumViewThreadPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 	std::string threadidstr="";
@@ -78,15 +78,15 @@ const std::string ForumViewThreadPage::GeneratePage(const std::string &method, c
 
 	content+="<table class=\"forumheader\">";
 	content+="<tr>";
-	content+="<td> Forum : <a href=\"forumthreads.htm?boardid="+boardidstr+"&currentpage="+currentpagestr+"\">"+SanitizeOutput(boardname)+"</a></td>";
+	content+="<td> "+m_trans->Get("web.page.forumviewthread.forum")+" <a href=\"forumthreads.htm?boardid="+boardidstr+"&currentpage="+currentpagestr+"\">"+SanitizeOutput(boardname)+"</a></td>";
 	if(firstunreadidstr!="")
 	{
 		content+="<td>";
-		content+="<a href=\"#"+firstunreadidstr+"\">First Unread Message</a>";
+		content+="<a href=\"#"+firstunreadidstr+"\">"+m_trans->Get("web.page.forumviewthread.firstunread")+"</a>";
 		content+="</td>";
 	}
 	content+="<td>";
-	content+="<a href=\""+m_pagename+"?formaction=markunread&threadid="+threadidstr+"&boardid="+boardidstr+"&currentpage="+currentpagestr+"\">Mark Unread</a>";
+	content+="<a href=\""+m_pagename+"?formaction=markunread&threadid="+threadidstr+"&boardid="+boardidstr+"&currentpage="+currentpagestr+"\">"+m_trans->Get("web.page.forumviewthread.markunread")+"</a>";
 	content+="</td>";
 	content+="</tr>";
 	content+="</table>\r\n";
@@ -135,25 +135,25 @@ const std::string ForumViewThreadPage::GeneratePage(const std::string &method, c
 
 			content+="<table class=\"trust\">";
 			content+="<tr>";
-			content+="<td colspan=\"3\" style=\"text-align:center;\"><a href=\"peertrust.htm?namesearch="+StringFunctions::UriEncode(name)+"\">Trust</a></td>";
+			content+="<td colspan=\"3\" style=\"text-align:center;\"><a href=\"peertrust.htm?namesearch="+StringFunctions::UriEncode(name)+"\">"+m_trans->Get("web.page.forumviewthread.trust")+"</a></td>";
 			content+="</tr>";
 			content+="<tr>";
-			content+="<td></td><td>Local</td><td>Peer</td>";
+			content+="<td></td><td>"+m_trans->Get("web.page.forumviewthread.local")+"</td><td>"+m_trans->Get("web.page.forumviewthread.peer")+"</td>";
 			content+="</tr>";
 			content+="<tr>";
-			content+="<td>Message</td><td>"+localmessagetrust+"</td><td>"+peermessagetrust+"</td>";
+			content+="<td>"+m_trans->Get("web.page.forumviewthread.message")+"</td><td>"+localmessagetrust+"</td><td>"+peermessagetrust+"</td>";
 			content+="</tr>";
 			content+="<tr>";
-			content+="<td>Trust List</td><td>"+localtrustlisttrust+"</td><td>"+peertrustlisttrust+"</td>";
+			content+="<td>"+m_trans->Get("web.page.forumviewthread.trustlist")+"</td><td>"+localtrustlisttrust+"</td><td>"+peertrustlisttrust+"</td>";
 			content+="</tr>";
 			content+="</table>";
 		}
 
 		content+="</td>";
 		content+="<td class=\"subject\">";
-		content+=SanitizeOutput(subject)+" on "+datetime;
+		content+=SanitizeOutput(subject)+" "+m_trans->Get("web.page.forumviewthread.on")+" "+datetime;
 		content+="</td>";
-		content+="<td><a href=\"forumcreatepost.htm?replytomessageid="+messageidstr+"&threadid="+threadidstr+"&boardid="+boardidstr+"&currentpage="+currentpagestr+"\">Reply</a></td>";
+		content+="<td><a href=\"forumcreatepost.htm?replytomessageid="+messageidstr+"&threadid="+threadidstr+"&boardid="+boardidstr+"&currentpage="+currentpagestr+"\">"+m_trans->Get("web.page.forumviewthread.reply")+"</a></td>";
 		content+="</tr>\r\n";
 		content+="<tr>";
 		content+="<td class=\"body\" colspan=\"2\">";
@@ -166,5 +166,5 @@ const std::string ForumViewThreadPage::GeneratePage(const std::string &method, c
 	}
 	content+="</table>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }

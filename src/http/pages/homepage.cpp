@@ -8,7 +8,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string HomePage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string HomePage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 
 	Option option(m_db);
@@ -27,11 +27,11 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 		((FMSApp *)&FMSApp::instance())->Terminate();
 	}
 
-	std::string content="<h2>Home</h2>";
+	std::string content="<h2>"+m_trans->Get("web.page.home.title")+"</h2>";
 	content+="<p class=\"paragraph\">";
-	content+="<b>FMS version ";
+	content+="<strong>"+m_trans->Get("web.page.home.fmsversion")+" ";
 	content+=FMS_VERSION;
-	content+="</b><br>";
+	content+="</strong><br>";
 
 	bool showgenericupdate=true;
 	SQLite3DB::Statement st=m_db->Prepare("SELECT Major, Minor, Release, PageKey FROM tblFMSVersion ORDER BY Major DESC, Minor DESC, Release DESC LIMIT 1;");
@@ -64,23 +64,23 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 
 		if(currentmajor<major || (currentmajor==major && currentminor<minor) || (currentmajor==major && currentminor==minor && currentrelease<release))
 		{
-			content+="<b>You are running an old version of FMS.  Please update here: <a href=\"http://"+fcphost+":"+fproxyport+"/"+freesite+"\">FMS "+majorstr+"."+minorstr+"."+releasestr+"</a></b><br>";
-			content+="You can see the release info <a href=\"versioninfo.htm?Major="+majorstr+"&Minor="+minorstr+"&Release="+releasestr+"\">here</a><br>";
+			content+="<strong>"+m_trans->Get("web.page.home.oldversion")+" <a href=\"http://"+fcphost+":"+fproxyport+"/"+freesite+"\">FMS "+majorstr+"."+minorstr+"."+releasestr+"</a></strong><br>";
+			content+=m_trans->Get("web.page.home.releaseinfo")+" <a href=\"versioninfo.htm?Major="+majorstr+"&Minor="+minorstr+"&Release="+releasestr+"\">"+m_trans->Get("web.page.home.here")+"</a><br>";
 			showgenericupdate=false;
 		}
 		else
 		{
-			content+="<a href=\"versioninfo.htm\">Release info</a><br>";
+			content+="<a href=\"versioninfo.htm\">"+m_trans->Get("web.page.home.releaseinfo")+"</a><br>";
 		}
 
 	}
 
 	if(showgenericupdate)
 	{
-		content+="Check for new versions at the <a href=\"http://"+fcphost+":"+fproxyport+"/"+FMS_FREESITE_USK+"\">FMS Freesite</a><br>";
+		content+=m_trans->Get("web.page.home.checknewreleases")+" <a href=\"http://"+fcphost+":"+fproxyport+"/"+FMS_FREESITE_USK+"\">"+m_trans->Get("web.page.home.fmsfreesite")+"</a><br>";
 	}
 
-	content+="Use these pages to administer your FMS installation.";
+	content+=m_trans->Get("web.page.home.admininstructions");
 	content+="</p>";
 
 	st=m_db->Prepare("SELECT COUNT(*) FROM tblMessageInserts WHERE Inserted='false';");
@@ -89,10 +89,10 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 	{
 		st.ResultText(0,messagecountstr);
 	}
-	content+="Messages waiting to be inserted:"+messagecountstr;
+	content+=m_trans->Get("web.page.home.messageswaiting")+messagecountstr;
 	if (messagecountstr!="0") //show link to message page
 	{
-		content+=" (<a href=\"showpendingmessage.htm\">show messages</a>)";
+		content+=" (<a href=\"showpendingmessage.htm\">"+m_trans->Get("web.page.home.showmessageswaiting")+"</a>)";
 	}
 	content+="<br>";
 	st=m_db->Prepare("SELECT COUNT(*) FROM tblFileInserts WHERE Key IS NULL;");
@@ -101,16 +101,16 @@ const std::string HomePage::GeneratePage(const std::string &method, const std::m
 	{
 		st.ResultText(0,filecountstr);
 	}
-	content+="Files waiting to be inserted:"+filecountstr+"<br>";
+	content+=m_trans->Get("web.page.home.fileswaiting")+filecountstr+"<br>";
 	content+="<p class=\"paragraph\">";
 	content+="<form name=\"frmshutdown\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"shutdown\">";
-	content+="<input type=\"submit\" value=\"Shutdown FMS\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.home.shutdownfms")+"\">";
 	content+="</form>";
 	content+="</p>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const bool HomePage::WillHandleURI(const std::string &uri)

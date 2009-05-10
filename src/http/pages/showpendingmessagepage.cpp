@@ -10,7 +10,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string ShowPendingMessagePage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ShowPendingMessagePage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="delete" && ValidateFormPassword(queryvars))
 	{
@@ -23,7 +23,7 @@ const std::string ShowPendingMessagePage::GeneratePage(const std::string &method
 	int msgcount=0;
 	std::string tblcontent="";
 	std::string content="";
-	tblcontent+="<table><tr><td>Identity</td><td>Boards</td><td>Subject</td><td>Time</td></tr>";
+	tblcontent+="<table><tr><td>"+m_trans->Get("web.page.pendingmessages.identity")+"</td><td>"+m_trans->Get("web.page.pendingmessages.boards")+"</td><td>"+m_trans->Get("web.page.pendingmessages.subject")+"</td><td>"+m_trans->Get("web.page.pendingmessages.time")+"</td></tr>";
 	while (st.RowReturned())
 	{	
 		int identityid=0;
@@ -60,7 +60,7 @@ const std::string ShowPendingMessagePage::GeneratePage(const std::string &method
 		tblcontent+=CreateFormPassword();
 		tblcontent+="<input type=\"hidden\" name=\"formaction\" value=\"delete\">";
 		tblcontent+="<input type=\"hidden\" name=\"uuid\" value=\""+uuid+"\">";
-		tblcontent+="<input type=\"submit\" value=\"Delete Message\">";
+		tblcontent+="<input type=\"submit\" value=\""+m_trans->Get("web.page.pendingmessages.deletemessage")+"\">";
 		tblcontent+="</form>";
 		tblcontent+="</td></tr>";
 		st.Step();
@@ -70,9 +70,9 @@ const std::string ShowPendingMessagePage::GeneratePage(const std::string &method
 
 	std::string msgcountstr("");
 	StringFunctions::Convert(msgcount,msgcountstr);
-	content="<h2>"+msgcountstr+" messages waiting to be inserted</h2>";
+	content="<h2>"+msgcountstr+" "+m_trans->Get("web.page.pendingmessages.messageswaiting")+"</h2>";
 
 	content+=tblcontent;
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }

@@ -1,6 +1,8 @@
 #include "../include/global.h"
 #include "../include/stringfunctions.h"
 
+Poco::SingletonHolder<StringTranslation> Translation;
+
 std::string CreateShortIdentityName(const std::string &name, const std::string &publickey)
 {
 	std::string result="";

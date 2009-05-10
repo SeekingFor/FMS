@@ -10,7 +10,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string PeerMaintenancePage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string PeerMaintenancePage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 	SQLite3DB::Statement st;
@@ -81,20 +81,20 @@ const std::string PeerMaintenancePage::GeneratePage(const std::string &method, c
 		}
 	}
 
-	content+="<h2>Peer Maintenance</h2>";
-	content+="<p class=\"paragraph\">Removing a peer will not remove the messages they sent, but will remove everything else about that peer, including their trust levels.</p>";
+	content+="<h2>"+m_trans->Get("web.page.peermaintenance.title")+"</h2>";
+	content+="<p class=\"paragraph\">"+m_trans->Get("web.page.peermaintenance.instructions")+"</p>";
 	content+="<p>";
-	content+="<a href=\"recentlyadded.htm\">Recently Added Peers</a>";
+	content+="<a href=\"recentlyadded.htm\">"+m_trans->Get("web.page.peermaintenance.recentlyadded")+"</a>";
 	content+="</p>";
 	content+="<table>";
-	content+="<tr><th colspan=\"3\">Stats</th></tr>";
+	content+="<tr><th colspan=\"3\">"+m_trans->Get("web.page.peermaintenance.stats")+"</th></tr>";
 
 	content+="<tr>";
 	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity;");
 	st.Step();
 	st.ResultText(0,tempval);
 	content+="<td>"+tempval+"</td>";
-	content+="<td>known peers</td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.knownpeers")+"</td>";
 	content+="</tr>";
 
 	content+="<tr>";
@@ -102,12 +102,12 @@ const std::string PeerMaintenancePage::GeneratePage(const std::string &method, c
 	st.Step();
 	st.ResultText(0,tempval);
 	content+="<td>"+tempval+"</td>";
-	content+="<td>never seen</td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.neverseen")+"</td>";
 	content+="<td>";
 	content+="<form name=\"frmremove\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"removenotseen\">";
-	content+="<input type=\"submit\" value=\"Remove\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peermaintenance.remove")+"\">";
 	content+="</form>";
 	content+="</td>";
 	content+="</tr>";
@@ -120,12 +120,12 @@ const std::string PeerMaintenancePage::GeneratePage(const std::string &method, c
 	st.ResultText(0,tempval);
 	content+="<tr>";
 	content+="<td>"+tempval+"</td>";
-	content+="<td>last seen more than 20 days ago</td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.lastseen20days")+"</td>";
 	content+="<td>";
 	content+="<form name=\"frmremove\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"removelastseen20\">";
-	content+="<input type=\"submit\" value=\"Remove\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peermaintenance.remove")+"\">";
 	content+="</form>";
 	content+="</td>";
 	content+="</tr>";
@@ -138,12 +138,12 @@ const std::string PeerMaintenancePage::GeneratePage(const std::string &method, c
 	st.ResultText(0,tempval);
 	content+="<tr>";
 	content+="<td>"+tempval+"</td>";
-	content+="<td>last sent a message more than 30 days ago</td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.lastsent30days")+"</td>";
 	content+="<td>";
 	content+="<form name=\"frmremove\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"removeposted30daysago\">";
-	content+="<input type=\"submit\" value=\"Remove\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peermaintenance.remove")+"\">";
 	content+="</form>";
 	content+="</td>";
 	content+="</tr>";
@@ -153,12 +153,12 @@ const std::string PeerMaintenancePage::GeneratePage(const std::string &method, c
 	st.ResultText(0,tempval);
 	content+="<tr>";
 	content+="<td>"+tempval+"</td>";
-	content+="<td>never sent a message</td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.neversent")+"</td>";
 	content+="<td>";
 	content+="<form name=\"frmremove\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"removeneversent\">";
-	content+="<input type=\"submit\" value=\"Remove\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peermaintenance.remove")+"\">";
 	content+="</form>";
 	content+="</td>";
 	content+="</tr>";
@@ -171,12 +171,12 @@ const std::string PeerMaintenancePage::GeneratePage(const std::string &method, c
 	st.ResultText(0,tempval);
 	content+="<tr>";
 	content+="<td>"+tempval+"</td>";
-	content+="<td>added more than 20 days ago and never sent a message</td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.added20daysneversent")+"</td>";
 	content+="<td>";
 	content+="<form name=\"frmremove\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"removeadded20daysneversent\">";
-	content+="<input type=\"submit\" value=\"Remove\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peermaintenance.remove")+"\">";
 	content+="</form>";
 	content+="</td>";
 	content+="</tr>";
@@ -189,12 +189,12 @@ const std::string PeerMaintenancePage::GeneratePage(const std::string &method, c
 	st.ResultText(0,tempval);
 	content+="<tr>";
 	content+="<td>"+tempval+"</td>";
-	content+="<td>last seen more than 20 days ago and never sent a message</td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.lastseen20daysneversent")+"</td>";
 	content+="<td>";
 	content+="<form name=\"frmremove\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"removelastseenneversent20\">";
-	content+="<input type=\"submit\" value=\"Remove\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peermaintenance.remove")+"\">";
 	content+="</form>";
 	content+="</td>";
 	content+="</tr>";
@@ -203,21 +203,21 @@ const std::string PeerMaintenancePage::GeneratePage(const std::string &method, c
 	content+="<td><form name=\"frmdelete\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"removedaysago\"></td>";
-	content+="<td>last seen <input type=\"text\" name=\"daysago\" size=\"2\"> days ago</td>";
-	content+="<td><input type=\"submit\" value=\"Remove\"></form></td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.lastseen")+" <input type=\"text\" name=\"daysago\" size=\"2\"> "+m_trans->Get("web.page.peermaintenance.daysago")+"</td>";
+	content+="<td><input type=\"submit\" value=\""+m_trans->Get("web.page.peermaintenance.remove")+"\"></form></td>";
 	content+="</tr>";
 
 	content+="<tr>";
 	content+="<td><form name=\"frmdelete\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"removenulldaysago\"></td>";
-	content+="<td>last seen <input type=\"text\" name=\"daysago\" size=\"2\"> days ago, and have null local trust</td>";
-	content+="<td><input type=\"submit\" value=\"Remove\"></form></td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.lastseen")+" <input type=\"text\" name=\"daysago\" size=\"2\"> "+m_trans->Get("web.page.peermaintenance.daysagonulltrust")+"</td>";
+	content+="<td><input type=\"submit\" value=\""+m_trans->Get("web.page.peermaintenance.remove")+"\"></form></td>";
 	content+="</tr>";
 
 	content+="</table>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const bool PeerMaintenancePage::WillHandleURI(const std::string &uri)

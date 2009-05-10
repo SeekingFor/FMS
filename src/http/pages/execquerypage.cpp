@@ -5,7 +5,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string ExecQueryPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ExecQueryPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 	std::string query="";
@@ -54,15 +54,15 @@ const std::string ExecQueryPage::GeneratePage(const std::string &method, const s
 		content+="</table>";
 	}
 
-	content+="<h2>Execute Query</h2>";
+	content+="<h2>"+m_trans->Get("web.page.execquery.title")+"</h2>";
 	content+="<form name=\"frmquery\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"execute\">";
 	content+="<textarea name=\"query\" rows=\"10\" cols=\"80\">"+StringFunctions::Replace(query,"<","&lt;")+"</textarea>";
-	content+="<input type=\"submit\" value=\"Execute Query\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.execquery.executequery")+"\">";
 	content+="</form>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const bool ExecQueryPage::WillHandleURI(const std::string &uri)

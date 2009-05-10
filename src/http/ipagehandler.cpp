@@ -72,13 +72,13 @@ const std::string IPageHandler::CreateTrueFalseDropDown(const std::string &name,
 	{
 		rval+=" SELECTED";
 	}
-	rval+=">true</option>";
+	rval+=">"+m_trans->Get("web.option.true")+"</option>";
 	rval+="<option value=\"false\"";
 	if(selected=="false")
 	{
 		rval+=" SELECTED";
 	}
-	rval+=">false</option>";
+	rval+=">"+m_trans->Get("web.option.false")+"</option>";
 	rval+="</select>";
 
 	return rval;
@@ -119,6 +119,35 @@ void IPageHandler::CreateQueryVarMap(Poco::Net::HTTPServerRequest &request, std:
 		vars[(*i).first]=(*i).second;
 	}
 
+}
+
+const std::string IPageHandler::GenerateNavigationLinks()
+{
+	std::string links="<div class=\"box\">\n";
+	links+="	<div class=\"header\">"+m_trans->Get("web.navlink.links")+"</div>\n";
+	links+="	<ul>\n";
+	links+="		<li><a href=\"index.htm\">"+m_trans->Get("web.navlink.home")+"</a></li>\n";
+	links+="		<li><a href=\"options.htm\">"+m_trans->Get("web.navlink.options")+"</a></li>\n";
+	links+="		<li><a href=\"createidentity.htm\">"+m_trans->Get("web.navlink.createidentity")+"</a></li>\n";
+	links+="		<li><a href=\"localidentities.htm\">"+m_trans->Get("web.navlink.localidentities")+"</a></li>\n";
+	links+="		<li><a href=\"announceidentity.htm\">"+m_trans->Get("web.navlink.announceidentity")+"</a></li>\n";
+	links+="		<li><a href=\"addpeer.htm\">"+m_trans->Get("web.navlink.addpeer")+"</a></li>\n";
+	links+="		<li><a href=\"peermaintenance.htm\">"+m_trans->Get("web.navlink.peermaintenance")+"</a></li>\n";
+	links+="		<li><a href=\"peertrust.htm\">"+m_trans->Get("web.navlink.peertrust")+"</a></li>\n";
+	links+="		<li><a href=\"boards.htm\">"+m_trans->Get("web.navlink.boardmaintenance")+"</a></li>\n";
+	links+="		<li><a href=\"controlboard.htm\">"+m_trans->Get("web.navlink.controlboards")+"</a></li>\n";
+	links+="		<li><a href=\"insertedfiles.htm\">"+m_trans->Get("web.navlink.insertedfiles")+"</a></li>\n";
+	links+="		<li><a href=\"forummain.htm\">"+m_trans->Get("web.navlink.browseforums")+"</a></li>\n";
+	links+="	</ul>\n";
+	links+="</div>\n";
+
+	return links;
+
+}
+
+const std::string IPageHandler::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+{
+	return StringFunctions::Replace(StringFunctions::Replace(m_template,"[NAVLINKS]",GenerateNavigationLinks()),"[CONTENT]",GenerateContent(method,queryvars));
 }
 
 void IPageHandler::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response)

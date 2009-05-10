@@ -6,9 +6,9 @@
 	#include <xmem.h>
 #endif
 
-const std::string InsertedFilesPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string InsertedFilesPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
-	std::string content="<h2>Inserted Files</h2>";
+	std::string content="<h2>"+m_trans->Get("web.page.insertedfiles.title")+"</h2>";
 
 	Option option(m_db);
 	std::string node="localhost";
@@ -43,14 +43,14 @@ const std::string InsertedFilesPage::GeneratePage(const std::string &method, con
 		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"removefile\">";
 		content+="<input type=\"hidden\" name=\"fileid\" value=\""+insertidstr+"\">";
-		content+="<input type=\"submit\" value=\"Remove\">";
+		content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.insertedfiles.remove")+"\">";
 		content+="</form>";
 		content+="<br>";
 
 		st.Step();
 	}
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const bool InsertedFilesPage::WillHandleURI(const std::string &uri)

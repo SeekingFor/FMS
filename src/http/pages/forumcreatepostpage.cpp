@@ -7,7 +7,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string ForumCreatePostPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ForumCreatePostPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	int page=0;
 	std::string content="";
@@ -46,7 +46,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 		}
 		else
 		{
-			error="You must select a local identity as the sender<br />";
+			error=m_trans->Get("web.page.forumcreatepost.error.localidentity")+"<br />";
 		}
 
 		if(queryvars.find("subject")!=queryvars.end() && (*queryvars.find("subject")).second!="")
@@ -55,7 +55,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 		}
 		else
 		{
-			error+="You must enter a subject<br />";
+			error+=m_trans->Get("web.page.forumcreatepost.error.subject")+"<br />";
 		}
 
 		if(queryvars.find("body")!=queryvars.end() && (*queryvars.find("body")).second!="")
@@ -66,7 +66,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 		}
 		else
 		{
-			error+="You must enter a message body</br />";
+			error+=m_trans->Get("web.page.forumcreatepost.error.body")+"</br />";
 		}
 
 		if(error=="")
@@ -104,7 +104,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 			}
 			else
 			{
-				error="Could not create message";
+				error=m_trans->Get("web.page.forumcreatepost.error.message");
 			}
 		}
 	}
@@ -152,7 +152,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 					}
 					body+="\n";
 				}
-				body=fromname+" wrote:\n"+body;
+				body=fromname+" "+m_trans->Get("web.page.forumcreatepost.wrote")+"\n"+body;
 
 			}
 		}
@@ -170,7 +170,7 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 
 	content+="<table class=\"forumheader\">";
 	content+="<tr>";
-	content+="<td>Forum : <a href=\"forumthreads.htm?boardid="+boardidstr+"&currentpage="+currentpagestr+"\">"+SanitizeOutput(boardname)+"</a></td>";
+	content+="<td>"+m_trans->Get("web.page.forumcreatepost.forum")+" <a href=\"forumthreads.htm?boardid="+boardidstr+"&currentpage="+currentpagestr+"\">"+SanitizeOutput(boardname)+"</a></td>";
 	content+="</tr>";
 	content+="</table>\r\n";
 
@@ -189,19 +189,19 @@ const std::string ForumCreatePostPage::GeneratePage(const std::string &method, c
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"send\">";
 		content+=CreateFormPassword();
 		content+="<table class=\"createpost\">";
-		content+="<tr><td class=\"identity\">From</td><td>"+LocalIdentityDropDown("localidentityid",localidentityidstr)+"</td></tr>";
-		content+="<tr><td class=\"subject\">Subject</td><td><input type=\"text\" name=\"subject\" maxlength=\"60\" size=\"60\" value=\""+SanitizeOutput(subject)+"\"></td></tr>";
-		content+="<tr><td class=\"body\">Message</td><td><textarea name=\"body\" cols=\"80\" rows=\"30\">"+SanitizeTextAreaOutput(body)+"</textarea></td></tr>";
-		content+="<tr><td colspan=\"2\" class=\"send\"><input type=\"submit\" value=\"Send\"></td></tr>";
+		content+="<tr><td class=\"identity\">"+m_trans->Get("web.page.forumcreatepost.from")+"</td><td>"+LocalIdentityDropDown("localidentityid",localidentityidstr)+"</td></tr>";
+		content+="<tr><td class=\"subject\">"+m_trans->Get("web.page.forumcreatepost.subject")+"</td><td><input type=\"text\" name=\"subject\" maxlength=\"60\" size=\"60\" value=\""+SanitizeOutput(subject)+"\"></td></tr>";
+		content+="<tr><td class=\"body\">"+m_trans->Get("web.page.forumcreatepost.message")+"</td><td><textarea name=\"body\" cols=\"80\" rows=\"30\">"+SanitizeTextAreaOutput(body)+"</textarea></td></tr>";
+		content+="<tr><td colspan=\"2\" class=\"send\"><input type=\"submit\" value=\""+m_trans->Get("web.page.forumcreatepost.send")+"\"></td></tr>";
 		content+="</table>\r\n";
 		content+="</form>";
 	}
 	else if(page==1)
 	{
-		content+="You have sent your message.  It will show up in the thread after it has been successfully inserted and retrieved by FMS.";
+		content+=m_trans->Get("web.page.forumcreatepost.successfulsend");
 	}
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const std::string ForumCreatePostPage::LocalIdentityDropDown(const std::string &name, const std::string &selectedid)

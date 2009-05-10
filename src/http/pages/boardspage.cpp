@@ -32,7 +32,7 @@ const std::string BoardsPage::BuildQueryString(const long startrow, const std::s
 
 }
 
-const std::string BoardsPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string BoardsPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	int boardcount=0;
 	std::string content="";
@@ -146,7 +146,7 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 		boardsearch=(*queryvars.find("boardsearch")).second;
 	}
 
-	content+="<h2>Boards</h2>";
+	content+="<h2>"+m_trans->Get("web.page.boards.title")+"</h2>";
 
 	sql="SELECT COUNT(*) FROM tblBoard WHERE BoardID NOT IN (SELECT BoardID FROM tblAdministrationBoard)";
 	if(boardsearch!="")
@@ -188,23 +188,23 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 
 	content+="<tr>";
 	content+="<td colspan=\"3\"><center>";
-	content+="<form name=\"frmboardsearch\" action=\"boards.htm\" method=\"POST\"><input type=\"text\" name=\"boardsearch\" value=\""+SanitizeOutput(boardsearch)+"\">"+CreateFormPassword()+"<input type=\"submit\" value=\"Search\"></form>";
+	content+="<form name=\"frmboardsearch\" action=\"boards.htm\" method=\"POST\"><input type=\"text\" name=\"boardsearch\" value=\""+SanitizeOutput(boardsearch)+"\">"+CreateFormPassword()+"<input type=\"submit\" value=\""+m_trans->Get("web.page.boards.search")+"\"></form>";
 	content+="</center></td>";
 	content+="</tr>";
 
 	content+="<tr>";
 	content+="<td colspan=\"3\"><center>";
-	content+="<form name=\"frmremoveboard\" action=\"boards.htm\" method=\"POST\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"remove0messages\">Remove boards with 0 messages<input type=\"submit\" value=\"Remove\"></form>";
+	content+="<form name=\"frmremoveboard\" action=\"boards.htm\" method=\"POST\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"remove0messages\">"+m_trans->Get("web.page.boards.remove0messages")+"<input type=\"submit\" value=\""+m_trans->Get("web.page.boards.remove")+"\"></form>";
 	content+="</center></td>";
 	content+="</tr>";
 
 	content+="<tr>";
-	content+="<td><form name=\"frmaddboard\" method=\"POST\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"addboard\"><input type=\"text\" name=\"boardname\"></td><td><input type=\"text\" name=\"boarddescription\" size=\"40\" maxlength=\"50\"></td><td><input type=\"submit\" value=\"Add Board\"></form></td>";
+	content+="<td><form name=\"frmaddboard\" method=\"POST\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"addboard\"><input type=\"text\" name=\"boardname\"></td><td><input type=\"text\" name=\"boarddescription\" size=\"40\" maxlength=\"50\"></td><td><input type=\"submit\" value=\""+m_trans->Get("web.page.boards.addboard")+"\"></form></td>";
 	content+="</tr>";
 
 	content+="<tr><td colspan=\"4\"><hr><form name=\"frmboards\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"</td></tr>";
 	content+="<tr>";
-	content+="<th>Name</th><th>Description</th><th>Save Received Messages *</th><th>Forum</th><th>Added Method</th>";
+	content+="<th>"+m_trans->Get("web.page.boards.name")+"</th><th>"+m_trans->Get("web.page.boards.description")+"</th><th>"+m_trans->Get("web.page.boards.savereceivedmessages")+"</th><th>"+m_trans->Get("web.page.boards.forum")+"</th><th>"+m_trans->Get("web.page.boards.addedmethod")+"</th>";
 	content+="</tr>";	
 	while(st.RowReturned() && rownum<rowsperpage)
 	{
@@ -263,7 +263,7 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 		if(startrow>0)
 		{
 			StringFunctions::Convert(startrow-rowsperpage,tempstr);
-			content+="<td colspan=\"2\" style=\"text-align:left;\"><a href=\"boards.htm?"+BuildQueryString(startrow-rowsperpage,boardsearch)+"\"><-- Previous Page</a></td>";
+			content+="<td colspan=\"2\" style=\"text-align:left;\"><a href=\"boards.htm?"+BuildQueryString(startrow-rowsperpage,boardsearch)+"\">"+m_trans->Get("web.page.boards.previouspage")+"</a></td>";
 			cols+=2;
 		}
 		if(startrow+rowsperpage<boardcount)
@@ -273,20 +273,20 @@ const std::string BoardsPage::GeneratePage(const std::string &method, const std:
 				content+="<td></td>";
 				cols++;
 			}
-			content+="<td colspan=\"1\" style=\"text-align:left;\"><a href=\"boards.htm?"+BuildQueryString(startrow+rowsperpage,boardsearch)+"\">Next Page --></a></td>";
+			content+="<td colspan=\"1\" style=\"text-align:left;\"><a href=\"boards.htm?"+BuildQueryString(startrow+rowsperpage,boardsearch)+"\">"+m_trans->Get("web.page.boards.nextpage")+"</a></td>";
 		}
 		content+="</tr>";
 	}
 
 	content+="<tr>";
-	content+="<td colspan=\"4\"><center><input type=\"submit\" value=\"Update\"></center></form></td>";
+	content+="<td colspan=\"4\"><center><input type=\"submit\" value=\""+m_trans->Get("web.page.boards.update")+"\"></center></form></td>";
 	content+="</tr>";
 	content+="</table>";
 	content+="<p class=\"paragraph\">";
-	content+="* If you uncheck this box, any new messages you download that are posted to this board will be discarded.  When multiple local identities are used, it is best not to discard messages from any boards, as identifying which identities are the same person is much easier when their message lists are missing messages from the same boards.";
+	content+=m_trans->Get("web.page.boards.saveinstructions");
 	content+="</p>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const bool BoardsPage::WillHandleURI(const std::string &uri)

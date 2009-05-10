@@ -38,13 +38,13 @@ protected:
 	const std::string CreateForumHeader()
 	{
 		std::string content="<table class=\"header\">\r\n";
-		content+="<tr><td><a href=\"index.htm\">Home</a> | <a href=\"forummain.htm\">Browse Forums</a></td></tr>\r\n";
+		content+="<tr><td><a href=\"index.htm\">"+m_trans->Get("web.navlink.home")+"</a> | <a href=\"forummain.htm\">"+m_trans->Get("web.navlink.browseforums")+"</a></td></tr>\r\n";
 		content+="</table>\r\n";
 		return content;
 	}
 
 private:
-	virtual const std::string GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)=0;
+	virtual const std::string GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)=0;
 
 };
 

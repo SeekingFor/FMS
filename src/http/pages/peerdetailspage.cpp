@@ -7,7 +7,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string PeerDetailsPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string PeerDetailsPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 	int identityid=0;
@@ -222,7 +222,7 @@ const std::string PeerDetailsPage::GeneratePage(const std::string &method, const
 	}
 	content+="</table>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const std::string PeerDetailsPage::GetClassString(const std::string &trustlevel)

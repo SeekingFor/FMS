@@ -2,7 +2,7 @@
 #include "../../../include/stringfunctions.h"
 #include <cmath>
 
-const std::string ForumThreadsPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ForumThreadsPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	int currentpage=1;
 	std::string currentpagestr="1";
@@ -57,15 +57,15 @@ const std::string ForumThreadsPage::GeneratePage(const std::string &method, cons
 	{
 		std::string boardname="";
 		boardnamest.ResultText(0,boardname);
-		content+="<td>Forum : <a href=\"forumthreads.htm?boardid="+boardidstr+"\">"+SanitizeOutput(boardname)+"</a></td>";
+		content+="<td>"+m_trans->Get("web.page.forumthreads.forum")+" <a href=\"forumthreads.htm?boardid="+boardidstr+"\">"+SanitizeOutput(boardname)+"</a></td>";
 	}
-	content+="<td><a href=\"forumthreads.htm?boardid="+boardidstr+"&currentpage="+currentpagestr+"&formaction=markallread\">Mark All Read</a></td>";
-	content+="<td><a href=\"forumcreatepost.htm?boardid="+boardidstr+"&currentpage="+currentpagestr+"\">New Post</a></td>";
+	content+="<td><a href=\"forumthreads.htm?boardid="+boardidstr+"&currentpage="+currentpagestr+"&formaction=markallread\">"+m_trans->Get("web.page.forumthreads.markallread")+"</a></td>";
+	content+="<td><a href=\"forumcreatepost.htm?boardid="+boardidstr+"&currentpage="+currentpagestr+"\">"+m_trans->Get("web.page.forumthreads.newpost")+"</a></td>";
 	content+="</tr>";
 	content+="</table>\r\n";
 
 	content+="<table class=\"threadinfo\">";
-	content+="<thead><tr><th>New</th><th>Subject</th><th>Started By</th><th>Replies</th><th>Last Post</th></tr></thread>\r\n";
+	content+="<thead><tr><th>"+m_trans->Get("web.page.forumthreads.header.new")+"</th><th>"+m_trans->Get("web.page.forumthreads.header.subject")+"</th><th>"+m_trans->Get("web.page.forumthreads.header.startedby")+"</th><th>"+m_trans->Get("web.page.forumthreads.header.replies")+"</th><th>"+m_trans->Get("web.page.forumthreads.header.lastpost")+"</th></tr></thread>\r\n";
 	
 	sql="SELECT tblThread.ThreadID, tblThread.LastMessageID, tblLastMessage.FromName, tblLastMessage.MessageDate || ' ' || tblLastMessage.MessageTime, tblFirstMessage.Subject, tblFirstMessage.FromName, tblFirstMessage.IdentityID, tblLastMessage.IdentityID";
 	sql+=" FROM tblThread INNER JOIN tblMessage AS tblLastMessage ON tblThread.LastMessageID=tblLastMessage.MessageID INNER JOIN tblMessage AS tblFirstMessage ON tblThread.FirstMessageID=tblFirstMessage.MessageID";
@@ -104,11 +104,11 @@ const std::string ForumThreadsPage::GeneratePage(const std::string &method, cons
 		newthreadpostst.Step();
 		if(newthreadpostst.RowReturned())
 		{
-			content+="<img src=\"showimage.htm?image=images/new_posts.png\" title=\"New Posts\">";
+			content+="<img src=\"showimage.htm?image=images/new_posts.png\" title=\""+m_trans->Get("web.page.forum.newposts")+"\">";
 		}
 		else
 		{
-			content+="<img src=\"showimage.htm?image=images/no_new_posts.png\" title=\"No New Posts\">";
+			content+="<img src=\"showimage.htm?image=images/no_new_posts.png\" title=\""+m_trans->Get("web.page.forum.nonewposts")+"\">";
 		}
 		newthreadpostst.Reset();
 
@@ -139,7 +139,7 @@ const std::string ForumThreadsPage::GeneratePage(const std::string &method, cons
 		content+="</td>";
 
 		content+="<td class=\"threadlastpost\">";
-		content+=lastmessagedate+"<br />by <a href=\"peerdetails.htm?identityid="+lastmessageidentityidstr+"\">"+FixFromName(lastmessagefromname)+"</a>";
+		content+=lastmessagedate+"<br />"+m_trans->Get("web.page.forumthreads.by")+" <a href=\"peerdetails.htm?identityid="+lastmessageidentityidstr+"\">"+FixFromName(lastmessagefromname)+"</a>";
 		content+="</td>";
 
 		content+="</tr>\r\n";
@@ -160,7 +160,7 @@ const std::string ForumThreadsPage::GeneratePage(const std::string &method, cons
 		int lastwrote=0;
 		content+="<tr>";
 		
-		content+="<td class=\"pages\" colspan=\"7\">Pages : ";
+		content+="<td class=\"pages\" colspan=\"7\">"+m_trans->Get("web.page.forumthreads.pages")+" ";
 
 		for(int i=1; i<=totalpages; i++)
 		{
@@ -184,7 +184,7 @@ const std::string ForumThreadsPage::GeneratePage(const std::string &method, cons
 			}
 		}
 
-		content+="<form><input type=\"hidden\" name=\"boardid\" value=\""+boardidstr+"\"><input type=\"text\" name=\"currentpage\"><input type=\"submit\" value=\"Go\"></form>";
+		content+="<form><input type=\"hidden\" name=\"boardid\" value=\""+boardidstr+"\"><input type=\"text\" name=\"currentpage\"><input type=\"submit\" value=\""+m_trans->Get("web.page.forumthreads.go")+"\"></form>";
 		
 		content+="</td>";
 
@@ -193,5 +193,5 @@ const std::string ForumThreadsPage::GeneratePage(const std::string &method, cons
 	
 	content+="</table>\r\n";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }

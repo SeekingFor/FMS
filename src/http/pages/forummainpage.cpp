@@ -5,14 +5,14 @@
 	#include <xmem.h>
 #endif
 
-const std::string ForumMainPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ForumMainPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 
 	content+=CreateForumHeader();
 
 	content+="<table class=\"foruminfo\">\r\n";
-	content+="<thead><tr><th>New</th><th>Forum</th><th>Posts</th><th>Last Post</th></tr></thead>\r\n";
+	content+="<thead><tr><th>"+m_trans->Get("web.page.forummain.header.new")+"</th><th>"+m_trans->Get("web.page.forummain.header.forum")+"</th><th>"+m_trans->Get("web.page.forummain.header.posts")+"</th><th>"+m_trans->Get("web.page.forummain.header.lastpost")+"</th></tr></thead>\r\n";
 
 	SQLite3DB::Statement newmessagesst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblMessageBoard.BoardID=? AND tblThread.BoardID=? AND tblMessage.Read=0 LIMIT 0,1;");
 	SQLite3DB::Statement lastmessagest=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblThread.ThreadID FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblThread.BoardID=? ORDER BY tblMessage.MessageDate || tblMessage.MessageTime DESC LIMIT 0,1;");
@@ -41,11 +41,11 @@ const std::string ForumMainPage::GeneratePage(const std::string &method, const s
 		newmessagesst.Step();
 		if(newmessagesst.RowReturned())
 		{
-			content+="<img src=\"showimage.htm?image=images/new_posts.png\" title=\"New Posts\">";
+			content+="<img src=\"showimage.htm?image=images/new_posts.png\" title=\""+m_trans->Get("web.page.forum.newposts")+"\">";
 		}
 		else
 		{
-			content+="<img src=\"showimage.htm?image=images/no_new_posts.png\" title=\"No New Posts\">";
+			content+="<img src=\"showimage.htm?image=images/no_new_posts.png\" title=\""+m_trans->Get("web.page.forum.nonewposts")+"\">";
 		}
 		newmessagesst.Reset();
 
@@ -56,7 +56,7 @@ const std::string ForumMainPage::GeneratePage(const std::string &method, const s
 		content+="<span class=\"description\">"+SanitizeOutput(boarddescription)+"</span>";
 		content+="</td>";
 		content+="<td class=\"postcount\">";
-		content+=postcountstr+" posts";
+		content+=postcountstr+" "+m_trans->Get("web.page.forummain.posts");
 		content+="</td>";
 
 		lastmessagest.Bind(0,boardid);
@@ -78,8 +78,8 @@ const std::string ForumMainPage::GeneratePage(const std::string &method, const s
 			lastmessagest.ResultText(4,messagedate);
 			lastmessagest.ResultText(5,threadidstr);
 
-			content+="Last post on "+messagedate+" in<br />";
-			content+="<a href=\"forumviewthread.htm?threadid="+threadidstr+"&boardid="+boardidstr+"#"+messageidstr+"\">"+FixSubject(subject)+"</a> by <a href=\"peerdetails.htm?identityid="+identityidstr+"\" title=\""+SanitizeOutput(fromname)+"\">"+FixFromName(fromname)+"</a>";
+			content+=m_trans->Get("web.page.forummain.lastposton")+" "+messagedate+" "+m_trans->Get("web.page.forummain.in")+"<br />";
+			content+="<a href=\"forumviewthread.htm?threadid="+threadidstr+"&boardid="+boardidstr+"#"+messageidstr+"\">"+FixSubject(subject)+"</a> "+m_trans->Get("web.page.forummain.by")+" <a href=\"peerdetails.htm?identityid="+identityidstr+"\" title=\""+SanitizeOutput(fromname)+"\">"+FixFromName(fromname)+"</a>";
 		}
 		content+="</td>";
 		lastmessagest.Reset();
@@ -90,5 +90,5 @@ const std::string ForumMainPage::GeneratePage(const std::string &method, const s
 
 	content+="</table>\r\n";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }

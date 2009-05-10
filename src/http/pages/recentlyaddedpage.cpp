@@ -6,7 +6,7 @@
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/Timespan.h>
 
-const std::string RecentlyAddedPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string RecentlyAddedPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 	Poco::DateTime date;
@@ -32,7 +32,7 @@ const std::string RecentlyAddedPage::GeneratePage(const std::string &method, con
 
 	}
 
-	content="<h2>Recently Added Peers</h2>";
+	content="<h2>"+m_trans->Get("web.page.recentlyadded.title")+"</h2>";
 
 	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID, PublicKey, Name, DateAdded, AddedMethod FROM tblIdentity WHERE DateAdded>=? ORDER BY DateAdded DESC;");
 	date-=Poco::Timespan(5,0,0,0,0);
@@ -43,7 +43,7 @@ const std::string RecentlyAddedPage::GeneratePage(const std::string &method, con
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"delete\">";
 	content+="<table class=\"small90\">";
-	content+="<tr><th>Name</th><th>Date Added</th><th>Added Method</th></tr>";
+	content+="<tr><th>"+m_trans->Get("web.page.recentlyadded.name")+"</th><th>"+m_trans->Get("web.page.recentlyadded.dateadded")+"</th><th>"+m_trans->Get("web.page.recentlyadded.addedmethod")+"</th></tr>";
 
 	while(st.RowReturned())
 	{
@@ -76,8 +76,8 @@ const std::string RecentlyAddedPage::GeneratePage(const std::string &method, con
 
 		st.Step();
 	}
-	content+="<tr><td colspan=\"4\"><center><input type=\"submit\" value=\"Delete Selected\"></center></td></tr>";
+	content+="<tr><td colspan=\"4\"><center><input type=\"submit\" value=\""+m_trans->Get("web.page.recentlyadded.deleteselected")+"\"></center></td></tr>";
 	content+="</table>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }

@@ -9,6 +9,10 @@
 #error "Your version of SQLite is too old!  3.6.6.2 or later is required."
 #endif
 
+#if SQLITE_VERSION_NUMBER==3006014
+#error "SQLite 3.6.14 does not work with FMS!"
+#endif
+
 namespace SQLite3DB
 {
 

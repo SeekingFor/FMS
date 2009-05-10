@@ -7,33 +7,33 @@
 	#include <xmem.h>
 #endif
 
-const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string LocalIdentitiesPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	int count;
 	std::string countstr;
 	std::string content="";
 
-	content+="<h2>Local Identities</h2>";
+	content+="<h2>"+m_trans->Get("web.page.localidentities.title")+"</h2>";
 
-	content+="<table><tr><th>Export Identities</th><th>Import Identities</th></tr>";
+	content+="<table><tr><th>"+m_trans->Get("web.page.localidentities.exportidentities")+"</th><th>"+m_trans->Get("web.page.localidentities.importidentities")+"</th></tr>";
 	content+="<tr><td>";
 	content+="<form name=\"frmexport\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"export\">";
-	content+="<input type=\"submit\" value=\"Export Identities\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.exportidentities")+"\">";
 	content+="</form>";
 	content+="</td><td>";
 	content+="<form name=\"frmimport\" method=\"POST\" enctype=\"multipart/form-data\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"import\">";
 	content+="<input type=\"file\" name=\"file\">";
-	content+="<input type=\"submit\" value=\"Import Identities\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.importidentities")+"\">";
 	content+="</form>";
 	content+="</td></tr></table>";
 
 	content+="<hr>";
 
-	content+="<table class=\"small90\"><tr><th>Name</th><th>Single Use</th><th>Publish Trust List</th><th>Publish Board List</th><th>Publish Freesite</th><th>Min Message Delay</th><th>Max Message Delay</th><th>Announced? *</th></tr>";
+	content+="<table class=\"small90\"><tr><th>"+m_trans->Get("web.page.localidentities.name")+"</th><th>"+m_trans->Get("web.page.localidentities.singleuse")+"</th><th>"+m_trans->Get("web.page.localidentities.publishtrustlist")+"</th><th>"+m_trans->Get("web.page.localidentities.publishboardlist")+"</th><th>"+m_trans->Get("web.page.localidentities.publishfreesite")+"</th><th>"+m_trans->Get("web.page.localidentities.minmessagedelay")+"</th><th>"+m_trans->Get("web.page.localidentities.maxmessagedelay")+"</th><th>"+m_trans->Get("web.page.localidentities.announced")+"</th></tr>";
 
 	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID,tblLocalIdentity.Name,tblLocalIdentity.PublicKey,tbLLocalIdentity.PublishTrustList,tblLocalIdentity.SingleUse,tblLocalIdentity.PublishBoardList,tblIdentity.IdentityID,tblLocalIdentity.PublishFreesite,tblLocalIdentity.MinMessageDelay,tblLocalIdentity.MaxMessageDelay FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey ORDER BY tblLocalIdentity.Name;");
 	st.Step();
@@ -99,16 +99,16 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 		{
 			std::string numlists="";
 			trustst.ResultText(0,numlists);
-			content+="<td>Yes ("+numlists+")</td>";
+			content+="<td>"+m_trans->Get("web.page.localidentities.yes")+" ("+numlists+")</td>";
 		}
 		else
 		{
-			content+="<td>No</td>";
+			content+="<td>"+m_trans->Get("web.page.localidentities.no")+"</td>";
 		}
 		trustst.Reset();
 
-		content+="<td><input type=\"submit\" value=\"Update\"></form></td>";
-		content+="<td><form name=\"frmdel\""+countstr+"\" method=\"POST\" action=\"confirm.htm\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"delete\"><input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\"><input type=\"hidden\" name=\"targetpage\" value=\"localidentities.htm\"><input type=\"hidden\" name=\"confirmdescription\" value=\"Are you sure you want to delete "+SanitizeOutput(CreateShortIdentityName(name,publickey))+"?\"><input type=\"submit\" value=\"Delete\"></form></td>";
+		content+="<td><input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.update")+"\"></form></td>";
+		content+="<td><form name=\"frmdel\""+countstr+"\" method=\"POST\" action=\"confirm.htm\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"delete\"><input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\"><input type=\"hidden\" name=\"targetpage\" value=\"localidentities.htm\"><input type=\"hidden\" name=\"confirmdescription\" value=\""+m_trans->Get("web.page.localidentities.confirmdelete")+" "+SanitizeOutput(CreateShortIdentityName(name,publickey))+"?\"><input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.delete")+"\"></form></td>";
 		content+="</tr>";
 		content+="<tr><td></td><td colspan=\"7\" class=\"smaller\">"+publickey+"</td></tr>";
 		st.Step();
@@ -116,11 +116,11 @@ const std::string LocalIdentitiesPage::GeneratePage(const std::string &method, c
 	}
 
 	content+="</table>";
-	content+="<p class=\"paragraph\">* An identity is considered successfully announced when you have downloaded a trust list from someone that contains the identity.  You must trust other identities' trust lists for this to happen.  The number in parenthesis is how many trust lists the identity appears in.  You may post messages before you are announced.</p>";
-	content+="<p class=\"paragraph\">Single Use Identities will automatically be deleted 7 days after creation.</p>";
-	content+="<p class=\"paragraph\">Messages that each identity sends may be delayed by a random number of minutes between min and max.  Set both to 0 to send messages as soon as possible.</p>";
+	content+="<p class=\"paragraph\">"+m_trans->Get("web.page.localidentities.announceddescription")+"</p>";
+	content+="<p class=\"paragraph\">"+m_trans->Get("web.page.localidentities.singleusedescription")+"</p>";
+	content+="<p class=\"paragraph\">"+m_trans->Get("web.page.localidentities.delaydescription")+"</p>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 void LocalIdentitiesPage::HandleDelete(const std::map<std::string,std::string> &queryvars)

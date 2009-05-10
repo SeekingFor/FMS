@@ -95,7 +95,7 @@ const std::string PeerTrustPage::CreateLocalIdentityDropDown(const std::string &
 	return result;
 }
 
-const std::string PeerTrustPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string PeerTrustPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	int count=0;
 	std::string countstr;
@@ -263,23 +263,23 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 		namesearch=(*queryvars.find("namesearch")).second;
 	}
 
-	content+="<h2>Peer Trust</h2>";
-	content+="Message Trust is how much you trust the identity to post good messages. Trust List Trust is how much weight you want the trust list of that identity to have when calculating the total. The local trust levels are set by you, and the peer trust levels are calculated by a weighted average using other identities' trust lists.  Trust is recalculated once an hour from received trust lists.  You must have at least 1 identity created and have received the SSK keypair for it from Freenet before setting trust.<br>";
-	content+="* - This identity is not publishing a trust list<br>";
+	content+="<h2>"+m_trans->Get("web.page.peertrust.title")+"</h2>";
+	content+=m_trans->Get("web.page.peertrust.instructions")+"<br>";
+	content+=m_trans->Get("web.page.peertrust.notrustlist")+"<br>";
 
 	// search drop down
 	content+="<div style=\"text-align:center;margin-bottom:5px;\">";
 	content+="<form name=\"frmsearch\" method=\"POST\" action=\""+m_pagename+"?"+BuildQueryString(0,"","","",localidentityid)+"\">";
 	content+="<input type=\"text\" name=\"namesearch\" value=\""+SanitizeOutput(namesearch)+"\">";
-	content+="<input type=\"submit\" value=\"Search\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peertrust.search")+"\">";
 	content+="</form>";
 	content+="</div>";
 
 	content+="<div style=\"text-align:center;\">";
 	content+="<form name=\"frmlocalidentity\" method=\"POST\" action=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,sortby,sortorder,-1)+"\">";
-	content+="Load Trust List of ";
+	content+=m_trans->Get("web.page.peertrust.loadtrustlist")+" ";
 	content+=CreateLocalIdentityDropDown("localidentityid",localidentityid);
-	content+="<input type=\"submit\" value=\"Load List\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peertrust.loadlist")+"\">";
 	content+="</form>";
 	content+="</div>";
 
@@ -293,14 +293,14 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 		content+="<input type=\"hidden\" name=\"namesearch\" value=\""+SanitizeOutput(namesearch)+"\">";
 	}
 	content+="<table class=\"small90\">";
-	content+="<tr><th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"Name",ReverseSort("Name",sortby,sortorder),localidentityid)+"\">Name</a></th>";
-	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"tblIdentityTrust.LocalMessageTrust",ReverseSort("tblIdentityTrust.LocalMessageTrust",sortby,sortorder),localidentityid)+"\">Local Message Trust</a></th>";
-	content+="<th>Message Comment</th>";
-	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"PeerMessageTrust",ReverseSort("PeerMessageTrust",sortby,sortorder),localidentityid)+"\">Peer Message Trust</a></th>";
-	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"tblIdentityTrust.LocalTrustListTrust",ReverseSort("tblIdentityTrust.LocalTrustListTrust",sortby,sortorder),localidentityid)+"\">Local Trust List Trust</a></th>";
-	content+="<th>Trust Comment</th>";
-	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"PeerTrustListTrust",ReverseSort("PeerTrustListTrust",sortby,sortorder),localidentityid)+"\">Peer Trust List Trust</a></th>";
-	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"MessageCount",ReverseSort("MessageCount",sortby,sortorder),localidentityid)+"\">Message Count</a></th>";
+	content+="<tr><th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"Name",ReverseSort("Name",sortby,sortorder),localidentityid)+"\">"+m_trans->Get("web.page.peertrust.name")+"</a></th>";
+	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"tblIdentityTrust.LocalMessageTrust",ReverseSort("tblIdentityTrust.LocalMessageTrust",sortby,sortorder),localidentityid)+"\">"+m_trans->Get("web.page.peertrust.localmessagetrust")+"</a></th>";
+	content+="<th>"+m_trans->Get("web.page.peertrust.messagecomment")+"</th>";
+	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"PeerMessageTrust",ReverseSort("PeerMessageTrust",sortby,sortorder),localidentityid)+"\">"+m_trans->Get("web.page.peertrust.peermessagetrust")+"</a></th>";
+	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"tblIdentityTrust.LocalTrustListTrust",ReverseSort("tblIdentityTrust.LocalTrustListTrust",sortby,sortorder),localidentityid)+"\">"+m_trans->Get("web.page.peertrust.localtrustlisttrust")+"</a></th>";
+	content+="<th>"+m_trans->Get("web.page.peertrust.trustcomment")+"</th>";
+	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"PeerTrustListTrust",ReverseSort("PeerTrustListTrust",sortby,sortorder),localidentityid)+"\">"+m_trans->Get("web.page.peertrust.peertrustlisttrust")+"</a></th>";
+	content+="<th><a href=\""+m_pagename+"?"+BuildQueryString(startrow,namesearch,"MessageCount",ReverseSort("MessageCount",sortby,sortorder),localidentityid)+"\">"+m_trans->Get("web.page.peertrust.messagecount")+"</a></th>";
 	content+="</tr>\r\n";
 	
 	// get count of identities we are showing
@@ -433,7 +433,7 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 		if(startrow>0)
 		{
 			StringFunctions::Convert(startrow-rowsperpage,tempstr);
-			content+="<td colspan=\"3\" align=\"left\"><a href=\""+m_pagename+"?"+BuildQueryString(startrow-rowsperpage,namesearch,sortby,sortorder,localidentityid)+"\"><-- Previous Page</a></td>";
+			content+="<td colspan=\"3\" align=\"left\"><a href=\""+m_pagename+"?"+BuildQueryString(startrow-rowsperpage,namesearch,sortby,sortorder,localidentityid)+"\">"+m_trans->Get("web.page.peertrust.previouspage")+"</a></td>";
 			cols+=3;
 		}
 		if(startrow+rowsperpage<identitycount)
@@ -443,16 +443,16 @@ const std::string PeerTrustPage::GeneratePage(const std::string &method, const s
 				content+="<td></td>";
 				cols++;
 			}
-			content+="<td colspan=\"3\" align=\"right\"><a href=\""+m_pagename+"?"+BuildQueryString(startrow+rowsperpage,namesearch,sortby,sortorder,localidentityid)+"\">Next Page --></a></td>";
+			content+="<td colspan=\"3\" align=\"right\"><a href=\""+m_pagename+"?"+BuildQueryString(startrow+rowsperpage,namesearch,sortby,sortorder,localidentityid)+"\">"+m_trans->Get("web.page.peertrust.nextpage")+"</a></td>";
 		}
 		content+="</tr>";
 	}
 
-	content+="<tr><td colspan=\"8\"><center><input type=\"submit\" value=\"Update Trust\"></center></td></tr>";
+	content+="<tr><td colspan=\"8\"><center><input type=\"submit\" value=\""+m_trans->Get("web.page.peertrust.updatetrust")+"\"></center></td></tr>";
 	content+="</table>";
 	content+="</form>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const std::string PeerTrustPage::GetClassString(const std::string &trustlevel)

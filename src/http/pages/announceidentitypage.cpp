@@ -33,7 +33,7 @@ const std::string AnnounceIdentityPage::CreateLocalIdentityDropDown(const std::s
 	return rval;
 }
 
-const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string AnnounceIdentityPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	Poco::DateTime date;
 	std::string content;
@@ -81,15 +81,15 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 
 	}
 
-	content+="<h2>Announce Identity</h2>";
+	content+="<h2>"+m_trans->Get("web.page.announceidentity.title")+"</h2>";
 	content+="<form name=\"frmannounce\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"announce\">";
 	content+="<table>";
-	content+="<tr><td colspan=\"4\"><center>Select Identity : ";
+	content+="<tr><td colspan=\"4\"><center>"+m_trans->Get("web.page.announceidentity.selectidentity")+" ";
 	content+=CreateLocalIdentityDropDown("localidentityid",localidentityidstr);
 	content+="</td></tr>";
-	content+="<tr><td colspan=\"4\"><center>Type the answers of a few of the following puzzles.  You don't need to get them all correct, but remember that they are case sensitive.  Getting announced will take some time and you must assign trust to other identities to see yourself announced.  DO NOT continuously solve captchas.  Solve 30 at most, wait a day, and if your identity has not been announced, repeat until it is.</td></tr>";
+	content+="<tr><td colspan=\"4\"><center>"+m_trans->Get("web.page.announceidentity.instructions")+"</td></tr>";
 	content+="<tr>";
 
 	date-=Poco::Timespan(1,0,0,0,0);
@@ -98,7 +98,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 
 	if(st.RowReturned()==false)
 	{
-		content+="<td colspan=\"4\"><center>You must wait for some puzzles to be downloaded.  Make sure you have assigned trust to some other identities' trust lists and check back later.</td>";
+		content+="<td colspan=\"4\"><center>"+m_trans->Get("web.page.announceidentity.waitforpuzzles")+"</td>";
 	}
 	
 	while(st.RowReturned() && shown<20)
@@ -133,7 +133,7 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 			{
 				content+="</tr>\r\n<tr>";
 			}
-			content+="<td title=\"From "+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"\">";
+			content+="<td title=\""+m_trans->Get("web.page.announceidentity.from")+" "+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"\">";
 			content+="<img src=\"showcaptcha.htm?UUID="+uuid+"\"><br>";
 			content+="<input type=\"hidden\" name=\"uuid["+countstr+"]\" value=\""+SanitizeOutput(uuid)+"\">";
 			content+="<input type=\"hidden\" name=\"day["+countstr+"]\" value=\""+day+"\">";
@@ -146,11 +146,11 @@ const std::string AnnounceIdentityPage::GeneratePage(const std::string &method, 
 		st.Step();
 	}
 
-	content+="</tr><td colspan=\"4\"><center><input type=\"submit\" value=\"Announce\"></td></tr>";
+	content+="</tr><td colspan=\"4\"><center><input type=\"submit\" value=\""+m_trans->Get("web.page.announceidentity.announce")+"\"></td></tr>";
 	content+="</table>";
 	content+="</form>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const bool AnnounceIdentityPage::WillHandleURI(const std::string &uri)

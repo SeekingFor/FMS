@@ -1,7 +1,7 @@
 #include "../../../include/http/pages/confirmpage.h"
 #include "../../../include/stringfunctions.h"
 
-const std::string ConfirmPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ConfirmPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 	std::string target="";
@@ -16,7 +16,7 @@ const std::string ConfirmPage::GeneratePage(const std::string &method, const std
 		confirmdescription=(*queryvars.find("confirmdescription")).second;
 	}
 	
-	content+="<h1>Confirm</h1>";
+	content+="<h1>"+m_trans->Get("web.page.confirm.title")+"</h1>";
 	content+=confirmdescription+"<br>";
 	content+="<form name=\"confirm\" method=\"POST\" action=\""+target+"\">";
 	for(std::map<std::string,std::string>::const_iterator i=queryvars.begin(); i!=queryvars.end(); i++)
@@ -26,13 +26,13 @@ const std::string ConfirmPage::GeneratePage(const std::string &method, const std
 			content+="<input type=\"hidden\" name=\""+(*i).first+"\" value=\""+(*i).second+"\">";	
 		}
 	}
-	content+="<input type=\"submit\" value=\"Continue\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.confirm.continue")+"\">";
 	content+="</form>";
 	content+="<form name=\"cancel\" method=\"POST\" action=\""+target+"\">";
-	content+="<input type=\"submit\" value=\"Cancel\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.confirm.cancel")+"\">";
 	content+="</form>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 

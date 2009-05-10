@@ -36,7 +36,9 @@ src/option.cpp
 src/optionssetup.cpp
 src/socketdefines.cpp
 src/stringfunctions.cpp
+src/stringtranslation.cpp
 src/threadbuilder.cpp
+src/translationsetup.cpp
 src/db/sqlite3db.cpp
 src/db/sqlite3recordset.cpp
 src/db/sqlite3statement.cpp

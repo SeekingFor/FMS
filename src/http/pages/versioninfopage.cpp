@@ -8,7 +8,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string VersionInfoPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string VersionInfoPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 
@@ -61,14 +61,14 @@ const std::string VersionInfoPage::GeneratePage(const std::string &method, const
 		st.ResultText(4,release);
 
 		content+="<div style=\"margin-bottom:20px;\">";
-		content+="<h2>Release "+major+"."+minor+"."+release+"</h2>";
-		content+="<h3>Notes</h3>";
+		content+="<h2>"+m_trans->Get("web.page.versioninfo.release")+" "+major+"."+minor+"."+release+"</h2>";
+		content+="<h3>"+m_trans->Get("web.page.versioninfo.notes")+"</h3>";
 		content+=StringFunctions::Replace(notes,"\n","<br>");
-		content+="<h3>Changes</h3>";
+		content+="<h3>"+m_trans->Get("web.page.versioninfo.changes")+"</h3>";
 		content+=StringFunctions::Replace(changes,"\n","<br>");
 		content+="</div>";
 		st.Step();
 	}
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }

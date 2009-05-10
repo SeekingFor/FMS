@@ -8,7 +8,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string ControlBoardPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ControlBoardPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 	int boardid;
@@ -67,16 +67,16 @@ const std::string ControlBoardPage::GeneratePage(const std::string &method, cons
 		}
 	}
 
-	content+="<h2>Control Boards</h2>";
+	content+="<h2>"+m_trans->Get("web.page.controlboard.title")+"</h2>";
 	content+="<p class=\"paragraph\">";
-	content+="These boards are special administration boards where sent messages will change the trust levels of the parent poster by ADDING these numbers to their current trust level.  These boards can not be used as regular boards, so make the name unique.  The change in trust levels can be negative or positive, but keep in mind that the minimum trust level is 0 and the maximum trust level is 100.  After the boards are created here, you may use your newreader to reply to a message to one or more of these boards, and the previous poster will have his trust levels changed as per the settings for that board.";
+	content+=m_trans->Get("web.page.controlboard.instructions");
 	content+="</p>";
 
 	st=m_db->Prepare("SELECT tblBoard.BoardID,BoardName,ModifyLocalMessageTrust,ModifyLocalTrustListTrust FROM tblBoard INNER JOIN tblAdministrationBoard ON tblBoard.BoardID=tblAdministrationBoard.BoardID ORDER BY BoardName COLLATE NOCASE;");
 	st.Step();
 
 	content+="<table>";
-	content+="<tr><th>Board Name</th><th>Change Message Trust</th><th>Change Trust List Trust</th></tr>\r\n";
+	content+="<tr><th>"+m_trans->Get("web.page.controlboard.boardname")+"</th><th>"+m_trans->Get("web.page.controlboard.changemessagetrust")+"</th><th>"+m_trans->Get("web.page.controlboard.changetrustlisttrust")+"</th></tr>\r\n";
 	while(st.RowReturned())
 	{
 		st.ResultText(0,boardidstr);
@@ -93,7 +93,7 @@ const std::string ControlBoardPage::GeneratePage(const std::string &method, cons
 		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"remove\">";
 		content+="<input type=\"hidden\" name=\"boardid\" value=\""+boardidstr+"\">";
-		content+="<input type=\"submit\" value=\"Remove\">";
+		content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.controlboard.remove")+"\">";
 		content+="</form>";
 		content+="</td>";
 		content+="</tr>\r\n";
@@ -111,13 +111,13 @@ const std::string ControlBoardPage::GeneratePage(const std::string &method, cons
 	content+="</td>\r\n<td>";
 	content+="<input type=\"text\" name=\"changetrustlisttrust\" size=\"2\" maxlength=\"4\">";
 	content+="</td>\r\n<td>";
-	content+="<input type=\"submit\" value=\"Add\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.controlboard.add")+"\">";
 	content+="</form>";
 	content+="</td>\r\n";
 	content+="</tr>";
 	content+="</table>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const bool ControlBoardPage::WillHandleURI(const std::string &uri)

@@ -11,7 +11,7 @@ public:
 	IPageHandler *New()	{ return new ForumThreadsPage(m_db,m_template); }
 
 private:
-	const std::string GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars);
+	const std::string GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars);
 };
 
 #endif	// _forumthreads_page_

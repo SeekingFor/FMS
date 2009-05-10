@@ -3,6 +3,7 @@
 #include "../include/dbsetup.h"
 #include "../include/optionssetup.h"
 #include "../include/option.h"
+#include "../include/translationsetup.h"
 #include "../include/stringfunctions.h"
 #include "../include/http/httpthread.h"
 #include "../include/nntp/nntplistener.h"
@@ -219,6 +220,9 @@ int FMSApp::main(const std::vector<std::string> &args)
 		ltc_mp=ltm_desc;
 		register_hash(&sha1_desc);
 #endif
+
+		option.Get("Language",tempval);
+		SetupTranslation(tempval);
 
 		StartThreads();
 

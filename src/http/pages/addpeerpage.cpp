@@ -8,7 +8,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string AddPeerPage::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string AddPeerPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	std::string content="";
 
@@ -31,19 +31,19 @@ const std::string AddPeerPage::GeneratePage(const std::string &method, const std
 		}
 	}
 
-	content+="<h2>Add Peer</h2>";
+	content+="<h2>"+m_trans->Get("web.page.addpeer.title")+"</h2>";
 	content+="<form name=\"frmaddpeer\" method=\"POST\">";
 	content+=CreateFormPassword();
 	content+="<input type=\"hidden\" name=\"formaction\" value=\"add\">";
-	content+="Public Key : ";
+	content+=m_trans->Get("web.page.addpeer.publickey")+" ";
 	content+="<input type=\"text\" name=\"publickey\" size=\"100\">";
 	content+="<br>";
-	content+="The public key must be a valid SSK public key and include the / at the end";
+	content+=m_trans->Get("web.page.addpeer.validpubkey");
 	content+="<br>";
-	content+="<input type=\"submit\" value=\"Add\">";
+	content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.addpeer.add")+"\">";
 	content+="</form>";
 
-	return StringFunctions::Replace(m_template,"[CONTENT]",content);
+	return content;
 }
 
 const bool AddPeerPage::WillHandleURI(const std::string &uri)

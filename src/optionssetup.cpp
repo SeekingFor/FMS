@@ -18,6 +18,23 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	SQLite3DB::Statement upd=db->Prepare("UPDATE tblOption SET Section=?, SortOrder=?, ValidValues=?, OptionDescription=?, DisplayType=?, DisplayParam1=?, DisplayParam2=?, Mode=? WHERE Option=?;");
 	int order=0;
 
+	// Language
+	st.Bind(0,"Language");
+	st.Bind(1,"english.prop");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Program");
+	upd.Bind(1,order++);
+	upd.Bind(2,"english.prop|English");
+	upd.Bind(3,"Select program language.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"Language");
+	upd.Step();
+	upd.Reset();
+
 	// LogLevel
 	tempstr.str("");
 	tempstr << Poco::Message::PRIO_DEBUG;

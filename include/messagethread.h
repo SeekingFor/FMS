@@ -2,8 +2,9 @@
 #define _messagethread_
 
 #include "idatabase.h"
+#include "ilogger.h"
 
-class MessageThread:public IDatabase
+class MessageThread:public IDatabase, public ILogger
 {
 public:
 	MessageThread(SQLite3DB::DB *db):IDatabase(db)			{}
