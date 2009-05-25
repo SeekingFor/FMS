@@ -59,7 +59,8 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.Language.english.prop","English");
 	st->SetDefault("web.option.Language.spanish.prop","Spanish");
 	st->SetDefault("web.option.Language.russian.prop","Russian");
-	st->SetDefault("web.option.Language.french.prop","French");
+	st->SetDefault("web.option.Language.french.prop","French (Français)");
+	st->SetDefault("web.option.Language.unlisted.prop","Unlisted/Other");
 	st->SetDefault("web.option.LogLevel.description","The maximum logging level that will be written to file.  Higher levels will include all messages from the previous levels.");
 	st->SetDefault("web.option.LogLevel.1","1 - Fatal Errors");
 	st->SetDefault("web.option.LogLevel.2","2 - Critical Errors");
@@ -234,6 +235,10 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.pendingmessages.subject","Subject");
 	st->SetDefault("web.page.pendingmessages.time","Time");
 	st->SetDefault("web.page.pendingmessages.deletemessage","Delete Message");
+
+	st->SetDefault("web.page.translate.title","Translate");
+	st->SetDefault("web.page.translate.translatebutton","Translate");
+	st->SetDefault("web.page.translate.gotonextuntranslated","Go to next untranslated string");
 
 	st->SetDefault("web.page.forum.newposts","New Posts");
 	st->SetDefault("web.page.forum.nonewposts","No New Posts");

@@ -25,7 +25,7 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	st.Reset();
 	upd.Bind(0,"Program");
 	upd.Bind(1,order++);
-	upd.Bind(2,"english.prop|English");
+	upd.Bind(2,"english.prop|English|french.prop|French|unlisted.prop|Unlisted/Other");
 	upd.Bind(3,"Select program language.");
 	upd.Bind(4,"select");
 	upd.Bind(5);

@@ -1,0 +1,50 @@
+﻿web.navlink.addpeer: Ajouter un contact
+web.navlink.announceidentity: Annoncer l'identité
+web.navlink.boardmaintenance: Configuration des forums
+web.navlink.browseforums: Parcourir les forums
+web.navlink.controlboards: Forums spéciaux
+web.navlink.createidentity: Créer une identité
+web.navlink.home: Accueil
+web.navlink.insertedfiles: Fichiers insérés
+web.navlink.links: Liens
+web.navlink.localidentities: Identités locales
+web.navlink.options: Options
+web.navlink.peermaintenance: Gestion des contacts
+web.navlink.peertrust: Confiance des contacts
+web.option.AddNewPostFromIdentities.description: Choisir oui pour créer automatiquement de nouvelles identités quand vous envoyez un message en utilisant un nouveau nom (avec un lecteur de news). Si vous choisissez non, vous ne pourrez pas envoyer de messages tant que vous n'aurez pas manuellement créé une nouvelle identité.
+web.option.ChangeMessageTrustOnReply.description: De combien le niveau de confiance local des messages d'une identité doit changer quand vous répondez à l'un de ses messages ?
+web.option.DeleteMessagesOlderThan.description: Supprimer automatiquement les messages datant de plus de...
+web.option.DownloadFrostMessages.description: Activer le téléchargement des messages circulant sur le protocole Frost.
+web.option.FCPHost.description: Nom d'hôte ou adresse IP du noeud Freenet.
+web.option.FCPPort.description: Port FCP de Freenet.
+web.option.FMSVersionEdition.description: Le numéro d'édition le plus récent de la clé renvoyant les dernières modifications apportées à FMS.
+web.option.FMSVersionKey.description: La clé USK qui contient les dernières modifications apportées à la dernière version de FMS.
+web.option.FProxyPort.description: Le port HTTP de Freenet.
+web.option.FailureCountReduction.description: Le compteur d'erreurs de chaque identité va être décrémenté par ce nombre tous les jours.
+web.option.FrostBoardPrefix.description: Les messages des forums définis dans FMS avec ce préfixe seront téléchargés depuis le protocole Frost. Vous devez ajouter manuellement ces forums avec ce préfixe dans FMS pour télécharger les messages Frost de ces forums. Le préfixe est retiré pour déterminer le nom du forum Frost où chercher les messages.
+web.option.FrostMaxMessageRequests.description: Le nombre maximum de requêtes simultanées pour le téléchargement des nouveaux messages du protocole Frost.
+web.option.FrostMessageBase.description: La base de messages utilisée pour télécharger les messages Frost.
+web.option.FrostMessageMaxDaysBackward.description: Télécharger les messages envoyés sur Frost depuis combien de jours au plus ?
+web.option.FrostSaveAnonymousMessages.description: Télécharger les messages Frost envoyés par des auteurs anonymes (non signés) ?
+web.option.HTTPAccessControl.description: Liste d'adresses et/ou de masques de sous-réseau, séparés par une virgule, autorisés à accéder aux pages d'administration. Par défaut, l'hôte local seulement. + permet un hôte, - refuse un hôte.
+web.option.HTTPListenPort.description: Port du serveur HTTP de FMS.
+web.option.Language.description: Sélectionnez la langue de FMS / Select language of FMS.
+web.option.Language.english.prop: Anglais (English)
+web.option.Language.french.prop: Français (French)
+web.option.Language.russian.prop: Russe (Russian)
+web.option.Language.spanish.prop: Espagnol (Spanish)
+web.option.LocalTrustOverridesPeerTrust.description: Choisissez oui si vous voulez que vos notes locales écrasent les notes de vos contacts dans le calcul des notes de confiance.
+web.option.LogLevel.1: 1 - Erreurs fatales
+web.option.LogLevel.2: 2 - Erreurs critiques
+web.option.LogLevel.3: 3 - Erreurs
+web.option.LogLevel.4: 4 - Alertes
+web.option.LogLevel.5: 5 - Notes
+web.option.LogLevel.6: 6 - Messages d'informations
+web.option.LogLevel.7: 7 - Messages de débogage
+web.option.LogLevel.8: 8 - Messages de traçage
+web.option.LogLevel.description: Le niveau maximum de reportage qui va être écrit dans le fichier de log. Un plus haut niveau inclut tous les messages du niveau précédent.
+web.option.MaxBoardListRequests.description: Le nombre maximum de requêtes simultanées de listes de nouveaux forums.
+web.option.MaxBoardsPerMessage.description: Le nombre maximum de forums dans lesquels un message reçu peut être affiché. Au-delà de cette limite, le message sera ignoré dans les forums supplémentaires. (Un message peut être envoyé à plusieurs forums simultanés un utilisant un lecteur de news.)
+web.option.MaxFailureCount.description: Le nombre de messages corrompus qu'une identité peut accumuler avant que vous ignoriez totalement cette identité. Des erreurs peuvent arriver y-compris dans de très bonnes circonstances, donc il est conseillé de laisser ce nombre à une valeur élevée pour éviter les faux positifs.
+web.option.MaxIdentityIntroductionRequests.description: Nombre maximum de requêtes simultanées de fichiers XML IdentityIntroduction. Chaque identité peut avoir de multiples requêtes en attente.
+web.option.MaxIdentityRequests.description: Nombre maximum de requêtes simultanées de nouveaux fichiers XML Identity.

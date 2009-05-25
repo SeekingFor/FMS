@@ -38,6 +38,7 @@ src/socketdefines.cpp
 src/stringfunctions.cpp
 src/stringtranslation.cpp
 src/threadbuilder.cpp
+src/translationpropertyfile.cpp
 src/translationsetup.cpp
 src/db/sqlite3db.cpp
 src/db/sqlite3recordset.cpp
@@ -105,6 +106,7 @@ src/http/pages/recentlyaddedpage.cpp
 src/http/pages/showcaptchapage.cpp
 src/http/pages/showimagepage.cpp
 src/http/pages/showpendingmessagepage.cpp
+src/http/pages/translatepage.cpp
 src/http/pages/versioninfopage.cpp
 src/nntp/extensiontrust.cpp
 src/nntp/nntpconnection.cpp

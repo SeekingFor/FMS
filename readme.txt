@@ -78,6 +78,23 @@ localhost:8080.  You can use the interface to configure and administer FMS.
 There is also a forum built into the web interface so you can read and send
 messages without needing to use a newsreader.
 
+TRANSLATIONS
+------------
+FMS provides facilities to translate most of the text that shows up on the user
+interface.  First you must select the language you wish to translate into on
+the options page of the web interface.  If your language does not appear,
+select the unlisted/other option.  Now go to http://localhost:8080/translate.
+htm to view all the strings that can be translated.  Untranslated strings will
+show up highlighted, but please keep in mind that the original string may
+change from time to time, so it is best to compare all strings occasionally to
+make sure they have the same content.  Click the translate button to translate
+a particular string.  When translating individual strings, there is a checkbox
+that may be clicked to immediately go to the next untranslated string.  After
+you are satisfied with your translation, locate the appropriate .prop file in
+the translations directory of FMS.  Upload this file into Freenet and create a
+post on the fms board with the name of the language and the URI of the uploaded
+file.
+
 NNTP CONFIGURATION
 ------------------
 By default, the NNTP server will listen on port 1119.  Configure your

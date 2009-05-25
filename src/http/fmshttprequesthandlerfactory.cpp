@@ -25,6 +25,7 @@
 #include "../../include/http/pages/forumcreatepostpage.h"
 //ROBERT CHANGE
 #include "../../include/http/pages/showpendingmessagepage.h"
+#include "../../include/http/pages/translatepage.h"
 
 #include <cstdio>
 
@@ -86,6 +87,7 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db):ID
 	m_pagehandlers.push_back(new VersionInfoPage(m_db,templatestr));
 	m_pagehandlers.push_back(new RecentlyAddedPage(m_db,templatestr));
 	m_pagehandlers.push_back(new ShowImagePage(m_db));
+	m_pagehandlers.push_back(new TranslatePage(m_db,templatestr));
 	m_pagehandlers.push_back(new ForumMainPage(m_db,forumtemplate));
 	m_pagehandlers.push_back(new ForumThreadsPage(m_db,forumtemplate));
 	m_pagehandlers.push_back(new ForumViewThreadPage(m_db,forumtemplate));
