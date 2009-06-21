@@ -9,10 +9,10 @@
 
 #define VERSION_MAJOR		"0"
 #define VERSION_MINOR		"3"
-#define VERSION_RELEASE		"39"
+#define VERSION_RELEASE		"40"
 #define FMS_VERSION			VERSION_MAJOR"."VERSION_MINOR"."VERSION_RELEASE
-#define FMS_FREESITE_USK	"USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/101/"
-#define FMS_VERSION_EDITION	"41"
+#define FMS_FREESITE_USK	"USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/102/"
+#define FMS_VERSION_EDITION	"42"
 
 typedef Poco::ScopedLock<Poco::FastMutex> Guard;
 extern Poco::SingletonHolder<StringTranslation> Translation;

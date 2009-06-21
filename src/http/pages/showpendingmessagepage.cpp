@@ -52,7 +52,7 @@ const std::string ShowPendingMessagePage::GenerateContent(const std::string &met
 		tblcontent.erase(tblcontent.length()-2); //strip final ", "
 		tblcontent+="</td><td>";
 		subject=mxml.GetSubject();
-		tblcontent+=subject;
+		tblcontent+=SanitizeOutput(subject);
 		tblcontent+="</td><td>";
 		tblcontent+=time+"</td><td>";
 		//button

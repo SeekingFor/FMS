@@ -1,50 +1,252 @@
-﻿web.navlink.addpeer: Ajouter un contact
-web.navlink.announceidentity: Annoncer l'identité
-web.navlink.boardmaintenance: Configuration des forums
-web.navlink.browseforums: Parcourir les forums
-web.navlink.controlboards: Forums spéciaux
-web.navlink.createidentity: Créer une identité
-web.navlink.home: Accueil
-web.navlink.insertedfiles: Fichiers insérés
-web.navlink.links: Liens
-web.navlink.localidentities: Identités locales
-web.navlink.options: Options
-web.navlink.peermaintenance: Gestion des contacts
-web.navlink.peertrust: Confiance des contacts
-web.option.AddNewPostFromIdentities.description: Choisir oui pour créer automatiquement de nouvelles identités quand vous envoyez un message en utilisant un nouveau nom (avec un lecteur de news). Si vous choisissez non, vous ne pourrez pas envoyer de messages tant que vous n'aurez pas manuellement créé une nouvelle identité.
-web.option.ChangeMessageTrustOnReply.description: De combien le niveau de confiance local des messages d'une identité doit changer quand vous répondez à l'un de ses messages ?
-web.option.DeleteMessagesOlderThan.description: Supprimer automatiquement les messages datant de plus de...
-web.option.DownloadFrostMessages.description: Activer le téléchargement des messages circulant sur le protocole Frost.
-web.option.FCPHost.description: Nom d'hôte ou adresse IP du noeud Freenet.
-web.option.FCPPort.description: Port FCP de Freenet.
-web.option.FMSVersionEdition.description: Le numéro d'édition le plus récent de la clé renvoyant les dernières modifications apportées à FMS.
-web.option.FMSVersionKey.description: La clé USK qui contient les dernières modifications apportées à la dernière version de FMS.
-web.option.FProxyPort.description: Le port HTTP de Freenet.
-web.option.FailureCountReduction.description: Le compteur d'erreurs de chaque identité va être décrémenté par ce nombre tous les jours.
-web.option.FrostBoardPrefix.description: Les messages des forums définis dans FMS avec ce préfixe seront téléchargés depuis le protocole Frost. Vous devez ajouter manuellement ces forums avec ce préfixe dans FMS pour télécharger les messages Frost de ces forums. Le préfixe est retiré pour déterminer le nom du forum Frost où chercher les messages.
-web.option.FrostMaxMessageRequests.description: Le nombre maximum de requêtes simultanées pour le téléchargement des nouveaux messages du protocole Frost.
-web.option.FrostMessageBase.description: La base de messages utilisée pour télécharger les messages Frost.
-web.option.FrostMessageMaxDaysBackward.description: Télécharger les messages envoyés sur Frost depuis combien de jours au plus ?
-web.option.FrostSaveAnonymousMessages.description: Télécharger les messages Frost envoyés par des auteurs anonymes (non signés) ?
-web.option.HTTPAccessControl.description: Liste d'adresses et/ou de masques de sous-réseau, séparés par une virgule, autorisés à accéder aux pages d'administration. Par défaut, l'hôte local seulement. + permet un hôte, - refuse un hôte.
-web.option.HTTPListenPort.description: Port du serveur HTTP de FMS.
-web.option.Language.description: Sélectionnez la langue de FMS / Select language of FMS.
-web.option.Language.english.prop: Anglais (English)
-web.option.Language.french.prop: Français (French)
-web.option.Language.russian.prop: Russe (Russian)
-web.option.Language.spanish.prop: Espagnol (Spanish)
-web.option.LocalTrustOverridesPeerTrust.description: Choisissez oui si vous voulez que vos notes locales écrasent les notes de vos contacts dans le calcul des notes de confiance.
-web.option.LogLevel.1: 1 - Erreurs fatales
-web.option.LogLevel.2: 2 - Erreurs critiques
-web.option.LogLevel.3: 3 - Erreurs
-web.option.LogLevel.4: 4 - Alertes
-web.option.LogLevel.5: 5 - Notes
-web.option.LogLevel.6: 6 - Messages d'informations
-web.option.LogLevel.7: 7 - Messages de débogage
-web.option.LogLevel.8: 8 - Messages de traçage
-web.option.LogLevel.description: Le niveau maximum de reportage qui va être écrit dans le fichier de log. Un plus haut niveau inclut tous les messages du niveau précédent.
-web.option.MaxBoardListRequests.description: Le nombre maximum de requêtes simultanées de listes de nouveaux forums.
-web.option.MaxBoardsPerMessage.description: Le nombre maximum de forums dans lesquels un message reçu peut être affiché. Au-delà de cette limite, le message sera ignoré dans les forums supplémentaires. (Un message peut être envoyé à plusieurs forums simultanés un utilisant un lecteur de news.)
-web.option.MaxFailureCount.description: Le nombre de messages corrompus qu'une identité peut accumuler avant que vous ignoriez totalement cette identité. Des erreurs peuvent arriver y-compris dans de très bonnes circonstances, donc il est conseillé de laisser ce nombre à une valeur élevée pour éviter les faux positifs.
-web.option.MaxIdentityIntroductionRequests.description: Nombre maximum de requêtes simultanées de fichiers XML IdentityIntroduction. Chaque identité peut avoir de multiples requêtes en attente.
-web.option.MaxIdentityRequests.description: Nombre maximum de requêtes simultanées de nouveaux fichiers XML Identity.
+web.navlink.addpeer= Ajouter un contact
+web.navlink.announceidentity= Annoncer une identité
+web.navlink.boardmaintenance= Gestion des forums
+web.navlink.browseforums= Parcourir les forums
+web.navlink.controlboards= Forums spéciaux
+web.navlink.createidentity= Créer une identité
+web.navlink.home= Accueil
+web.navlink.insertedfiles= Fichiers insérés
+web.navlink.links= Liens
+web.navlink.localidentities= Identités locales
+web.navlink.options= Options
+web.navlink.peermaintenance= Gestion des contacts
+web.navlink.peertrust= Confiance des contacts
+web.option.AddNewPostFromIdentities.description= Choisir oui pour créer automatiquement de nouvelles identités quand vous envoyez un message en utilisant un nouveau nom (avec un lecteur de news). Si vous choisissez non, vous ne pourrez pas envoyer de messages tant que vous n'aurez pas manuellement créé une nouvelle identité.
+web.option.ChangeMessageTrustOnReply.description= De combien le niveau de confiance local des messages d'une identité doit changer quand vous répondez à l'un de ses messages ?
+web.option.DeleteMessagesOlderThan.description= Supprimer automatiquement les messages datant de plus de...
+web.option.DownloadFrostMessages.description= Activer le téléchargement des messages circulant sur le protocole Frost.
+web.option.FCPHost.description= Nom d'hôte ou adresse IP du noeud Freenet.
+web.option.FCPPort.description= Port FCP de Freenet.
+web.option.FMSVersionEdition.description= Le numéro d'édition le plus récent de la clé renvoyant les dernières modifications apportées à FMS.
+web.option.FMSVersionKey.description= La clé USK qui contient les dernières modifications apportées à la dernière version de FMS.
+web.option.FProxyPort.description= Le port HTTP de Freenet.
+web.option.FailureCountReduction.description= Le compteur d'erreurs de chaque identité va être décrémenté par ce nombre tous les jours.
+web.option.FrostBoardPrefix.description= Les messages des forums définis dans FMS avec ce préfixe seront téléchargés depuis le protocole Frost. Vous devez ajouter manuellement ces forums avec ce préfixe dans FMS pour télécharger les messages Frost de ces forums. Le préfixe est retiré pour déterminer le nom du forum Frost où chercher les messages.
+web.option.FrostMaxMessageRequests.description= Le nombre maximum de requêtes simultanées pour le téléchargement des nouveaux messages du protocole Frost.
+web.option.FrostMessageBase.description= La base de messages utilisée pour télécharger les messages Frost.
+web.option.FrostMessageMaxDaysBackward.description= Télécharger les messages envoyés sur Frost depuis combien de jours au plus ?
+web.option.FrostSaveAnonymousMessages.description= Télécharger les messages Frost envoyés par des auteurs anonymes (non signés) ?
+web.option.HTTPAccessControl.description= Liste d'adresses et/ou de masques de sous-réseau, séparés par une virgule, autorisés à accéder aux pages d'administration. Par défaut, l'hôte local seulement. + permet un hôte, - refuse un hôte.
+web.option.HTTPListenPort.description= Port du serveur HTTP de FMS.
+web.option.Language.description= Sélectionnez la langue de FMS / Select language of FMS.
+web.option.Language.english.prop= Anglais (English)
+web.option.Language.french.prop= Français (French)
+web.option.Language.russian.prop= Russe (Russian)
+web.option.Language.spanish.prop= Espagnol (Spanish)
+web.option.Language.unlisted.prop= Non listé / Autre
+web.option.LocalTrustOverridesPeerTrust.description= Choisissez oui si vous voulez que vos notes locales écrasent les notes de vos contacts dans le calcul des notes de confiance.
+web.option.LogLevel.1= 1 - Erreurs fatales
+web.option.LogLevel.2= 2 - Erreurs critiques
+web.option.LogLevel.3= 3 - Erreurs
+web.option.LogLevel.4= 4 - Alertes
+web.option.LogLevel.5= 5 - Notes
+web.option.LogLevel.6= 6 - Messages d'informations
+web.option.LogLevel.7= 7 - Messages de débogage
+web.option.LogLevel.8= 8 - Messages de traçage
+web.option.LogLevel.description= Le niveau maximum de reportage qui va être écrit dans le fichier de log. Un plus haut niveau inclut tous les messages du niveau précédent.
+web.option.MaxBoardListRequests.description= Le nombre maximum de requêtes simultanées de listes de nouveaux forums.
+web.option.MaxBoardsPerMessage.description= Le nombre maximum de forums dans lesquels un message reçu peut être affiché. Au-delà de cette limite, le message sera ignoré dans les forums supplémentaires. (Un message peut être envoyé à plusieurs forums simultanés un utilisant un lecteur de news.)
+web.option.MaxFailureCount.description= Le nombre de messages corrompus qu'une identité peut accumuler avant que vous ignoriez totalement cette identité. Des erreurs peuvent arriver y-compris dans de très bonnes circonstances, donc il est conseillé de laisser ce nombre à une valeur élevée pour éviter les faux positifs.
+web.option.MaxIdentityIntroductionRequests.description= Nombre maximum de requêtes simultanées de fichiers XML IdentityIntroduction. Chaque identité peut avoir de multiples requêtes en attente.
+web.option.MaxIdentityRequests.description= Nombre maximum de requêtes simultanées de nouveaux fichiers XML Identity.
+web.option.MaxIntroductionPuzzleRequests.description= Nombre maximum de requêtes simultanées pour l'introduction de nouveaux fichiers Puzzle XML
+web.option.MaxMessageListRequests.description= Nombre maximum de requêtes simultanées pour la liste des nouveaux messages
+web.option.MaxMessageRequests.description= Nombre maximum de requêtes simultanées pour les nouveaux messages
+web.option.MaxOldMessageListRequests.description= Nombre maximum de requêtes simultanées pour la liste des anciens messages. Vous pouvez mettre temporairement une valeur plus élevée pour ce champ si vous souhaitez recevoir des messages assez anciens. Après avoir téléchargé ces messages, vous pouvez revenir à une valeur plus faible.
+web.option.MaxPeerMessagesPerDay.description= Le nombre maximum de messages que vous allez télécharger de chaque contact sur un jour donné.
+web.option.MaxTrustListRequests.description= Nombre maximum de requêtes simultanées pour les nouvelles listes de confiance
+web.option.MessageBase.description= Une chaîne de caractère unique partagée par tous les clients qui veulent communiquer avec les autres. Ceci ne doit pas être changé sauf si vous souhaitez créer votre propre réseau de communication (séparé du reste).
+web.option.MessageDownloadMaxDaysBackward.description= Nombre maximum de jours antérieurs pour lesquels les messages de chaque entité vont être téléchargés.
+web.option.MessageListDaysBackward.description= Nombre maximum de jours antérieur pour lesquels les messages que vous avez insérés vont apparaître dans vos listes de messages.
+web.option.MinLocalMessageTrust.description= Spécifie le niveau local de confiance des messages attribuée localement qu'un contact doit avoir avant que ses messages soient téléchargés.
+web.option.MinLocalTrustListTrust.description= Spécifie le niveau de confiance des listes de confiance attribuée localement qu'un contact doit avoir avant que sa liste de confiance soit incluse dans la moyenne pondérée. Tout Peer en dessous de ce nombre sera exclu de ce résultat.
+web.option.MinPeerMessageTrust.description= Spécifie le niveau de confiance des messages attribués par les contacts qu'un contact doit avoir avant que ses messages soient téléchargés.
+web.option.MinPeerTrustListTrust.description= Spécifie le niveau de confiance des listes de confiance attribué par les contacts qu'un contact doit avoir avant que sa liste de confiance soit incluse dans la moyenne pondérée. Tous les contacts en dessous de ce niveau seront exclus du résultat.
+web.option.NNTPAllowPost.description= Autoriser l'envoi de messages en NNTP. Si désactivé, les newgroups seront en lecture seule.
+web.option.NNTPBindAddresses.description= Une liste d'adresses IPv4, IPv6 ou de nom d'hôtes valides séparés par des virgules sur lesquelles le service NNTP va essayer de s'attacher.
+web.option.NNTPListenPort.description= Le port sur lequel le service NNTP va écouter pour les connexions entrantes.
+web.option.SaveMessagesFromNewBoards.description= Positionnez à vrai pour sauvegarder automatiquement les messages postés sur les nouveaux forums. Positionnez à faux pour ignorer les messages sur les nouveaux forums.
+web.option.StartFreenetUpdater.description= Positionnez à vrai pour démarrer le thread de mise à jour Freenet et pour se connecter à Freenet. Positionnez à faux pour empêcher toute communication avec Freenet.
+web.option.StartHTTP.description= Démarrer le serveur HTTP. ATTENTION : si vous désactivez cette option, vous ne pourrez plus accéder aux pages d'administration.
+web.option.StartNNTP.description= Démarrer le serveur NNTP.
+web.option.VacuumOnStartup.description= Nettoyer la base de données chaque fois que FMS démarre. Ceci permet de défragmenter l'espace libre dans la base de données et de créer un fichier de base de données plus léger. Nettoyer la base de données peut être consommateur de CPU et d'accès disque.
+web.option.false= faux
+web.option.section.Freenet Connection= Connexion Freenet
+web.option.section.Frost Support= Compatibilité Frost
+web.option.section.HTTP Server= Serveur HTTP
+web.option.section.Messages= Messages
+web.option.section.NNTP Server= Serveur NNTP
+web.option.section.Program= Programme
+web.option.section.Requests= Requêtes
+web.option.section.Trust= Confiance
+web.option.true= vrai
+web.page.addpeer.add= Ajouter
+web.page.addpeer.publickey= Clef Publique :
+web.page.addpeer.title= Ajouter un contact
+web.page.addpeer.validpubkey= La clef publique doit être une clef publique SSK valide et inclure un / à la fin
+web.page.announceidentity.announce= Annoncer
+web.page.announceidentity.from= De :
+web.page.announceidentity.instructions= Entrez la réponse de quelques un des puzzles suivants. Vous n'avez pas besoin que toutes vos réponses soient justes, mais souvenez-vous que les puzzles sont sensibles à la casse. Être annoncé va prendre un certain temps et vous devez assigner des niveaux de confiance à d'autres identités pour être vous-même annoncé. NE RÉSOLVEZ PAS continuellement les captchas. Résolvez-en au moins 30, attendez une journée, et si votre identité n'a pas été annoncée, répétez l'opération jusqu'à ce qu'elle le soit.
+web.page.announceidentity.selectidentity= Sélectionnez une identité :
+web.page.announceidentity.title= Annoncer une identitée
+web.page.announceidentity.waitforpuzzles= Vous devez attendre que quelques puzzles soient téléchargés. Vérifiez que vous avez bien attribué des niveaux de confiance à quelques listes de confiance d'autres identités et revenez plus tard.
+web.page.boards.addboard= Ajouter un forum
+web.page.boards.addedmethod= Méthode d'ajout
+web.page.boards.description= Description
+web.page.boards.forum= Utiliser
+web.page.boards.name= Nom
+web.page.boards.nextpage= Page suivante -->
+web.page.boards.previouspage= <-- Page précédente
+web.page.boards.remove= Supprimer
+web.page.boards.remove0messages= Supprimer les forums avec 0 message
+web.page.boards.saveinstructions= Si vous décochez cette case, tous nouveaux messages que vous téléchargez qui sont envoyés sur ce forum seront rejetés. Quand plusieurs identités locales sont utilisées, il est préférable de ne pas rejeter les messages d'un forum, car identifier quelles identités correspondent à une même personne est plus simple quand leurs listes de message ne comportent pas les messages des mêmes forums.
+web.page.boards.savereceivedmessages= Sauvegarder les messages reçus
+web.page.boards.search= Rechercher
+web.page.boards.title= Forums
+web.page.boards.update= Appliquer
+web.page.confirm.cancel= Annuler
+web.page.confirm.continue= Continuer
+web.page.confirm.title= Confirmer
+web.page.controlboard.add= Ajouter
+web.page.controlboard.boardname= Nom du forum
+web.page.controlboard.changemessagetrust= Changer le niveau de confiance des messages
+web.page.controlboard.changetrustlisttrust= Changer le niveau de confiance des listes de confiance
+web.page.controlboard.instructions= Ces forums sont des forums spéciaux administratifs où les messages envoyés changent le niveau de confiance de l'envoyeur parent en AJOUTANT ces nombres à leurs niveaux de confiance actuels. Ces forums ne peuvent pas être utilisés comme des forums standard, donc utilisez un nom unique. Le changement dans le niveau de confiance peut être négatif ou positif, mais gardez à l'esprit que le niveau minimum de confiance est 0 et que le niveau maximum de confiance est 100. Après que le forum ait été créé ici, vous pouvez utiliser votre lecteur de news pour répondre à un message d’un ou plusieurs de ces forums, et l'envoyeur précédent aura sont niveau de confiance changé en fonction de la configuration de ce forum.
+web.page.controlboard.remove= Supprimer
+web.page.controlboard.title= Forums spéciaux
+web.page.createidentity.aftercreateinstructions= Vous devez avoir au moins une identité locale qui a mis explicitement une liste de confiance pour un ou plusieurs contacts qui publie sa liste de confiance ou vous ne serez pas capable d'obtenir d'autres identités.
+web.page.createidentity.create= Créer
+web.page.createidentity.createdidentity= Identités créées
+web.page.createidentity.title= Créer une identité
+web.page.execquery.executequery= Exécuter une requête
+web.page.execquery.title= Exécuter une requête
+web.page.forum.newposts= Nouveau message
+web.page.forum.nonewposts= Pas de nouveau message
+web.page.forumcreatepost.error.body= Vous devez entrer un corps pour votre message
+web.page.forumcreatepost.error.localidentity= Vous devez sélectionner une identité local pour l'envoyeur
+web.page.forumcreatepost.error.message= Impossible de créer le message
+web.page.forumcreatepost.error.subject= Vous devez entrer un sujet
+web.page.forumcreatepost.forum= Forum :
+web.page.forumcreatepost.from= De
+web.page.forumcreatepost.message= Message
+web.page.forumcreatepost.send= Envoyer
+web.page.forumcreatepost.subject= Sujet
+web.page.forumcreatepost.successfulsend= Vous avez envoyé votre message. Il apparaitra dans le fil de discussion après qu'il ait été inséré avec succès et reçus par FMS.
+web.page.forumcreatepost.wrote= écris :
+web.page.forummain.by= par
+web.page.forummain.header.forum= Forum
+web.page.forummain.header.lastpost= Dernier message
+web.page.forummain.header.new= Act.
+web.page.forummain.header.posts= Messages
+web.page.forummain.in= dans
+web.page.forummain.lastposton= Dernier message le
+web.page.forummain.posts= messages
+web.page.forumthreads.by= par
+web.page.forumthreads.forum= Forum :
+web.page.forumthreads.go= Aller
+web.page.forumthreads.header.lastpost= Dernier message
+web.page.forumthreads.header.new= Act.
+web.page.forumthreads.header.replies= Réponses
+web.page.forumthreads.header.startedby= Commencé par
+web.page.forumthreads.header.subject= Sujet
+web.page.forumthreads.markallread= Marquer tout comme lu
+web.page.forumthreads.newpost= Nouveau message
+web.page.forumthreads.pages= Pages :
+web.page.forumviewthread.firstunread= Premier message non lu
+web.page.forumviewthread.forum= Forum :
+web.page.forumviewthread.local= Local
+web.page.forumviewthread.markunread= Marquer comme lu
+web.page.forumviewthread.message= Message
+web.page.forumviewthread.on= le
+web.page.forumviewthread.peer= Contact
+web.page.forumviewthread.reply= Répondre
+web.page.forumviewthread.trust= Confiance
+web.page.forumviewthread.trustlist= Liste de confiance
+web.page.home.admininstructions= Utilisez ces pages pour administrer votre installation FMS.
+web.page.home.checknewreleases= Vérifier les nouvelles versions sur
+web.page.home.fileswaiting= Fichier en attente d'insertion:
+web.page.home.fmsfreesite= Freesite FMS
+web.page.home.fmsversion= FMS version
+web.page.home.messageswaiting= Messages en attente d'insertion:
+web.page.home.oldreleaseinfo= Vous pouvez voir les infos de version
+web.page.home.oldversion= Vous utilisez une vieille version de FMS. Merci de faire la mise à jour ici:
+web.page.home.releaseinfo= Information de version
+web.page.home.releaseinfohere= ici
+web.page.home.showmessageswaiting= voir les messages
+web.page.home.shutdownfms= Arrêter FMS
+web.page.home.title= Accueil
+web.page.insertedfiles.remove= Supprimer
+web.page.insertedfiles.title= Fichier insérés
+web.page.localidentities.announced= Annoncé? *
+web.page.localidentities.announceddescription= Une identité est considérée comme annoncée avec succès quand vous avez téléchargé une liste de confiance qui contient cette identité. Vous devez faire confiance aux listes de confiance des autres identités pour que cela puisse arriver. Le nombre entre parenthèses correspond au nombre de liste de confiance dans lesquels cette identité apparait. Vous pouvez envoyer des messages avant d'être annoncé.
+web.page.localidentities.confirmdelete= Êtes vous sûr de vouloir supprimer
+web.page.localidentities.delaydescription= Les messages que chaque identité envoie peuvent être retardés d'un nombre aléatoire de minutes entre min et max. Mettez les deux à 0 pour envoyer les messages dès que possible.
+web.page.localidentities.delete= Supprimer
+web.page.localidentities.exportidentities= Exporter les identités
+web.page.localidentities.importidentities= Importer des identités
+web.page.localidentities.maxmessagedelay= Délai maximum d'envoi
+web.page.localidentities.minmessagedelay= Délai minimum d'envoi
+web.page.localidentities.name= Nom
+web.page.localidentities.no= Non
+web.page.localidentities.publishboardlist= Publier la liste des forums
+web.page.localidentities.publishfreesite= Publier Freesite
+web.page.localidentities.publishtrustlist= Publier liste de confiance
+web.page.localidentities.singleuse= Usage unique
+web.page.localidentities.singleusedescription= Les identités à usage unique seront supprimées automatiquement 7 jours après leurs créations.
+web.page.localidentities.title= Identités locales
+web.page.localidentities.update= Appliquer
+web.page.localidentities.yes= Oui
+web.page.options.advanced= Avancé
+web.page.options.requirerestart= La plupart des options nécessitent un redémarrage de FM pour prendre effet.
+web.page.options.save= Enregistrer
+web.page.options.simple= Simple
+web.page.options.title= Options
+web.page.peermaintenance.added20daysneversent= ajoutés il y a plus de 20 jours et n'ont jamais envoyés de message
+web.page.peermaintenance.daysago= jours
+web.page.peermaintenance.daysagonulltrust= jours et a une liste de confiance nul
+web.page.peermaintenance.instructions= Supprimer un contact ne va pas supprimer les messages qu'il a envoyés, mais va supprimer tout le reste de ce contact, ses niveaux de confiance y compris.
+web.page.peermaintenance.knownpeers= contacts connus
+web.page.peermaintenance.lastseen= vu pour la dernière fois il y a
+web.page.peermaintenance.lastseen20days= vu pour la dernière fois il y a plus de 20 jours
+web.page.peermaintenance.lastseen20daysneversent= vu pour la dernière fois il y a plus de 20 jours et n'ont jamais envoyés de message
+web.page.peermaintenance.lastsent30days= ont envoyés un message pour la dernière fois il y a plus de 30 jours
+web.page.peermaintenance.neverseen= jamais vu
+web.page.peermaintenance.neversent= n'ont jamais envoyé de message
+web.page.peermaintenance.recentlyadded= Contacts ajoutés récemment
+web.page.peermaintenance.remove= Supprimer
+web.page.peermaintenance.stats= Statuts
+web.page.peermaintenance.title= Gestion des contacts
+web.page.peertrust.instructions= La confiance des messages décrit à quel point vous faites confiance à une identité pour n'envoyer que des messages valables. La confiance des listes de confiance décrit le poids que doit avoir la liste de confiance de cette identité lors du calcul total. Les niveaux de confiance locaux sont définis par vous, et les niveaux de confiance par contact sont calculés par une moyenne pondérée en utilisant les listes de confiance des autres identités. La confiance est recalculée une fois par heure à partir des listes de confiance reçues. Vous devez avoir au moins une identité créée et avoir reçu une clef SSK pour celle-ci à partir de Freenet avant de pouvoir configurer les niveaux de confiance.
+web.page.peertrust.loadlist= Charger la liste
+web.page.peertrust.loadtrustlist= Charger la liste de confiance de
+web.page.peertrust.localmessagetrust= Confiance locale des messages
+web.page.peertrust.localtrustlisttrust= Confiance locale de la liste de confiance
+web.page.peertrust.messagecomment= Commentaire sur les messages
+web.page.peertrust.messagecount= Nombre de message
+web.page.peertrust.name= Nom
+web.page.peertrust.nextpage= Page suivante -->
+web.page.peertrust.notrustlist= * - Cette identité ne publie pas de liste de confiance
+web.page.peertrust.peermessagetrust= Confiance des messages par contact
+web.page.peertrust.peertrustlisttrust= Confiance de la liste de confiance par contact
+web.page.peertrust.previouspage= <-- Page précédente
+web.page.peertrust.search= Rechercher
+web.page.peertrust.title= Confiance des contacts
+web.page.peertrust.trustcomment= Commentaire sur la liste de confiance
+web.page.peertrust.updatetrust= Appliquer
+web.page.pendingmessages.boards= Forums
+web.page.pendingmessages.deletemessage= Supprimer message
+web.page.pendingmessages.identity= Identité
+web.page.pendingmessages.messageswaiting= messages en attente d'insertion
+web.page.pendingmessages.subject= Sujet
+web.page.pendingmessages.time= Heure
+web.page.recentlyadded.addedmethod= Méthode d'ajout
+web.page.recentlyadded.dateadded= Date d'ajout
+web.page.recentlyadded.deleteselected= Supprimer la sélection
+web.page.recentlyadded.name= Nom
+web.page.recentlyadded.title= Contacts ajoutés récemment
+web.page.translate.gotonextuntranslated= Aller à la chaîne de caractère non traduite suivante
+web.page.translate.title= Traduire
+web.page.translate.translatebutton= Traduire
+web.page.versioninfo.changes= Changements
+web.page.versioninfo.notes= Notes
+web.page.versioninfo.release= Version

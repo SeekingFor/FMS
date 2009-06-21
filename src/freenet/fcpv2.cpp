@@ -339,7 +339,7 @@ const bool Connection::Receive(Message &message)
 				}
 			}
 		}
-
+		return true;
 	}
 	return false;
 }

@@ -7,6 +7,10 @@
 #include <time.h>
 #include <ctype.h>
 #include <limits.h>
+#if !defined _MSC_VER && !defined __MINGW32__ && !defined __EMX__
+#include <stdint.h> /* for SIZE_MAX in case limits.h didn't get it */
+#endif
+
 
 /* use configuration data */
 #include <tomcrypt_custom.h>
