@@ -11,11 +11,11 @@ AlternateCaptcha1::AlternateCaptcha1()
 	m_fonts=fonts.Fonts();
 }
 
-void AlternateCaptcha1::Generate()
+const bool AlternateCaptcha1::Generate()
 {
 	if(m_fonts.size()==0)
 	{
-		return;
+		return false;
 	}
 
 	std::string puzzlestring=GenerateRandomString(5);
@@ -97,6 +97,7 @@ void AlternateCaptcha1::Generate()
 	m_puzzle.clear();
 	bmp.SaveToMemory("bmp",m_puzzle);
 
+	return true;
 }
 
 const std::string AlternateCaptcha1::GenerateRandomString(const int len)

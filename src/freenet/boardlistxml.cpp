@@ -15,10 +15,6 @@ void BoardListXML::AddBoard(const std::string &name, const std::string &descript
 	{
 		std::string lowername=name;
 		StringFunctions::LowerCase(lowername,lowername);
-		if(lowername.size()>40)
-		{
-			lowername.erase(40);
-		}
 		m_boards.push_back(board(lowername,description));
 	}
 }
@@ -96,10 +92,6 @@ const bool BoardListXML::ParseXML(const std::string &xml)
 			{
 				name=SanitizeSingleString(txt->firstChild()->getNodeValue());
 				StringFunctions::LowerCase(name,name);
-				if(name.size()>40)
-				{
-					name.erase(40);
-				}
 			}
 			txt=XMLGetFirstChild(boardel,"Description");
 			if(txt && txt->firstChild())

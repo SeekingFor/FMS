@@ -15,11 +15,11 @@ AlternateCaptcha2::AlternateCaptcha2()
 	m_fonts=fonts.Fonts();
 }
 
-void AlternateCaptcha2::Generate()
+const bool AlternateCaptcha2::Generate()
 {
 	if(m_fonts.size()==0)
 	{
-		return;
+		return false;
 	}
 
 	std::string puzzlestring=GenerateRandomString(6);
@@ -94,6 +94,7 @@ void AlternateCaptcha2::Generate()
 	m_solution.insert(m_solution.end(),puzzlestring.begin(),puzzlestring.end());
 	bmp.SaveToMemory("bmp",m_puzzle);
 
+	return true;
 }
 
 const std::string AlternateCaptcha2::GenerateRandomString(const int len)

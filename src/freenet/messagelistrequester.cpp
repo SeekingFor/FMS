@@ -1,5 +1,7 @@
 #include "../../include/freenet/messagelistrequester.h"
 #include "../../include/freenet/messagelistxml.h"
+#include "../../include/unicode/unicodestring.h"
+#include "../../include/global.h"
 
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/DateTimeParser.h>
@@ -163,6 +165,10 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 			std::vector<std::string> messageboards=xml.GetBoards(i);
 			for(std::vector<std::string>::iterator j=messageboards.begin(); j!=messageboards.end(); j++)
 			{
+				UnicodeString boardname((*j));
+				boardname.Trim(MAX_BOARD_NAME_LENGTH);
+				(*j)=boardname.NarrowString();
+
 				if(boards.find((*j))!=boards.end())
 				{
 					if(boards[(*j)]==true)
@@ -232,6 +238,10 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 				std::vector<std::string> messageboards=xml.GetExternalBoards(i);
 				for(std::vector<std::string>::iterator j=messageboards.begin(); j!=messageboards.end(); j++)
 				{
+					UnicodeString boardname((*j));
+					boardname.Trim(MAX_BOARD_NAME_LENGTH);
+					(*j)=boardname.NarrowString();
+
 					if(boards.find((*j))!=boards.end())
 					{
 						if(boards[(*j)]==true)

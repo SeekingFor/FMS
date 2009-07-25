@@ -262,6 +262,14 @@ void ConvertDB0116To0117(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=17;");
 }
 
+void ConvertDB0117To0118(SQLite3DB::DB *db)
+{
+
+	db->Execute("UPDATE tblOption SET OptionValue='news' WHERE Option='FrostMessageBase' AND OptionValue='frost';");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=18;");
+}
+
 void FixCapitalBoardNames(SQLite3DB::DB *db)
 {
 

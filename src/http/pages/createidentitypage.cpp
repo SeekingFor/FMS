@@ -4,6 +4,8 @@
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
 
+#include <string>
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif
@@ -39,7 +41,7 @@ const std::string CreateIdentityPage::GenerateContent(const std::string &method,
 		content+="<form name=\"frmcreateidentity\" method=\"POST\">";
 		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"create\">";
-		content+="Name : <input type=\"text\" name=\"name\" maxlength=\"40\">";
+		content+="Name : <input type=\"text\" name=\"name\" maxlength=\""MAX_IDENTITY_NAME_LENGTH_STR"\">";
 		content+=" <input type=\"submit\" value=\""+m_trans->Get("web.page.createidentity.create")+"\">";
 		content+="</form>";
 	}

@@ -239,11 +239,11 @@ void FreenetMasterThread::run()
 					(*i)->Process();
 				}
 
-				// if we haven't received any messages from the node in 10 minutes, something is wrong
+				// if we haven't received any messages from the node within the timeout period, something is wrong
 				now=Poco::Timestamp();
-				if(lastreceivedmessage<(now-Poco::Timespan(0,0,10,0,0)))
+				if(lastreceivedmessage<(now-Poco::Timespan(0,0,0,m_fcptimeout,0)))
 				{
-					m_log->error("FreenetMasterThread::Run The Freenet node has not responded in 10 minutes.  Trying to reconnect.");
+					m_log->error("FreenetMasterThread::Run The Freenet node has not responded in within the timeout period.  Trying to reconnect.");
 					m_fcp.Disconnect();
 				}
 
@@ -294,6 +294,11 @@ void FreenetMasterThread::Setup()
 			m_fcpport=9481;
 			option.Set("FCPPort",m_fcpport);
 		}
+	}
+	if(option.GetInt("FCPTimeout",m_fcptimeout)==false)
+	{
+		m_fcptimeout=600;
+		option.Set("FCPTimeout",m_fcptimeout);
 	}
 
 	// seed random number generator

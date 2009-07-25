@@ -2,6 +2,7 @@
 #define _forumpage_
 
 #include "../ipagehandler.h"
+#include "../../unicode/unicodestring.h"
 
 class ForumPage:public IPageHandler
 {
@@ -13,26 +14,24 @@ public:
 protected:
 	const std::string FixFromName(const std::string &fromname)
 	{
-		std::string tempname=fromname;
-		if(tempname.size()>30)
+		UnicodeString tempname(fromname);
+		if(tempname.CharacterCount()>30)
 		{
-			tempname.erase(27);
+			tempname.Trim(27);
 			tempname+="...";
 		}
-		tempname=SanitizeOutput(tempname);
-		return tempname;
+		return SanitizeOutput(tempname.NarrowString());
 	}
 
 	const std::string FixSubject(const std::string &subject)
 	{
-		std::string tempsubject=subject;
-		if(tempsubject.size()>30)
+		UnicodeString tempsubject(subject);
+		if(tempsubject.CharacterCount()>30)
 		{
-			tempsubject.erase(27);
+			tempsubject.Trim(27);
 			tempsubject+="...";
 		}
-		tempsubject=SanitizeOutput(tempsubject);
-		return tempsubject;
+		return SanitizeOutput(tempsubject.NarrowString());
 	}
 
 	const std::string CreateForumHeader()

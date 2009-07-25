@@ -1,5 +1,7 @@
 #include "../../include/freenet/messagerequester.h"
 #include "../../include/freenet/messagexml.h"
+#include "../../include/unicode/unicodestring.h"
+#include "../../include/global.h"
 
 #include <algorithm>
 
@@ -138,6 +140,14 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			boards.resize(m_maxboardspermessage);
 		}
 
+		// make sure all board names are no longer than max length
+		for(std::vector<std::string>::iterator i=boards.begin(); i!=boards.end(); i++)
+		{
+			UnicodeString boardname((*i));
+			boardname.Trim(MAX_BOARD_NAME_LENGTH);
+			(*i)=boardname.NarrowString();
+		}
+
 		if(boards.size()<=0)
 		{
 			m_log->error("MessageRequester::HandleAllData Message XML did not contain any boards! "+message["Identifier"]);
@@ -156,7 +166,9 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 		// make sure the reply board is on the board list we are saving - if not, replace the last element of boards with the reply board
 		if(xml.GetReplyBoard()!="" && std::find(boards.begin(),boards.end(),xml.GetReplyBoard())==boards.end() && boards.size()>0)
 		{
-			boards[boards.size()-1]=xml.GetReplyBoard();
+			UnicodeString boardname(xml.GetReplyBoard());
+			boardname.Trim(MAX_BOARD_NAME_LENGTH);
+			boards[boards.size()-1]=boardname.NarrowString();
 		}
 
 		// make sure domain of message id match 43 characters of public key of identity (remove - and ~) - if not, discard message

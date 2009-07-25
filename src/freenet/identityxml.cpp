@@ -62,10 +62,6 @@ const bool IdentityXML::ParseXML(const std::string &xml)
 			if(txt->firstChild())
 			{
 				m_name=txt->firstChild()->getNodeValue();
-				if(m_name.size()>40)
-				{
-					m_name.erase(40);
-				}
 			}
 		}
 		

@@ -136,10 +136,6 @@ const bool MessageXML::ParseXML(const std::string &xml)
 				{
 					m_replyboard.erase(m_replyboard.find(","));
 				}
-				if(m_replyboard.size()>40)
-				{
-					m_replyboard.erase(40);
-				}
 			}
 		}
 		txt=XMLGetFirstChild(root,"Body");
@@ -164,10 +160,6 @@ const bool MessageXML::ParseXML(const std::string &xml)
 					if(boardname.find(",")!=std::string::npos)
 					{
 						boardname.erase(boardname.find(","));
-					}
-					if(boardname.size()>40)
-					{
-						boardname.erase(40);
 					}
 					m_boards.push_back(boardname);
 				}

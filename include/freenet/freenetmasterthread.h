@@ -41,6 +41,7 @@ private:
 	std::vector<IFCPConnected *> m_fcpconnected;
 	std::vector<IFCPMessageHandler *> m_fcpmessagehandlers;
 	bool m_receivednodehello;
+	int m_fcptimeout;
 
 };
 

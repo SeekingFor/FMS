@@ -228,10 +228,6 @@ const bool MessageListXML::ParseXML(const std::string &xml)
 					{
 						std::string boardname=SanitizeSingleString(node3->firstChild()->getNodeValue());
 						StringFunctions::LowerCase(boardname,boardname);
-						if(boardname.size()>40)
-						{
-							boardname.erase(40);
-						}
 						boards.push_back(boardname);
 					}
 					node3=XMLGetNextSibling(node3,"Board");
@@ -286,10 +282,6 @@ const bool MessageListXML::ParseXML(const std::string &xml)
 						{
 							std::string boardname=SanitizeSingleString(node3->firstChild()->getNodeValue());
 							StringFunctions::LowerCase(boardname,boardname);
-							if(boardname.size()>40)
-							{
-								boardname.erase(40);
-							}
 							boards.push_back(boardname);
 						}
 						node3=XMLGetNextSibling(node3,"Board");

@@ -1,5 +1,7 @@
 #include "../../include/freenet/boardlistrequester.h"
 #include "../../include/freenet/boardlistxml.h"
+#include "../../include/unicode/unicodestring.h"
+#include "../../include/global.h"
 
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
@@ -89,19 +91,23 @@ const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 		for(long i=0; i<xml.GetCount(); i++)
 		{
 			int boardid;
-			std::string name="";
-			std::string description="";
+			UnicodeString name(xml.GetName(i));
+			std::string dbdescription("");
+			UnicodeString description(xml.GetDescription(i));
 
-			brd.Bind(0,xml.GetName(i));
+			name.Trim(MAX_BOARD_NAME_LENGTH);
+			description.Trim(MAX_BOARD_DESCRIPTION_LENGTH);
+
+			brd.Bind(0,name.NarrowString());
 			brd.Step();
 			
 			if(brd.RowReturned())
 			{
 				brd.ResultInt(0,boardid);
-				brd.ResultText(2,description);
-				if(description=="" && xml.GetDescription(i)!="")
+				brd.ResultText(2,dbdescription);
+				if(dbdescription=="" && description.NarrowString()!="")
 				{
-					upd.Bind(0,xml.GetDescription(i));
+					upd.Bind(0,description.NarrowString());
 					upd.Bind(1,boardid);
 					upd.Step();
 					upd.Reset();
@@ -109,8 +115,8 @@ const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 			}
 			else
 			{
-				ins.Bind(0,xml.GetName(i));
-				ins.Bind(1,xml.GetDescription(i));
+				ins.Bind(0,name.NarrowString());
+				ins.Bind(1,description.NarrowString());
 				ins.Bind(2,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
 				if(m_savemessagesfromnewboards)
 				{

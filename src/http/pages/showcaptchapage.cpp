@@ -21,7 +21,7 @@ void ShowCaptchaPage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco:
 	std::string content="";
 	if(queryvars.find("UUID")!=queryvars.end())
 	{
-		SQLite3DB::Statement st=m_db->Prepare("SELECT MimeType,PuzzleData FROM tblIntroductionPuzzleRequests WHERE Type='captcha' AND UUID=?;");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT MimeType,PuzzleData FROM tblIntroductionPuzzleRequests WHERE UUID=?;");
 		st.Bind(0,(*queryvars.find("UUID")).second);
 		st.Step();
 

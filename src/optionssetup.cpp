@@ -300,6 +300,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Step();
 	upd.Reset();
 
+	st.Bind(0,"FCPTimeout");
+	st.Bind(1,"600");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Freenet Connection");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"FCP Timeout in seconds.  If the connected Freenet node doesn't send any data to FMS in this this time period, FMS will try to reconnect to the node.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"FCPTimeout");
+	upd.Step();
+	upd.Reset();
+
 	st.Bind(0,"MaxIdentityRequests");
 	st.Bind(1,"5");
 	st.Step();
@@ -687,7 +703,7 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Reset();
 
 	st.Bind(0,"FrostMessageBase");
-	st.Bind(1,"frost");
+	st.Bind(1,"news");
 	st.Step();
 	st.Reset();
 	upd.Bind(0,"Frost Support");

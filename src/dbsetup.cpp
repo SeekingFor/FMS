@@ -123,13 +123,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=17;
 		}
+		if(major==1 && minor==17)
+		{
+			ConvertDB0117To0118(db);
+			major=1;
+			minor=18;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,17);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,18);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=17;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=18;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\

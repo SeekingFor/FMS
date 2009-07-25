@@ -14,6 +14,7 @@ OPTION(I_HAVE_READ_THE_README "I have fully read and understood the readme.txt."
 OPTION(ALTERNATE_CAPTCHA "Use alternate captcha.  This requires the FreeImage library." OFF)
 OPTION(QUERY_LOG "Log all database queries made by FMS." OFF)
 OPTION(FROST_SUPPORT "Compile with support for downloading Frost messages." ON)
+OPTION(POCO_STATIC "Statically link to the Poco libraries.  You can specify the base path to the static libraries using POCO_BASE_DIR, and the exact path to the libraries using POCO_LIB_DIR." OFF)
 
 SET(FMS_SRC
 src/base64.cpp
@@ -76,6 +77,7 @@ src/freenet/trustlistxml.cpp
 src/freenet/unkeyedidcreator.cpp
 src/freenet/unknownidentityrequester.cpp
 src/freenet/captcha/simplecaptcha.cpp
+src/freenet/captcha/unlikecaptcha1.cpp
 src/freenet/captcha/easybmp/EasyBMP.cpp
 src/freenet/captcha/easybmp/EasyBMP_Font.cpp
 src/freenet/captcha/easybmp/EasyBMP_Geometry.cpp
@@ -119,6 +121,7 @@ src/nntp/mime/MimeType.cpp
 src/threadwrapper/threadedexector.cpp
 src/unicode/ConvertUTF.c
 src/unicode/unicodeformatter.cpp
+src/unicode/unicodestring.cpp
 src/unicode/utfconversion.cpp
 )
 
@@ -167,6 +170,13 @@ IF(NOT I_HAVE_READ_THE_README)
 	MESSAGE(FATAL_ERROR "You must fully read the readme.txt before continuing.")
 ENDIF(NOT I_HAVE_READ_THE_README)
 
+IF(POCO_STATIC)
+	LINK_DIRECTORIES(${POCO_LIB_DIR})
+	INCLUDE_DIRECTORIES(BEFORE ${POCO_BASE_DIR}/Foundation/include)
+	INCLUDE_DIRECTORIES(BEFORE ${POCO_BASE_DIR}/XML/include)
+	INCLUDE_DIRECTORIES(BEFORE ${POCO_BASE_DIR}/Util/include)
+	INCLUDE_DIRECTORIES(BEFORE ${POCO_BASE_DIR}/Net/include)
+ENDIF(POCO_STATIC)
 ADD_EXECUTABLE(fms ${FMS_SRC} ${FMS_PLATFORM_SRC} ${FMS_INC})
 
 # link dl - For SQLite3 and shttpd - not for FreeBSD
@@ -200,10 +210,17 @@ IF(NOT USE_BUNDLED_SQLITE)
 	FIND_LIBRARY(SQLITE3_LIBRARY NAMES sqlite3 sqlite3_s)
 ENDIF(NOT USE_BUNDLED_SQLITE)
 
-FIND_LIBRARY(POCO_FOUNDATION_LIBRARY NAMES PocoFoundation PocoFoundationmt)
-FIND_LIBRARY(POCO_NET_LIBRARY NAMES PocoNet PocoNetmt)
-FIND_LIBRARY(POCO_UTIL_LIBRARY NAMES PocoUtil PocoUtilmt)
-FIND_LIBRARY(POCO_XML_LIBRARY NAMES PocoXML PocoXMLmt)
+IF(POCO_STATIC)
+	FIND_LIBRARY(POCO_FOUNDATION_LIBRARY PATHS ${POCO_LIB_DIR} NAMES libPocoFoundation.a)
+	FIND_LIBRARY(POCO_NET_LIBRARY PATHS ${POCO_LIB_DIR} NAMES libPocoNet.a)
+	FIND_LIBRARY(POCO_UTIL_LIBRARY PATHS ${POCO_LIB_DIR} NAMES libPocoUtil.a)
+	FIND_LIBRARY(POCO_XML_LIBRARY PATHS ${POCO_LIB_DIR} NAMES libPocoXML.a)
+ELSE(POCO_STATIC)
+	FIND_LIBRARY(POCO_FOUNDATION_LIBRARY NAMES PocoFoundation PocoFoundationmt)
+	FIND_LIBRARY(POCO_NET_LIBRARY NAMES PocoNet PocoNetmt)
+	FIND_LIBRARY(POCO_UTIL_LIBRARY NAMES PocoUtil PocoUtilmt)
+	FIND_LIBRARY(POCO_XML_LIBRARY NAMES PocoXML PocoXMLmt)
+ENDIF(POCO_STATIC)
 FIND_LIBRARY(PTHREADS_LIBRARY NAMES pthread pthreads pthreadvc2)
 FIND_LIBRARY(ICONV_LIBRARY NAMES iconv iconv_s libiconv libiconv_s)
 IF(ALTERNATE_CAPTCHA)
@@ -214,14 +231,12 @@ IF(ALTERNATE_CAPTCHA)
 ENDIF(ALTERNATE_CAPTCHA)
 
 IF(POCO_FOUNDATION_LIBRARY)
-	# We don't need to explicitly link under MSVC, POCO uses #pragmas to specify linked libraries.
-	IF(NOT MSVC)
-		TARGET_LINK_LIBRARIES(fms ${POCO_FOUNDATION_LIBRARY})
-	ENDIF(NOT MSVC)
 	ADD_DEFINITIONS(-DPOCO_HAVE_IPv6)
-	IF(WIN32)
+	IF(WIN32 OR POCO_STATIC)
 		ADD_DEFINITIONS(-DPOCO_STATIC)
-	ENDIF(WIN32)
+	ENDIF(WIN32 OR POCO_STATIC)
+	
+	# We don't need to explicitly link under MSVC, POCO uses #pragmas to specify linked libraries.
 	IF(POCO_UTIL_LIBRARY)
 		IF(NOT MSVC)
 			TARGET_LINK_LIBRARIES(fms ${POCO_UTIL_LIBRARY})
@@ -229,13 +244,6 @@ IF(POCO_FOUNDATION_LIBRARY)
 	ELSE(POCO_UTIL_LIBRARY)
 		MESSAGE(FATAL_ERROR "Could not find system Poco Util library.  You must set the location manually.")
 	ENDIF(POCO_UTIL_LIBRARY)
-	IF(POCO_NET_LIBRARY)
-		IF(NOT MSVC)
-			TARGET_LINK_LIBRARIES(fms ${POCO_NET_LIBRARY})
-		ENDIF(NOT MSVC)
-	ELSE(POCO_NET_LIBRARY)
-		MESSAGE(FATAL_ERROR "Could not find system Poco Net library.  You must set the location manually.")
-	ENDIF(POCO_NET_LIBRARY)
 	IF(POCO_XML_LIBRARY)
 		IF(NOT MSVC)
 			TARGET_LINK_LIBRARIES(fms ${POCO_XML_LIBRARY})
@@ -243,6 +251,16 @@ IF(POCO_FOUNDATION_LIBRARY)
 	ELSE(POCO_XML_LIBRARY)
 		MESSAGE(FATAL_ERROR "Could not find system Poco XML library.  You must set the location manually.")
 	ENDIF(POCO_XML_LIBRARY)
+	IF(POCO_NET_LIBRARY)
+		IF(NOT MSVC)
+			TARGET_LINK_LIBRARIES(fms ${POCO_NET_LIBRARY})
+		ENDIF(NOT MSVC)
+	ELSE(POCO_NET_LIBRARY)
+		MESSAGE(FATAL_ERROR "Could not find system Poco Net library.  You must set the location manually.")
+	ENDIF(POCO_NET_LIBRARY)
+	IF(NOT MSVC)
+		TARGET_LINK_LIBRARIES(fms ${POCO_FOUNDATION_LIBRARY})
+	ENDIF(NOT MSVC)
 ELSE(POCO_FOUNDATION_LIBRARY)
 	MESSAGE(FATAL_ERROR "Could not find system Poco Foundation library.  You must set the location manually.")
 ENDIF(POCO_FOUNDATION_LIBRARY)
@@ -302,7 +320,6 @@ IF(FROST_SUPPORT)
 	ADD_SUBDIRECTORY(libs/libtomcrypt)
 	TARGET_LINK_LIBRARIES(fms tomcrypt)
 	INCLUDE_DIRECTORIES(libs/libtomcrypt/headers)
-
 	
 	ADD_DEFINITIONS(-DFROST_SUPPORT)
 	
@@ -312,6 +329,11 @@ ENDIF(FROST_SUPPORT)
 IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 	INCLUDE_DIRECTORIES(AFTER /usr/local/include)
 ENDIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+
+# Mac OS X won't find Poco include files without this
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	INCLUDE_DIRECTORIES(AFTER /opt/local/include)
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 IF(QUERY_LOG)
 	ADD_DEFINITIONS(-DQUERY_LOG)

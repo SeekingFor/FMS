@@ -85,6 +85,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.FCPHost.description","Host name or address of Freenet node.");
 	st->SetDefault("web.option.FCPPort.description","The port that Freenet is listening for FCP connections on.");
 	st->SetDefault("web.option.FProxyPort.description","The port that Freenet is listening for http connections on.");
+	st->SetDefault("web.option.FCPTimeout.description","FCP Timeout in seconds.  If the connected Freenet node doesn't send any data to FMS in this this time period, FMS will try to reconnect to the node.");
 	st->SetDefault("web.option.MaxIdentityRequests.description","Maximum number of concurrent requests for new Identity xml files");
 	st->SetDefault("web.option.MaxIdentityIntroductionRequests.description","Maximum number of concurrent identities requesting IdentityIntroduction xml files.  Each identity may have multiple requests pending.");
 	st->SetDefault("web.option.MaxIntroductionPuzzleRequests.description","Maximum number of concurrent requests for new IntroductionPuzzle xml files");
@@ -149,6 +150,10 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.announceidentity.instructions","Type the answers of a few of the following puzzles.  You don't need to get them all correct, but remember that they are case sensitive.  Getting announced will take some time and you must assign trust to other identities to see yourself announced.  DO NOT continuously solve captchas.  Solve 30 at most, wait a day, and if your identity has not been announced, repeat until it is.");
 	st->SetDefault("web.page.announceidentity.waitforpuzzles","You must wait for some puzzles to be downloaded.  Make sure you have assigned trust to some other identities' trust lists and check back later.");
 	st->SetDefault("web.page.announceidentity.announce","Announce");
+	st->SetDefault("web.page.announceidentity.charactercaptcha.instructions","Type the characters that appear in the image");
+	st->SetDefault("web.page.announceidentity.unlikecaptcha1.whichpanelunlike","Which panel is unlike the rest?");
+	st->SetDefault("web.page.announceidentity.unlikecaptcha1.unlikeobject","What object appears in this panel?");
+	st->SetDefault("web.page.announceidentity.unlikecaptcha1.similarobject","What object appears in the other panels?");
 
 	st->SetDefault("web.page.addpeer.title","Add Peer");
 	st->SetDefault("web.page.addpeer.publickey","Public Key :");

@@ -56,12 +56,15 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 			StringFunctions::LowerCase(boardname,boardname);
 			boarddescription=(*queryvars.find("boarddescription")).second;
 
-			SQLite3DB::Statement addst=m_db->Prepare("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod) VALUES(?,?,?,?);");
-			addst.Bind(0,boardname);
-			addst.Bind(1,boarddescription);
-			addst.Bind(2,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
-			addst.Bind(3,"Added manually");
-			addst.Step();
+			if(boardname!="")
+			{
+				SQLite3DB::Statement addst=m_db->Prepare("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod) VALUES(?,?,?,?);");
+				addst.Bind(0,boardname);
+				addst.Bind(1,boarddescription);
+				addst.Bind(2,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
+				addst.Bind(3,"Added manually");
+				addst.Step();
+			}
 		}
 		if((*queryvars.find("formaction")).second=="remove0messages" && ValidateFormPassword(queryvars))
 		{
@@ -199,7 +202,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 	content+="</tr>";
 
 	content+="<tr>";
-	content+="<td><form name=\"frmaddboard\" method=\"POST\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"addboard\"><input type=\"text\" name=\"boardname\"></td><td><input type=\"text\" name=\"boarddescription\" size=\"40\" maxlength=\"50\"></td><td><input type=\"submit\" value=\""+m_trans->Get("web.page.boards.addboard")+"\"></form></td>";
+	content+="<td><form name=\"frmaddboard\" method=\"POST\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"addboard\"><input type=\"text\" name=\"boardname\" maxlength=\""MAX_BOARD_NAME_LENGTH_STR"\"></td><td><input type=\"text\" name=\"boarddescription\" size=\"40\" maxlength=\""MAX_BOARD_DESCRIPTION_LENGTH_STR"\"></td><td><input type=\"submit\" value=\""+m_trans->Get("web.page.boards.addboard")+"\"></form></td>";
 	content+="</tr>";
 
 	content+="<tr><td colspan=\"4\"><hr><form name=\"frmboards\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"</td></tr>";
@@ -229,7 +232,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 		content+="<td>"+SanitizeOutput(boardname)+"</td>";
 		content+="<td><input type=\"hidden\" name=\"boardid["+rownumstr+"]\" value=\""+boardidstr+"\">";
 		content+="<input type=\"hidden\" name=\"oldboarddescription["+rownumstr+"]\" value=\""+StringFunctions::Replace(SanitizeOutput(boarddescription),"&nbsp;"," ")+"\">";
-		content+="<input type=\"text\" name=\"boarddescription["+rownumstr+"]\" value=\""+SanitizeOutput(boarddescription)+"\" size=\"40\" maxlength=\"50\"></td>";
+		content+="<input type=\"text\" name=\"boarddescription["+rownumstr+"]\" value=\""+SanitizeOutput(boarddescription)+"\" size=\"40\" maxlength=\""MAX_BOARD_DESCRIPTION_LENGTH_STR"\"></td>";
 		content+="<td>";
 		content+="<input type=\"hidden\" name=\"oldsavereceivedmessages["+rownumstr+"]\" value=\""+savereceivedmessages+"\">";
 		content+="<input type=\"checkbox\" name=\"savereceivedmessages["+rownumstr+"]\" value=\"true\"";

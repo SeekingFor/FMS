@@ -339,7 +339,7 @@ void FrostMessageRequester::StartRequest(const std::string &id)
 		}
 
 		message.SetName("ClientGet");
-		message["URI"]="KSK@"+m_frostmessagebase+"|message|news|"+Poco::DateTimeFormatter::format(date,"%Y.%n.%e")+"-"+boardname+"-"+idparts[1]+".xml";
+		message["URI"]="KSK@frost|message|"+m_frostmessagebase+"|"+Poco::DateTimeFormatter::format(date,"%Y.%n.%e")+"-"+boardname+"-"+idparts[1]+".xml";
 		message["Identifier"]=m_fcpuniquename+"|"+id+"|"+message["URI"];
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";		// 1 MB

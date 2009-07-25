@@ -65,7 +65,7 @@ const std::string HomePage::GenerateContent(const std::string &method, const std
 		if(currentmajor<major || (currentmajor==major && currentminor<minor) || (currentmajor==major && currentminor==minor && currentrelease<release))
 		{
 			content+="<strong>"+m_trans->Get("web.page.home.oldversion")+" <a href=\"http://"+fcphost+":"+fproxyport+"/"+freesite+"\">FMS "+majorstr+"."+minorstr+"."+releasestr+"</a></strong><br>";
-			content+=m_trans->Get("web.page.home.releaseinfo")+" <a href=\"versioninfo.htm?Major="+majorstr+"&Minor="+minorstr+"&Release="+releasestr+"\">"+m_trans->Get("web.page.home.here")+"</a><br>";
+			content+=m_trans->Get("web.page.home.releaseinfo")+" <a href=\"versioninfo.htm?Major="+majorstr+"&Minor="+minorstr+"&Release="+releasestr+"\">"+m_trans->Get("web.page.home.releaseinfohere")+"</a><br>";
 			showgenericupdate=false;
 		}
 		else

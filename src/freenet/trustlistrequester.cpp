@@ -2,9 +2,13 @@
 #include "../../include/option.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/freenet/trustlistxml.h"
+#include "../../include/unicode/unicodestring.h"
+#include "../../include/global.h"
 
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/Timespan.h>
+
+#include <algorithm>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -127,15 +131,17 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		{
 			int id=-1;
 			std::string identity;
-			std::string messagetrustcomment="";
-			std::string trustlisttrustcomment="";
+			UnicodeString messagetrustcomment("");
+			UnicodeString trustlisttrustcomment("");
 			identity=xml.GetIdentity(i);
 
 			st.Bind(0,identity);
 			st.Step();
 			if(st.RowReturned()==false)
 			{
-				if(insertcount<50 && (dayinsertcount<100 || previnsertcount==0))
+				// allow up to 10 new identities per downloaded trust list, where total inserted in the last 24 hours may not exceed 1/10 the total number of identities we know about or 500 (whichever is smaller, minimum 10)
+				// 24 hour limit is lifted if the database didn't contain any identities inserted more than 24 hours ago (new db)
+				if(insertcount<10 && (dayinsertcount<((std::min)(((std::max)(previnsertcount/10,10)),500)) || previnsertcount==0))
 				{
 					idinsert.Bind(0,identity);
 					idinsert.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
@@ -176,17 +182,12 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 				}
 				messagetrustcomment=xml.GetMessageTrustComment(i);
 				trustlisttrustcomment=xml.GetTrustListTrustComment(i);
-				// limit comments to 50 characters each
-				if(messagetrustcomment.size()>50)
-				{
-					messagetrustcomment.erase(50);
-				}
-				if(trustlisttrustcomment.size()>50)
-				{
-					trustlisttrustcomment.erase(50);
-				}
-				trustst.Bind(4,messagetrustcomment);
-				trustst.Bind(5,trustlisttrustcomment);
+				
+				messagetrustcomment.Trim(MAX_TRUST_COMMENT_LENGTH);
+				trustlisttrustcomment.Trim(MAX_TRUST_COMMENT_LENGTH);
+
+				trustst.Bind(4,messagetrustcomment.NarrowString());
+				trustst.Bind(5,trustlisttrustcomment.NarrowString());
 				trustst.Step();
 				trustst.Reset();
 			}
@@ -195,13 +196,13 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		trustst.Finalize();
 		st.Finalize();
 
-		if(insertcount>=50)
+		if(insertcount>=10)
 		{
-			m_log->warning("TrustListRequester::HandleAllData TrustList contained more than 50 new identities : "+message["Identifier"]);
+			m_log->warning("TrustListRequester::HandleAllData TrustList contained more than 10 new identities : "+message["Identifier"]);
 		}
-		if(dayinsertcount>=100 && previnsertcount>0)
+		if(dayinsertcount>=((std::min)(((std::max)(previnsertcount/10,10)),500)) && previnsertcount>0)
 		{
-			m_log->warning("TrustListRequester::HandleAllData TrustList would have inserted more than 100 new identities in the last 24 hours : "+message["Identifier"]);
+			m_log->warning("TrustListRequester::HandleAllData TrustList would have inserted too many new identities in the last 24 hours : "+message["Identifier"]);
 		}
 
 		st=m_db->Prepare("INSERT INTO tblTrustListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");

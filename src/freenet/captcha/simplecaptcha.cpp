@@ -11,7 +11,7 @@
 	#include <xmem.h>
 #endif
 
-void SimpleCaptcha::Generate()
+const bool SimpleCaptcha::Generate()
 {
 	BMP bmp;
 	int bmpwidth=110;
@@ -145,6 +145,8 @@ void SimpleCaptcha::Generate()
 	bmp.WriteToFile(tempfilename.c_str());
 	ReadPuzzleData(tempfilename);
 	unlink(tempfilename.c_str());
+
+	return true;
 }
 
 const std::string SimpleCaptcha::GenerateRandomString(const int len)

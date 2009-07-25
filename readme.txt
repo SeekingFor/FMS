@@ -65,6 +65,41 @@ you have that pertains to the problem.  Make sure to anonymize any IP addresses,
 host names, subnet masks, and keys from the log that you don't want people to
 know about.
 
+CAPTCHAS
+--------
+There are currently 2 main types of captcha images that FMS uses to introduce
+new identities.
+
+The first type is an image that contains scrambled and obscured characters.  In
+order to solve this type of captcha, you must type in the exact characters that
+appear in the image from left to right.  If your FMS binary has been compiled
+with alternate captchas turned on, you have the ability to add bitmap fonts to
+the fonts directory, which will be used by this captcha generator.  Please see
+the existing fonts in this directory for the format, and approximate size that
+the font must be.
+
+The second type of captcha contains 4 small images of objects.  3 of the images
+will contain the same object.  The 4th will contain a different object.  You
+must identify which image is different, what it contains, and what is in the
+other 3 images.  You should type the object names in lower case in singular
+form.  In order for FMS to generate this type of captcha, please follow these
+instructions.  First, create a directory called unlikeimages in the FMS working
+directory.  In this directory you will place 100x100 pixel bitmap images that
+contain objects that most people can identify.  The names of the images must be
+in the format: object_##.bmp , where object is the singular lower case name of
+what the image contains, and ## is an identifier of any length.  Using numbers
+such as 01, 02, 03, etc. as the identifiers is advisable.  Please pick images
+where there is no question in what it contains.  Something like a telephone may
+seem like a great idea, but should the object name be phone or telephone?
+Other ambiguity can occur with animals, where there may be many individual
+species that most would classify under a more generic term.  Elephants, birds,
+foxes, monkeys, etc. are some examples of this.  Please use the generic term
+that most people would identify the object as.  It is important to have a large
+collection of images when using this type of captcha, and you obviously need at
+least 3 images of each type of object.  Also, don't share your image collection
+with other users.  This would give any potential malicious user all the
+information they need to easily solve your captchas.
+
 EXITING
 -------
 To exit FMS running in console mode, press CTRL+C while at the console.  You
@@ -146,10 +181,12 @@ be named index.htm, trustlist.htm, or files.htm.
 TRUST
 -----
 Trust is the most important element of FMS.  It determines which identities you
-will download messages from and thus your overall experience.  Do not give
-trust to arbitrary identities.  Pick whom you trust wisely.  The settings for
-minimum trust before downloading messages and trust lists can be changed on the
-web interface.
+will download messages from and thus your overall experience.  Trust values can
+range from 0 to 100, with 0 being distrust, 100 being fully trust, and 50 being
+neutral.  A blank trust value means undertermined trust.  Do not give trust to
+arbitrary identities.  Pick whom you trust wisely.  The settings for minimum
+trust before downloading messages and trust lists can be changed on the web
+interface.
 
 You must have a local identity created before you can set trust levels.  Even
 if you don't want to post messages, you must still create an identity, but you

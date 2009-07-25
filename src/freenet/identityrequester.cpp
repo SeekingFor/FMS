@@ -2,6 +2,8 @@
 #include "../../include/freenet/identityxml.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/option.h"
+#include "../../include/unicode/unicodestring.h"
+#include "../../include/global.h"
 
 #include <Poco/DateTime.h>
 #include <Poco/Timestamp.h>
@@ -32,7 +34,7 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 	IdentityXML xml;
 	long identityid;
 	long index;
-	std::string name="";
+	UnicodeString name;
 
 	now=Poco::Timestamp();
 	StringFunctions::Split(message["Identifier"],"|",idparts);
@@ -57,12 +59,11 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 	{
 
 		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, SingleUse=?, LastSeen=?, PublishTrustList=?, PublishBoardList=?, FreesiteEdition=? WHERE IdentityID=?");
+		
 		name=xml.GetName();
-		if(name.size()>40)
-		{
-			name.erase(40);
-		}
-		st.Bind(0,name);
+		name.Trim(MAX_IDENTITY_NAME_LENGTH);
+
+		st.Bind(0,name.NarrowString());
 		if(xml.GetSingleUse()==true)
 		{
 			st.Bind(1,"true");

@@ -45,6 +45,7 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 	std::string day="";
 	std::string name="";
 	std::string pubkey="";
+	std::string captchatype="";
 	int requestindex=0;
 	bool willshow=false;
 	std::string localidentityidstr="";
@@ -56,6 +57,10 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 		std::vector<std::string> uuids;
 		std::vector<std::string> days;
 		std::vector<std::string> solutions;
+		std::vector<std::string> captchatypes;
+		std::vector<std::string> unlikenums;
+		std::vector<std::string> unlikeobjects;
+		std::vector<std::string> similarobjects;
 
 		if(queryvars.find("localidentityid")!=queryvars.end())
 		{
@@ -65,6 +70,10 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 		CreateArgArray(queryvars,"uuid",uuids);
 		CreateArgArray(queryvars,"day",days);
 		CreateArgArray(queryvars,"solution",solutions);
+		CreateArgArray(queryvars,"captchatype",captchatypes);
+		CreateArgArray(queryvars,"unlikenum",unlikenums);
+		CreateArgArray(queryvars,"unlikeobject",unlikeobjects);
+		CreateArgArray(queryvars,"similarobject",similarobjects);
 
 		for(int i=0; i<solutions.size(); i++)
 		{
@@ -74,6 +83,21 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 				insert.Bind(1,days[i]);
 				insert.Bind(2,uuids[i]);
 				insert.Bind(3,solutions[i]);
+				insert.Step();
+				insert.Reset();
+			}
+		}
+
+		for(int i=0; i<unlikenums.size(); i++)
+		{
+			if(unlikeobjects[i]!="" && similarobjects[i]!="")
+			{
+				insert.Bind(0,localidentityid);
+				insert.Bind(1,days[i]);
+				insert.Bind(2,uuids[i]);
+				StringFunctions::LowerCase(unlikeobjects[i],unlikeobjects[i]);
+				StringFunctions::LowerCase(similarobjects[i],similarobjects[i]);
+				insert.Bind(3,std::string(unlikenums[i]+unlikeobjects[i]+similarobjects[i]));
 				insert.Step();
 				insert.Reset();
 			}
@@ -93,7 +117,7 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 	content+="<tr>";
 
 	date-=Poco::Timespan(1,0,0,0,0);
-	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID,Day,tblIdentity.IdentityID,RequestIndex,tblIdentity.Name,tblIdentity.PublicKey FROM tblIntroductionPuzzleRequests INNER JOIN tblIdentity ON tblIntroductionPuzzleRequests.IdentityID=tblIdentity.IdentityID WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts WHERE UUID IS NOT NULL) AND UUID NOT IN (SELECT UUID FROM tblIntroductionPuzzleInserts WHERE UUID IS NOT NULL) AND Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND Found='true' ORDER BY tblIdentity.IdentityID, Day DESC, RequestIndex DESC;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID,Day,tblIdentity.IdentityID,RequestIndex,tblIdentity.Name,tblIdentity.PublicKey,tblIntroductionPuzzleRequests.Type FROM tblIntroductionPuzzleRequests INNER JOIN tblIdentity ON tblIntroductionPuzzleRequests.IdentityID=tblIdentity.IdentityID WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts WHERE UUID IS NOT NULL) AND UUID NOT IN (SELECT UUID FROM tblIntroductionPuzzleInserts WHERE UUID IS NOT NULL) AND Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND Found='true' ORDER BY tblIdentity.IdentityID, Day DESC, RequestIndex DESC;");
 	st.Step();
 
 	if(st.RowReturned()==false)
@@ -109,6 +133,7 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 		st.ResultInt(3,requestindex);
 		st.ResultText(4,name);
 		st.ResultText(5,pubkey);
+		st.ResultText(6,captchatype);
 
 		// if we are already inserting a solution for an identity - we shouldn't show any puzzles that are older than the one we are inserting
 		// get the last index # we are inserting this day from this identity
@@ -126,18 +151,39 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 			}
 		}
 
-		if(willshow && thisid!=lastid)
+		if(willshow && thisid!=lastid && (captchatype=="captcha" || captchatype=="unlikecaptcha1"))
 		{
 			StringFunctions::Convert(shown,countstr);
 			if(shown>0 && shown%4==0)
 			{
 				content+="</tr>\r\n<tr>";
 			}
-			content+="<td title=\""+m_trans->Get("web.page.announceidentity.from")+" "+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"\">";
-			content+="<img src=\"showcaptcha.htm?UUID="+uuid+"\"><br>";
+			content+="<td style=\"vertical-align:top;\" title=\""+m_trans->Get("web.page.announceidentity.from")+" "+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"\">";
+			content+="<img src=\"showcaptcha.htm?UUID="+uuid+"\"><br />";
 			content+="<input type=\"hidden\" name=\"uuid["+countstr+"]\" value=\""+SanitizeOutput(uuid)+"\">";
 			content+="<input type=\"hidden\" name=\"day["+countstr+"]\" value=\""+day+"\">";
-			content+="<input type=\"text\" name=\"solution["+countstr+"]\">";
+			content+="<input type=\"hidden\" name=\"captchatype["+countstr+"]\" value=\""+SanitizeOutput(captchatype)+"\">";
+			if(captchatype=="captcha")
+			{
+				content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.charactercaptcha.instructions")+"</span><br />";
+				content+="<input type=\"text\" name=\"solution["+countstr+"]\">";
+			}
+			else if(captchatype=="unlikecaptcha1")
+			{
+				content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.unlikecaptcha1.whichpanelunlike")+"</span><br />";
+				content+="<select name=\"unlikenum["+countstr+"]\">";
+				content+="<option value=\"1\">1</option>";
+				content+="<option value=\"2\">2</option>";
+				content+="<option value=\"3\">3</option>";
+				content+="<option value=\"4\">4</option>";
+				content+="</select>";
+				content+="<br />";
+				content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.unlikecaptcha1.unlikeobject")+"</span><br />";
+				content+="<input type=\"text\" name=\"unlikeobject["+countstr+"]\">";
+				content+="<br />";
+				content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.unlikecaptcha1.similarobject")+"</span><br />";
+				content+="<input type=\"text\" name=\"similarobject["+countstr+"]\">";
+			}
 			content+="</td>\r\n";
 			lastid=thisid;
 			shown++;

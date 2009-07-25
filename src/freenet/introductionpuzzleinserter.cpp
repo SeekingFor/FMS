@@ -3,6 +3,7 @@
 #include "../../include/stringfunctions.h"
 #include "../../include/option.h"
 #include "../../include/freenet/captcha/simplecaptcha.h"
+#include "../../include/freenet/captcha/unlikecaptcha1.h"
 #ifdef ALTERNATE_CAPTCHA
 #include "../../include/freenet/captcha/alternatecaptcha1.h"
 #include "../../include/freenet/captcha/alternatecaptcha2.h"
@@ -73,36 +74,51 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 	}
 }
 
-void IntroductionPuzzleInserter::GenerateCaptcha(std::string &encodeddata, std::string &solution)
+void IntroductionPuzzleInserter::GenerateCaptcha(std::string &encodeddata, std::string &solution, std::string &captchatype, std::string &mimetype)
 {
-	ICaptcha *cap=0;
+	ICaptcha *primarycap=new UnlikeCaptcha1("unlikeimages");
+	ICaptcha *secondarycap=0;
+	ICaptcha *usedcap=0;
 #ifdef ALTERNATE_CAPTCHA
 	if(rand()%2==0)
 	{
-		cap=new AlternateCaptcha1();
+		secondarycap=new AlternateCaptcha1();
 	}
 	else
 	{
-		cap=new AlternateCaptcha2();
+		secondarycap=new AlternateCaptcha2();
 	}
 	m_log->trace("IntroductionPuzzleInserter::GenerateCaptcha using alternate captcha generator");
 #else
-	cap=new SimpleCaptcha();
+	secondarycap=new SimpleCaptcha();
 #endif
 	std::vector<unsigned char> puzzle;
 	std::vector<unsigned char> puzzlesolution;
 
-	cap->Generate();
-	cap->GetPuzzle(puzzle);
-	cap->GetSolution(puzzlesolution);
+	if(primarycap->Generate()==true)
+	{
+		usedcap=primarycap;
+	}
+	else
+	{
+		secondarycap->Generate();
+		usedcap=secondarycap;
+	}
 
 	encodeddata.clear();
 	solution.clear();
 
+	usedcap->GetPuzzle(puzzle);
+	usedcap->GetSolution(puzzlesolution);
+
 	Base64::Encode(puzzle,encodeddata);
 	solution.insert(solution.begin(),puzzlesolution.begin(),puzzlesolution.end());
 
-	delete cap;
+	captchatype=usedcap->GetCaptchaType();
+	mimetype=usedcap->GetMimeType();
+
+	delete primarycap;
+	delete secondarycap;
 
 }
 
@@ -193,6 +209,8 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 	std::string privatekey="";
 	std::string publickey="";
 	std::string keypart="";
+	std::string captchatype="";
+	std::string mimetype="";
 
 	StringFunctions::Convert(localidentityid,idstring);
 	SQLite3DB::Recordset rs=m_db->Query("SELECT MAX(InsertIndex) FROM tblIntroductionPuzzleInserts WHERE Day='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"' AND LocalIdentityID="+idstring+";");
@@ -227,7 +245,7 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		Option option(m_db);
 		option.Get("MessageBase",messagebase);
 
-		GenerateCaptcha(encodedpuzzle,solutionstring);
+		GenerateCaptcha(encodedpuzzle,solutionstring,captchatype,mimetype);
 		if(encodedpuzzle.size()==0)
 		{
 			m_log->fatal("IntroductionPuzzleInserter::StartInsert could not create introduction puzzle");
@@ -243,12 +261,12 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 			m_log->fatal("IntroductionPuzzleInserter::StartInsert could not create UUID");
 		}
 
-		xml.SetType("captcha");
+		xml.SetType(captchatype);
 		std::string uuidstr=uuid.toString();
 		StringFunctions::UpperCase(uuidstr,uuidstr);
 		xml.SetUUID(uuidstr+"@"+keypart);
 		xml.SetPuzzleData(encodedpuzzle);
-		xml.SetMimeType("image/bmp");
+		xml.SetMimeType(mimetype);
 
 		xmldata=xml.GetXML();
 		StringFunctions::Convert(xmldata.size(),xmldatasizestr);
@@ -275,7 +293,7 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		m_fcp->Send(std::vector<char>(xmldata.begin(),xmldata.end()));
 		*/
 
-		m_db->Execute("INSERT INTO tblIntroductionPuzzleInserts(UUID,Type,MimeType,LocalIdentityID,PuzzleData,PuzzleSolution) VALUES('"+xml.GetUUID()+"','captcha','image/bmp',"+idstring+",'"+encodedpuzzle+"','"+solutionstring+"');");
+		m_db->Execute("INSERT INTO tblIntroductionPuzzleInserts(UUID,Type,MimeType,LocalIdentityID,PuzzleData,PuzzleSolution) VALUES('"+xml.GetUUID()+"','"+captchatype+"','"+mimetype+"',"+idstring+",'"+encodedpuzzle+"','"+solutionstring+"');");
 
 		m_inserting.push_back(localidentityid);
 

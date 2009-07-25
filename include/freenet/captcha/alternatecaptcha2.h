@@ -13,10 +13,12 @@ class AlternateCaptcha2:public ICaptcha
 public:
 	AlternateCaptcha2();
 
-	void Generate();
+	const bool Generate();
 
 	const bool GetPuzzle(std::vector<unsigned char> &puzzle);
 	const bool GetSolution(std::vector<unsigned char> &solution);
+	const std::string GetMimeType()			{ return "image/bmp"; }
+	const std::string GetCaptchaType()		{ return "captcha"; }
 
 private:
 	const std::string GenerateRandomString(const int len);
