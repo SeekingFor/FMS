@@ -277,7 +277,7 @@ std::string SiteInserter::GenerateTrustList(const std::string &htmltemplate, con
 	st.Step();
 
 	content+="<table class=\"trustlist\">";
-	content+="<tr class=\"title\"><thcolspan=\"5\">";
+	content+="<tr class=\"title\"><th colspan=\"5\">";
 	content+="Trust List of "+SanitizeOutput(name);
 	content+="</th></tr>";
 	content+="<tr class=\"headings\"><th></th><th>Message Trust</th><th>Message Comment</th><th>Trust List Trust</th><th>Trust Comment</th></tr>";
@@ -434,6 +434,7 @@ const bool SiteInserter::StartInsert(const long &localidentityid)
 	message["URI"]=uskkey;
 	message["Identifier"]=m_fcpuniquename+"|"+localidentityidstr+"|"+message["URI"];
 	message["DefaultName"]="index.htm";
+	message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 
 	// add each page to the message
 	for(std::map<std::string,std::string>::iterator pagei=pages.begin(); pagei!=pages.end(); pagei++)

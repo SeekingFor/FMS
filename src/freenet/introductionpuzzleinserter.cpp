@@ -274,6 +274,7 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		message.SetName("ClientPut");
 		message["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|IntroductionPuzzle|"+indexstr+".xml";
 		message["Identifier"]=m_fcpuniquename+"|"+idstring+"|"+indexstr+"|"+xml.GetUUID()+"|"+message["URI"];
+		message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmldatasizestr;
 		m_fcp->Send(message);

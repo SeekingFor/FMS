@@ -28,6 +28,7 @@ protected:
 private:
 	void InitializeIMessageListRequester();
 	virtual void PopulateIDList()=0;
+	virtual const IDTYPE GetIDFromIdentifier(const std::string &identifier)=0;
 	virtual void StartRequest(const IDTYPE &id)=0;
 	virtual void StartRedirectRequest(FCPv2::Message &message);
 	virtual const bool HandleAllData(FCPv2::Message &message);
@@ -36,8 +37,6 @@ private:
 	void GetBoardList(std::map<std::string,bool> &boards, const bool forceload=false);
 	const bool CheckDateNotFuture(const std::string &datestr) const;
 	const bool CheckDateWithinMaxDays(const std::string &datestr) const;
-
-	virtual const bool GetIDFromIdentifier(const std::string &identifier, IDTYPE &id)=0;
 
 	bool m_savetonewboards;
 
@@ -375,7 +374,7 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 	}
 
 	// remove this identityid from request list
-	GetIDFromIdentifier(message["Identifier"],messageid);
+	messageid=GetIDFromIdentifier(message["Identifier"]);
 	RemoveFromRequestList(messageid);
 
 	// keep 2 days of request indexes in the cache
@@ -422,7 +421,7 @@ const bool IMessageListRequester<IDTYPE>::HandleGetFailed(FCPv2::Message &messag
 	}
 
 	// remove this identityid from request list
-	GetIDFromIdentifier(message["Identifier"],messageid);
+	messageid=GetIDFromIdentifier(message["Identifier"]);
 	RemoveFromRequestList(messageid);
 
 	return true;

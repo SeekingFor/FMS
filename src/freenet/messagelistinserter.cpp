@@ -326,6 +326,7 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		// don't insert into edition 0 because 1208 has major issues with this
 		message["URI"]="USK"+privatekey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|MessageList/"+indexstr+"/";
 		message["Identifier"]=m_fcpuniquename+"|"+localidentityidstr+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|"+message["URI"];
+		message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 		message["DefaultName"]="MessageList.xml";
 		message["Files.0.Name"]="MessageList.xml";
 		message["Files.0.UploadFrom"]="direct";

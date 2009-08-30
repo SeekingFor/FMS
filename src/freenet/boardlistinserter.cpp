@@ -170,6 +170,7 @@ const bool BoardListInserter::StartInsert(const long &localidentityid)
 	message.SetName("ClientPut");
 	message["URI"]=privatekey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|BoardList|"+indexstr+".xml";
 	message["Identifier"]=m_fcpuniquename+"|"+localidentityidstr+"|"+indexstr+"|"+message["URI"];
+	message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 	message["UploadFrom"]="direct";
 	message["DataLength"]=datasizestr;
 	m_fcp->Send(message);

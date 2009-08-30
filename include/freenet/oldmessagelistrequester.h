@@ -12,8 +12,8 @@ public:
 protected:
 	void Initialize();
 	void PopulateIDList();
+	const std::string GetIDFromIdentifier(const std::string &identifier);
 	void StartRequest(const std::string &id);
-	const bool GetIDFromIdentifier(const std::string &identifier, std::string &id);
 
 };
 

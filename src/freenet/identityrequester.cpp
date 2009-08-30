@@ -14,14 +14,27 @@
 	#include <xmem.h>
 #endif
 
-IdentityRequester::IdentityRequester(SQLite3DB::DB *db):IIndexRequester<long>(db)
+IdentityRequester::IdentityRequester(SQLite3DB::DB *db):IIndexRequester<std::pair<long,long> >(db)
 {
-	Initialize();
+
 }
 
-IdentityRequester::IdentityRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexRequester<long>(db,fcp)
+IdentityRequester::IdentityRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexRequester<std::pair<long,long> >(db,fcp)
 {
-	Initialize();
+
+}
+
+const std::pair<long,long> IdentityRequester::GetIDFromIdentifier(const std::string &identifier)
+{
+	long identityid;
+	long identityorder;
+
+	std::vector<std::string> idparts;
+	StringFunctions::Split(identifier,"|",idparts);
+	StringFunctions::Convert(idparts[1],identityid);
+	StringFunctions::Convert(idparts[3],identityorder);
+
+	return std::pair<long,long>(identityorder,identityid);
 }
 
 const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
@@ -35,12 +48,14 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 	long identityid;
 	long index;
 	UnicodeString name;
+	long identityorder;
 
 	now=Poco::Timestamp();
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
 	StringFunctions::Convert(idparts[1],identityid);
 	StringFunctions::Convert(idparts[2],index);
+	StringFunctions::Convert(idparts[3],identityorder);
 
 	// wait for all data to be received from connection
 	m_fcp->WaitForBytes(1000,datalength);
@@ -124,7 +139,7 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 	}
 
 	// remove this identityid from request list
-	RemoveFromRequestList(identityid);
+	RemoveFromRequestList(std::pair<long,long>(identityorder,identityid));
 
 	return true;
 
@@ -136,10 +151,12 @@ const bool IdentityRequester::HandleGetFailed(FCPv2::Message &message)
 	std::vector<std::string> idparts;
 	long identityid;
 	long index;
+	long identityorder;
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(idparts[1],identityid);
-	StringFunctions::Convert(idparts[2],index);	
+	StringFunctions::Convert(idparts[2],index);
+	StringFunctions::Convert(idparts[3],identityorder);
 
 	// if this is a fatal error - insert index into database so we won't try to download this index again
 	if(message["Fatal"]=="true")
@@ -155,61 +172,23 @@ const bool IdentityRequester::HandleGetFailed(FCPv2::Message &message)
 	}
 
 	// remove this identityid from request list
-	RemoveFromRequestList(identityid);
+	RemoveFromRequestList(std::pair<long,long>(identityorder,identityid));
 
 	return true;
 
 }
 
-void IdentityRequester::Initialize()
+void IdentityRequester::StartRequest(const std::pair<long,long> &inputpair)
 {
-	m_fcpuniquename="KnownIdentityRequester";
-	Option option(m_db);
-	option.GetInt("MaxIdentityRequests",m_maxrequests);
-
-	// known identities get 4/5 + any remaining if not evenly divisible - unknown identities get 1/5 of the max requests option
-	m_maxrequests=((m_maxrequests*4)/5)+(m_maxrequests%5);
-
-	if(m_maxrequests<1)
-	{
-		m_maxrequests=1;
-		m_log->error("Option MaxIdentityRequests is currently set at less than 1.  It must be 1 or greater.");
-	}
-	if(m_maxrequests>100)
-	{
-		m_log->warning("Option MaxIdentityRequests is currently set at more than 100.  This value might be incorrectly configured.");
-	}
-}
-
-void IdentityRequester::PopulateIDList()
-{
-	Poco::DateTime date;
-	int id;
-
-	date.assign(date.year(),date.month(),date.day(),0,0,0);
-
-	// select identities we want to query (haven't seen yet today) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
-	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen IS NOT NULL AND LastSeen<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"' AND tblIdentity.FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
-	st.Step();
-
-	m_ids.clear();
-
-	while(st.RowReturned())
-	{
-		st.ResultInt(0,id);
-		m_ids[id]=false;
-		st.Step();
-	}
-}
-
-void IdentityRequester::StartRequest(const long &identityid)
-{
+	const long identityorder=inputpair.first;
+	const long identityid=inputpair.second;
 	Poco::DateTime now;
 	FCPv2::Message message;
 	std::string publickey;
 	int index;
 	std::string indexstr;
 	std::string identityidstr;
+	std::string identityorderstr;
 
 	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
 	st.Bind(0,identityid);
@@ -239,19 +218,23 @@ void IdentityRequester::StartRequest(const long &identityid)
 
 		StringFunctions::Convert(index,indexstr);
 		StringFunctions::Convert(identityid,identityidstr);
+		StringFunctions::Convert(identityorder,identityorderstr);
 
 		message.SetName("ClientGet");
 		message["URI"]=publickey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Identity|"+indexstr+".xml";
-		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|"+message["URI"];
+		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|"+identityorderstr+"|"+message["URI"];
+		message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 		message["ReturnType"]="direct";
 		message["MaxSize"]="10000";			// 10 KB
 
 		m_fcp->Send(message);
 
-		m_requesting.push_back(identityid);
+		m_requesting.push_back(inputpair);
 	}
 	st.Finalize();
 
-	m_ids[identityid]=true;
+	m_ids[inputpair]=true;
+
+	m_log->trace(m_fcpuniquename+"::StartRequest started request for "+message["Identifier"]);
 
 }

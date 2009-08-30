@@ -592,15 +592,21 @@ void SetupDB(SQLite3DB::DB *db)
 	// insert Luke771's public key - haven't seen in a while - disabling for now
 	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@mdXK~ZVlfTZhF1SLBrvZ--i0vOsOpa~w9wv~~psQ-04,gXonsXKc7aexKSO8Gt8Fwre4Qgmmbt2WueO7VzxNKkk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert falafel's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@IxVqeqM0LyYdTmYAf5z49SJZUxr7NtQkOqVYG0hvITw,RM2wnMn5zAufCMt5upkkgq25B1elfBAxc7htapIWg1c,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@IxVqeqM0LyYdTmYAf5z49SJZUxr7NtQkOqVYG0hvITw,RM2wnMn5zAufCMt5upkkgq25B1elfBAxc7htapIWg1c,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert cptn_insano's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@bloE1LJ~qzSYUkU2nt7sB9kq060D4HTQC66pk5Q8NpA,DOOASUnp0kj6tOdhZJ-h5Tk7Ka50FSrUgsH7tCG1usU,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@bloE1LJ~qzSYUkU2nt7sB9kq060D4HTQC66pk5Q8NpA,DOOASUnp0kj6tOdhZJ-h5Tk7Ka50FSrUgsH7tCG1usU,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert Flink's public key - haven't seen in a while - disabling for now
 	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@q2TtkNBOuuniyJ56~8NSopCs3ttwe5KlB31ugZtWmXA,6~PzIupS8YK7L6oFNpXGKJmHT2kBMDfwTg73nHdNur8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert Kane's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@Ofm~yZivDJ5Z2fSzZbMiLEUUQaIc0KHRdZMBTaPLO6I,WLm4s4hNbOOurJ6ijfOq4odz7-dN7uTUvYxJRwWnlMI,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@Ofm~yZivDJ5Z2fSzZbMiLEUUQaIc0KHRdZMBTaPLO6I,WLm4s4hNbOOurJ6ijfOq4odz7-dN7uTUvYxJRwWnlMI,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// inserts boardstat's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@aYWBb6zo2AM13XCNhsmmRKMANEx6PG~C15CWjdZziKA,X1pAG4EIqR1gAiyGFVZ1iiw-uTlh460~rFACJ7ZHQXk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@aYWBb6zo2AM13XCNhsmmRKMANEx6PG~C15CWjdZziKA,X1pAG4EIqR1gAiyGFVZ1iiw-uTlh460~rFACJ7ZHQXk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	// insert void's public key
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@Io8dkKWKkDfLVZ8n218hLRQV2K~20EIUk2hgWkneHEs,yy5MbLSpcYOMyX6mim0vofV7Sxdtsv-8uVOeFDf7ML0,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	// insert herb's public key
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@5FeJUDg2ZdEqo-u4yoYWc1zF4tgPwOWlqcAJVGCoRv8,ptJ1y0YBkdU9S5DeYC8AsLH0SrmTE9S3w2HKZvl5QKo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	// insert Tommy[D]'s public key
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@EefdujDZxdWxl0qusX0cJofGmJBvd3dF4Ty61PZy8Y8,4-LkBILohhpX7znBPXZWEUoK2qQZs-CLbUFO3-yKJIo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 
 	// TODO remove sometime after 0.1.17
 	FixCapitalBoardNames(db);

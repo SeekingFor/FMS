@@ -46,6 +46,7 @@ protected:
 	std::vector<IDTYPE> m_inserting;		// list of ids we are inserting
 	std::string m_messagebase;
 	Poco::DateTime m_lastchecked;
+	std::string m_defaultinsertpriorityclassstr;
 
 	// these MUST be populated by child class
 	std::string m_fcpuniquename;
@@ -131,6 +132,7 @@ void IIndexInserter<IDTYPE>::InitializeIIndexInserter()
 	m_fcpuniquename="";
 	option.Get("MessageBase",m_messagebase);
 	m_lastchecked=Poco::Timestamp();
+	option.Get("DefaultInsertPriorityClass",m_defaultinsertpriorityclassstr);
 }
 
 template <class IDTYPE>
@@ -152,16 +154,17 @@ void IIndexInserter<IDTYPE>::RegisterWithThread(FreenetMasterThread *thread)
 }
 
 template <class IDTYPE>
-void IIndexInserter<IDTYPE>::RemoveFromInsertList(const IDTYPE identityid)
+void IIndexInserter<IDTYPE>::RemoveFromInsertList(const IDTYPE id)
 {
-	typename std::vector<IDTYPE>::iterator i=m_inserting.begin();
-	while(i!=m_inserting.end() && (*i)!=identityid)
-	{
-		i++;
-	}
+	typename std::vector<IDTYPE>::iterator i=std::find(m_inserting.begin(),m_inserting.end(),id);
+
 	if(i!=m_inserting.end())
 	{
 		m_inserting.erase(i);
+	}
+	else
+	{
+		//m_log->fatal("IIndexInserter<IDTYPE>::RemoveFromInsertList no matching id found!");
 	}
 }
 

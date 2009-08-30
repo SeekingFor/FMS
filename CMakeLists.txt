@@ -63,6 +63,7 @@ src/freenet/inactivemessagelistrequester.cpp
 src/freenet/introductionpuzzleinserter.cpp
 src/freenet/introductionpuzzlerequester.cpp
 src/freenet/introductionpuzzlexml.cpp
+src/freenet/knownidentityrequester.cpp
 src/freenet/messageinserter.cpp
 src/freenet/messagelistinserter.cpp
 src/freenet/messagelistrequester.cpp

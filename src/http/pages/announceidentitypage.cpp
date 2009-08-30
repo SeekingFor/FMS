@@ -5,6 +5,8 @@
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
 
+#include <algorithm>
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif
@@ -53,6 +55,8 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="announce" && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement insert=m_db->Prepare("INSERT INTO tblIdentityIntroductionInserts(LocalIdentityID,Day,UUID,Solution) VALUES(?,?,?,?);");
+		SQLite3DB::Statement inserttrustst=m_db->Prepare("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) VALUES(?,?);");
+		SQLite3DB::Statement addtrustst=m_db->Prepare("UPDATE tblIdentityTrust SET LocalTrustListTrust=? WHERE LocalIdentityID=? AND IdentityID=? AND LocalTrustListTrust IS NULL;");
 		int localidentityid=0;
 		std::vector<std::string> uuids;
 		std::vector<std::string> days;
@@ -61,6 +65,18 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 		std::vector<std::string> unlikenums;
 		std::vector<std::string> unlikeobjects;
 		std::vector<std::string> similarobjects;
+		std::vector<std::string> identityids;
+		bool addtrust=false;
+		int trust=0;
+
+		if(queryvars.find("chkaddtrust")!=queryvars.end() && (*queryvars.find("chkaddtrust")).second!="" && queryvars.find("txtaddtrust")!=queryvars.end() && (*queryvars.find("txtaddtrust")).second!="")
+		{
+			if(StringFunctions::Convert((*queryvars.find("txtaddtrust")).second,trust))
+			{
+				trust=(std::max)(0,(std::min)(100,trust));
+				addtrust=true;
+			}
+		}
 
 		if(queryvars.find("localidentityid")!=queryvars.end())
 		{
@@ -74,6 +90,7 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 		CreateArgArray(queryvars,"unlikenum",unlikenums);
 		CreateArgArray(queryvars,"unlikeobject",unlikeobjects);
 		CreateArgArray(queryvars,"similarobject",similarobjects);
+		CreateArgArray(queryvars,"identityid",identityids);
 
 		for(int i=0; i<solutions.size(); i++)
 		{
@@ -85,6 +102,20 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 				insert.Bind(3,solutions[i]);
 				insert.Step();
 				insert.Reset();
+
+				if(addtrust==true)
+				{
+					inserttrustst.Bind(0,localidentityid);
+					inserttrustst.Bind(1,identityids[i]);
+					inserttrustst.Step();
+					inserttrustst.Reset();
+
+					addtrustst.Bind(0,trust);
+					addtrustst.Bind(1,localidentityid);
+					addtrustst.Bind(2,identityids[i]);
+					addtrustst.Step();
+					addtrustst.Reset();
+				}
 			}
 		}
 
@@ -124,75 +155,92 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 	{
 		content+="<td colspan=\"4\"><center>"+m_trans->Get("web.page.announceidentity.waitforpuzzles")+"</td>";
 	}
-	
-	while(st.RowReturned() && shown<20)
+	else
 	{
-		st.ResultText(0,uuid);
-		st.ResultText(1,day);
-		st.ResultText(2,thisid);
-		st.ResultInt(3,requestindex);
-		st.ResultText(4,name);
-		st.ResultText(5,pubkey);
-		st.ResultText(6,captchatype);
-
-		// if we are already inserting a solution for an identity - we shouldn't show any puzzles that are older than the one we are inserting
-		// get the last index # we are inserting this day from this identity
-		// if the index here is greater than the index in the st statement, we will skip this puzzle because we are already inserting a puzzle with a greater index
-		willshow=true;
-		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblIdentityIntroductionInserts INNER JOIN tblIntroductionPuzzleRequests ON tblIdentityIntroductionInserts.UUID=tblIntroductionPuzzleRequests.UUID WHERE tblIdentityIntroductionInserts.Day=? AND tblIdentityIntroductionInserts.UUID IN (SELECT UUID FROM tblIntroductionPuzzleRequests WHERE IdentityID=? AND Day=? AND UUID IS NOT NULL) GROUP BY tblIdentityIntroductionInserts.Day;");
-		st2.Step();
-		if(st2.RowReturned()==true)
+		while(st.RowReturned() && shown<20)
 		{
-			int index=0;
-			st2.ResultInt(0,index);
-			if(index>=requestindex)
+			st.ResultText(0,uuid);
+			st.ResultText(1,day);
+			st.ResultText(2,thisid);
+			st.ResultInt(3,requestindex);
+			st.ResultText(4,name);
+			st.ResultText(5,pubkey);
+			st.ResultText(6,captchatype);
+
+			// if we are already inserting a solution for an identity - we shouldn't show any puzzles that are older than the one we are inserting
+			// get the last index # we are inserting this day from this identity
+			// if the index here is greater than the index in the st statement, we will skip this puzzle because we are already inserting a puzzle with a greater index
+			willshow=true;
+			SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblIdentityIntroductionInserts INNER JOIN tblIntroductionPuzzleRequests ON tblIdentityIntroductionInserts.UUID=tblIntroductionPuzzleRequests.UUID WHERE tblIdentityIntroductionInserts.Day=? AND tblIdentityIntroductionInserts.UUID IN (SELECT UUID FROM tblIntroductionPuzzleRequests WHERE IdentityID=? AND Day=? AND UUID IS NOT NULL) GROUP BY tblIdentityIntroductionInserts.Day;");
+			st2.Step();
+			if(st2.RowReturned()==true)
 			{
-				willshow=false;
+				int index=0;
+				st2.ResultInt(0,index);
+				if(index>=requestindex)
+				{
+					willshow=false;
+				}
 			}
+
+			if(willshow && thisid!=lastid && (captchatype=="captcha" || captchatype=="unlikecaptcha1"))
+			{
+				StringFunctions::Convert(shown,countstr);
+				if(shown>0 && shown%4==0)
+				{
+					content+="</tr>\r\n<tr>";
+				}
+				content+="<td style=\"vertical-align:top;\" title=\""+m_trans->Get("web.page.announceidentity.from")+" "+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"\">";
+				content+="<img src=\"showcaptcha.htm?UUID="+uuid+"\"><br />";
+				content+="<input type=\"hidden\" name=\"uuid["+countstr+"]\" value=\""+SanitizeOutput(uuid)+"\">";
+				content+="<input type=\"hidden\" name=\"day["+countstr+"]\" value=\""+day+"\">";
+				content+="<input type=\"hidden\" name=\"captchatype["+countstr+"]\" value=\""+SanitizeOutput(captchatype)+"\">";
+				content+="<input type=\"hidden\" name=\"identityid["+countstr+"]\" value=\""+thisid+"\">";
+				if(captchatype=="captcha")
+				{
+					content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.charactercaptcha.instructions")+"</span><br />";
+					content+="<input type=\"text\" name=\"solution["+countstr+"]\">";
+				}
+				else if(captchatype=="unlikecaptcha1")
+				{
+					content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.unlikecaptcha1.whichpanelunlike")+"</span><br />";
+					content+="<select name=\"unlikenum["+countstr+"]\">";
+					content+="<option value=\"1\">1</option>";
+					content+="<option value=\"2\">2</option>";
+					content+="<option value=\"3\">3</option>";
+					content+="<option value=\"4\">4</option>";
+					content+="</select>";
+					content+="<br />";
+					content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.unlikecaptcha1.unlikeobject")+"</span><br />";
+					content+="<input type=\"text\" name=\"unlikeobject["+countstr+"]\">";
+					content+="<br />";
+					content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.unlikecaptcha1.similarobject")+"</span><br />";
+					content+="<input type=\"text\" name=\"similarobject["+countstr+"]\">";
+				}
+				content+="</td>\r\n";
+				lastid=thisid;
+				shown++;
+			}
+			
+			st.Step();
 		}
 
-		if(willshow && thisid!=lastid && (captchatype=="captcha" || captchatype=="unlikecaptcha1"))
-		{
-			StringFunctions::Convert(shown,countstr);
-			if(shown>0 && shown%4==0)
-			{
-				content+="</tr>\r\n<tr>";
-			}
-			content+="<td style=\"vertical-align:top;\" title=\""+m_trans->Get("web.page.announceidentity.from")+" "+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"\">";
-			content+="<img src=\"showcaptcha.htm?UUID="+uuid+"\"><br />";
-			content+="<input type=\"hidden\" name=\"uuid["+countstr+"]\" value=\""+SanitizeOutput(uuid)+"\">";
-			content+="<input type=\"hidden\" name=\"day["+countstr+"]\" value=\""+day+"\">";
-			content+="<input type=\"hidden\" name=\"captchatype["+countstr+"]\" value=\""+SanitizeOutput(captchatype)+"\">";
-			if(captchatype=="captcha")
-			{
-				content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.charactercaptcha.instructions")+"</span><br />";
-				content+="<input type=\"text\" name=\"solution["+countstr+"]\">";
-			}
-			else if(captchatype=="unlikecaptcha1")
-			{
-				content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.unlikecaptcha1.whichpanelunlike")+"</span><br />";
-				content+="<select name=\"unlikenum["+countstr+"]\">";
-				content+="<option value=\"1\">1</option>";
-				content+="<option value=\"2\">2</option>";
-				content+="<option value=\"3\">3</option>";
-				content+="<option value=\"4\">4</option>";
-				content+="</select>";
-				content+="<br />";
-				content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.unlikecaptcha1.unlikeobject")+"</span><br />";
-				content+="<input type=\"text\" name=\"unlikeobject["+countstr+"]\">";
-				content+="<br />";
-				content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.unlikecaptcha1.similarobject")+"</span><br />";
-				content+="<input type=\"text\" name=\"similarobject["+countstr+"]\">";
-			}
-			content+="</td>\r\n";
-			lastid=thisid;
-			shown++;
-		}
-		
+		std::string mltlt("0");
+		st=m_db->Prepare("SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust';");
 		st.Step();
+		if(st.RowReturned())
+		{
+			st.ResultText(0,mltlt);
+		}
+
+		content+="</tr>\r\n";
+		content+="<tr><td colspan=\"2\" style=\"text-align:right;\"><input type=\"checkbox\" name=\"chkaddtrust\" value=\"Y\" checked></td><td colspan=\"2\">"+m_trans->Get("web.page.announceidentity.chkaddtrust")+"</td></tr>\r\n";
+		content+="<tr><td colspan=\"2\" style=\"text-align:right;\"><input type=\"textbox\" name=\"txtaddtrust\" value=\""+mltlt+"\" size=\"2\" maxlength=\"3\"></td><td colspan=\"2\">"+m_trans->Get("web.page.announceidentity.txtaddtrust")+"</td></tr>\r\n";
+		content+="<tr><td colspan=\"4\"><center><input type=\"submit\" value=\""+m_trans->Get("web.page.announceidentity.announce")+"\"></center></td>";
+		
 	}
 
-	content+="</tr><td colspan=\"4\"><center><input type=\"submit\" value=\""+m_trans->Get("web.page.announceidentity.announce")+"\"></td></tr>";
+	content+="</tr>\r\n";
 	content+="</table>";
 	content+="</form>";
 

@@ -17,6 +17,13 @@ FrostMessageRequester::FrostMessageRequester(SQLite3DB::DB *db, FCPv2::Connectio
 	Initialize();
 }
 
+const std::string FrostMessageRequester::GetIDFromIdentifier(const std::string &identifier)
+{
+	std::vector<std::string> idparts;
+	StringFunctions::Split(identifier,"|",idparts);
+	return idparts[1]+"|"+idparts[2]+"|"+idparts[3];
+}
+
 const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 {
 	std::vector<std::string> idparts;
@@ -341,6 +348,7 @@ void FrostMessageRequester::StartRequest(const std::string &id)
 		message.SetName("ClientGet");
 		message["URI"]="KSK@frost|message|"+m_frostmessagebase+"|"+Poco::DateTimeFormatter::format(date,"%Y.%n.%e")+"-"+boardname+"-"+idparts[1]+".xml";
 		message["Identifier"]=m_fcpuniquename+"|"+id+"|"+message["URI"];
+		message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";		// 1 MB
 

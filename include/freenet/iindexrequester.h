@@ -43,6 +43,7 @@ protected:
 	virtual void StartRequest(const IDTYPE &id)=0;
 	virtual const bool HandleAllData(FCPv2::Message &message)=0;
 	virtual const bool HandleGetFailed(FCPv2::Message &message)=0;
+	virtual const IDTYPE GetIDFromIdentifier(const std::string &identifier)=0;
 	virtual void RemoveFromRequestList(const IDTYPE id);
 
 	Poco::DateTime m_tempdate;
@@ -51,6 +52,7 @@ protected:
 	std::string m_messagebase;
 	std::map<IDTYPE,bool> m_ids;			// map of all ids we know and whether we have requested file from them yet
 	std::vector<IDTYPE> m_requesting;		// list of ids we are currently requesting from
+	std::string m_defaultrequestpriorityclassstr;
 
 	// these MUST be populated by child class
 	int m_maxrequests;
@@ -126,10 +128,12 @@ const bool IIndexRequester<IDTYPE>::HandleMessage(FCPv2::Message &message)
 		if(message.GetName()=="IdentifierCollision")
 		{
 			// remove one of the ids from the requesting list
-			IDTYPE id;
+			IDTYPE id=GetIDFromIdentifier(message["Identifier"]);
+			/*
 			std::vector<std::string> idparts;
 			StringFunctions::Split(message["Identifier"],"|",idparts);
 			StringFunctions::Convert(idparts[1],id);
+			*/
 			RemoveFromRequestList(id);
 			return true;
 		}
@@ -150,6 +154,7 @@ void IIndexRequester<IDTYPE>::InitializeIIndexRequester()
 	m_lastreceived=Poco::Timestamp();
 	m_lastpopulated=Poco::Timestamp();
 	m_lastpopulated-=Poco::Timespan(0,0,10,0,0);
+	option.Get("DefaultRequestPriorityClass",m_defaultrequestpriorityclassstr);
 }
 
 template <class IDTYPE>
@@ -216,6 +221,10 @@ void IIndexRequester<IDTYPE>::RemoveFromRequestList(const IDTYPE id)
 	if(i!=m_requesting.end())
 	{
 		m_requesting.erase(i);
+	}
+	else
+	{
+		//m_log->trace("IIndexRequester<IDTYPE>::RemoveFromRequestList no matching id found!");
 	}
 }
 

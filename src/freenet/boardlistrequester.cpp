@@ -50,6 +50,15 @@ std::string BoardListRequester::GetIdentityName(const long identityid)
 	}
 }
 
+const long BoardListRequester::GetIDFromIdentifier(const std::string &identifier)
+{
+	long id;
+	std::vector<std::string> idparts;
+	StringFunctions::Split(identifier,"|",idparts);
+	StringFunctions::Convert(idparts[1],id);
+	return id;
+}
+
 const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 {	
 	Poco::DateTime now;
@@ -300,6 +309,7 @@ void BoardListRequester::StartRequest(const long &identityid)
 		message.SetName("ClientGet");
 		message["URI"]=publickey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|BoardList|"+indexstr+".xml";
 		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|"+message["URI"];
+		message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 		message["ReturnType"]="direct";
 		message["MaxSize"]="100000";			// 100 KB
 

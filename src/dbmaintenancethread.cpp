@@ -149,69 +149,84 @@ void DBMaintenanceThread::Do30MinuteMaintenance()
 
 void DBMaintenanceThread::Do1HourMaintenance()
 {
+	int idcount=0;
 
-	m_db->Execute("BEGIN;");
-	// recalculate all trust levels - this is CPU instensive
-	// do 1 identity at a time as doing it with 1 UPDATE statement locks that database for the duration
-	SQLite3DB::Statement st=m_db->Prepare("SELECT TargetIdentityID,PeerMessageTrust,PeerTrustListTrust FROM vwCalculatedPeerTrust;");
-	SQLite3DB::Statement upd=m_db->Prepare("UPDATE tblIdentity SET PeerMessageTrust=?, PeerTrustListTrust=? WHERE IdentityID=?");
+	// get count of local identities
+	SQLite3DB::Statement st=m_db->Prepare("SELECT COUNT(*) FROM tblLocalIdentity;");
 	st.Step();
-	while(st.RowReturned())
+	if(st.RowReturned())
 	{
-		int identityid=0;
-		int trust=0;
-		
-		st.ResultInt(0,identityid);
-
-		upd.Bind(0,identityid);
-		if(st.ResultNull(1)==false)
-		{
-			trust=0;
-			st.ResultInt(1,trust);
-			upd.Bind(0,trust);
-		}
-		else
-		{
-			upd.Bind(0);
-		}
-		if(st.ResultNull(2)==false)
-		{
-			trust=0;
-			st.ResultInt(2,trust);
-			upd.Bind(1,trust);
-		}
-		else
-		{
-			upd.Bind(1);
-		}
-		upd.Bind(2,identityid);
-		upd.Step();
-		upd.Reset();
-
-		st.Step();
+		st.ResultInt(0,idcount);
 	}
 
-	// set null peer trust for identities without a calculated trust
-	st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE IdentityID NOT IN (SELECT TargetIdentityID FROM vwCalculatedPeerTrust);");
-	upd=m_db->Prepare("UPDATE tblIdentity SET PeerMessageTrust=NULL, PeerTrustListTrust=NULL WHERE IdentityID=?;");
-	st.Step();
-	while(st.RowReturned())
+	// only recalculate trust if a local identity exists
+	if(idcount>0)
 	{
-		int identityid=0;
-		st.ResultInt(0,identityid);
-		upd.Bind(0,identityid);
-		upd.Step();
-		upd.Reset();
+
+		m_db->Execute("BEGIN;");
+		// recalculate all trust levels - this is CPU instensive
+		// do 1 identity at a time as doing it with 1 UPDATE statement locks that database for the duration
+		SQLite3DB::Statement st=m_db->Prepare("SELECT TargetIdentityID,PeerMessageTrust,PeerTrustListTrust FROM vwCalculatedPeerTrust;");
+		SQLite3DB::Statement upd=m_db->Prepare("UPDATE tblIdentity SET PeerMessageTrust=?, PeerTrustListTrust=? WHERE IdentityID=?");
 		st.Step();
+		while(st.RowReturned())
+		{
+			int identityid=0;
+			int trust=0;
+			
+			st.ResultInt(0,identityid);
+
+			upd.Bind(0,identityid);
+			if(st.ResultNull(1)==false)
+			{
+				trust=0;
+				st.ResultInt(1,trust);
+				upd.Bind(0,trust);
+			}
+			else
+			{
+				upd.Bind(0);
+			}
+			if(st.ResultNull(2)==false)
+			{
+				trust=0;
+				st.ResultInt(2,trust);
+				upd.Bind(1,trust);
+			}
+			else
+			{
+				upd.Bind(1);
+			}
+			upd.Bind(2,identityid);
+			upd.Step();
+			upd.Reset();
+
+			st.Step();
+		}
+
+		// set null peer trust for identities without a calculated trust
+		st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE IdentityID NOT IN (SELECT TargetIdentityID FROM vwCalculatedPeerTrust);");
+		upd=m_db->Prepare("UPDATE tblIdentity SET PeerMessageTrust=NULL, PeerTrustListTrust=NULL WHERE IdentityID=?;");
+		st.Step();
+		while(st.RowReturned())
+		{
+			int identityid=0;
+			st.ResultInt(0,identityid);
+			upd.Bind(0,identityid);
+			upd.Step();
+			upd.Reset();
+			st.Step();
+		}
+
+		st.Finalize();
+		upd.Finalize();
+
+		// insert all identities not in trust list already
+		m_db->Execute("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity WHERE LocalIdentityID || '_' || IdentityID NOT IN (SELECT LocalIdentityID || '_' || IdentityID FROM tblIdentityTrust);");
+
+		m_db->Execute("COMMIT;");
+
 	}
-
-	st.Finalize();
-	upd.Finalize();
-
-	// insert all identities not in trust list already
-	m_db->Execute("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity WHERE LocalIdentityID || '_' || IdentityID NOT IN (SELECT LocalIdentityID || '_' || IdentityID FROM tblIdentityTrust);");
-
-	m_db->Execute("COMMIT;");
 
 	m_log->debug("PeriodicDBMaintenance::Do1HourMaintenance");
 }

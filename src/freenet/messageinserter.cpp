@@ -227,6 +227,7 @@ const bool MessageInserter::StartInsert(const std::string &messageuuid)
 		message.SetName("ClientPut");
 		message["URI"]=privatekey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Message|"+indexstr+".xml";
 		message["Identifier"]=m_fcpuniquename+"|"+messageuuid+"|"+idstr+"|"+indexstr+"|"+xmlfile.GetMessageID()+"|"+message["URI"];
+		message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmlsizestr;
 		m_fcp->Send(message);
@@ -237,6 +238,7 @@ const bool MessageInserter::StartInsert(const std::string &messageuuid)
 		message.SetName("ClientPut");
 		message["URI"]=privatekey+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Message-"+indexstr;
 		message["Identifier"]=m_fcpuniquename+"|"+message["URI"];
+		message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmlsizestr;
 		m_fcp->Send(message);

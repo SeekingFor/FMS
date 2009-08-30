@@ -89,6 +89,13 @@ const std::string MessageRequester::GetIdentityName(const long identityid)
 	}
 }
 
+const std::string MessageRequester::GetIDFromIdentifier(const std::string &identifier)
+{
+	std::vector<std::string> idparts;
+	StringFunctions::Split(identifier,"|",idparts);
+	return idparts[1];
+}
+
 const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 {
 	SQLite3DB::Statement st;
@@ -528,6 +535,7 @@ void MessageRequester::StartRequest(const std::string &requestid)
 		message.SetName("ClientGet");
 		message["URI"]=publickey+m_messagebase+"|"+date+"|Message|"+indexstr+".xml";
 		message["Identifier"]=m_fcpuniquename+"|"+requestid+"|"+parts[0]+"|"+parts[1]+"|"+parts[2]+"|"+message["URI"];
+		message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";		// 1 MB
 		// don't use ULPR - we wan't to know of failures ASAP so we can mark them as such

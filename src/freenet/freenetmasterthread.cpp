@@ -3,7 +3,7 @@
 #include "../../include/stringfunctions.h"
 #include "../../include/freenet/unkeyedidcreator.h"
 #include "../../include/freenet/identityinserter.h"
-#include "../../include/freenet/identityrequester.h"
+#include "../../include/freenet/knownidentityrequester.h"
 #include "../../include/freenet/unknownidentityrequester.h"
 #include "../../include/freenet/introductionpuzzleinserter.h"
 #include "../../include/freenet/identityintroductionrequester.h"
@@ -306,7 +306,7 @@ void FreenetMasterThread::Setup()
 
 	m_registrables.push_back(new UnkeyedIDCreator(m_db,&m_fcp));
 	m_registrables.push_back(new IdentityInserter(m_db,&m_fcp));
-	m_registrables.push_back(new IdentityRequester(m_db,&m_fcp));
+	m_registrables.push_back(new KnownIdentityRequester(m_db,&m_fcp));
 	m_registrables.push_back(new UnknownIdentityRequester(m_db,&m_fcp));
 	m_registrables.push_back(new IntroductionPuzzleInserter(m_db,&m_fcp));
 	m_registrables.push_back(new IdentityIntroductionRequester(m_db,&m_fcp));

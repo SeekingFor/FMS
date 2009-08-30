@@ -107,6 +107,15 @@ void MessageListRequester::GetBoardList(std::map<std::string,bool> &boards, cons
 
 }
 
+const long MessageListRequester::GetIDFromIdentifier(const std::string &identifier)
+{
+	long id;
+	std::vector<std::string> idparts;
+	StringFunctions::Split(identifier,"|",idparts);
+	StringFunctions::Convert(idparts[1],id);
+	return id;
+}
+
 const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 {	
 	SQLite3DB::Statement st;
@@ -552,6 +561,7 @@ void MessageListRequester::StartRequest(const long &id)
 		message.SetName("ClientGet");
 		message["URI"]="USK"+publickey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|MessageList/"+indexstr+"/MessageList.xml";
 		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|_|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|"+message["URI"];
+		message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";
 

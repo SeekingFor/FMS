@@ -12,6 +12,7 @@ public:
 private:
 	void Initialize();
 	void PopulateIDList();
+	const std::string GetIDFromIdentifier(const std::string &identifier);
 	void StartRequest(const std::string &id);
 	const bool HandleAllData(FCPv2::Message &message);
 	const bool HandleGetFailed(FCPv2::Message &message);

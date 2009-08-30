@@ -84,6 +84,8 @@ const bool MessageXML::ParseXML(const std::string &xml)
 	bool parsed=false;
 	Poco::XML::DOMParser dp;
 
+	dp.setEntityResolver(0);
+
 	Initialize();
 
 	try

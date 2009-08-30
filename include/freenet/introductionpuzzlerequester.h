@@ -15,6 +15,7 @@ private:
 	void Initialize();
 	void StartRequest(const long &identityid);
 	void PopulateIDList();				// clear and re-populate m_ids with identities we want to query
+	const long GetIDFromIdentifier(const std::string &identifier);
 	const bool HandleAllData(FCPv2::Message &message);
 	const bool HandleGetFailed(FCPv2::Message &message);
 

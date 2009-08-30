@@ -86,6 +86,22 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.FCPPort.description","The port that Freenet is listening for FCP connections on.");
 	st->SetDefault("web.option.FProxyPort.description","The port that Freenet is listening for http connections on.");
 	st->SetDefault("web.option.FCPTimeout.description","FCP Timeout in seconds.  If the connected Freenet node doesn't send any data to FMS in this this time period, FMS will try to reconnect to the node.");
+	st->SetDefault("web.option.DefaultRequestPriorityClass.description","The default PriorityClass for requests.");
+	st->SetDefault("web.option.DefaultRequestPriorityClass.1","1 - Emergency");
+	st->SetDefault("web.option.DefaultRequestPriorityClass.2","2 - Very High");
+	st->SetDefault("web.option.DefaultRequestPriorityClass.3","3 - High");
+	st->SetDefault("web.option.DefaultRequestPriorityClass.4","4 - Medium");
+	st->SetDefault("web.option.DefaultRequestPriorityClass.5","5 - Low");
+	st->SetDefault("web.option.DefaultRequestPriorityClass.6","6 - Very Low");
+	st->SetDefault("web.option.DefaultRequestPriorityClass.7","7 - Will Never Finish");
+	st->SetDefault("web.option.DefaultInsertPriorityClass.description","The default PriorityClass for inserts.");
+	st->SetDefault("web.option.DefaultInsertPriorityClass.1","1 - Emergency");
+	st->SetDefault("web.option.DefaultInsertPriorityClass.2","2 - Very High");
+	st->SetDefault("web.option.DefaultInsertPriorityClass.3","3 - High");
+	st->SetDefault("web.option.DefaultInsertPriorityClass.4","4 - Medium");
+	st->SetDefault("web.option.DefaultInsertPriorityClass.5","5 - Low");
+	st->SetDefault("web.option.DefaultInsertPriorityClass.6","6 - Very Low");
+	st->SetDefault("web.option.DefaultInsertPriorityClass.7","7 - Will Never Finish");
 	st->SetDefault("web.option.MaxIdentityRequests.description","Maximum number of concurrent requests for new Identity xml files");
 	st->SetDefault("web.option.MaxIdentityIntroductionRequests.description","Maximum number of concurrent identities requesting IdentityIntroduction xml files.  Each identity may have multiple requests pending.");
 	st->SetDefault("web.option.MaxIntroductionPuzzleRequests.description","Maximum number of concurrent requests for new IntroductionPuzzle xml files");
@@ -154,6 +170,8 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.announceidentity.unlikecaptcha1.whichpanelunlike","Which panel is unlike the rest?");
 	st->SetDefault("web.page.announceidentity.unlikecaptcha1.unlikeobject","What object appears in this panel?");
 	st->SetDefault("web.page.announceidentity.unlikecaptcha1.similarobject","What object appears in the other panels?");
+	st->SetDefault("web.page.announceidentity.chkaddtrust","Add trust list trust to the identity that published each solved captcha");
+	st->SetDefault("web.page.announceidentity.txtaddtrust","The amount of trust list trust to set for each identity.  This will not overwrite any existing trust.");
 
 	st->SetDefault("web.page.addpeer.title","Add Peer");
 	st->SetDefault("web.page.addpeer.publickey","Public Key :");

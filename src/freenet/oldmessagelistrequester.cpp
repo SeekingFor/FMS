@@ -10,8 +10,9 @@ OldMessageListRequester::OldMessageListRequester(SQLite3DB::DB *db, FCPv2::Conne
 	Initialize();
 }
 
-const bool OldMessageListRequester::GetIDFromIdentifier(const std::string &identifier, std::string &id)
+const std::string OldMessageListRequester::GetIDFromIdentifier(const std::string &identifier)
 {
+	std::string id("");
 	std::vector<std::string> idparts;
 
 	StringFunctions::Split(identifier,"|",idparts);
@@ -19,11 +20,11 @@ const bool OldMessageListRequester::GetIDFromIdentifier(const std::string &ident
 	if(idparts.size()>4)
 	{
 		id=idparts[4]+"|"+idparts[1]+"|"+idparts[2];
-		return true;
+		return id;
 	}
 	else
 	{
-		return false;
+		return "";
 	}
 
 }
@@ -129,6 +130,7 @@ void OldMessageListRequester::StartRequest(const std::string &id)
 		message.SetName("ClientGet");
 		message["URI"]="USK"+publickey.substr(3)+m_messagebase+"|"+StringFunctions::Replace(day,"-",".")+"|MessageList/"+indexstr+"/MessageList.xml";
 		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|_|"+day+"|"+message["URI"];
+		message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 		message["ReturnType"]="direct";
 		message["MaxSize"]="1000000";
 

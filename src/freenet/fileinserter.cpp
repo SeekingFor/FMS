@@ -105,6 +105,7 @@ const bool FileInserter::StartInsert(const long &fileinsertid)
 	message["Identifier"]=m_fcpuniquename+"|"+fileinsertidstr;
 	message["UploadFrom"]="direct";
 	message["DataLength"]=sizestr;
+	message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 	m_fcp->Send(message);
 	m_fcp->Send(data);
 
