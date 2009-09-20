@@ -8,15 +8,15 @@
 class MessageList:public std::vector<Message>,public ILogger,public IDatabase
 {
 public:
-	MessageList(SQLite3DB::DB *db):IDatabase(db)			{}
+	MessageList(SQLite3DB::DB *db);
 	
 	/**
 		\brief Loads all messages with an id between lowmessageid and highmessageid inclusive
 	*/
-	void LoadRange(const long lowmessageid, const long highmessageid, const long boardid=-1);
+	void LoadNNTPRange(const long lownntpmessageid, const long highnntpmessageid, const long boardid);
 	
 private:
-
+	bool m_uniqueboardmessageids;
 };
 
 #endif	// _messagelist_

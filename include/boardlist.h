@@ -26,7 +26,7 @@ public:
 	void LoadNew(const std::string &date);
 	
 private:
-	
+
 };
 
 #endif	// _boardlist_

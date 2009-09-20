@@ -185,6 +185,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Step();
 	upd.Reset();
 
+	st.Bind(0,"UniqueBoardMessageIDs");
+	st.Bind(1,"true");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"NNTP Server");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Use per board unique message ids for each message.  Turning this off will use global message ids unique across all boards.  Changing this value either way will require clearing any cache your newsgroup keeps.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"UniqueBoardMessageIDs");
+	upd.Step();
+	upd.Reset();
+
 	st.Bind(0,"StartHTTP");
 	st.Bind(1,"true");
 	st.Step();
@@ -198,6 +214,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(6);
 	upd.Bind(7,"simple");
 	upd.Bind(8,"StartHTTP");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"HTTPBindAddress");
+	st.Bind(1,"0.0.0.0");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"HTTP Server");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"The IP address or hostname that the HTTP server will bind to.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"HTTPBindAddress");
 	upd.Step();
 	upd.Reset();
 
@@ -317,12 +349,12 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Reset();
 
 	st.Bind(0,"DefaultRequestPriorityClass");
-	st.Bind(1,"3");
+	st.Bind(1,"2");
 	st.Step();
 	st.Reset();
 	upd.Bind(0,"Freenet Connection");
 	upd.Bind(1,order++);
-	upd.Bind(2,"1|1 - Emergency|2|2 - Very High|3|3 - High|4|4 - Medium|5|5 - Low|6|6 - Very Low|7|7 - Will Never Finish");
+	upd.Bind(2,"0|0 - Emergency|1|1 - Very High|2|2 - High|3|3 - Medium|4|4 - Low|5|5 - Very Low|6|6 - Will Never Finish");
 	upd.Bind(3,"The default PriorityClass for requests.");
 	upd.Bind(4,"select");
 	upd.Bind(5);
@@ -333,12 +365,12 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Reset();
 
 	st.Bind(0,"DefaultInsertPriorityClass");
-	st.Bind(1,"3");
+	st.Bind(1,"2");
 	st.Step();
 	st.Reset();
 	upd.Bind(0,"Freenet Connection");
 	upd.Bind(1,order++);
-	upd.Bind(2,"1|1 - Emergency|2|2 - Very High|3|3 - High|4|4 - Medium|5|5 - Low|6|6 - Very Low|7|7 - Will Never Finish");
+	upd.Bind(2,"0|0 - Emergency|1|1 - Very High|2|2 - High|3|3 - Medium|4|4 - Low|5|5 - Very Low|6|6 - Will Never Finish");
 	upd.Bind(3,"The default PriorityClass for inserts.");
 	upd.Bind(4,"select");
 	upd.Bind(5);
@@ -707,7 +739,7 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(0,"Messages");
 	upd.Bind(1,order++);
 	upd.Bind(2);
-	upd.Bind(3,"Automatically delete messages older than this many days.");
+	upd.Bind(3,"Automatically delete messages older than this many days.  Use -1 to keep messages forever.");
 	upd.Bind(4,"textbox");
 	upd.Bind(5);
 	upd.Bind(6);

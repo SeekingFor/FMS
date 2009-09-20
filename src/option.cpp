@@ -5,14 +5,46 @@
 	#include <xmem.h>
 #endif
 
+std::map<std::string,std::string> Option::m_cache;
+
 const bool Option::Get(const std::string &option, std::string &value)
 {
-	SQLite3DB::Statement st=m_db->Prepare("SELECT OptionValue FROM tblOption WHERE Option=?;");
-	st.Bind(0,option);
-	st.Step();
-	if(st.RowReturned())
+	if(m_cache.find(option)!=m_cache.end())
 	{
-		st.ResultText(0,value);
+		value=m_cache[option];
+		return true;
+	}
+	else
+	{
+		SQLite3DB::Statement st=m_db->Prepare("SELECT OptionValue FROM tblOption WHERE Option=?;");
+		st.Bind(0,option);
+		st.Step();
+		if(st.RowReturned())
+		{
+			st.ResultText(0,value);
+			m_cache[option]=value;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+}
+
+const bool Option::GetBool(const std::string &option, bool &value)
+{
+	std::string valstr="";
+	if(Get(option,valstr) && valstr=="true" || valstr=="false")
+	{
+		if(option=="true")
+		{
+			value=true;
+		}
+		else
+		{
+			value=false;
+		}
 		return true;
 	}
 	else

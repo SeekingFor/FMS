@@ -10,10 +10,10 @@ class Message:public IDatabase,public ILogger
 {
 public:
 	Message(SQLite3DB::DB *db);
-	Message(SQLite3DB::DB *db, const long messageid);
-	Message(SQLite3DB::DB *db, const std::string &messageuuid);
+	Message(SQLite3DB::DB *db, const long dbmessageid, const long boardid);
+	//Message(SQLite3DB::DB *db, const std::string &messageuuid);
 
-	const long GetMessageID() const					{ return m_messageid; }
+	const long GetDBMessageID() const				{ return m_dbmessageid; }
 	const std::string GetMessageUUID() const		{ return m_messageuuid; }
 	const std::string GetSubject() const			{ return m_subject; }
 	const std::string GetBody() const				{ return m_body; }
@@ -28,6 +28,7 @@ public:
 	const std::string GetNNTPHeaders() const;
 	const std::string GetNNTPArticleID() const;
 	const std::string GetNNTPBody() const;
+	const long GetNNTPMessageID() const				{ return m_nntpmessageid; }
 
 /*
 	void SetMessageUUID(const std::string &messageuuid)					{ m_messageuuid=messageuuid; }
@@ -40,9 +41,10 @@ public:
 	void AddInReplyTo(const long index, const std::string &messageid)	{ m_inreplyto[index]=messageid; }
 */
 
-	const bool Load(const long messageid, const long boardid=-1);
-	const bool LoadNext(const long messageid, const long boardid=-1);		// loads next message in board with messageid > passed id
-	const bool LoadPrevious(const long messageid, const long boardid=-1);	// loads previous message in board with messageid < passed id
+	const bool LoadDB(const long dbmessageid, const long boardid=-1);
+	const bool LoadNNTP(const long nntpmessageid, const long boardid);
+	const bool LoadNextNNTP(const long nntpmessageid, const long boardid);		// loads next message in board with messageid > passed id
+	const bool LoadPreviousNNTP(const long nntpmessageid, const long boardid);	// loads previous message in board with messageid < passed id
 	const bool Load(const std::string &messageuuid);
 	
 	const bool ParseNNTPMessage(const std::string &nntpmessage);
@@ -70,7 +72,9 @@ private:
 		std::vector<unsigned char> m_data;
 	};
 
-	long m_messageid;
+	bool m_uniqueboardmessageids;
+	long m_dbmessageid;
+	long m_nntpmessageid;
 	bool m_addnewpostfromidentities;
 	std::string m_messageuuid;
 	std::string m_subject;

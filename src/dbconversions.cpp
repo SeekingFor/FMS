@@ -270,6 +270,57 @@ void ConvertDB0117To0118(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=18;");
 }
 
+void ConvertDB0118To0119(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblMessageBoard ADD COLUMN BoardMessageID INTEGER;");
+	db->Execute("ALTER TABLE tblBoard ADD COLUMN NextMessageID INTEGER NOT NULL DEFAULT 1;");
+
+	// TODO - fill in missing BoardMessageIDs
+	db->Execute("BEGIN;");
+	SQLite3DB::Statement boardst=db->Prepare("SELECT BoardID FROM tblBoard;");
+	SQLite3DB::Statement boardmessagest=db->Prepare("SELECT MessageID FROM tblMessageBoard WHERE BoardID=? ORDER BY MessageID;");
+	SQLite3DB::Statement updatemessageboardst=db->Prepare("UPDATE tblMessageBoard SET BoardMessageID=? WHERE MessageID=? AND BoardID=?;");
+	SQLite3DB::Statement updateboardst=db->Prepare("UPDATE tblBoard SET NextMessageID=? WHERE BoardID=?;");
+	boardst.Step();
+	while(boardst.RowReturned())
+	{
+		int boardmessageid=1;
+		int boardid=0;
+		boardst.ResultInt(0,boardid);
+
+		boardmessagest.Bind(0,boardid);
+		boardmessagest.Step();
+		while(boardmessagest.RowReturned())
+		{
+			int messageid=0;
+			boardmessagest.ResultInt(0,messageid);
+
+			updatemessageboardst.Bind(0,boardmessageid++);
+			updatemessageboardst.Bind(1,messageid);
+			updatemessageboardst.Bind(2,boardid);
+			updatemessageboardst.Step();
+			updatemessageboardst.Reset();
+
+			boardmessagest.Step();
+		}
+		boardmessagest.Reset();
+
+		updateboardst.Bind(0,boardmessageid);
+		updateboardst.Bind(1,boardid);
+		updateboardst.Step();
+		updateboardst.Reset();
+
+		boardst.Step();
+	}
+	db->Execute("COMMIT;");
+
+	db->Execute("DROP INDEX IF EXISTS idxMessageBoard_BoardID;");
+	db->Execute("DROP VIEW IF EXISTS vwBoardStats;");
+	db->Execute("INSERT INTO tblOption(Option,OptionValue) VALUES('UniqueBoardMessageIDs','false');");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=19;");
+}
+
 void FixCapitalBoardNames(SQLite3DB::DB *db)
 {
 

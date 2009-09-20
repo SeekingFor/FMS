@@ -129,13 +129,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=18;
 		}
+		if(major==1 && minor==18)
+		{
+			ConvertDB0118To0119(db);
+			major=1;
+			minor=19;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,18);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,19);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=18;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=19;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -314,7 +320,8 @@ void SetupDB(SQLite3DB::DB *db)
 				DateAdded				DATETIME,\
 				SaveReceivedMessages	BOOL CHECK(SaveReceivedMessages IN('true','false')) DEFAULT 'true',\
 				AddedMethod				TEXT,\
-				Forum					TEXT CHECK(Forum IN('true','false')) DEFAULT 'false'\
+				Forum					TEXT CHECK(Forum IN('true','false')) DEFAULT 'false',\
+				NextMessageID			INTEGER NOT NULL DEFAULT 1\
 				);");
 
 	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('fms','Freenet Message System','2007-12-01 12:00:00','Seed Board','true');");
@@ -350,11 +357,19 @@ void SetupDB(SQLite3DB::DB *db)
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageBoard(\
 				MessageID			INTEGER,\
-				BoardID				INTEGER\
+				BoardID				INTEGER,\
+				BoardMessageID		INTEGER\
 				);");
 
 	db->Execute("CREATE INDEX IF NOT EXISTS idxMessageBoard_MessageID ON tblMessageBoard (MessageID);");
-	db->Execute("CREATE INDEX IF NOT EXISTS idxMessageBoard_BoardID ON tblMessageBoard (BoardID);");
+	//db->Execute("CREATE INDEX IF NOT EXISTS idxMessageBoard_BoardID ON tblMessageBoard (BoardID);");
+	db->Execute("CREATE INDEX IF NOT EXISTS idxMessageBoard_BoardMessageID ON tblMessageBoard (BoardID,BoardMessageID);");
+
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgInsertMessageBoard AFTER INSERT ON tblMessageBoard\
+				FOR EACH ROW BEGIN\
+					UPDATE tblMessageBoard SET BoardMessageID=(SELECT NextMessageID FROM tblBoard WHERE BoardID=new.BoardID) WHERE MessageID=new.MessageID AND BoardID=new.BoardID;\
+					UPDATE tblBoard SET NextMessageID=NextMessageID+1 WHERE BoardID=new.BoardID;\
+				END;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageListRequests(\
 				IdentityID			INTEGER,\
@@ -469,10 +484,32 @@ void SetupDB(SQLite3DB::DB *db)
 	// end thread db schema
 
 	// low / high / message count for each board
+	/*
 	db->Execute("CREATE VIEW IF NOT EXISTS vwBoardStats AS \
 				SELECT tblBoard.BoardID AS 'BoardID', IFNULL(MIN(MessageID),0) AS 'LowMessageID', IFNULL(MAX(MessageID),0) AS 'HighMessageID', COUNT(MessageID) AS 'MessageCount' \
 				FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID \
 				WHERE MessageID>=0 OR MessageID IS NULL \
+				GROUP BY tblBoard.BoardID;");
+	*/
+	db->Execute("CREATE VIEW IF NOT EXISTS vwBoardStats AS\
+				SELECT tblBoard.BoardID AS 'BoardID',\
+				CASE (SELECT OptionValue FROM tblOption WHERE Option='UniqueBoardMessageIDs')\
+				WHEN 'true' THEN\
+				IFNULL(MIN(BoardMessageID),0)\
+				ELSE\
+				IFNULL(MIN(MessageID),0) \
+				END\
+				AS 'LowMessageID',\
+				CASE (SELECT OptionValue FROM tblOption WHERE Option='UniqueBoardMessageIDs')\
+				WHEN 'true' THEN\
+				IFNULL(MAX(BoardMessageID),0)\
+				ELSE\
+				IFNULL(MAX(MessageID),0)\
+				END\
+				AS 'HighMessageID',\
+				COUNT(MessageID) AS 'MessageCount'\
+				FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID\
+				WHERE MessageID>=0 OR MessageID IS NULL\
 				GROUP BY tblBoard.BoardID;");
 
 	// calculates peer trust
@@ -607,6 +644,16 @@ void SetupDB(SQLite3DB::DB *db)
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@5FeJUDg2ZdEqo-u4yoYWc1zF4tgPwOWlqcAJVGCoRv8,ptJ1y0YBkdU9S5DeYC8AsLH0SrmTE9S3w2HKZvl5QKo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert Tommy[D]'s public key
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@EefdujDZxdWxl0qusX0cJofGmJBvd3dF4Ty61PZy8Y8,4-LkBILohhpX7znBPXZWEUoK2qQZs-CLbUFO3-yKJIo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	// insert DoorsOnFire's public key
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@F1x03zWQR4dAqJT8FueZnmWhVE9RuPg1Z4oeItkQ1qw,8DCU7gsHn61lSvYPyjaqsg4oMzBSEP1JhBVMMX-J8sM,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	// insert interrupt's public key
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@04RAn8gPQ~Cd7zGHkzui-Vz0jW-YNNLwfUnj5zI8i3I,H1CQ1U8cbs~y0o8qFYKUmpfySti80avdR~q3ADDb448,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	// insert The Seeker's public key
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@cI~w2hrvvyUa1E6PhJ9j5cCoG1xmxSooi7Nez4V2Gd4,A3ArC3rrJBHgAJV~LlwY9kgxM8kUR2pVYXbhGFtid78,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	// insert benjamin's public key
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@y7xEHiGMGlivnCq-a8SpYU0YO-XRNI3LcJHB8tCeaXI,lRZOVc0pEHTEPqZUJqc5qRv6JDxHZzqc~ybEC~I2y~A,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	// insert Oncle Jack's public key
+	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@L9ytg5-Yixmw~q5NKHzy6FeOaXSLCqIw3L4Fgl1dcZA,plYsHAfOJVqim1E~~6Tup98RVNvJ5dKJqPTzKcXlZv8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 
 	// TODO remove sometime after 0.1.17
 	FixCapitalBoardNames(db);

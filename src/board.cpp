@@ -1,5 +1,6 @@
 #include "../include/board.h"
 #include "../include/stringfunctions.h"
+#include "../include/option.h"
 
 #include <Poco/DateTimeParser.h>
 
@@ -9,12 +10,15 @@
 
 Board::Board(SQLite3DB::DB *db):IDatabase(db)
 {
+	Option option(db);
+	option.GetBool("UniqueBoardMessageIDs",m_uniqueboardmessageids);
+
 	m_boardid=-1;
 	m_boardname="";
 	m_boarddescription="";
 	m_datecreated.assign(1970,1,1);
-	m_lowmessageid=0;
-	m_highmessageid=0;
+	m_lownntpmessageid=0;
+	m_highnntpmessageid=0;
 	m_messagecount=0;
 	m_savereceivedmessages=true;
 	m_addedmethod="";
@@ -22,21 +26,27 @@ Board::Board(SQLite3DB::DB *db):IDatabase(db)
 
 Board::Board(SQLite3DB::DB *db, const long boardid):IDatabase(db)
 {
+	Option option(db);
+	option.GetBool("UniqueBoardMessageIDs",m_uniqueboardmessageids);
 	Load(boardid);	
 }
 
 Board::Board(SQLite3DB::DB *db, const std::string &boardname):IDatabase(db)
 {
+	Option option(db);
+	option.GetBool("UniqueBoardMessageIDs",m_uniqueboardmessageids);
 	Load(boardname);
 }
 
-Board::Board(SQLite3DB::DB *db, const long boardid, const std::string &boardname, const std::string &boarddescription, const std::string datecreated, const long lowmessageid, const long highmessageid, const long messagecount, const bool savereceivedmessages, const std::string &addedmethod):IDatabase(db)
+Board::Board(SQLite3DB::DB *db, const long boardid, const std::string &boardname, const std::string &boarddescription, const std::string datecreated, const long lownntpmessageid, const long highnntpmessageid, const long messagecount, const bool savereceivedmessages, const std::string &addedmethod):IDatabase(db)
 {
+	Option option(db);
+	option.GetBool("UniqueBoardMessageIDs",m_uniqueboardmessageids);
 	m_boardid=boardid;
 	m_boardname=boardname;
 	m_boarddescription=boarddescription;
-	m_lowmessageid=lowmessageid;
-	m_highmessageid=highmessageid;
+	m_lownntpmessageid=lownntpmessageid;
+	m_highnntpmessageid=highnntpmessageid;
 	m_messagecount=messagecount;
 	m_savereceivedmessages=savereceivedmessages;
 	m_addedmethod=addedmethod;
@@ -53,14 +63,22 @@ const bool Board::Load(const long boardid)
 	m_boardname="";
 	m_boarddescription="";
 	m_datecreated.assign(1970,1,1);
-	m_lowmessageid=0;
-	m_highmessageid=0;
+	m_lownntpmessageid=0;
+	m_highnntpmessageid=0;
 	m_messagecount=0;
 	m_addedmethod="";
 
 	// Optimize query by not using vwBoardStats
 	//SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, HighMessageID, LowMessageID, MessageCount, SaveReceivedMessages, AddedMethod FROM tblBoard LEFT JOIN vwBoardStats ON tblBoard.BoardID=vwBoardStats.BoardID WHERE tblBoard.BoardID=?;");
-	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, IFNULL(MAX(MessageID),'0') AS HighMessageID, IFNULL(MIN(MessageID),'0') AS LowMessageID, COUNT(MessageID) AS MessageCount, SaveReceivedMessages, AddedMethod FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblBoard.BoardID=? AND (MessageID IS NULL OR MessageID>=0);");
+	SQLite3DB::Statement st;
+	if(m_uniqueboardmessageids==true)
+	{
+		st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, IFNULL(MAX(BoardMessageID),0) AS HighMessageID, IFNULL(MIN(BoardMessageID),0) AS LowMessageID, COUNT(MessageID) AS MessageCount, SaveReceivedMessages, AddedMethod FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblBoard.BoardID=? AND (MessageID IS NULL OR MessageID>=0);");
+	}
+	else
+	{
+		st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, IFNULL(MAX(MessageID),'0') AS HighMessageID, IFNULL(MIN(MessageID),'0') AS LowMessageID, COUNT(MessageID) AS MessageCount, SaveReceivedMessages, AddedMethod FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblBoard.BoardID=? AND (MessageID IS NULL OR MessageID>=0);");
+	}
 	st.Bind(0,boardid);
 	st.Step();
 
@@ -79,10 +97,10 @@ const bool Board::Load(const long boardid)
 
 		tempint=0;
 		st.ResultInt(3,tempint);
-		m_highmessageid=tempint;
+		m_highnntpmessageid=tempint;
 		tempint=0;
 		st.ResultInt(4,tempint);
-		m_lowmessageid=tempint;
+		m_lownntpmessageid=tempint;
 		tempint=0;
 		st.ResultInt(5,tempint);
 		m_messagecount=tempint;
@@ -113,15 +131,23 @@ const bool Board::Load(const std::string &boardname)		// same as loading form bo
 	m_boardname="";
 	m_boarddescription="";
 	m_datecreated.assign(1970,1,1);
-	m_lowmessageid=0;
-	m_highmessageid=0;
+	m_lownntpmessageid=0;
+	m_highnntpmessageid=0;
 	m_messagecount=0;
 	int tempint=-1;
 	m_addedmethod="";
 
 	// Optimize query by not using vwBoardStats
 	//SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, HighMessageID, LowMessageID, MessageCount, SaveReceivedMessages, tblBoard.BoardID, AddedMethod FROM tblBoard LEFT JOIN vwBoardStats ON tblBoard.BoardID=vwBoardStats.BoardID WHERE tblBoard.BoardName=?;");
-	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, IFNULL(MAX(MessageID),'0') AS HighMessageID, IFNULL(MIN(MessageID),'0') AS LowMessageID, COUNT(MessageID) AS MessageCount, SaveReceivedMessages, tblBoard.BoardID, AddedMethod FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblBoard.BoardName=? AND (MessageID IS NULL OR MessageID>=0);");
+	SQLite3DB::Statement st;
+	if(m_uniqueboardmessageids==true)
+	{
+		st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, IFNULL(MAX(BoardMessageID),0) AS HighMessageID, IFNULL(MIN(BoardMessageID),0) AS LowMessageID, COUNT(MessageID) AS MessageCount, SaveReceivedMessages, tblBoard.BoardID, AddedMethod FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblBoard.BoardName=? AND (MessageID IS NULL OR MessageID>=0);");
+	}
+	else
+	{
+		st=m_db->Prepare("SELECT BoardName, BoardDescription, DateAdded, IFNULL(MAX(MessageID),'0') AS HighMessageID, IFNULL(MIN(MessageID),'0') AS LowMessageID, COUNT(MessageID) AS MessageCount, SaveReceivedMessages, tblBoard.BoardID, AddedMethod FROM tblBoard LEFT JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblBoard.BoardName=? AND (MessageID IS NULL OR MessageID>=0);");
+	}
 	st.Bind(0,boardname);
 	st.Step();
 
@@ -141,10 +167,10 @@ const bool Board::Load(const std::string &boardname)		// same as loading form bo
 
 		tempint=0;
 		st.ResultInt(3,tempint);
-		m_highmessageid=tempint;
+		m_highnntpmessageid=tempint;
 		tempint=0;
 		st.ResultInt(4,tempint);
-		m_lowmessageid=tempint;
+		m_lownntpmessageid=tempint;
 		tempint=0;
 		st.ResultInt(5,tempint);
 		m_messagecount=tempint;

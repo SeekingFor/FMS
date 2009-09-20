@@ -18,14 +18,18 @@
 	#include <xmem.h>
 #endif
 
-Message::Message(SQLite3DB::DB *db):IDatabase(db)
+Message::Message(SQLite3DB::DB *db):IDatabase(db),m_nntpmessageid(-1)
 {
+	Option option(db);
+	option.GetBool("UniqueBoardMessageIDs",m_uniqueboardmessageids);
 	Initialize();
 }
 
-Message::Message(SQLite3DB::DB *db, const long messageid):IDatabase(db)
+Message::Message(SQLite3DB::DB *db, const long dbmessageid, const long boardid):IDatabase(db),m_nntpmessageid(-1)
 {
-	Load(messageid);
+	Option option(db);
+	option.GetBool("UniqueBoardMessageIDs",m_uniqueboardmessageids);
+	LoadDB(dbmessageid,boardid);
 }
 
 const bool Message::CheckForAdministrationBoard(const std::vector<std::string> &boards)
@@ -388,8 +392,10 @@ void Message::HandleChangeTrust()
 
 void Message::Initialize()
 {
+	// don't initialize m_nntpmessageid in here
+
 	std::string tempval="";
-	m_messageid=-1;
+	m_dbmessageid=-1;
 	m_messageuuid="";
 	m_subject="";
 	m_body="";
@@ -421,7 +427,8 @@ void Message::Initialize()
 	StringFunctions::Convert(tempval,m_minlocaltrustlisttrust);
 }
 
-const bool Message::Load(const long messageid, const long boardid)
+/*
+const bool Message::Load(const long dbmessageid, const long boardid)
 {
 	
 	Initialize();
@@ -436,7 +443,7 @@ const bool Message::Load(const long messageid, const long boardid)
 	sql+=";";
 
 	SQLite3DB::Statement st=m_db->Prepare(sql);
-	st.Bind(0,messageid);
+	st.Bind(0,dbmessageid);
 	if(boardid!=-1)
 	{
 		st.Bind(1,boardid);
@@ -470,7 +477,7 @@ const bool Message::Load(const long messageid, const long boardid)
 
 		// get board list
 		st=m_db->Prepare("SELECT tblBoard.BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
-		st.Bind(0,messageid);
+		st.Bind(0,dbmessageid);
 		st.Step();
 		while(st.RowReturned())
 		{
@@ -483,7 +490,101 @@ const bool Message::Load(const long messageid, const long boardid)
 
 		// get in reply to list
 		st=m_db->Prepare("SELECT ReplyToMessageUUID, ReplyOrder FROM tblMessageReplyTo INNER JOIN tblMessage ON tblMessageReplyTo.MessageID=tblMessage.MessageID WHERE tblMessage.MessageID=?;");
-		st.Bind(0,messageid);
+		st.Bind(0,dbmessageid);
+		st.Step();
+		while(st.RowReturned())
+		{
+			std::string tempval;
+			int tempint;
+			st.ResultText(0,tempval);
+			st.ResultInt(1,tempint);
+			m_inreplyto[tempint]=tempval;
+			st.Step();
+		}
+		st.Finalize();
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+
+}
+*/
+
+const bool Message::LoadDB(const long dbmessageid, const long boardid)
+{
+	
+	Initialize();
+
+	std::string sql;
+	
+	if(m_uniqueboardmessageids==true)
+	{
+		sql="SELECT tblMessage.MessageID, MessageUUID, Subject, Body, tblBoard.BoardName, MessageDate, MessageTime, FromName, tblMessageBoard.BoardMessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID INNER JOIN tblBoard ON tblMessage.ReplyBoardID=tblBoard.BoardID WHERE tblMessage.MessageID=?";
+	}
+	else
+	{
+		sql="SELECT tblMessage.MessageID, MessageUUID, Subject, Body, tblBoard.BoardName, MessageDate, MessageTime, FromName, tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID INNER JOIN tblBoard ON tblMessage.ReplyBoardID=tblBoard.BoardID WHERE tblMessage.MessageID=?";
+	}
+	if(boardid!=-1)
+	{
+		sql+=" AND tblMessageBoard.BoardID=?";
+	}
+	sql+=";";
+
+	SQLite3DB::Statement st=m_db->Prepare(sql);
+	st.Bind(0,dbmessageid);
+	if(boardid!=-1)
+	{
+		st.Bind(1,boardid);
+	}
+	st.Step();
+
+	if(st.RowReturned())
+	{
+		std::string tempdate;
+		std::string temptime;
+		int tempint=-1;
+		st.ResultInt(0,tempint);
+		m_dbmessageid=tempint;
+		st.ResultText(1,m_messageuuid);
+		st.ResultText(2,m_subject);
+		st.ResultText(3,m_body);
+		st.ResultText(4,m_replyboardname);
+		st.ResultText(5,tempdate);
+		st.ResultText(6,temptime);
+		st.ResultText(7,m_fromname);
+		st.ResultInt(8,tempint);
+		m_nntpmessageid=tempint;
+		st.Finalize();
+
+		int tzdiff=0;
+		if(Poco::DateTimeParser::tryParse(tempdate + " " + temptime,m_datetime,tzdiff)==false)
+		{
+			m_log->error("Message::Load couldn't parse date/time "+tempdate+" "+temptime);
+		}
+
+		// strip off any \r\n in subject
+		m_subject=StringFunctions::Replace(m_subject,"\r\n","");
+
+		// get board list
+		st=m_db->Prepare("SELECT tblBoard.BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
+		st.Bind(0,dbmessageid);
+		st.Step();
+		while(st.RowReturned())
+		{
+			std::string tempval;
+			st.ResultText(0,tempval);
+			m_boards.push_back(tempval);
+			st.Step();
+		}
+		st.Finalize();
+
+		// get in reply to list
+		st=m_db->Prepare("SELECT ReplyToMessageUUID, ReplyOrder FROM tblMessageReplyTo INNER JOIN tblMessage ON tblMessageReplyTo.MessageID=tblMessage.MessageID WHERE tblMessage.MessageID=?;");
+		st.Bind(0,dbmessageid);
 		st.Step();
 		while(st.RowReturned())
 		{
@@ -529,10 +630,10 @@ const bool Message::Load(const std::string &messageuuid)
 
 	if(st.RowReturned())
 	{
-		int messageid;
-		st.ResultInt(0,messageid);
+		int dbmessageid;
+		st.ResultInt(0,dbmessageid);
 
-		return Load(messageid);
+		return LoadDB(dbmessageid);
 	}
 	else
 	{
@@ -540,9 +641,17 @@ const bool Message::Load(const std::string &messageuuid)
 	}
 }
 
-const bool Message::LoadNext(const long messageid, const long boardid)
+const bool Message::LoadNextNNTP(const long nntpmessageid, const long boardid)
 {
-	std::string sql="SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessage.MessageID>?";
+	std::string sql("");
+	if(m_uniqueboardmessageids==true)
+	{
+		sql="SELECT tblMessage.MessageID, tblMessageBoard.BoardMessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageBoard.BoardMessageID>?";
+	}
+	else
+	{
+		sql="SELECT tblMessage.MessageID, tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessage.MessageID>?";
+	}
 	if(boardid!=-1)
 	{
 		sql+=" AND tblMessageBoard.BoardID=?";
@@ -551,7 +660,7 @@ const bool Message::LoadNext(const long messageid, const long boardid)
 
 	SQLite3DB::Statement st=m_db->Prepare(sql);
 
-	st.Bind(0,messageid);
+	st.Bind(0,nntpmessageid);
 	if(boardid!=-1)
 	{
 		st.Bind(1,boardid);
@@ -560,9 +669,12 @@ const bool Message::LoadNext(const long messageid, const long boardid)
 
 	if(st.RowReturned())
 	{
-		int result;
-		st.ResultInt(0,result);
-		return Load(result,boardid);
+		int dbmessageid;
+		int tempint;
+		st.ResultInt(0,dbmessageid);
+		st.ResultInt(1,tempint);
+		m_nntpmessageid=tempint;
+		return LoadDB(dbmessageid,boardid);
 	}
 	else
 	{
@@ -570,9 +682,47 @@ const bool Message::LoadNext(const long messageid, const long boardid)
 	}
 }
 
-const bool Message::LoadPrevious(const long messageid, const long boardid)
+const bool Message::LoadNNTP(const long nntpmessageid, const long boardid)
 {
-	std::string sql="SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessage.MessageID<?";
+	std::string sql("");
+	if(m_uniqueboardmessageids==true)
+	{
+		sql="SELECT tblMessage.MessageID, tblMessageBoard.BoardMessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageBoard.BoardID=? AND tblMessageBoard.BoardMessageID=?;";
+	}
+	else
+	{
+		sql="SELECT tblMessage.MessageID, tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageBoard.BoardID=? AND tblMessage.MessageID=?;";
+	}
+	SQLite3DB::Statement st=m_db->Prepare(sql);
+	st.Bind(0,boardid);
+	st.Bind(1,nntpmessageid);
+	st.Step();
+	if(st.RowReturned())
+	{
+		int dbmessageid;
+		int tempint;
+		st.ResultInt(0,dbmessageid);
+		st.ResultInt(1,tempint);
+		m_nntpmessageid=tempint;
+		return LoadDB(dbmessageid,boardid);
+	}
+	else
+	{
+		return false;
+	}
+}
+
+const bool Message::LoadPreviousNNTP(const long nntpmessageid, const long boardid)
+{
+	std::string sql("");
+	if(m_uniqueboardmessageids==true)
+	{
+		sql="SELECT tblMessage.MessageID, tblMessageBoard.BoardMessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageBoard.BoardMessageID<?";
+	}
+	else
+	{
+		sql="SELECT tblMessage.MessageID, tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessage.MessageID<?";
+	}
 	if(boardid!=-1)
 	{
 		sql+=" AND tblMessageBoard.BoardID=?";
@@ -581,7 +731,7 @@ const bool Message::LoadPrevious(const long messageid, const long boardid)
 
 	SQLite3DB::Statement st=m_db->Prepare(sql);
 
-	st.Bind(0,messageid);
+	st.Bind(0,nntpmessageid);
 	if(boardid!=-1)
 	{
 		st.Bind(1,boardid);
@@ -590,9 +740,12 @@ const bool Message::LoadPrevious(const long messageid, const long boardid)
 
 	if(st.RowReturned())
 	{
-		int result;
-		st.ResultInt(0,result);
-		return Load(result,boardid);
+		int dbmessageid;
+		int tempint;
+		st.ResultInt(0,dbmessageid);
+		st.ResultInt(1,tempint);
+		m_nntpmessageid=tempint;
+		return LoadDB(dbmessageid,boardid);
 	}
 	else
 	{

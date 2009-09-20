@@ -14,8 +14,8 @@ void BoardList::Load()
 	std::string dateadded="";
 	std::string savereceivedstr="";
 	bool savereceived=false;
-	int highmessageid=0;
-	int lowmessageid=0;
+	int highnntpmessageid=0;
+	int lownntpmessageid=0;
 	int messagecount=0;
 	std::string addedmethod="";
 
@@ -28,8 +28,8 @@ void BoardList::Load()
 		st.ResultText(1,boardname);
 		st.ResultText(2,boarddescription);
 		st.ResultText(3,dateadded);
-		st.ResultInt(4,highmessageid);
-		st.ResultInt(5,lowmessageid);
+		st.ResultInt(4,highnntpmessageid);
+		st.ResultInt(5,lownntpmessageid);
 		st.ResultInt(6,messagecount);
 		st.ResultText(7,savereceivedstr);
 		st.ResultText(8,addedmethod);
@@ -43,7 +43,7 @@ void BoardList::Load()
 			savereceived=false;
 		}
 
-		push_back(Board(m_db,boardid,boardname,boarddescription,dateadded,lowmessageid,highmessageid,messagecount,savereceived,addedmethod));
+		push_back(Board(m_db,boardid,boardname,boarddescription,dateadded,lownntpmessageid,highnntpmessageid,messagecount,savereceived,addedmethod));
 		st.Step();
 	}
 }

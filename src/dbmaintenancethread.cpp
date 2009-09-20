@@ -126,6 +126,7 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 	m_db->Execute("DELETE FROM tblThread WHERE ThreadID IN (SELECT tblThread.ThreadID FROM tblThread LEFT JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE tblThreadPost.ThreadID IS NULL);");
 
 	// TODO - remove after corruption issue fixed
+	/*
 	if(ll=="8")
 	{
 		std::string dbres=TestDBIntegrity(m_db);
@@ -137,6 +138,7 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 			m_log->trace("DBMaintenanceThread::Do10MinuteMaintenenace() end after reindex returned "+dbres);
 		}
 	}
+	*/
 
 	m_log->debug("PeriodicDBMaintenance::Do10MinuteMaintenance");
 }
@@ -394,12 +396,15 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	st.Step();
 
 	// delete old messages
-	date=Poco::Timestamp();
-	date-=Poco::Timespan(m_deletemessagesolderthan,0,0,0,0);
-	m_log->trace("PeriodicDBMaintenance::Do1DayMaintenance deleting messages prior to "+Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
-	st=m_db->Prepare("DELETE FROM tblMessage WHERE MessageDate<?;");
-	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
-	st.Step();
+	if(m_deletemessagesolderthan>=0)
+	{
+		date=Poco::Timestamp();
+		date-=Poco::Timespan(m_deletemessagesolderthan,0,0,0,0);
+		m_log->trace("PeriodicDBMaintenance::Do1DayMaintenance deleting messages prior to "+Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+		st=m_db->Prepare("DELETE FROM tblMessage WHERE MessageDate<?;");
+		st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+		st.Step();
+	}
 
 	// delete old message requests
 	date=Poco::Timestamp();

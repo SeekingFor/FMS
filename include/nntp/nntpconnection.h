@@ -53,7 +53,7 @@ private:
 		bool m_allowpost;
 		bool m_isposting;
 		long m_boardid;
-		long m_messageid;
+		long m_nntpmessageid;
 		LocalIdentity m_authuser;		// -1 if user not authenticated, otherwise id of user from tblLocalIdentity
 		bool m_authenticated;
 	};

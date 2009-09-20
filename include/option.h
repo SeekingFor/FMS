@@ -4,6 +4,7 @@
 #include "idatabase.h"
 
 #include <sstream>
+#include <map>
 
 //just a wrapper around the database for the options table
 class Option:public IDatabase
@@ -13,9 +14,11 @@ public:
 
 	const bool Get(const std::string &option, std::string &value);
 	const bool GetInt(const std::string &option, int &value);
+	const bool GetBool(const std::string &option, bool &value);
 	template<class T>
 	void Set(const std::string &option, const T &value);
 private:
+	static std::map<std::string,std::string> m_cache;
 };
 
 template<class T>
@@ -39,6 +42,7 @@ void Option::Set(const std::string &option, const T &value)
 		st.Bind(1,valuestr.str());
 		st.Step();
 	}
+	m_cache[option]=valuestr.str();
 }
 
 #endif	// _option_

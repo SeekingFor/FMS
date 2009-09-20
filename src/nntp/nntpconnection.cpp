@@ -25,7 +25,7 @@ NNTPConnection::NNTPConnection(SOCKET sock):m_socket(sock),m_status(0)
 	m_status.m_isposting=false;
 	m_status.m_allowpost=false;
 	m_status.m_boardid=-1;
-	m_status.m_messageid=-1;
+	m_status.m_nntpmessageid=-1;
 	m_status.m_mode=MODE_NONE;
 	m_status.m_authenticated=false;
 
@@ -408,14 +408,14 @@ const bool NNTPConnection::HandleGroupCommand(const NNTPCommand &command)
 		{
 			std::ostringstream tempstr;
 
-			tempstr << "211 " << board.GetMessageCount() << " " << board.GetLowMessageID() << " " << board.GetHighMessageID() << " " << board.GetBoardName();
+			tempstr << "211 " << board.GetMessageCount() << " " << board.GetLowNNTPMessageID() << " " << board.GetHighNNTPMessageID() << " " << board.GetBoardName();
 
 			SendBufferedLine(tempstr.str());
 
 			// set the current boardid to this one
 			m_status.m_boardid=board.GetBoardID();
 			//set the first message id, -1 if there are no messages
-			board.GetLowMessageID()!=0 ? m_status.m_messageid=board.GetLowMessageID() : m_status.m_messageid=-1;
+			board.GetLowNNTPMessageID()!=0 ? m_status.m_nntpmessageid=board.GetLowNNTPMessageID() : m_status.m_nntpmessageid=-1;
 
 		}
 		else
@@ -453,17 +453,17 @@ const bool NNTPConnection::HandleLastCommand(const NNTPCommand &command)
 {
 	if(m_status.m_boardid!=-1)
 	{
-		if(m_status.m_messageid!=-1)
+		if(m_status.m_nntpmessageid!=-1)
 		{
 			Message mess(m_db);
 
-			if(mess.LoadPrevious(m_status.m_messageid,m_status.m_boardid))
+			if(mess.LoadPreviousNNTP(m_status.m_nntpmessageid,m_status.m_boardid))
 			{
 				std::ostringstream tempstr;
 
-				m_status.m_messageid=mess.GetMessageID();
+				m_status.m_nntpmessageid=mess.GetNNTPMessageID();
 
-				tempstr << "223 " << mess.GetMessageID() << " " << mess.GetNNTPArticleID();
+				tempstr << "223 " << mess.GetNNTPMessageID() << " " << mess.GetNNTPArticleID();
 
 				SendBufferedLine(tempstr.str());
 
@@ -543,7 +543,7 @@ const bool NNTPConnection::HandleListCommand(const NNTPCommand &command)
 
 			if(show==true && (*i).GetSaveReceivedMessages()==true)
 			{
-				tempstr << (*i).GetBoardName() << " " << (*i).GetHighMessageID() << " " << (*i).GetLowMessageID() << " " << (m_status.m_allowpost ? "y" : "n");
+				tempstr << (*i).GetBoardName() << " " << (*i).GetHighNNTPMessageID() << " " << (*i).GetLowNNTPMessageID() << " " << (m_status.m_allowpost ? "y" : "n");
 				SendBufferedLine(tempstr.str());
 			}
 		}
@@ -628,8 +628,8 @@ const bool NNTPConnection::HandleListGroupCommand(const NNTPCommand &command)
 		validgroup=board.Load(command.m_arguments[0]);
 		if(validgroup)
 		{
-			lownum=board.GetLowMessageID();
-			highnum=board.GetHighMessageID();
+			lownum=board.GetLowNNTPMessageID();
+			highnum=board.GetHighNNTPMessageID();
 		}
 		else
 		{
@@ -664,27 +664,27 @@ const bool NNTPConnection::HandleListGroupCommand(const NNTPCommand &command)
 
 		// set boardid and messageid
 		m_status.m_boardid=board.GetBoardID();
-		board.GetLowMessageID()!=0 ? m_status.m_messageid=board.GetLowMessageID() : m_status.m_messageid=-1;
+		board.GetLowNNTPMessageID()!=0 ? m_status.m_nntpmessageid=board.GetLowNNTPMessageID() : m_status.m_nntpmessageid=-1;
 
 		if(lownum==-1)
 		{
-			lownum=board.GetLowMessageID();
+			lownum=board.GetLowNNTPMessageID();
 		}
 		if(highnum==-1)
 		{
-			highnum=board.GetHighMessageID();
+			highnum=board.GetHighNNTPMessageID();
 		}
 
-		tempstr << "211 " << board.GetMessageCount() << " " << board.GetLowMessageID() << " " << board.GetHighMessageID() << " " << board.GetBoardName();
+		tempstr << "211 " << board.GetMessageCount() << " " << board.GetLowNNTPMessageID() << " " << board.GetHighNNTPMessageID() << " " << board.GetBoardName();
 		SendBufferedLine(tempstr.str());
 
 		MessageList ml(m_db);
-		ml.LoadRange(lownum,highnum,board.GetBoardID());
+		ml.LoadNNTPRange(lownum,highnum,board.GetBoardID());
 
 		for(std::vector<Message>::iterator i=ml.begin(); i!=ml.end(); i++)
 		{
 			tempstr.str("");
-			tempstr << (*i).GetMessageID();
+			tempstr << (*i).GetNNTPMessageID();
 
 			SendBufferedLine(tempstr.str());
 		}
@@ -795,7 +795,7 @@ const bool NNTPConnection::HandleNewGroupsCommand(const NNTPCommand &command)
 			if((*i).GetSaveReceivedMessages()==true)
 			{
 				std::ostringstream tempstr;
-				tempstr << (*i).GetBoardName() << " " << (*i).GetHighMessageID() << " " << (*i).GetLowMessageID() << " " << m_status.m_allowpost ? "y" : "n";
+				tempstr << (*i).GetBoardName() << " " << (*i).GetHighNNTPMessageID() << " " << (*i).GetLowNNTPMessageID() << " " << m_status.m_allowpost ? "y" : "n";
 				SendBufferedLine(tempstr.str());
 			}
 		}
@@ -817,17 +817,17 @@ const bool NNTPConnection::HandleNextCommand(const NNTPCommand &command)
 {
 	if(m_status.m_boardid!=-1)
 	{
-		if(m_status.m_messageid!=-1)
+		if(m_status.m_nntpmessageid!=-1)
 		{
 			Message mess(m_db);
 
-			if(mess.LoadNext(m_status.m_messageid,m_status.m_boardid))
+			if(mess.LoadNextNNTP(m_status.m_nntpmessageid,m_status.m_boardid))
 			{
 				std::ostringstream tempstr;
 
-				m_status.m_messageid=mess.GetMessageID();
+				m_status.m_nntpmessageid=mess.GetNNTPMessageID();
 
-				tempstr << "223 " << mess.GetMessageID() << " " << mess.GetNNTPArticleID();
+				tempstr << "223 " << mess.GetNNTPMessageID() << " " << mess.GetNNTPArticleID();
 
 				SendBufferedLine(tempstr.str());
 
@@ -860,8 +860,8 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 
 	if(command.m_arguments.size()==0)
 	{
-		lowmessageid=m_status.m_messageid;
-		highmessageid=m_status.m_messageid;
+		lowmessageid=m_status.m_nntpmessageid;
+		highmessageid=m_status.m_nntpmessageid;
 	}
 	else
 	{
@@ -930,7 +930,7 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 			if(highmessageid==-2)
 			{
 				Message mess(m_db);
-				if(mess.Load(lowmessageid,m_status.m_boardid))
+				if(mess.LoadNNTP(lowmessageid,m_status.m_boardid))
 				{
 					SendBufferedLine("224 Overview information follows");
 					SendArticleOverInfo(mess);
@@ -945,7 +945,7 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 			else if(highmessageid==-1)
 			{
 				MessageList ml(m_db);
-				ml.LoadRange(lowmessageid,bd.GetHighMessageID(),m_status.m_boardid);
+				ml.LoadNNTPRange(lowmessageid,bd.GetHighNNTPMessageID(),m_status.m_boardid);
 				if(ml.size()>0)
 				{
 					SendBufferedLine("224 Overview information follows");
@@ -964,7 +964,7 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 			else if(highmessageid>=lowmessageid)
 			{
 				MessageList ml(m_db);
-				ml.LoadRange(lowmessageid,highmessageid,m_status.m_boardid);
+				ml.LoadNNTPRange(lowmessageid,highmessageid,m_status.m_boardid);
 				if(ml.size()>0)
 				{
 					SendBufferedLine("224 Overview information follows");
@@ -1346,7 +1346,7 @@ void NNTPConnection::SendArticleOverInfo(Message &message)
 	std::string line;
 	std::map<long,std::string> references;
 
-	StringFunctions::Convert(message.GetMessageID(),tempval);
+	StringFunctions::Convert(message.GetNNTPMessageID(),tempval);
 	line=tempval+"\t";
 	line+=message.GetSubject()+"\t";
 	line+=message.GetFromName()+"\t";
@@ -1405,7 +1405,7 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 	}
 
 	Message message(m_db);
-	int messageid=m_status.m_messageid;
+	int messageid=m_status.m_nntpmessageid;
 	std::string articleid="";
 	int type=0;	// default to current messageid, 1=messageid, 2=articleid
 
@@ -1414,8 +1414,8 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 		if(command.m_arguments[0].find("<")==std::string::npos)
 		{
 			StringFunctions::Convert(command.m_arguments[0],messageid);
-			message.Load(messageid,m_status.m_boardid);
-			m_status.m_messageid=message.GetMessageID();
+			message.LoadNNTP(messageid,m_status.m_boardid);
+			m_status.m_nntpmessageid=message.GetNNTPMessageID();
 			type=1;
 		}
 		else
@@ -1442,7 +1442,7 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 	}
 	else
 	{
-		message.Load(m_status.m_messageid,m_status.m_boardid);
+		message.LoadNNTP(m_status.m_nntpmessageid,m_status.m_boardid);
 	}
 
 	switch(type)
@@ -1450,7 +1450,7 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 	case 0:
 		if(m_status.m_boardid!=-1)
 		{
-			if(m_status.m_messageid!=-1)
+			if(m_status.m_nntpmessageid!=-1)
 			{
 				std::ostringstream tempstr;
 				std::string article;
@@ -1474,7 +1474,7 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 				// dot stuff article
 				article=StringFunctions::Replace(article,"\r\n.","\r\n..");
 
-				tempstr << successcode << " " << message.GetMessageID() << " " << message.GetNNTPArticleID();
+				tempstr << successcode << " " << message.GetNNTPMessageID() << " " << message.GetNNTPArticleID();
 
 				SendBufferedLine(tempstr.str());
 				if(sendheaders || sendbody)
@@ -1497,7 +1497,7 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 	case 1:
 		if(m_status.m_boardid!=-1)
 		{
-			if(message.GetMessageID()!=-1)
+			if(message.GetNNTPMessageID()!=-1)
 			{
 				std::ostringstream tempstr;
 				std::string article;
@@ -1521,7 +1521,7 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 				// dot stuff article
 				article=StringFunctions::Replace(article,"\r\n.","\r\n..");
 
-				tempstr << successcode << " " << message.GetMessageID() << " " << message.GetNNTPArticleID();
+				tempstr << successcode << " " << message.GetNNTPMessageID() << " " << message.GetNNTPArticleID();
 
 				SendBufferedLine(tempstr.str());
 				if(sendheaders || sendbody)
@@ -1541,7 +1541,7 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 		}
 		break;
 	case 2:
-		if(message.GetMessageID()!=-1)
+		if(message.GetNNTPMessageID()!=-1)
 		{
 			std::string article;
 			if(sendheaders&&sendbody)

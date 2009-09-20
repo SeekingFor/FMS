@@ -25,13 +25,16 @@ void HTTPThread::run()
 	LoadDatabase();
 	Option option(m_db);
 
-	std::string portstr("8080");
-	option.Get("HTTPListenPort",portstr);
-	StringFunctions::Convert(portstr,m_listenport);
+	std::string bindaddress("0.0.0.0");
+	option.GetInt("HTTPListenPort",m_listenport);
+	option.Get("HTTPBindAddress",bindaddress);
 
 	try
 	{
-		Poco::Net::ServerSocket sock(m_listenport);
+		
+		Poco::Net::SocketAddress sa(bindaddress,m_listenport);
+		Poco::Net::ServerSocket sock(sa);
+		//Poco::Net::ServerSocket sock(m_listenport);
 		Poco::Net::HTTPServerParams* pParams = new Poco::Net::HTTPServerParams;
 		pParams->setMaxQueued(30);
 		pParams->setMaxThreads(5);
