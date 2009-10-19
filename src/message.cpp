@@ -154,7 +154,20 @@ const std::string Message::GetNNTPArticleID() const
 
 const std::string Message::GetNNTPBody() const
 {
-	return m_body;
+	std::string nntpbody(m_body);
+
+	if(m_receivedfileattachments.size()>0)
+	{
+		nntpbody+="\r\nAttachments";
+		for(std::vector<receivedfileattachment>::const_iterator i=m_receivedfileattachments.begin(); i!=m_receivedfileattachments.end(); i++)
+		{
+			std::string sizestr("");
+			StringFunctions::Convert((*i).m_size,sizestr);
+			nntpbody+="\r\n"+(*i).m_key+"\r\n"+sizestr+" bytes\r\n";
+		}
+	}
+
+	return nntpbody;
 }
 
 const std::string Message::GetNNTPHeaders() const
@@ -404,7 +417,8 @@ void Message::Initialize()
 	m_fromname="";
 	m_boards.clear();
 	m_inreplyto.clear();
-	m_fileattachments.clear();
+	m_insertfileattachments.clear();
+	m_receivedfileattachments.clear();
 	m_changemessagetrustonreply=0;
 	Option option(m_db);
 
@@ -593,6 +607,21 @@ const bool Message::LoadDB(const long dbmessageid, const long boardid)
 			st.ResultText(0,tempval);
 			st.ResultInt(1,tempint);
 			m_inreplyto[tempint]=tempval;
+			st.Step();
+		}
+		st.Finalize();
+
+		// get attachment list
+		st=m_db->Prepare("SELECT Key, Size FROM tblMessageFileAttachment WHERE MessageID=?;");
+		st.Bind(0,dbmessageid);
+		st.Step();
+		while(st.RowReturned())
+		{
+			std::string key("");
+			int size(0);
+			st.ResultText(0,key);
+			st.ResultInt(1,size);
+			m_receivedfileattachments.push_back(receivedfileattachment(key,size));
 			st.Step();
 		}
 		st.Finalize();
@@ -973,7 +1002,7 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 			{
 				filename=(*i)->GetName();
 			}
-			m_fileattachments.push_back(fileattachment(filename,contenttype,data));
+			m_insertfileattachments.push_back(insertfileattachment(filename,contenttype,data));
 		}
 	}
 
@@ -1058,7 +1087,7 @@ const bool Message::StartFreenetInsert()
 
 		// insert file attachments into database
 		st=m_db->Prepare("INSERT INTO tblFileInserts(MessageUUID,FileName,Size,MimeType,Data) VALUES(?,?,?,?,?);");
-		for(std::vector<fileattachment>::iterator i=m_fileattachments.begin(); i!=m_fileattachments.end(); i++)
+		for(std::vector<insertfileattachment>::iterator i=m_insertfileattachments.begin(); i!=m_insertfileattachments.end(); i++)
 		{
 			st.Bind(0,m_messageuuid);
 			st.Bind(1,(*i).m_filename);

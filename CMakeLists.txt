@@ -83,6 +83,8 @@ src/freenet/captcha/easybmp/EasyBMP.cpp
 src/freenet/captcha/easybmp/EasyBMP_Font.cpp
 src/freenet/captcha/easybmp/EasyBMP_Geometry.cpp
 src/http/fmshttprequesthandlerfactory.cpp
+src/http/forumviewstate.cpp
+src/http/htmltemplatehandler.cpp
 src/http/httpthread.cpp
 src/http/identityexportxml.cpp
 src/http/ipagehandler.cpp
@@ -107,7 +109,7 @@ src/http/pages/peermaintenancepage.cpp
 src/http/pages/peertrustpage.cpp
 src/http/pages/recentlyaddedpage.cpp
 src/http/pages/showcaptchapage.cpp
-src/http/pages/showimagepage.cpp
+src/http/pages/showfilepage.cpp
 src/http/pages/showpendingmessagepage.cpp
 src/http/pages/translatepage.cpp
 src/http/pages/versioninfopage.cpp

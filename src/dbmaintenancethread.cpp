@@ -424,7 +424,6 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	m_db->Execute("DELETE FROM tblIdentityTrust WHERE LocalIdentityID NOT IN (SELECT LocalIdentityID FROM tblLocalIdentity);");
 	m_db->Execute("DELETE FROM tblIdentityTrust WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity);");
 
-
 	// cap failure count
 	m_db->Execute("UPDATE tblIdentity SET FailureCount=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') WHERE FailureCount>(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount');");
 	// reduce failure count for each identity
@@ -435,6 +434,9 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	findst.Finalize();
 
 	m_db->Execute("COMMIT;");
+
+	// recount messages in each board
+	m_db->Execute("UPDATE tblBoard SET MessageCount=(SELECT IFNULL(COUNT(*),0) FROM tblMessageBoard WHERE tblMessageBoard.BoardID=tblBoard.BoardID);");
 
 	m_log->debug("PeriodicDBMaintenance::Do1DayMaintenance");
 

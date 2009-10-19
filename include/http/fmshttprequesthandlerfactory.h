@@ -2,6 +2,7 @@
 #define _fmshttprequesthandlerfactory_
 
 #include "ipagehandler.h"
+#include "htmltemplatehandler.h"
 #include "../ipaddressacl.h"
 #include "../ilogger.h"
 #include "../idatabase.h"
@@ -20,6 +21,7 @@ public:
 private:
 	std::vector<IPageHandler *> m_pagehandlers;
 	IPAddressACL m_acl;
+	HTMLTemplateHandler m_forumtemplatehandler;
 
 };
 

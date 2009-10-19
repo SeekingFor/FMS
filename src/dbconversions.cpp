@@ -321,6 +321,26 @@ void ConvertDB0118To0119(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=19;");
 }
 
+void ConvertDB0119To0120(SQLite3DB::DB *db)
+{
+	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageFileAttachment(\
+				MessageID			INTEGER NOT NULL,\
+				Key					TEXT,\
+				Size				INTEGER\
+				);");
+
+	db->Execute("CREATE INDEX IF NOT EXISTS idxMessageFileAttachment_MessageID ON tblMessageFileAttachment(MessageID);");
+
+	db->Execute("ALTER TABLE tblBoard ADD COLUMN MessageCount INTEGER NOT NULL DEFAULT 0;");
+	// trigger will be recreated in dbsetup
+	db->Execute("DROP TRIGGER IF EXISTS trgInsertMessageBoard;");
+
+	// initially populate message counts
+	db->Execute("UPDATE tblBoard SET MessageCount=(SELECT IFNULL(COUNT(*),0) FROM tblMessageBoard WHERE tblMessageBoard.BoardID=tblBoard.BoardID);");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=20;");
+}
+
 void FixCapitalBoardNames(SQLite3DB::DB *db)
 {
 

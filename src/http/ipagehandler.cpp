@@ -40,6 +40,27 @@ void IPageHandler::CreateArgArray(const std::map<std::string,std::string> &vars,
 	}
 }
 
+const std::string IPageHandler::CreateLinkFormPassword()
+{
+	Poco::DateTime date;
+	Poco::UUIDGenerator uuidgen;
+	Poco::UUID uuid;
+	try
+	{
+		uuid=uuidgen.createRandom();
+	}
+	catch(...)
+	{
+	}
+
+	SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tmpFormPassword(Date,Password) VALUES(?,?);");
+	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+	st.Bind(1,uuid.toString());
+	st.Step();
+
+	return "formpassword="+uuid.toString();
+}
+
 const std::string IPageHandler::CreateFormPassword()
 {
 	Poco::DateTime date;

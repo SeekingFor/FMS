@@ -1,217 +1,325 @@
+<!--[BEGIN FORUMPAGE]-->
 <html>
-<head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<style>
-body	{
-			margin:0px;
-			padding:10px;
-			font-family:Helvetica,Arial;
-			font-size:12px;
-		}
-		
-table	{
-			margin:0px;
-			padding:0px;
-			font-size:12px;
-		}
-			
-table td	{
-				margin:0px;
-				padding:0px;
-				background-color:#ddeeff;
-			}
-			
-table th	{
-				background-color:#003366;
-				color:#ffffff;
-			}
-
-#outercontainer	{
-					padding:0px;
-					margin:0px;
-				}
-				
-.error			{
-					padding-left:5px;
-					padding-right:5px;
-					color:#ff0000;
-					font-weight:bolder;
-				}
-				
-table.header		{
-						width:100%;
-					}
-
-table.header	td	{
-						text-align:center;
-						padding:5px;
-						font-size:1.2em;
-						font-weight:bolder;
-					}
-
-table.foruminfo		{
-						width:100%;
-					}
-					
-table.foruminfo td	{
-						padding-left:5px;
-						padding-right:5px;
-						padding-top:2px;
-						padding-bottom:2px;
-					}
-
-table.foruminfo td.newposts	{
-								width:32px;
-							}
-							
-table.foruminfo td.forumname	{
-									font-size:1.2em;
-									font-weight:bolder;
-								}
-
-table.foruminfo td.forumname .description	{
-												font-weight:normal;
-												font-size:0.7em;
-											}
-											
-table.foruminfo td.postcount	{
-									width:80px;
-								}
-								
-table.foruminfo td.lastpost		{
-									width:340px;
-									font-size:0.9em;
-								}
-
-table.forumheader				{
-									width:100%;
-								}
-								
-table.forumheader td			{
-									font-size:1.1em;
-									font-weight:bolder;
-									padding-left:5px;
-									padding-right:5px;
-									padding-top:2px;
-									padding-bottom:2px;
-								}
-
-table.threadinfo				{
-									width:100%;
-								}
-								
-table.threadinfo td				{
-									padding-left:5px;
-									padding-right:5px;
-									padding-top:2px;
-									padding-bottom:2px;
-								}
-
-table.threadinfo td.newposts	{
-									width:32px;
-									text-align:center;
-								}
-
-table.threadinfo td.threadauthor	{
-										width:150px;
-									}
-									
-table.threadinfo td.threadreplies	{
-										width:60px;
-									}
-
-table.threadinfo td.threadlastpost	{
-										width:220px;
-										font-size:0.9em;
-									}
-
-table.threadinfo td.pages			{
-										font-weight:bolder;
-									}
-
-table.threadinfo td.pages form		{
-										margin-left:10px;
-										display:inline;
-									}
-
-table.threadinfo td.pages input		{
-										width:30px;
-										text-align:center;
-									}
-									
-table.thread						{
-										width:100%;
-									}
-									
-table.thread td						{
-										padding:5px;
-									}
-									
-table.thread td.from				{
-										vertical-align:top;
-										font-weight:bolder;
-									}
-									
-table.thread td.subject				{
-										font-size:1.1em;
-										font-weight:bolder;
-										height:20px;
-									}
-
-table.thread td.body				{
-										vertical-align:top;
-										overflow:auto;
-									}
-table.createpost td					{
-										padding-left:5px;
-										padding-right:5px;
-										padding-top:2px;
-										padding-bottom:2px;
-									}
-
-table.createpost td.identity		{
-										font-weight:bolder;
-										text-align:right;
-									}
-
-table.createpost td.subject			{
-										font-weight:bolder;
-										text-align:right;
-									}
-
-table.createpost td.body			{
-										font-weight:bolder;
-										text-align:right;
-										vertical-align:top;
-									}
-
-table.createpost td.send			{
-										text-align:center;
-									}
-
-table.trust							{
-										margin-top:10px;
-										margin-left:5px;
-										border-style:solid;
-										border-width:1px;
-									}
-									
-table.trust td						{
-										padding-left:5px;
-										padding-right:5px;
-										padding-top:2px;
-										padding-bottom:2px;
-									}
-
-</style>
+<head>
+<title>[PAGETITLE]</title>
+<link rel="stylesheet" type="text/css" href="styles/basestyle.css">
+<link rel="stylesheet" type="text/css" href="styles/forumstyle.css">
 </head>
 <body>
-
-<div id="outercontainer">
-
-	[CONTENT]
-
+<div class="forumcontainer">
+[FORUMCONTENT]
 </div>
-
 </body>
 </html>
+<!--[END FORUMPAGE]-->
+
+<!--[BEGIN FORUMLINKHEADER]-->
+<tr>
+	<td colspan="5" class="forumlinkheader">
+		<a href="/index.htm">{translation.web.navlink.home}</a> | <a href="http://[FCPHOST]:[FPROXYPORT]/">{translation.web.navlink.browsefreenet}</a> | <a href="/forummain2.htm">{translation.web.navlink.browseforums}</a>
+	</td>
+</tr>
+<!--[END FORUMLINKHEADER]-->
+
+<!--[BEGIN FORUMLOCATIONHEADER]-->
+<tr>
+	<td colspan="2" class="forumlocationheader">
+		[LOCATIONBREADCRUMBS]
+	</td>
+	<td colspan="3" class="forumloginheader">
+		[FORUMLOGINHEADER]
+	</td>
+</tr>
+<!--[END FORUMLOCATIONHEADER]-->
+
+<!--[BEGIN LOCATIONBREADCRUMB]-->
+&#0187; <a href="[BREADCRUMBLINK]">[BREADCRUMBNAME]</a> 
+<!--[END LOCATIONBREADCRUMB]-->
+
+
+
+
+
+
+
+
+
+
+<!--[BEGIN FORUMLASTPOST]-->
+{translation.web.page.forummain.lastposton} [FORUMLASTPOSTDATE] {translation.web.page.forummain.in}<br />
+[FORUMLASTPOSTSUBJECT] {translation.web.page.forummain.by} [FORUMLASTPOSTAUTHOR]
+<!--[END FORUMLASTPOST]-->
+
+<!--[BEGIN FORUMROW]-->
+<tr class="forumrow">
+	<td class="newpost">[NEWPOSTIMAGE]</td>
+	<td><div class="forumname">[FORUMNAME]</div><div class="forumdescription">[FORUMDESCRIPTION]</div></td>
+	<td class="forumpostcount">[FORUMPOSTCOUNT] {translation.web.page.forummain.posts}</td>
+	<td class="forumlastpost">[FORUMLASTPOSTINFO]</td>
+</tr>
+<!--[END FORUMROW]-->
+
+<!--[BEGIN FORUMMAINCONTENT]-->
+<table width="100%">
+	[FORUMLINKHEADER]
+	[FORUMLOCATIONHEADER]
+	<tr><td colspan="5">
+	<table width="100%">
+	<tr class="forumcolumnheader">
+		<th class="forumcolumnheadernew">{translation.web.page.forummain.header.new}</th>
+		<th class="forumcolumnheaderforum">{translation.web.page.forummain.header.forum}</th>
+		<th class="forumcolumnheaderposts">{translation.web.page.forummain.header.posts}</th>
+		<th class="forumcolumnheaderlastpost">{translation.web.page.forummain.header.lastpost}</th>
+	</tr>
+	[FORUMROWS]
+	</td>
+	</tr>
+	</table>
+</table>
+<!--[END FORUMMAINCONTENT]-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--[BEGIN FORUMTHREADSCONTENT]-->
+<table width="100%">
+	[FORUMLINKHEADER]
+	[FORUMLOCATIONHEADER]
+	[FORUMTHREADSHEADER]
+	<tr class="forumcolumnheader">
+		<th class="forumcolumnheadernew">{translation.web.page.forumthreads.header.new}</th>
+		<th class="forumcolumnheadersubject">{translation.web.page.forumthreads.header.subject}</th>
+		<th class="forumcolumnheaderstartedby">{translation.web.page.forumthreads.header.startedby}</th>
+		<th class="forumcolumnheaderreplies">{translation.web.page.forumthreads.header.replies}</th>
+		<th class="forumcolumnheaderlastpost">{translation.web.page.forumthreads.header.lastpost}</th>
+	</tr>
+	[FORUMTHREADROWS]
+	[FORUMTHREADPAGES]
+</table>
+<!--[END FORUMTHREADSCONTENT]-->
+
+<!--[BEGIN FORUMTHREADSHEADER]-->
+	<tr class="forumthreadsheader">
+		<td colspan="5"><span>[MARKALLREADLINK]</span><span style="margin-left:10px;">[NEWPOSTLINK]</span></td>
+	</tr>
+<!--[END FORUMTHREADSHEADER]-->
+
+<!--[BEGIN FORUMTHREADROWODD]-->
+	<tr class="forumthreadrow forumthreadrowodd">
+		<td class="newpost">[NEWPOSTIMAGE]</td>
+		<td class="subject">[THREADSUBJECT]</td>
+		<td class="startedby">[STARTEDBY]</td>
+		<td class="replies">[REPLIES]</td>
+		<td class="lastpost">[THREADLASTPOSTINFO]</td>
+	</tr>
+<!--[END FORUMTHREADROWODD]-->
+
+<!--[BEGIN FORUMTHREADROWEVEN]-->
+	<tr class="forumthreadrow forumthreadroweven">
+		<td class="newpost">[NEWPOSTIMAGE]</td>
+		<td class="subject">[THREADSUBJECT]</td>
+		<td class="startedby">[STARTEDBY]</td>
+		<td class="replies">[REPLIES]</td>
+		<td class="lastpost">[THREADLASTPOSTINFO]</td>
+	</tr>
+<!--[END FORUMTHREADROWEVEN]-->
+
+<!--[BEGIN FORUMTHREADPAGES]-->
+	<tr class="threadpages">
+		<td colspan="5">
+			{translation.web.page.forumthreads.pages} [PAGENUMBERS] [PAGENUMBERFORM]
+		</td>
+	</tr>
+<!--[END FORUMTHREADPAGES]-->
+
+<!--[BEGIN THREADLASTPOSTINFO]-->
+	[THREADLASTPOSTDATE]<br />{translation.web.page.forumthreads.by} [THREADLASTPOSTAUTHOR]
+<!--[END THREADLASTPOSTINFO]-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--[BEGIN FORUMVIEWTHREADCONTENT]-->
+<table width="100%">
+	[FORUMLINKHEADER]
+	[FORUMLOCATIONHEADER]
+	[FORUMVIEWTHREADHEADER]
+	<tr>
+	<td colspan="5">
+	<table class="forumthread" width="100%">
+	[THREADPOSTROWS]
+	</table>
+	</td>
+	</tr>
+</table>
+<!--[END FORUMVIEWTHREADCONTENT]-->
+
+<!--[BEGIN FORUMVIEWTHREADHEADER]-->
+<tr class="forumviewthreadheader">
+	<td colspan="5">
+		<span>[FIRSTUNREADPOSTLINK]</span><span style="margin-left:10px;">[MARKUNREADLINK]</span>
+	</td>
+</tr>
+<!--[END FORUMVIEWTHREADHEADER]-->
+
+<!--[BEGIN THREADPOSTROWODD]-->
+<tr class="lightbg topborder">
+	<td class="name" rowspan="2">
+	[THREADPOSTANCHOR][THREADPOSTAUTHORINFO]
+	</td>
+	<td class="title">
+	[THREADPOSTTITLE] {translation.web.page.forumviewthread.on} [THREADPOSTDATE]
+	</td>
+	<td>
+	[THREADPOSTREPLYLINK]
+	</td>
+</tr>
+<tr class="lightbg">
+	<td class="post" colspan="2">[THREADPOSTBODY][THREADPOSTATTACHMENTS]</td>
+</tr>
+<!--[END THREADPOSTROWODD]-->
+
+<!--[BEGIN THREADPOSTROWEVEN]-->
+<tr class="darkbg topborder">
+	<td class="name" rowspan="2">
+	[THREADPOSTANCHOR][THREADPOSTAUTHORINFO]
+	</td>
+	<td class="title">
+	[THREADPOSTTITLE] {translation.web.page.forumviewthread.on} [THREADPOSTDATE]
+	</td>
+	<td>
+	[THREADPOSTREPLYLINK]
+	</td>	
+</tr>
+<tr class="darkbg">
+	<td class="post" colspan="2">[THREADPOSTBODY][THREADPOSTATTACHMENTS]</td>
+</tr>
+<!--[END THREADPOSTROWEVEN]-->
+
+<!--[BEGIN THREADPOSTATTACHMENT]-->
+<div>
+	[THREADPOSTATTACHMENTLINK] [THREADPOSTATTACHMENTSIZE]
+</div>
+<!--[END THREADPOSTATTACHMENT]-->
+
+<!--[BEGIN THREADPOSTAUTHORINFO]-->
+[THREADPOSTAUTHORNAME]<br />
+[CONDITIONALTRUSTTABLE]
+<!--[END THREADPOSTAUTHORINFO]-->
+
+<!--[BEGIN TRUSTTABLE]-->
+<table class="trust">
+	<tr>
+		<th colspan="3">Trust</th>
+	</tr>
+	<tr>
+		<td></td>
+		<td>{translation.web.page.forumviewthread.local}</td>
+		<td>{translation.web.page.forumviewthread.peer}</td>
+	</tr>
+	<tr>
+		<td>{translation.web.page.forumviewthread.message}</td>
+		<td style="text-align:right;">[LOCALMESSAGETRUST]</td>
+		<td style="text-align:right;">[PEERMESSAGETRUST]</td>
+	</tr>
+	<tr>
+		<td>{translation.web.page.forumviewthread.trustlist}</td>
+		<td style="text-align:right;">[LOCALTRUSTLISTTRUST]</td>
+		<td style="text-align:right;">[PEERTRUSTLISTTRUST]</td>
+	</tr>
+</table>
+<!--[END TRUSTTABLE]-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--[BEGIN FORUMCREATEPOSTCONTENT]-->
+<table class="createpost" width="100%">
+	[FORUMLINKHEADER]
+	[FORUMLOCATIONHEADER]
+	<tr>
+		<td colspan="5">
+			<table>
+				<tr
+					<td colspan="2" style="text-align:center;font-weight:bolder;color:#ee0000;">
+						[ERROR]
+					</td>
+				</tr>
+				<tr>
+					<td style="text-align:right;vertical-align:top;width:120px;">
+						[STARTFORM]
+						{translation.web.page.forumcreatepost.from}
+					</td>
+					<td>
+						[AUTHORDROPDOWN]
+					</td>
+				</tr>
+				<tr>
+					<td style="text-align:right;vertical-align:top;">
+						{translation.web.page.forumcreatepost.subject}
+					</td>
+					<td>
+						[SUBJECTTEXTBOX]
+					</td>
+				</tr>
+				<tr>
+					<td style="text-align:right;vertical-align:top;">
+						{translation.web.page.forumcreatepost.message}
+					</td>
+					<td>
+						[MESSAGETEXTAREA]
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2" style="text-align:center;">
+					[SENDBUTTON]
+					[ENDFORM]
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+<!--[END FORUMCREATEPOSTCONTENT]-->
+
+<!--[BEGIN FORUMCREATEPOSTSUCCESSFULSEND]-->
+<table width="100%">
+	[FORUMLINKHEADER]
+	[FORUMLOCATIONHEADER]
+	<tr>
+	<td colspan="5" style="padding:5px;">
+	{translation.web.page.forumcreatepost.successfulsend}
+	</td>
+	</tr>
+</table>
+<!--[END FORUMCREATEPOSTSUCCESSFULSEND]-->

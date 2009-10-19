@@ -29,6 +29,8 @@ NNTPConnection::NNTPConnection(SOCKET sock):m_socket(sock),m_status(0)
 	m_status.m_mode=MODE_NONE;
 	m_status.m_authenticated=false;
 
+	m_endcheckstartpos=0;
+
 }
 
 NNTPConnection::~NNTPConnection()
@@ -49,9 +51,9 @@ void NNTPConnection::Disconnect()
 	}
 }
 
-std::vector<char>::iterator NNTPConnection::Find(std::vector<char> &buffer, const std::string &val)
+std::vector<char>::iterator NNTPConnection::Find(std::vector<char> &buffer, const std::string &val, const std::vector<char>::size_type startpos)
 {
-	return std::search(buffer.begin(),buffer.end(),val.begin(),val.end());
+	return std::search(buffer.begin()+startpos,buffer.end(),val.begin(),val.end());
 }
 
 const bool NNTPConnection::HandleArticleCommand(const NNTPCommand &command)
@@ -233,6 +235,8 @@ const bool NNTPConnection::HandleCommand(const NNTPCommand &command)
 	{
 		return HandleGetTrustListCommand(command);
 	}
+
+	m_endcheckstartpos=0;
 
 	return false;
 }
@@ -1085,8 +1089,11 @@ void NNTPConnection::HandleReceivedData()
 	}
 	else
 	{
-		// check for end of post
-		std::vector<char>::iterator endpos=Find(m_receivebuffer,"\r\n.\r\n");
+		// check for end of post - only check part of buffer we haven't checked yet
+		std::vector<char>::iterator endpos=Find(m_receivebuffer,"\r\n.\r\n",m_endcheckstartpos);
+
+		// we need to check the final 4 chars in the next pass, in case the buffer currently ended with \r\n.\r 
+		m_receivebuffer.size()>4 ? m_endcheckstartpos=m_receivebuffer.size()-4 : m_endcheckstartpos=0;
 
 		if(endpos!=m_receivebuffer.end())
 		{
@@ -1102,6 +1109,8 @@ void NNTPConnection::HandleReceivedData()
 
 			// message was received, so posting is completed
 			m_status.m_isposting=false;
+
+			m_endcheckstartpos=0;
 
 		}
 	}

@@ -38,6 +38,7 @@ protected:
 
 	void CreateQueryVarMap(Poco::Net::HTTPServerRequest &request, std::map<std::string,std::string> &vars);
 
+	const std::string CreateLinkFormPassword();
 	const std::string CreateFormPassword();
 	const bool ValidateFormPassword(const std::map<std::string,std::string> &vars);
 

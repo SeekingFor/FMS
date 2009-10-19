@@ -1,0 +1,50 @@
+body	{
+			padding:0px;
+			margin:0px;
+			font-family:Helvetica,Arial;
+			font-size:16px;
+			color:#001933;
+			background-color:#006633;
+		}
+
+form	{
+			display:inline;
+		}
+		
+table		{
+				padding:0px;
+				margin:0px;
+				border-spacing:0px;
+				border-collapse:collapse;
+			}
+
+table td	{
+				padding:0px;
+				margin:0px;
+			}
+
+a:link		{
+				color:#934200;
+				text-decoration:none;
+			}
+
+a:visited	{
+				color:#934200;
+				text-decoration:none;
+			}
+
+a:active	{
+				color:#934200;
+				text-decoration:none;
+			}
+
+a:hover		{
+				color:#3333FF;
+				text-decoration:none;
+			}
+
+input.search	{
+					background-image:url('/images/search.png');
+					background-repeat:no-repeat;
+					padding-left:18px;
+				}

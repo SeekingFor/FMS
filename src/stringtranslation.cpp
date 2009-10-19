@@ -64,7 +64,7 @@ const bool StringTranslation::LoadLocalizedTranslation(const std::string &path)
 	}
 }
 
-const std::string StringTranslation::Get(const std::string &id, const std::string &defaultvalue)
+const std::string StringTranslation::Get(const std::string &id, const std::string &defaultvalue) const
 {
 	if(m_localized.hasProperty(id) && m_localized.getString(id,defaultvalue)!="")
 	{
@@ -76,12 +76,12 @@ const std::string StringTranslation::Get(const std::string &id, const std::strin
 	}
 }
 
-const std::string StringTranslation::GetDefault(const std::string &id, const std::string &defaultvalue)
+const std::string StringTranslation::GetDefault(const std::string &id, const std::string &defaultvalue) const
 {
 	return m_default.getString(id,defaultvalue);
 }
 
-const std::string StringTranslation::GetLocalized(const std::string &id, const std::string &defaultvalue)
+const std::string StringTranslation::GetLocalized(const std::string &id, const std::string &defaultvalue) const
 {
 	return m_localized.getString(id,defaultvalue);
 }
@@ -117,7 +117,19 @@ void StringTranslation::SetLocalized(const std::string &id, const std::string &v
 	}
 }
 
-const bool StringTranslation::TranslationExists(const std::string &id)
+const bool StringTranslation::IDExists(const std::string &id) const
+{
+	if(m_default.hasProperty(id))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+const bool StringTranslation::TranslationExists(const std::string &id) const
 {
 	if(m_localized.hasProperty(id))
 	{

@@ -85,20 +85,32 @@ const bool FrostIdentity::VerifyAuthor(const std::string &author)
 
 const bool FrostIdentity::VerifySignature(const std::vector<unsigned char> &data, const std::string &signature)
 {
-	std::vector<unsigned char> sigdata;
-	std::vector<unsigned char> hashdata(100,0);
-	unsigned long hashlen=hashdata.size();
-	int status,rval;
+	if(data.size()>0 && signature!="")
+	{
+		std::vector<unsigned char> sigdata;
+		std::vector<unsigned char> hashdata(100,0);
+		unsigned long hashlen=hashdata.size();
+		int status,rval;
 
-	rval=status=0;
+		rval=status=0;
 
-	Base64::Decode(signature,sigdata);
+		if(Base64::Decode(signature,sigdata)==true)
+		{
+			hash_memory(find_hash("sha1"),&data[0],data.size(),&hashdata[0],&hashlen);
+			hashdata.resize(hashlen);
 
-	hash_memory(find_hash("sha1"),&data[0],data.size(),&hashdata[0],&hashlen);
-	hashdata.resize(hashlen);
+			rval=rsa_verify_hash_ex(&sigdata[0],sigdata.size(),&hashdata[0],hashdata.size(),LTC_PKCS_1_PSS,find_hash("sha1"),16,&status,&m_rsa);
 
-	rval=rsa_verify_hash_ex(&sigdata[0],sigdata.size(),&hashdata[0],hashdata.size(),LTC_PKCS_1_PSS,find_hash("sha1"),16,&status,&m_rsa);
-
-	return (rval==0 && status==1) ? true : false;
+			return (rval==0 && status==1) ? true : false;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
 
 }

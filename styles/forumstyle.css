@@ -1,0 +1,186 @@
+.forumcontainer			{
+							padding:0px;
+							margin:10px;
+							border-style:solid;
+							border-collapse:collapse;
+							border-width:2px;
+							border-color:#003366;
+							background-color:#FFFFFF;
+						}
+
+.forumlinkheader		{
+							padding:4px;
+							background-color:#DDEEFF;
+							text-align:center;
+							font-size:16px;
+							font-weight:bolder;
+							border-bottom-style:solid;
+							border-bottom-width:2px;
+							border-bottom-color:#000000;
+						}
+
+.forumlocationheader	{
+							padding:5px;
+							padding-left:10px;
+							font-weight:bolder;
+						}
+						
+.forumloginheader		{
+							padding:5px;
+							padding-right:10px;
+							text-align:right;
+						}
+
+.forumsearchboxheader	{
+							text-align:right;
+							padding:5px;
+						}
+						
+.forumcolumnheader		{
+							color:#FFFFFF;
+							background-color:#003366;
+							padding-left:5px;
+							padding-right:5px;
+						}
+				
+.forumcolumnheadernew	{
+							width:32px;
+							padding-left:5px;
+							padding-right:5px;
+						}
+						
+.forumcolumnheaderforum	{
+							
+						}
+						
+.forumcolumnheaderposts	{
+							width:90px;
+						}
+						
+.forumcolumnheaderlastpost	{
+								width:400px;
+							}
+
+tr.forumrow	.forumname		{
+								font-size:1.2em;
+							}
+							
+tr.forumrow .forumdescription	{
+									font-size:0.8em;
+									padding-left:5px;
+								}
+								
+tr.forumrow .newpost			{
+									padding-top:10px;
+									padding-bottom:10px;
+									text-align:center;
+								}
+								
+tr.forumrow .forumpostcount		{
+									text-align:right;
+								}
+
+tr.forumrow .forumlastpost		{
+									padding-left:10px;
+									font-size:0.8em;
+								}
+
+
+
+table.trust						{
+									margin-top:5px;
+									margin-left:5px;
+									border-style:solid;
+									border-width:1px;
+								}
+
+tr.forumthreadsheader td		{
+									padding:5px;
+									text-align:right;
+									padding-right:20px;
+								}
+								
+tr.forumcolumnheader th.forumcolumnheaderreplies	{
+														width:90px;
+													}
+								
+tr.threadpages td				{
+									padding:5px;
+									font-weight:bolder;
+								}
+
+tr.threadpages form				{
+									margin-left:10px;
+									display:inline;
+								}
+
+tr.threadpages input.pagetext	{
+									width:30px;
+									text-align:center;
+								}
+								
+tr.forumthreadrow td.newpost	{
+									text-align:center;
+								}
+								
+tr.forumthreadrow td.replies	{
+									padding-right:10px;
+									text-align:right;
+								}
+								
+tr.forumthreadrow td.lastpost	{
+									padding-left:10px;
+								}
+								
+tr.forumthreadroweven td		{
+									background-color:#DDEEFF;
+								}
+
+
+
+
+/* Forum Thread View */
+
+table.forumthread				{
+									width:100%;
+								}
+								
+table.forumthread td			{
+									padding:5px;
+								}
+								
+table.forumthread tr.darkbg		{
+									background-color:#DDEEFF;
+								}
+								
+table.forumthread tr.lightbg	{
+									background-color:#FFFFFF;
+								}
+								
+table.forumthread tr.topborder	{
+									border-top-style:solid;
+									border-top-width:2px;
+								}
+
+table.forumthread td.name		{
+									vertical-align:top;
+								}
+
+table.forumthread td.title		{
+									height:22px;
+									font-weight:bolder;
+								}
+								
+table.forumthread td.post		{
+									vertical-align:top;
+								}
+								
+tr.forumviewthreadheader td		{
+									padding:5px;
+									padding-right:20px;
+									text-align:right;
+								}
+
+table.createpost td				{
+									padding:5px;
+								}

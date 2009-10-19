@@ -2,7 +2,7 @@
 #define _forumcreatepostpage_
 
 #include "forumpage.h"
-
+/*
 class ForumCreatePostPage:public ForumPage
 {
 public:
@@ -14,6 +14,18 @@ private:
 
 	const std::string LocalIdentityDropDown(const std::string &name, const std::string &selectedid);
 	
+};
+*/
+class ForumTemplateCreatePostPage:public ForumTemplatePage
+{
+public:
+	ForumTemplateCreatePostPage(SQLite3DB::DB *db, const HTMLTemplateHandler &templatehandler):ForumTemplatePage(db,templatehandler,"forumcreatepost.htm")	{}
+
+	IPageHandler *New()		{ return new ForumTemplateCreatePostPage(m_db,m_templatehandler); }
+
+private:
+	const std::string GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars);
+
 };
 
 #endif	// _forumcreatepostpage_

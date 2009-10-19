@@ -64,12 +64,19 @@ private:
 	const int FindLocalIdentityID(const std::string &name);
 	const std::string SanitizeFromName(const std::string &fromname) const;
 
-	struct fileattachment
+	struct insertfileattachment
 	{
-		fileattachment(const std::string &filename, const std::string &mimetype, const std::vector<unsigned char> &data):m_filename(filename),m_mimetype(mimetype),m_data(data)	{}
+		insertfileattachment(const std::string &filename, const std::string &mimetype, const std::vector<unsigned char> &data):m_filename(filename),m_mimetype(mimetype),m_data(data)	{}
 		std::string m_filename;
 		std::string m_mimetype;
 		std::vector<unsigned char> m_data;
+	};
+
+	struct receivedfileattachment
+	{
+		receivedfileattachment(const std::string &key, const int size):m_key(key),m_size(size)	{}
+		std::string m_key;
+		int m_size;
 	};
 
 	bool m_uniqueboardmessageids;
@@ -84,7 +91,8 @@ private:
 	std::string m_fromname;
 	std::vector<std::string> m_boards;
 	std::map<long,std::string> m_inreplyto;
-	std::vector<fileattachment> m_fileattachments;
+	std::vector<insertfileattachment> m_insertfileattachments;
+	std::vector<receivedfileattachment> m_receivedfileattachments;
 	long m_changemessagetrustonreply;
 	long m_minlocalmessagetrust;
 	long m_minlocaltrustlisttrust;

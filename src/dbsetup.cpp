@@ -135,13 +135,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=19;
 		}
+		if(major==1 && minor==19)
+		{
+			ConvertDB0119To0120(db);
+			major=1;
+			minor=20;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,19);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,20);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=19;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=20;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -321,7 +327,8 @@ void SetupDB(SQLite3DB::DB *db)
 				SaveReceivedMessages	BOOL CHECK(SaveReceivedMessages IN('true','false')) DEFAULT 'true',\
 				AddedMethod				TEXT,\
 				Forum					TEXT CHECK(Forum IN('true','false')) DEFAULT 'false',\
-				NextMessageID			INTEGER NOT NULL DEFAULT 1\
+				NextMessageID			INTEGER NOT NULL DEFAULT 1,\
+				MessageCount			INTEGER NOT NULL DEFAULT 0\
 				);");
 
 	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('fms','Freenet Message System','2007-12-01 12:00:00','Seed Board','true');");
@@ -368,8 +375,21 @@ void SetupDB(SQLite3DB::DB *db)
 	db->Execute("CREATE TRIGGER IF NOT EXISTS trgInsertMessageBoard AFTER INSERT ON tblMessageBoard\
 				FOR EACH ROW BEGIN\
 					UPDATE tblMessageBoard SET BoardMessageID=(SELECT NextMessageID FROM tblBoard WHERE BoardID=new.BoardID) WHERE MessageID=new.MessageID AND BoardID=new.BoardID;\
-					UPDATE tblBoard SET NextMessageID=NextMessageID+1 WHERE BoardID=new.BoardID;\
+					UPDATE tblBoard SET NextMessageID=NextMessageID+1, MessageCount=MessageCount+1 WHERE BoardID=new.BoardID;\
 				END;");
+
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgDeleteMessageBoard BEFORE DELETE ON tblMessageBoard\
+				FOR EACH ROW BEGIN\
+					UPDATE tblBoard SET MessageCount=MessageCount-1 WHERE BoardID=old.BoardID;\
+				END;");
+
+	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageFileAttachment(\
+				MessageID			INTEGER NOT NULL,\
+				Key					TEXT,\
+				Size				INTEGER\
+				);");
+
+	db->Execute("CREATE INDEX IF NOT EXISTS idxMessageFileAttachment_MessageID ON tblMessageFileAttachment(MessageID);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageListRequests(\
 				IdentityID			INTEGER,\

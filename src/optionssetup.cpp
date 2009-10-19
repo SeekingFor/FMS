@@ -192,7 +192,7 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(0,"NNTP Server");
 	upd.Bind(1,order++);
 	upd.Bind(2,"true|true|false|false");
-	upd.Bind(3,"Use per board unique message ids for each message.  Turning this off will use global message ids unique across all boards.  Changing this value either way will require clearing any cache your newsgroup keeps.");
+	upd.Bind(3,"Use per board unique message ids for each message.  Turning this off will use global message ids unique across all boards.  Changing this value either way will require clearing any cache your newsreader keeps.");
 	upd.Bind(4,"select");
 	upd.Bind(5);
 	upd.Bind(6);

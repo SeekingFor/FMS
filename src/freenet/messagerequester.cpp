@@ -231,22 +231,6 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			std::string nntpbody="";
 			nntpbody=xml.GetBody();
 
-			//add file keys/sizes to body
-			std::vector<MessageXML::fileattachment> fileattachments=xml.GetFileAttachments();
-			if(fileattachments.size()>0)
-			{
-				nntpbody+="\r\nAttachments";
-			}
-			for(std::vector<MessageXML::fileattachment>::iterator i=fileattachments.begin(); i!=fileattachments.end(); i++)
-			{
-				std::string sizestr="0";
-				StringFunctions::Convert((*i).m_size,sizestr);
-
-				nntpbody+="\r\n"+(*i).m_key;
-				nntpbody+="\r\n"+sizestr+" bytes";
-				nntpbody+="\r\n";
-			}
-
 			st=m_db->Prepare("INSERT INTO tblMessage(IdentityID,FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,MessageIndex,InsertDate) VALUES(?,?,?,?,?,?,?,?,?,?);");
 			st.Bind(0,identityid);
 			st.Bind(1,GetIdentityName(identityid));
@@ -287,6 +271,17 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 					st.Reset();
 				}
 				st.Finalize();
+
+				st=m_db->Prepare("INSERT INTO tblMessageFileAttachment(MessageID,Key,Size) VALUES(?,?,?);");
+				std::vector<MessageXML::fileattachment> fileattachments=xml.GetFileAttachments();
+				for(std::vector<MessageXML::fileattachment>::iterator i=fileattachments.begin(); i!=fileattachments.end(); i++)
+				{
+					st.Bind(0,messageid);
+					st.Bind(1,(*i).m_key);
+					st.Bind(2,(*i).m_size);
+					st.Step();
+					st.Reset();
+				}
 
 				m_log->debug("MessageRequester::HandleAllData parsed Message XML file : "+message["Identifier"]);
 

@@ -12,11 +12,12 @@ public:
 	const bool LoadDefaultTranslation(const std::string &path);
 	const bool LoadLocalizedTranslation(const std::string &path);
 
-	const std::string Get(const std::string &id, const std::string &defaultvalue="?????");
-	const std::string GetDefault(const std::string &id, const std::string &defaultvalue="?????");
-	const std::string GetLocalized(const std::string &id, const std::string &defaultvalue="?????");
+	const std::string Get(const std::string &id, const std::string &defaultvalue="?????") const;
+	const std::string GetDefault(const std::string &id, const std::string &defaultvalue="?????") const;
+	const std::string GetLocalized(const std::string &id, const std::string &defaultvalue="?????") const;
 
-	const bool TranslationExists(const std::string &id);
+	const bool IDExists(const std::string &id) const;
+	const bool TranslationExists(const std::string &id) const;
 
 	void GetDefaultKeys(std::vector<std::string> &keys) const;
 	void SetDefault(const std::string &id, const std::string &value);

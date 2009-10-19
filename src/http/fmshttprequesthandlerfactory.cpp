@@ -19,7 +19,7 @@
 #include "../../include/http/pages/versioninfopage.h"
 #include "../../include/http/pages/recentlyaddedpage.h"
 #include "../../include/http/pages/forummainpage.h"
-#include "../../include/http/pages/showimagepage.h"
+#include "../../include/http/pages/showfilepage.h"
 #include "../../include/http/pages/forumthreadspage.h"
 #include "../../include/http/pages/forumviewthreadpage.h"
 #include "../../include/http/pages/forumcreatepostpage.h"
@@ -50,7 +50,7 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db):ID
 	{
 		m_log->error("HTTPThread::HTTPThread could not open template.htm");
 	}
-
+/*
 	// load forum template
 	std::string forumtemplate="<html><head></head><body><a href=\"home.htm\">Home</a><br><h1>Could not open forum-template.htm!  Place in program directory and restart!</h1><br>[CONTENT]</body></html>";
 	infile=fopen("forum-template.htm","rb");
@@ -67,6 +67,12 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db):ID
 	else
 	{
 		m_log->error("HTTPThread::HTTPThread could not open forum-template.htm");
+	}
+*/
+
+	if(m_forumtemplatehandler.LoadTemplate("forum-template.htm")==false)
+	{
+		m_log->error("HTTPThread::HTTPThread could not open forum-template-new.htm");
 	}
 
 	// push back page handlers
@@ -86,12 +92,16 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db):ID
 	m_pagehandlers.push_back(new PeerTrustPage(m_db,templatestr));
 	m_pagehandlers.push_back(new VersionInfoPage(m_db,templatestr));
 	m_pagehandlers.push_back(new RecentlyAddedPage(m_db,templatestr));
-	m_pagehandlers.push_back(new ShowImagePage(m_db));
+	m_pagehandlers.push_back(new ShowFilePage(m_db));
 	m_pagehandlers.push_back(new TranslatePage(m_db,templatestr));
-	m_pagehandlers.push_back(new ForumMainPage(m_db,forumtemplate));
-	m_pagehandlers.push_back(new ForumThreadsPage(m_db,forumtemplate));
-	m_pagehandlers.push_back(new ForumViewThreadPage(m_db,forumtemplate));
-	m_pagehandlers.push_back(new ForumCreatePostPage(m_db,forumtemplate));
+	//m_pagehandlers.push_back(new ForumMainPage(m_db,forumtemplate));
+	//m_pagehandlers.push_back(new ForumThreadsPage(m_db,forumtemplate));
+	//m_pagehandlers.push_back(new ForumViewThreadPage(m_db,forumtemplate));
+	//m_pagehandlers.push_back(new ForumCreatePostPage(m_db,forumtemplate));
+	m_pagehandlers.push_back(new ForumTemplateMainPage(m_db,m_forumtemplatehandler));
+	m_pagehandlers.push_back(new ForumTemplateThreadsPage(m_db,m_forumtemplatehandler));
+	m_pagehandlers.push_back(new ForumTemplateViewThreadPage(m_db,m_forumtemplatehandler));
+	m_pagehandlers.push_back(new ForumTemplateCreatePostPage(m_db,m_forumtemplatehandler));
 	//ROBERT CHANGE
 	m_pagehandlers.push_back(new ShowPendingMessagePage(m_db,templatestr));
 	// homepage must be last - catch all page handler

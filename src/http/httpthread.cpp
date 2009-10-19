@@ -25,6 +25,15 @@ void HTTPThread::run()
 	LoadDatabase();
 	Option option(m_db);
 
+	m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpForumViewState(\
+				  ForumViewStateID	TEXT NOT NULL UNIQUE,\
+				  LocalIdentityID	INTEGER,\
+				  BoardID			INTEGER,\
+				  Page				INTEGER,\
+				  ThreadID			INTEGER,\
+				  MessageID			INTEGER\
+				  );");
+
 	std::string bindaddress("0.0.0.0");
 	option.GetInt("HTTPListenPort",m_listenport);
 	option.Get("HTTPBindAddress",bindaddress);

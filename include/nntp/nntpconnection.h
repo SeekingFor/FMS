@@ -63,7 +63,7 @@ private:
 	void SocketSend();			// immediately send buffered data - will block if send if no ready
 	void SocketReceive();		// immediately recv data on socket - will block if no data is waiting
 	void HandleReceivedData();
-	std::vector<char>::iterator Find(std::vector<char> &buffer, const std::string &val);
+	std::vector<char>::iterator Find(std::vector<char> &buffer, const std::string &val, const std::vector<char>::size_type startpos=0);
 	const bool HandleCommand(const NNTPCommand &command);
 	void HandlePostedMessage(const std::string &message);
 
@@ -98,6 +98,7 @@ private:
 	std::vector<char> m_sendbuffer;
 	std::vector<char> m_receivebuffer;
 	std::vector<char> m_tempbuffer;
+	std::vector<char>::size_type m_endcheckstartpos;		// the start position for finding the end of the message, so we can check the buffer in pieces as it fills and not have to check the whole buffer every time
 
 };
 

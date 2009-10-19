@@ -25,6 +25,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.navlink.controlboards","Control Boards");
 	st->SetDefault("web.navlink.insertedfiles","Inserted Files");
 	st->SetDefault("web.navlink.browseforums","Browse Forums");
+	st->SetDefault("web.navlink.browsefreenet","Browse Freenet");
 
 	st->SetDefault("web.page.home.title","Home");
 	st->SetDefault("web.page.home.fmsversion","FMS version");
@@ -78,7 +79,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.NNTPListenPort.description","The port that the NNTP service will listen for incoming connections.");
 	st->SetDefault("web.option.NNTPBindAddresses.description","A comma separated list of valid IPv4 or IPv6 addresses/hostnames that the NNTP service will try to bind to.");
 	st->SetDefault("web.option.NNTPAllowPost.description","Allow posting messages from NNTP.  Setting to false will make the newsgroups read only.");
-	st->SetDefault("web.option.UniqueBoardMessageIDs.description","Use per board unique message ids for each message.  Turning this off will use global message ids unique across all boards.  Changing this value either way will require clearing any cache your newsgroup keeps.");
+	st->SetDefault("web.option.UniqueBoardMessageIDs.description","Use per board unique message ids for each message.  Turning this off will use global message ids unique across all boards.  Changing this value either way will require clearing any cache your newsreader keeps.");
 	st->SetDefault("web.option.StartHTTP.description","Start HTTP server.  WARNING: If you turn this off, you won't be able to access the administration pages.");
 	st->SetDefault("web.option.HTTPBindAddress.description","The IP address or hostname that the HTTP server will bind to.");
 	st->SetDefault("web.option.HTTPListenPort.description","Port HTTP server will listen on.");
@@ -267,6 +268,8 @@ void SetupTranslation(const std::string &languagefile)
 
 	st->SetDefault("web.page.forum.newposts","New Posts");
 	st->SetDefault("web.page.forum.nonewposts","No New Posts");
+	st->SetDefault("web.page.forum.signin","Sign In");
+	st->SetDefault("web.page.forum.signout","Sign Out");
 
 	st->SetDefault("web.page.forummain.header.new","New");
 	st->SetDefault("web.page.forummain.header.forum","Forum");
