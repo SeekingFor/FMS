@@ -1,6 +1,7 @@
 #include "../../../include/http/pages/forumthreadspage.h"
 #include "../../../include/stringfunctions.h"
 #include <cmath>
+#include <algorithm>
 /*
 const std::string ForumThreadsPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
@@ -225,7 +226,11 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 	if(queryvars.find("boardid")!=queryvars.end())
 	{
 		boardidstr=(*queryvars.find("boardid")).second;
-		StringFunctions::Convert(boardidstr,boardid);		
+		StringFunctions::Convert(boardidstr,boardid);
+	}
+	else
+	{
+		boardid=m_viewstate.GetBoardID();
 	}
 	if(queryvars.find("page")!=queryvars.end())
 	{
@@ -237,6 +242,16 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 			pagestr="0";
 		}
 	}
+	else
+	{
+		page=m_viewstate.GetPage();
+	}
+	page=(std::max)(page,1);
+	StringFunctions::Convert(boardid,boardidstr);
+	StringFunctions::Convert(page,pagestr);
+	m_viewstate.SetBoardID(boardid);
+	m_viewstate.SetPage(page);
+
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="markallread" && boardid!=-1 && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement markst=m_db->Prepare("UPDATE tblMessage SET Read=1 WHERE tblMessage.Read=0 AND tblMessage.MessageID IN (SELECT MessageID FROM tblThread INNER JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE tblThread.BoardID=?);");
@@ -259,7 +274,7 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 	CreateBreadcrumbLinks(breadcrumblinks,result);
 	vars["LOCATIONBREADCRUMBS"]=result;
 
-	vars["MARKALLREADLINK"]="<a href=\""+m_pagename+"?viewstate="+m_viewstate.GetViewStateID()+"&boardid="+boardidstr+"&currentpage="+pagestr+"&formaction=markallread\"><img src=\"images/mail_generic.png\" border=\"0\" style=\"vertical-align:bottom;\">"+m_trans->Get("web.page.forumthreads.markallread")+"</a>";
+	vars["MARKALLREADLINK"]="<a href=\""+m_pagename+"?viewstate="+m_viewstate.GetViewStateID()+"&boardid="+boardidstr+"&currentpage="+pagestr+"&formaction=markallread&"+CreateLinkFormPassword()+"\"><img src=\"images/mail_generic.png\" border=\"0\" style=\"vertical-align:bottom;\">"+m_trans->Get("web.page.forumthreads.markallread")+"</a>";
 	vars["NEWPOSTLINK"]="<a href=\"forumcreatepost.htm?viewstate="+m_viewstate.GetViewStateID()+"&boardid="+boardidstr+"&currentpage="+pagestr+"\"><img src=\"images/mail_new3.png\" border=\"0\" style=\"vertical-align:bottom;\">"+m_trans->Get("web.page.forumthreads.newpost")+"</a>";
 
 	// thread rows
@@ -381,17 +396,21 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 			}
 		}
 
+		m_templatehandler.GetSection("FORUMTHREADPAGES",vars["FORUMTHREADPAGES"]);
 		vars["PAGENUMBERS"]=pagenumbers;
 		vars["PAGENUMBERFORM"]="<form><input type=\"hidden\" name=\"boardid\" value=\""+boardidstr+"\"><input type=\"hidden\" name=\"viewstate\" value=\""+m_viewstate.GetViewStateID()+"\"><input class=\"pagetext\" type=\"text\" name=\"page\"><input type=\"submit\" value=\""+m_trans->Get("web.page.forumthreads.go")+"\"></form>";
 
 	}
 	else
 	{
+		vars["FORUMTHREADPAGES"]="";
 		vars["PAGENUMBERS"]="";
 		vars["PAGENUMBERFORM"]="";
 	}
 
-	m_templatehandler.GetSection("FORUMTHREADSCONTENT",maincontent);
+	std::vector<std::string> ignored;
+	ignored.push_back("FORUMTHREADPAGES");
+	m_templatehandler.GetSection("FORUMTHREADSCONTENT",maincontent,ignored);
 	m_templatehandler.PerformReplacements(maincontent,vars,result);
 
 	return result;

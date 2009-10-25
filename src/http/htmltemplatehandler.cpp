@@ -2,15 +2,16 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
-const bool HTMLTemplateHandler::GetSection(const std::string &section, std::string &result) const
+const bool HTMLTemplateHandler::GetSection(const std::string &section, std::string &result, const std::vector<std::string> &ignoredvars) const
 {
 	std::map<std::string,std::string>::const_iterator seci=m_section.find(section);
 	if(seci!=m_section.end())
 	{
 		result=(*seci).second;
 		int nestcount=0;
-		while(nestcount++<20 && PerformReplacements(result,m_section,result)>0)
+		while(nestcount++<20 && PerformReplacements(result,m_section,result,ignoredvars)>0)
 		{
 		}
 
@@ -65,7 +66,7 @@ const bool HTMLTemplateHandler::LoadTemplate(const std::string &templatepath)
 	}
 }
 
-const int HTMLTemplateHandler::PerformReplacements(const std::string &text, const std::map<std::string,std::string> &varmap, std::string &result) const
+const int HTMLTemplateHandler::PerformReplacements(const std::string &text, const std::map<std::string,std::string> &varmap, std::string &result, const std::vector<std::string> &ignoredvars) const
 {
 	int replaced=0;
 	std::string worktext(text);
@@ -77,11 +78,14 @@ const int HTMLTemplateHandler::PerformReplacements(const std::string &text, cons
 		if(endpos!=std::string::npos)
 		{
 			std::string section=worktext.substr(startpos+1,endpos-(startpos+1));
-			std::map<std::string,std::string>::const_iterator vari=varmap.find(section);
-			if(vari!=varmap.end())
+			if(std::find(ignoredvars.begin(),ignoredvars.end(),section)==ignoredvars.end())
 			{
-				worktext.replace(startpos,(endpos-startpos)+1,(*vari).second);
-				replaced++;
+				std::map<std::string,std::string>::const_iterator vari=varmap.find(section);
+				if(vari!=varmap.end())
+				{
+					worktext.replace(startpos,(endpos-startpos)+1,(*vari).second);
+					replaced++;
+				}
 			}
 		}
 

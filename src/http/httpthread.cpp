@@ -31,7 +31,8 @@ void HTTPThread::run()
 				  BoardID			INTEGER,\
 				  Page				INTEGER,\
 				  ThreadID			INTEGER,\
-				  MessageID			INTEGER\
+				  MessageID			INTEGER,\
+				  ReplyToMessageID	INTEGER\
 				  );");
 
 	std::string bindaddress("0.0.0.0");

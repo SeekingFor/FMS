@@ -2,6 +2,8 @@
 #include "../../../include/stringfunctions.h"
 #include "../../../include/unicode/unicodeformatter.h"
 #include "../../../include/option.h"
+#include "../../../include/quoter.h"
+#include "../../../include/keyfinder.h"
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -232,15 +234,36 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 
 	if(queryvars.find("threadid")!=queryvars.end())
 	{
+		int temp=0;
 		threadidstr=(*queryvars.find("threadid")).second;
+		StringFunctions::Convert(threadidstr,temp);
+		m_viewstate.SetThreadID(temp);
+	}
+	else
+	{
+		int temp=0;
+		temp=m_viewstate.GetThreadID();
+		StringFunctions::Convert(temp,threadidstr);
 	}
 	if(queryvars.find("page")!=queryvars.end())
 	{
 		pagestr=(*queryvars.find("page")).second;
 	}
+	else
+	{
+		int temp=0;
+		temp=m_viewstate.GetPage();
+		StringFunctions::Convert(temp,pagestr);
+	}
 	if(queryvars.find("boardid")!=queryvars.end())
 	{
 		boardidstr=(*queryvars.find("boardid")).second;
+	}
+	else
+	{
+		int temp=0;
+		temp=m_viewstate.GetBoardID();
+		StringFunctions::Convert(temp,boardidstr);
 	}
 
 	// first unread select must come before marking read messages
@@ -268,7 +291,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	// add/remove trust
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second.find("trust")!=std::string::npos && queryvars.find("identityid")!=queryvars.end() && ValidateFormPassword(queryvars))
 	{
-		SQLite3DB::Statement currenttrustst=m_db->Prepare("SELECT IFNULL(LocalMessageTrust,50), IFNULL(LocalTrustListTrust,50) FROM tblIdentityTrust WHERE IdentityID=? AND LocalIdentityID=?;");
+		SQLite3DB::Statement currenttrustst=m_db->Prepare("SELECT IFNULL(LocalMessageTrust,-1), IFNULL(LocalTrustListTrust,-1) FROM tblIdentityTrust WHERE IdentityID=? AND LocalIdentityID=?;");
 		SQLite3DB::Statement updatetrustst=m_db->Prepare("UPDATE tblIdentityTrust SET LocalMessageTrust=?, LocalTrustListTrust=? WHERE IdentityID=? AND LocalIdentityID=?;");
 
 		currenttrustst.Bind(0,(*queryvars.find("identityid")).second);
@@ -284,23 +307,53 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 
 			if((*queryvars.find("formaction")).second=="addmessagetrust")
 			{
+				if(localmessagetrust==-1)
+				{
+					localmessagetrust=50;
+				}
 				localmessagetrust=(std::min)(localmessagetrust+10,100);
 			}
 			else if((*queryvars.find("formaction")).second=="removemessagetrust")
 			{
+				if(localmessagetrust==-1)
+				{
+					localmessagetrust=50;
+				}
 				localmessagetrust=(std::max)(localmessagetrust-10,0);
 			}
 			else if((*queryvars.find("formaction")).second=="addtrustlisttrust")
 			{
+				if(localtrustlisttrust==-1)
+				{
+					localtrustlisttrust=50;
+				}
 				localtrustlisttrust=(std::min)(localtrustlisttrust+10,100);
 			}
 			else if((*queryvars.find("formaction")).second=="removetrustlisttrust")
 			{
+				if(localtrustlisttrust==-1)
+				{
+					localtrustlisttrust=50;
+				}
 				localtrustlisttrust=(std::max)(localtrustlisttrust-10,0);
 			}
 
-			updatetrustst.Bind(0,localmessagetrust);
-			updatetrustst.Bind(1,localtrustlisttrust);
+			if(localmessagetrust!=-1)
+			{
+				updatetrustst.Bind(0,localmessagetrust);
+			}
+			else
+			{
+				updatetrustst.Bind(0);
+			}
+			if(localtrustlisttrust!=-1)
+			{
+				updatetrustst.Bind(1,localtrustlisttrust);
+			}
+			else
+			{
+				updatetrustst.Bind(1);
+			}
 			updatetrustst.Bind(2,(*queryvars.find("identityid")).second);
 			updatetrustst.Bind(3,m_viewstate.GetLocalIdentityID());
 			updatetrustst.Step();
@@ -500,11 +553,14 @@ const std::string ForumTemplateViewThreadPage::FixBody(const std::string &body)
 	std::string output=body;
 
 	output=StringFunctions::Replace(output,"\r\n","\n");
-
-	//UnicodeFormatter::LineWrap(output,80,"",output);
-
+	output=StringFunctions::Replace(output,"&","&amp;");
 	output=StringFunctions::Replace(output,"<","&lt;");
 	output=StringFunctions::Replace(output,">","&gt;");
+
+	output=QuoterHTMLRenderer::Render(output);
+	output=KeyFinderHTMLRenderer::Render(output,"[FCPHOST]","[FPROXYPORT]");
+
 	output=StringFunctions::Replace(output,"\n","<br />");
+
 	return output;
 }

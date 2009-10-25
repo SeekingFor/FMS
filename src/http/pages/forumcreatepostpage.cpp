@@ -256,17 +256,44 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 	{
 		boardidstr=(*queryvars.find("boardid")).second;
 	}
+	else
+	{
+		int temp=0;
+		temp=m_viewstate.GetBoardID();
+		StringFunctions::Convert(temp,boardidstr);
+	}
 	if(queryvars.find("page")!=queryvars.end())
 	{
 		pagestr=(*queryvars.find("page")).second;
+	}
+	else
+	{
+		int temp=0;
+		temp=m_viewstate.GetPage();
+		StringFunctions::Convert(temp,pagestr);
 	}
 	if(queryvars.find("threadid")!=queryvars.end())
 	{
 		threadidstr=(*queryvars.find("threadid")).second;
 	}
+	else
+	{
+		int temp=0;
+		temp=m_viewstate.GetThreadID();
+		StringFunctions::Convert(temp,threadidstr);
+	}
 	if(queryvars.find("replytomessageid")!=queryvars.end())
 	{
+		int temp=0;
 		replytomessageidstr=(*queryvars.find("replytomessageid")).second;
+		StringFunctions::Convert(replytomessageidstr,temp);
+		m_viewstate.SetReplyToMessageID(temp);
+	}
+	else
+	{
+		int temp=0;
+		temp=m_viewstate.GetReplyToMessageID();
+		StringFunctions::Convert(temp,replytomessageidstr);
 	}
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="send" && ValidateFormPassword(queryvars))

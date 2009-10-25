@@ -184,3 +184,43 @@ tr.forumviewthreadheader td		{
 table.createpost td				{
 									padding:5px;
 								}
+								
+.forumquote						{
+									border-style:solid;
+									border-width:1px;
+									border-color:#5F5F5F;
+									margin:5px;
+									padding:5px;
+								}
+
+.quotelevel1					{
+									background-color:#EFEFEF;
+								}
+
+.quotelevel2					{
+									background-color:#DFDFDF;
+								}
+
+.quotelevel3					{
+									background-color:#CFCFCF;
+								}
+
+.quotelevel4					{
+									background-color:#AFAFAF;
+								}
+
+.quotelevel5					{
+									background-color:#9F9F9F;
+								}
+
+.quotelevel6					{
+									background-color:#8F8F8F;
+								}
+
+.quotelevel7					{
+									background-color:#7F7F7F;
+								}
+
+.quotelevel8					{
+									background-color:#6F6F6F;
+								}

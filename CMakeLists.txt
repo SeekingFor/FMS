@@ -28,6 +28,7 @@ src/fmsapp.cpp
 src/global.cpp
 src/hex.cpp
 src/ipaddressacl.cpp
+src/keyfinder.cpp
 src/localidentity.cpp
 src/main.cpp
 src/message.cpp
@@ -35,6 +36,7 @@ src/messagelist.cpp
 src/messagethread.cpp
 src/option.cpp
 src/optionssetup.cpp
+src/quoter.cpp
 src/socketdefines.cpp
 src/stringfunctions.cpp
 src/stringtranslation.cpp

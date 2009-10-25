@@ -102,6 +102,12 @@ const std::string ForumTemplateMainPage::GenerateContent(const std::string &meth
 	std::vector<std::pair<std::string,std::string> > breadcrumblinks;
 	std::map<std::string,std::string> vars;
 
+	m_viewstate.UnsetBoardID();
+	m_viewstate.UnsetPage();
+	m_viewstate.UnsetThreadID();
+	m_viewstate.UnsetMessageID();
+	m_viewstate.UnsetReplyToMessageID();
+
 	m_templatehandler.GetSection("FORUMMAINCONTENT",maincontent);
 	m_templatehandler.GetSection("FORUMROW",forumrow);
 

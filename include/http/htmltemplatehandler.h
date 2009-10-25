@@ -9,8 +9,8 @@ class HTMLTemplateHandler
 public:
 
 	const bool LoadTemplate(const std::string &templatepath);
-	const bool GetSection(const std::string &section, std::string &result) const;
-	const int PerformReplacements(const std::string &text, const std::map<std::string,std::string> &varmap, std::string &result) const;
+	const bool GetSection(const std::string &section, std::string &result, const std::vector<std::string> &ignoredvars=std::vector<std::string>()) const;
+	const int PerformReplacements(const std::string &text, const std::map<std::string,std::string> &varmap, std::string &result, const std::vector<std::string> &ignoredvars=std::vector<std::string>()) const;
 	void PerformTranslations(const std::string &text, const StringTranslation &translations, std::string &result) const;
 
 private:

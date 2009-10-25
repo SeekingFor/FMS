@@ -92,7 +92,7 @@ private:
 
 		if(m_viewstate.GetLocalIdentityID()==0)
 		{
-			sections["FORUMLOGINHEADER"]="<form method=\"post\">";
+			sections["FORUMLOGINHEADER"]="<form method=\"post\" action=\""+m_pagename+"\">";
 			sections["FORUMLOGINHEADER"]+="<input type=\"hidden\" name=\"formaction\" value=\"login\">";
 			sections["FORUMLOGINHEADER"]+=CreateFormPassword();
 			sections["FORUMLOGINHEADER"]+="<input type=\"hidden\" name=\"viewstate\" value=\""+m_viewstate.GetViewStateID()+"\">";
@@ -195,7 +195,7 @@ protected:
 
 			if(publickey.size()>4)
 			{
-				name+=publickey.substr(2);
+				name+=publickey.substr(3);
 			}
 			name=FixAuthorName(name);
 
@@ -205,7 +205,7 @@ protected:
 				found=true;
 				result+=" selected";
 			}
-			result+=">"+SanitizeOutput(name)+"</option>";
+			result+=">"+name+"</option>";
 
 			st.Step();
 		}
