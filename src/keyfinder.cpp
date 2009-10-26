@@ -110,6 +110,23 @@ std::vector<KeyFinderItem *> KeyFinderParser::ParseMessage(const std::string &me
 		filenamere.match(workmessage,keymatch.offset+keymatch.length,filematch);
 		if(filematch.offset!=std::string::npos && filematch.offset==keymatch.offset+keymatch.length)
 		{
+			// find the next new line position after the file name
+			// we will adjust the length of the filename to continue until the newline if it does not already
+			std::string::size_type nextnewlinepos=workmessage.size();
+			for(std::string::size_type i=0; i<replacedchars.size(); i++)
+			{
+				if((replacedchars[i]-i)>filematch.offset)
+				{
+					nextnewlinepos=replacedchars[i]-i;
+					i=replacedchars.size();
+				}
+			}
+			// adjust length of filename to continue until the next newline
+			if(nextnewlinepos!=std::string::npos && nextnewlinepos>(filematch.offset+filematch.length))
+			{
+				filematch.length=nextnewlinepos-filematch.offset;
+			}
+
 			keymatch.length+=filematch.length;
 		}
 		keymatches.push_back(keymatch);

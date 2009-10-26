@@ -73,7 +73,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.LogLevel.8","8 - Trace Messages");
 	st->SetDefault("web.option.VacuumOnStartup.description","VACUUM the database every time FMS starts.  This will defragment the free space in the database and create a smaller database file.  Vacuuming the database can be CPU and disk intensive.");
 	st->SetDefault("web.option.MessageBase.description","A unique string shared by all clients who want to communicate with each other.  This should not be changed unless you want to create your own separate communications network.");
-	st->SetDefault("web.option.FMSVersionKey.description","The USK key which contains information about the latest version of FMS.");
+	st->SetDefault("web.option.FMSVersionKey.description","The USK which contains information about the latest version of FMS.");
 	st->SetDefault("web.option.FMSVersionEdition.description","The latest found edition of the FMS version USK.");
 	st->SetDefault("web.option.StartNNTP.description","Start NNTP server.");
 	st->SetDefault("web.option.NNTPListenPort.description","The port that the NNTP service will listen for incoming connections.");

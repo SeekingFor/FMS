@@ -19,7 +19,7 @@ void BoardList::Load()
 	int messagecount=0;
 	std::string addedmethod="";
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT tblBoard.BoardID, BoardName, BoardDescription, DateAdded, HighMessageID, LowMessageID, MessageCount, SaveReceivedMessages, AddedMethod FROM tblBoard LEFT JOIN vwBoardStats ON tblBoard.BoardID=vwBoardStats.BoardID ORDER BY BoardName COLLATE NOCASE;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT tblBoard.BoardID, BoardName, BoardDescription, DateAdded, HighMessageID, LowMessageID, vwBoardStats.MessageCount, SaveReceivedMessages, AddedMethod FROM tblBoard LEFT JOIN vwBoardStats ON tblBoard.BoardID=vwBoardStats.BoardID ORDER BY BoardName COLLATE NOCASE;");
 	st.Step();
 	
 	while(st.RowReturned())

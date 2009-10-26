@@ -93,7 +93,7 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(0,"Program");
 	upd.Bind(1,order++);
 	upd.Bind(2);
-	upd.Bind(3,"The USK key which contains information about the latest version of FMS.");
+	upd.Bind(3,"The USK which contains information about the latest version of FMS.");
 	upd.Bind(4,"textbox");
 	upd.Bind(5,"80");
 	upd.Bind(6);

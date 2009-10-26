@@ -64,9 +64,12 @@ private:
 		std::map<std::string,std::string> sections;
 		std::string output("");
 
-		if(queryvars.find("viewstate")!=queryvars.end())
+		if(queryvars.find("viewstate")!=queryvars.end() && (*queryvars.find("viewstate")).second!="")
 		{
-			m_viewstate.LoadViewState((*queryvars.find("viewstate")).second);
+			if(m_viewstate.LoadViewState((*queryvars.find("viewstate")).second)==false)
+			{
+				m_viewstate.CreateViewState();
+			}
 		}
 		else
 		{
