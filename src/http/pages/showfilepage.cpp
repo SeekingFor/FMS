@@ -1,6 +1,7 @@
 #include "../../../include/http/pages/showfilepage.h"
 
 #include <cstdio>
+#include <sstream>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -21,6 +22,14 @@ ShowFilePage::ShowFilePage(SQLite3DB::DB *db):IPageHandler(db)
 	m_filewhitelist["images/circleminus.png"]="image/png";
 	m_filewhitelist["styles/basestyle.css"]="text/css";
 	m_filewhitelist["styles/forumstyle.css"]="text/css";
+	
+	// add smiley images
+	for(int i=1; i<=73; i++)
+	{
+		std::ostringstream numstr;
+		numstr << i;
+		m_filewhitelist["images/smilies/"+numstr.str()+".gif"]="image/gif";
+	}
 }
 
 void ShowFilePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response)

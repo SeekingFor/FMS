@@ -88,6 +88,7 @@ src/http/fmshttprequesthandlerfactory.cpp
 src/http/forumviewstate.cpp
 src/http/htmltemplatehandler.cpp
 src/http/httpthread.cpp
+src/http/emoticonreplacer.cpp
 src/http/identityexportxml.cpp
 src/http/ipagehandler.cpp
 src/http/multipartparser.cpp

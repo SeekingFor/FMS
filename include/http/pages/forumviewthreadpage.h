@@ -2,6 +2,8 @@
 #define _forumviewthreadpage_
 
 #include "forumpage.h"
+#include "../../../include/http/emoticonreplacer.h"
+
 /*
 class ForumViewThreadPage:public ForumPage
 {
@@ -19,17 +21,21 @@ private:
 
 };
 */
+
 class ForumTemplateViewThreadPage:public ForumTemplatePage
 {
 public:
-	ForumTemplateViewThreadPage(SQLite3DB::DB *db, const HTMLTemplateHandler &templatehandler):ForumTemplatePage(db,templatehandler,"forumviewthread.htm")	{}
+	ForumTemplateViewThreadPage(SQLite3DB::DB *db, const HTMLTemplateHandler &templatehandler);
 
 	IPageHandler *New()	{ return new ForumTemplateViewThreadPage(m_db,m_templatehandler); }
 
 private:
 	const std::string GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars);
-
 	const std::string FixBody(const std::string &body);
+	
+	bool m_showsmilies;
+	bool m_detectlinks;
+	EmoticonReplacer m_emot;
 
 };
 

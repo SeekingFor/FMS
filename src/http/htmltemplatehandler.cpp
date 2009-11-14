@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <cstdio>
 
 const bool HTMLTemplateHandler::GetSection(const std::string &section, std::string &result, const std::vector<std::string> &ignoredvars) const
 {
@@ -74,6 +75,7 @@ const int HTMLTemplateHandler::PerformReplacements(const std::string &text, cons
 	std::string::size_type startpos=worktext.find("[");
 	while(startpos!=std::string::npos)
 	{
+		bool didreplace=false;
 		std::string::size_type endpos=worktext.find("]",startpos);
 		if(endpos!=std::string::npos)
 		{
@@ -85,11 +87,19 @@ const int HTMLTemplateHandler::PerformReplacements(const std::string &text, cons
 				{
 					worktext.replace(startpos,(endpos-startpos)+1,(*vari).second);
 					replaced++;
+					didreplace=true;
 				}
 			}
 		}
 
-		startpos=worktext.find("[",startpos+1);
+		if(didreplace==true)
+		{
+			startpos=worktext.find("[",startpos);
+		}
+		else
+		{
+			startpos=worktext.find("[",startpos+1);
+		}
 	}
 
 	result=worktext;

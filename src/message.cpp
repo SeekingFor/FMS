@@ -9,6 +9,7 @@
 #include <Poco/UUIDGenerator.h>
 #include <Poco/UUID.h>
 #include <algorithm>
+#include <string>
 
 #ifdef DO_CHARSET_CONVERSION
 	#include "../include/charsetconverter.h"
@@ -165,6 +166,18 @@ const std::string Message::GetNNTPBody() const
 			StringFunctions::Convert((*i).m_size,sizestr);
 			nntpbody+="\r\n"+(*i).m_key+"\r\n"+sizestr+" bytes\r\n";
 		}
+	}
+
+	// find all LF that don't have a preceeding CR, and add the CR
+	std::string::size_type lfpos=nntpbody.find("\n");
+	while(lfpos!=std::string::npos)
+	{
+		if(lfpos==0 || nntpbody[lfpos-1]!='\r')
+		{
+			nntpbody.insert(lfpos,"\r");
+			lfpos++;
+		}
+		lfpos=nntpbody.find("\n",lfpos+1);
 	}
 
 	return nntpbody;

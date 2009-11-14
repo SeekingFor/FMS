@@ -341,6 +341,14 @@ void ConvertDB0119To0120(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=20;");
 }
 
+void ConvertDB0120To0121(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblBoard ADD COLUMN LatestMessageID INTEGER;");
+	db->Execute("UPDATE tblBoard SET LatestMessageID=(SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageBoard.BoardID=tblBoard.BoardID ORDER BY tblMessage.MessageDate DESC, tblMessage.MessageTime DESC LIMIT 0,1);");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=21;");
+}
+
 void FixCapitalBoardNames(SQLite3DB::DB *db)
 {
 

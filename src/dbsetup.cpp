@@ -141,13 +141,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=20;
 		}
+		if(major==1 && minor==20)
+		{
+			ConvertDB0120To0121(db);
+			major=1;
+			minor=21;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,20);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,21);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=20;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=21;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -328,7 +334,8 @@ void SetupDB(SQLite3DB::DB *db)
 				AddedMethod				TEXT,\
 				Forum					TEXT CHECK(Forum IN('true','false')) DEFAULT 'false',\
 				NextMessageID			INTEGER NOT NULL DEFAULT 1,\
-				MessageCount			INTEGER NOT NULL DEFAULT 0\
+				MessageCount			INTEGER NOT NULL DEFAULT 0,\
+				LatestMessageID			INTEGER\
 				);");
 
 	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('fms','Freenet Message System','2007-12-01 12:00:00','Seed Board','true');");

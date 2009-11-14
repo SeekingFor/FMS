@@ -210,6 +210,14 @@ const std::string ForumViewThreadPage::GenerateContent(const std::string &method
 	return content;
 }
 */
+
+ForumTemplateViewThreadPage::ForumTemplateViewThreadPage(SQLite3DB::DB *db, const HTMLTemplateHandler &templatehandler):ForumTemplatePage(db,templatehandler,"forumviewthread.htm"),m_emot("images/smilies/")
+{
+	Option option(db);
+	option.GetBool("ForumDetectLinks",m_detectlinks);
+	option.GetBool("ForumShowSmilies",m_showsmilies);
+}
+
 const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
 {
 	int postcount=0;
@@ -558,7 +566,15 @@ const std::string ForumTemplateViewThreadPage::FixBody(const std::string &body)
 	output=StringFunctions::Replace(output,">","&gt;");
 
 	output=QuoterHTMLRenderer::Render(output);
-	output=KeyFinderHTMLRenderer::Render(output,"[FCPHOST]","[FPROXYPORT]");
+
+	if(m_detectlinks==true)
+	{
+		output=KeyFinderHTMLRenderer::Render(output,"[FCPHOST]","[FPROXYPORT]");
+	}
+	if(m_showsmilies==true)
+	{
+		output=m_emot.Replace(output);
+	}
 
 	output=StringFunctions::Replace(output,"\n","<br />");
 

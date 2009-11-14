@@ -92,7 +92,7 @@ void QuoterHTMLRenderVisitor::Visit(const QuoterItem &item)
 			std::ostringstream levelstr("");
 			levelstr << (std::max)((std::min)(textarea->GetLevel(),8),1);
 
-			m_rendered+="<div class=\"forumquote quotelevel"+levelstr.str()+"\" style=\"border-width:1px;border-style:solid;margin:5px;\">";
+			m_rendered+="<div class=\"forumquote quotelevel"+levelstr.str()+"\">";
 		}
 		for(std::vector<QuoterItem *>::const_iterator i=textarea->GetItems().begin(); i!=textarea->GetItems().end(); i++)
 		{

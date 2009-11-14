@@ -380,6 +380,38 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Step();
 	upd.Reset();
 
+	st.Bind(0,"ForumDetectLinks");
+	st.Bind(1,"true");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Forum");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Attempt to detect links to CHKs in plain text messages.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"ForumDetectLinks");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"ForumShowSmilies");
+	st.Bind(1,"false");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Forum");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Change plain text emoticons into smiley images.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"ForumShowSmilies");
+	upd.Step();
+	upd.Reset();
+
 	st.Bind(0,"MaxIdentityRequests");
 	st.Bind(1,"5");
 	st.Step();

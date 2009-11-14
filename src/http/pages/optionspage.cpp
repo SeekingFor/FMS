@@ -1,5 +1,6 @@
 #include "../../../include/http/pages/optionspage.h"
 #include "../../../include/stringfunctions.h"
+#include "../../../include/option.h"
 
 #include <Poco/Path.h>
 
@@ -86,7 +87,7 @@ const std::string OptionsPage::GenerateContent(const std::string &method, const 
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="save" && ValidateFormPassword(queryvars))
 	{
-		SQLite3DB::Statement update=m_db->Prepare("UPDATE tblOption SET OptionValue=? WHERE Option=?;");
+		Option option(m_db);
 		std::vector<std::string> options;
 		std::vector<std::string> oldvalues;
 		std::vector<std::string> newvalues;
@@ -98,10 +99,8 @@ const std::string OptionsPage::GenerateContent(const std::string &method, const 
 		{
 			if(oldvalues[i]!=newvalues[i])
 			{
-				update.Bind(0,newvalues[i]);
-				update.Bind(1,options[i]);
-				update.Step();
-				update.Reset();
+
+				option.Set(options[i],newvalues[i]);
 
 				// load new language immediately
 				if(options[i]=="Language")

@@ -46,8 +46,8 @@ void HTTPThread::run()
 		Poco::Net::ServerSocket sock(sa);
 		//Poco::Net::ServerSocket sock(m_listenport);
 		Poco::Net::HTTPServerParams* pParams = new Poco::Net::HTTPServerParams;
-		pParams->setMaxQueued(30);
-		pParams->setMaxThreads(5);
+		//pParams->setMaxQueued(30);
+		//pParams->setMaxThreads(5);
 		Poco::Net::HTTPServer srv(new FMSHTTPRequestHandlerFactory(m_db),sock,pParams);
 
 		srv.start();

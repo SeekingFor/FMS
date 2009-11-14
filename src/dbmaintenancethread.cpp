@@ -28,6 +28,7 @@ DBMaintenanceThread::DBMaintenanceThread()
 
 void DBMaintenanceThread::Do10MinuteMaintenance()
 {
+	std::vector<int> m_boardlist;
 	std::vector<std::pair<long,long> > m_unthreadedmessages;
 	Option option(m_db);
 	std::string ll("");
@@ -48,6 +49,8 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 												WHERE tblMessageBoard.BoardID=? AND \
 												tblMessageBoard.MessageID NOT IN (SELECT MessageID FROM tblThreadPost INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblThread.BoardID=?);");
 
+	SQLite3DB::Statement latestmessagest=m_db->Prepare("UPDATE tblBoard SET LatestMessageID=(SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageBoard.BoardID=tblBoard.BoardID ORDER BY tblMessage.MessageDate DESC, tblMessage.MessageTime DESC LIMIT 0,1) WHERE tblBoard.BoardID=?;");
+
 	boardst.Step();
 	while(boardst.RowReturned())
 	{
@@ -66,6 +69,7 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 			selectst.ResultInt(0,messageid);
 
 			m_unthreadedmessages.push_back(std::pair<long,long>(boardid,messageid));
+			m_boardlist.push_back(boardid);
 
 			selectst.Step();
 		}
@@ -77,6 +81,14 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 	for(std::vector<std::pair<long,long> >::iterator i=m_unthreadedmessages.begin(); i!=m_unthreadedmessages.end(); i++)
 	{
 		tb.Build((*i).second,(*i).first,true);
+	}
+
+	// get latest message ids for the updated boards
+	for(std::vector<int>::iterator i=m_boardlist.begin(); i!=m_boardlist.end(); i++)
+	{
+		latestmessagest.Bind(0,(*i));
+		latestmessagest.Step();
+		latestmessagest.Reset();
 	}
 	
 	/*

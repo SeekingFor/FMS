@@ -51,6 +51,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.section.NNTP Server","NNTP Server");
 	st->SetDefault("web.option.section.HTTP Server","HTTP Server");
 	st->SetDefault("web.option.section.Freenet Connection","Freenet Connection");
+	st->SetDefault("web.option.section.Forum","Forum");
 	st->SetDefault("web.option.section.Requests","Requests");
 	st->SetDefault("web.option.section.Trust","Trust");
 	st->SetDefault("web.option.section.Messages","Messages");
@@ -105,6 +106,8 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.DefaultInsertPriorityClass.4","4 - Low");
 	st->SetDefault("web.option.DefaultInsertPriorityClass.5","5 - Very Low");
 	st->SetDefault("web.option.DefaultInsertPriorityClass.6","6 - Will Never Finish");
+	st->SetDefault("web.option.ForumDetectLinks.description","Attempt to detect links to CHKs in plain text messages.");
+	st->SetDefault("web.option.ForumShowSmilies.description","Change plain text emoticons into smiley images.");
 	st->SetDefault("web.option.MaxIdentityRequests.description","Maximum number of concurrent requests for new Identity xml files");
 	st->SetDefault("web.option.MaxIdentityIntroductionRequests.description","Maximum number of concurrent identities requesting IdentityIntroduction xml files.  Each identity may have multiple requests pending.");
 	st->SetDefault("web.option.MaxIntroductionPuzzleRequests.description","Maximum number of concurrent requests for new IntroductionPuzzle xml files");
