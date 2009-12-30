@@ -171,7 +171,11 @@ protected:
 
 	const std::string FixSubject(const std::string &subject)
 	{
+		std::vector<std::string> skip;
 		UnicodeString tempsubject(subject);
+
+		skip.push_back(" ");
+
 		if(tempsubject.CharacterCount()>30)
 		{
 			tempsubject.Trim(27);

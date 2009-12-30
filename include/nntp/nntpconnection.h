@@ -99,6 +99,7 @@ private:
 	std::vector<char> m_receivebuffer;
 	std::vector<char> m_tempbuffer;
 	std::vector<char>::size_type m_endcheckstartpos;		// the start position for finding the end of the message, so we can check the buffer in pieces as it fills and not have to check the whole buffer every time
+	bool m_allgroups;
 
 };
 

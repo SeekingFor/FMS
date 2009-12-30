@@ -147,7 +147,8 @@ void FMSApp::initializeLogger()
 		StringFunctions::Convert(tempval,initiallevel);
 	}
 
-	Poco::AutoPtr<Poco::FormattingChannel> formatter=new Poco::FormattingChannel(new Poco::PatternFormatter("%Y-%m-%d %H:%M:%S | %p | %t"));
+	Poco::AutoPtr<Poco::PatternFormatter> pformatter=new Poco::PatternFormatter("%Y-%m-%d %H:%M:%S | %p | %t");
+	Poco::AutoPtr<Poco::FormattingChannel> formatter=new Poco::FormattingChannel(pformatter);
 	
 	if(m_logtype=="file")
 	{

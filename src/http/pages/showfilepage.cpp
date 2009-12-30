@@ -35,6 +35,9 @@ ShowFilePage::ShowFilePage(SQLite3DB::DB *db):IPageHandler(db)
 void ShowFilePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response)
 {
 	m_log->trace("ShowFilePage::handleRequest from "+request.clientAddress().toString());
+	m_log->trace("ShowFilePage::handleRequest ContentType="+request.getContentType());
+	m_log->trace("ShowFilePage::handleRequest TransferEncoding="+request.getTransferEncoding());
+	m_log->trace("ShowFilePage::handleRequest URI="+request.getURI());
 
 	std::map<std::string,std::string> queryvars;
 	CreateQueryVarMap(request,queryvars);
@@ -46,9 +49,17 @@ void ShowFilePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 		{
 			response.sendFile((*queryvars.find("file")).second,m_filewhitelist[(*queryvars.find("file")).second]);
 		}
+		catch(Poco::FileNotFoundException &fnf)
+		{
+			m_log->error("ShowFilePage::handleRequest caught FileNotFound exception - "+fnf.message());
+		}
+		catch(Poco::OpenFileException &of)
+		{
+			m_log->error("ShowFilePage::handleRequest caught OpenFile exception - "+of.message());
+		}
 		catch(...)
 		{
-
+			m_log->error("ShowFilePage::handleRequest caught other exception");
 		}
 	}
 	else if(request.getURI().size()>0 && request.getURI()[0]=='/' && m_filewhitelist.find(request.getURI().substr(1))!=m_filewhitelist.end())
@@ -57,10 +68,37 @@ void ShowFilePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 		{
 			response.sendFile(request.getURI().substr(1),m_filewhitelist[request.getURI().substr(1)]);
 		}
+		catch(Poco::FileNotFoundException &fnf)
+		{
+			m_log->error("ShowFilePage::handleRequest caught FileNotFound exception - "+fnf.message());
+		}
+		catch(Poco::OpenFileException &of)
+		{
+			m_log->error("ShowFilePage::handleRequest caught OpenFile exception - "+of.message());
+		}
 		catch(...)
 		{
-
+			m_log->error("ShowFilePage::handleRequest caught other exception");
 		}		
+	}
+	else if(request.getURI().size()>0 && m_filewhitelist.find(request.getURI())!=m_filewhitelist.end())
+	{
+		try
+		{
+			response.sendFile(request.getURI(),m_filewhitelist[request.getURI()]);
+		}
+		catch(Poco::FileNotFoundException &fnf)
+		{
+			m_log->error("ShowFilePage::handleRequest caught FileNotFound exception - "+fnf.message());
+		}
+		catch(Poco::OpenFileException &of)
+		{
+			m_log->error("ShowFilePage::handleRequest caught OpenFile exception - "+of.message());
+		}
+		catch(...)
+		{
+			m_log->error("ShowFilePage::handleRequest caught other exception");
+		}	
 	}
 
 }

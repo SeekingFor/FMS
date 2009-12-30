@@ -163,6 +163,12 @@ const bool Board::Load(const std::string &boardname)		// same as loading form bo
 		st.ResultInt(7,tempint);	// boardid
 		m_boardid=tempint;
 
+		// queries always return empty row even for no matches
+		if(m_boardname!=boardname)
+		{
+			return false;
+		}
+
 		SetDateFromString(tempstr);
 
 		tempint=0;
@@ -200,5 +206,24 @@ void Board::SetDateFromString(const std::string &datestring)
 	if(Poco::DateTimeParser::tryParse(datestring,m_datecreated,tzdiff)==false)
 	{
 		m_log->error("Board::SetDateFromString could not parse date "+datestring);
+	}
+}
+
+void Board::SetSaveReceivedMessages(const bool savereceivedmessages)
+{
+	if(m_savereceivedmessages!=savereceivedmessages)
+	{
+		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblBoard SET SaveReceivedMessages=? WHERE BoardID=?;");
+		if(savereceivedmessages==true)
+		{
+			st.Bind(0,"true");
+		}
+		else
+		{
+			st.Bind(0,"false");
+		}
+		st.Bind(1,m_boardid);
+		st.Step();
+		m_savereceivedmessages=savereceivedmessages;
 	}
 }

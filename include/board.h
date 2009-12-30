@@ -28,6 +28,8 @@ public:
 	const bool GetSaveReceivedMessages() const	{ return m_savereceivedmessages; }
 	std::string GetAddedMethod() const			{ return m_addedmethod; }
 
+	void SetSaveReceivedMessages(const bool savereceivedmessages);
+
 private:
 	void SetDateFromString(const std::string &datestring);
 

@@ -17,8 +17,8 @@
 class IPageHandler:public Poco::Net::HTTPRequestHandler,public ILogger,public IDatabase
 {
 public:
-	IPageHandler(SQLite3DB::DB *db):IDatabase(db)		{ m_trans=Translation.get(); }
-	IPageHandler(SQLite3DB::DB *db, const std::string &templatestr, const std::string &pagename):IDatabase(db),m_template(templatestr),m_pagename(pagename)	{ m_trans=Translation.get(); }
+	IPageHandler(SQLite3DB::DB *db);
+	IPageHandler(SQLite3DB::DB *db, const std::string &templatestr, const std::string &pagename);
 	virtual ~IPageHandler()	{}
 	virtual const bool WillHandleURI(const std::string &uri);
 
@@ -43,7 +43,7 @@ protected:
 	const bool ValidateFormPassword(const std::map<std::string,std::string> &vars);
 
 	// replaces html elements with encoded characters (i.e. < becomes &lt;)
-	const std::string SanitizeOutput(const std::string &input);
+	const std::string SanitizeOutput(const std::string &input, const std::vector<std::string> &skipelements=std::vector<std::string>());
 	// don't replace space with &nbsp;, because browser might convert to unicode non breaking space character
 	const std::string SanitizeTextAreaOutput(const std::string &input);
 
@@ -53,6 +53,8 @@ protected:
 	std::string m_pagename;
 
 	StringTranslation *m_trans;
+
+	std::vector<std::pair<std::string,std::string> > m_htmlencode;		// characters we want to html encode during text sanitation
 
 };
 

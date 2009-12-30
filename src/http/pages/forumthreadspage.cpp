@@ -217,11 +217,14 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 	std::string threadrowodd("");
 	std::string threadroweven("");
 	std::string threadrows("");
+	std::vector<std::string> skipspace;
 	int count=0;
 	SQLite3DB::Statement newthreadpostst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblThreadPost INNER JOIN tblMessage ON tblThreadPost.MessageID=tblMessage.MessageID WHERE tblThreadPost.ThreadID=? AND tblMessage.Read=0 LIMIT 0,1;");
 	SQLite3DB::Statement replycountst=m_db->Prepare("SELECT IFNULL(COUNT(*)-1,0) FROM tblThreadPost WHERE ThreadID=?;");
 	SQLite3DB::Statement boardnamest=m_db->Prepare("SELECT tblBoard.BoardName FROM tblBoard WHERE BoardID=?;");
 	SQLite3DB::Statement threadcountst=m_db->Prepare("SELECT COUNT(*) FROM tblThread WHERE BoardID=?;");
+
+	skipspace.push_back(" ");
 
 	if(queryvars.find("boardid")!=queryvars.end())
 	{
@@ -327,7 +330,7 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 		}
 		newthreadpostst.Reset();
 
-		rowvars["THREADSUBJECT"]="<a href=\"forumviewthread.htm?viewstate="+m_viewstate.GetViewStateID()+"&threadid="+threadidstr+"&page="+pagestr+"&boardid="+boardidstr+"\">"+SanitizeOutput(firstmessagesubject)+"</a>";
+		rowvars["THREADSUBJECT"]="<a href=\"forumviewthread.htm?viewstate="+m_viewstate.GetViewStateID()+"&threadid="+threadidstr+"&page="+pagestr+"&boardid="+boardidstr+"\">"+SanitizeOutput(firstmessagesubject,skipspace)+"</a>";
 		rowvars["STARTEDBY"]="<a href=\"peerdetails.htm?identityid="+firstmessageidentityidstr+"\">"+FixAuthorName(firstmessagefromname)+"</a>";
 		
 		replycountst.Bind(0,threadidstr);

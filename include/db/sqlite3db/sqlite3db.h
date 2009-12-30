@@ -29,7 +29,7 @@ public:
 	const int GetLastResult() { return m_lastresult; }	// gets result of last action taken - standard sqlite3 return codes
 	const int GetLastError(std::string &errormessage);	// gets last error of this database
 	
-	const bool IsOpen();
+	const bool IsOpen() const;
 	
 	const bool Execute(const std::string &sql);	// executes a statement returing true if successful
 	const bool ExecuteInsert(const std::string &sql, long &insertid);	// call when inserting data and the insertid of the row inserted is needed, otherwise Execute can be called if the row id is not needed

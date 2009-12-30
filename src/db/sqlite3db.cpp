@@ -131,7 +131,7 @@ void DB::Initialize()
 	m_lastresult=SQLITE_OK;
 }
 
-const bool DB::IsOpen()
+const bool DB::IsOpen() const
 {
 	return m_db ? true : false;
 }

@@ -5,13 +5,34 @@
 
 #include <Poco/Thread.h>
 
-class CancelableThread:public Poco::Thread
+/*
+	Poco::Thread does not have a virtual destructor, so we can't inherit safely.
+*/
+class CancelableThread
 {
 public:
-	CancelableThread():m_runnable(0)										{}
-	CancelableThread(CancelableRunnable *runnable):m_runnable(runnable)	{ start(*runnable); }
+	CancelableThread():m_runnable(0),m_thread(new Poco::Thread),m_wasjoined(false)			{}
+	CancelableThread(CancelableRunnable *runnable):m_runnable(runnable),m_thread(new Poco::Thread),m_wasjoined(false)	{ if(m_thread && m_runnable) { m_thread->start(*runnable); } }
 	~CancelableThread()
 	{
+		if(m_thread)
+		{
+			if(m_thread->isRunning() && IsCancelled()==false)
+			{
+				Cancel();
+			}
+			if(m_wasjoined==false)
+			{
+				try
+				{
+					m_thread->tryJoin(5000);
+				}
+				catch(...)
+				{
+				}
+			}
+			delete m_thread;
+		}
 		if(m_runnable)
 		{
 			delete m_runnable;
@@ -19,14 +40,20 @@ public:
 	}
 
 	// CancelableThread takes ownership of runnable and will destroy it in the destructor
-	void Start(CancelableRunnable *runnable)	{ m_runnable=runnable; start(*runnable); }
+	void Start(CancelableRunnable *runnable)	{ m_runnable=runnable; m_thread->start(*runnable); }
 
 	void Cancel()				{ if(m_runnable) { m_runnable->Cancel(); } }
 	const bool IsCancelled()	{ return m_runnable ? m_runnable->IsCancelled() : false; }
 
+	// these methods implemented from Poco::Thread
+	void join()					{ if(m_thread) { m_thread->join(); m_wasjoined=true; } }
+	bool isRunning() const		{ if(m_thread) { return m_thread->isRunning(); } else { return false; } }
+
 private:
 
+	Poco::Thread *m_thread;
 	CancelableRunnable *m_runnable;
+	bool m_wasjoined;				// We must call join on ALL Poco threads, running or not, before deletion.  Otherwise there is a potential TLS leak in POSIX Thread implementation.
 
 };
 

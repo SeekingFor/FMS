@@ -410,6 +410,7 @@ const bool NNTPConnection::HandleGroupCommand(const NNTPCommand &command)
 		Board board(m_db);
 		if(board.Load(command.m_arguments[0])==true)
 		{
+			board.SetSaveReceivedMessages(true);
 			std::ostringstream tempstr;
 
 			tempstr << "211 " << board.GetMessageCount() << " " << board.GetLowNNTPMessageID() << " " << board.GetHighNNTPMessageID() << " " << board.GetBoardName();
@@ -545,7 +546,7 @@ const bool NNTPConnection::HandleListCommand(const NNTPCommand &command)
 				show=uwildmat((*i).GetBoardName().c_str(),arg2.c_str());
 			}
 
-			if(show==true && (*i).GetSaveReceivedMessages()==true)
+			if(show==true && ((*i).GetSaveReceivedMessages()==true || m_allgroups==true))
 			{
 				tempstr << (*i).GetBoardName() << " " << (*i).GetHighNNTPMessageID() << " " << (*i).GetLowNNTPMessageID() << " " << (m_status.m_allowpost ? "y" : "n");
 				SendBufferedLine(tempstr.str());
@@ -576,7 +577,7 @@ const bool NNTPConnection::HandleListCommand(const NNTPCommand &command)
 				show=uwildmat((*i).GetBoardName().c_str(),arg2.c_str());
 			}
 
-			if(show==true && (*i).GetSaveReceivedMessages()==true)
+			if(show==true && ((*i).GetSaveReceivedMessages()==true || m_allgroups==true))
 			{
 				tempstr << (*i).GetBoardName() << "\t" << (*i).GetBoardDescription();
 				SendBufferedLine(tempstr.str());
@@ -665,7 +666,7 @@ const bool NNTPConnection::HandleListGroupCommand(const NNTPCommand &command)
 
 	if(validgroup)
 	{
-
+		board.SetSaveReceivedMessages(true);
 		// set boardid and messageid
 		m_status.m_boardid=board.GetBoardID();
 		board.GetLowNNTPMessageID()!=0 ? m_status.m_nntpmessageid=board.GetLowNNTPMessageID() : m_status.m_nntpmessageid=-1;
@@ -796,7 +797,7 @@ const bool NNTPConnection::HandleNewGroupsCommand(const NNTPCommand &command)
 
 		for(BoardList::iterator i=bl.begin(); i!=bl.end(); i++)
 		{
-			if((*i).GetSaveReceivedMessages()==true)
+			if(((*i).GetSaveReceivedMessages()==true || m_allgroups==true))
 			{
 				std::ostringstream tempstr;
 				tempstr << (*i).GetBoardName() << " " << (*i).GetHighNNTPMessageID() << " " << (*i).GetLowNNTPMessageID() << " " << m_status.m_allowpost ? "y" : "n";
@@ -1282,8 +1283,10 @@ void NNTPConnection::run()
 
 	LoadDatabase();
 
-	m_status.m_authuser.SetDB(m_db);
 	Option option(m_db);
+	option.GetBool("NNTPAllGroups",m_allgroups);
+
+	m_status.m_authuser.SetDB(m_db);
 	option.Get("NNTPAllowPost",tempval);
 	if(tempval=="true")
 	{

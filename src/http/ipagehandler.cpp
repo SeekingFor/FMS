@@ -10,10 +10,37 @@
 #include <Poco/Timespan.h>
 
 #include <cstring>
+#include <algorithm>
 
 #ifdef XMEM
 	#include <xmem.h>
 #endif
+
+IPageHandler::IPageHandler(SQLite3DB::DB *db):IDatabase(db)
+{
+	m_trans=Translation.get();
+
+	// must do & first because all other elements have & in them!
+	m_htmlencode.push_back(std::pair<std::string,std::string>("&","&amp;"));
+	m_htmlencode.push_back(std::pair<std::string,std::string>("<","&lt;"));
+	m_htmlencode.push_back(std::pair<std::string,std::string>(">","&gt;"));
+	m_htmlencode.push_back(std::pair<std::string,std::string>("\"","&quot;"));
+	m_htmlencode.push_back(std::pair<std::string,std::string>(" ","&nbsp;"));
+
+}
+
+IPageHandler::IPageHandler(SQLite3DB::DB *db, const std::string &templatestr, const std::string &pagename):IDatabase(db),m_template(templatestr),m_pagename(pagename)	
+{
+	m_trans=Translation.get();
+
+	// must do & first because all other elements have & in them!
+	m_htmlencode.push_back(std::pair<std::string,std::string>("&","&amp;"));
+	m_htmlencode.push_back(std::pair<std::string,std::string>("<","&lt;"));
+	m_htmlencode.push_back(std::pair<std::string,std::string>(">","&gt;"));
+	m_htmlencode.push_back(std::pair<std::string,std::string>("\"","&quot;"));
+	m_htmlencode.push_back(std::pair<std::string,std::string>(" ","&nbsp;"));
+
+}
 
 void IPageHandler::CreateArgArray(const std::map<std::string,std::string> &vars, const std::string &basename, std::vector<std::string> &args)
 {
@@ -190,25 +217,27 @@ void IPageHandler::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 
 }
 
-const std::string IPageHandler::SanitizeOutput(const std::string &input)
+const std::string IPageHandler::SanitizeOutput(const std::string &input, const std::vector<std::string> &skipelements)
 {
-	// must do & first because all other elements have & in them!
-	std::string output=StringFunctions::Replace(input,"&","&amp;");
-	output=StringFunctions::Replace(output,"<","&lt;");
-	output=StringFunctions::Replace(output,">","&gt;");
-	output=StringFunctions::Replace(output,"\"","&quot;");
-	output=StringFunctions::Replace(output," ","&nbsp;");
+	std::string output(input);
+	
+	for(std::vector<std::pair<std::string,std::string> >::const_iterator i=m_htmlencode.begin(); i!=m_htmlencode.end(); i++)
+	{
+		if(std::find(skipelements.begin(),skipelements.end(),(*i).first)==skipelements.end())
+		{
+			output=StringFunctions::Replace(output,(*i).first,(*i).second);
+		}
+	}
+
 	return output;
 }
 
 const std::string IPageHandler::SanitizeTextAreaOutput(const std::string &input)
 {
-	// must do & first because all other elements have & in them!
-	std::string output=StringFunctions::Replace(input,"&","&amp;");
-	output=StringFunctions::Replace(output,"<","&lt;");
-	output=StringFunctions::Replace(output,">","&gt;");
-	output=StringFunctions::Replace(output,"\"","&quot;");
-	return output;
+	std::vector<std::string> skip;
+	skip.push_back(" ");
+
+	return SanitizeOutput(input,skip);
 }
 
 const bool IPageHandler::ValidateFormPassword(const std::map<std::string,std::string> &vars)

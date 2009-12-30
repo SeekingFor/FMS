@@ -236,9 +236,12 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	std::string threadpostattachment("");
 	std::string postattachments("");
 	std::string trusttable("");
+	std::vector<std::string> skipspace;
 	SQLite3DB::Statement fileattachmentst=m_db->Prepare("SELECT Key, Size FROM tblMessageFileAttachment WHERE MessageID=?;");
 	SQLite3DB::Statement truststpeeronly=m_db->Prepare("SELECT PeerMessageTrust, PeerTrustListTrust FROM tblIdentity WHERE IdentityID=?;");
 	SQLite3DB::Statement truststboth=m_db->Prepare("SELECT tblIdentityTrust.LocalMessageTrust, tblIdentity.PeerMessageTrust, tblIdentityTrust.LocalTrustListTrust, tblIdentity.PeerTrustListTrust FROM tblIdentity LEFT JOIN tblIdentityTrust ON tblIdentity.IdentityID=tblIdentityTrust.IdentityID WHERE tblIdentity.IdentityID=? AND tblIdentityTrust.LocalIdentityID=?;");
+
+	skipspace.push_back(" ");
 
 	if(queryvars.find("threadid")!=queryvars.end())
 	{
@@ -423,7 +426,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 
 		if(postcount==0)
 		{
-			breadcrumblinks.push_back(std::pair<std::string,std::string>(m_pagename+"?viewstate="+m_viewstate.GetViewStateID()+"&threadid="+threadidstr+"&boardid="+boardidstr+"&page="+pagestr,SanitizeOutput(subject)));
+			breadcrumblinks.push_back(std::pair<std::string,std::string>(m_pagename+"?viewstate="+m_viewstate.GetViewStateID()+"&threadid="+threadidstr+"&boardid="+boardidstr+"&page="+pagestr,SanitizeOutput(subject,skipspace)));
 		}
 
 		postvars["THREADPOSTANCHOR"]="<a name=\""+messageidstr+"\"></a>";
@@ -526,7 +529,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		{
 			postvars["THREADPOSTAUTHORNAME"]=FixAuthorName(fromname);
 		}
-		postvars["THREADPOSTTITLE"]=SanitizeOutput(subject);
+		postvars["THREADPOSTTITLE"]=SanitizeOutput(subject,skipspace);
 		postvars["THREADPOSTDATE"]=datetime;
 		postvars["THREADPOSTREPLYLINK"]="<a href=\"forumcreatepost.htm?viewstate="+m_viewstate.GetViewStateID()+"&replytomessageid="+messageidstr+"&threadid="+threadidstr+"&boardid="+boardidstr+"&page="+pagestr+"\"><img src=\"images/mail_reply.png\" border=\"0\" style=\"vertical-align:bottom;\">"+m_trans->Get("web.page.forumviewthread.reply")+"</a>";
 
