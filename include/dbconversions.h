@@ -23,8 +23,8 @@ void ConvertDB0117To0118(SQLite3DB::DB *db);
 void ConvertDB0118To0119(SQLite3DB::DB *db);
 void ConvertDB0119To0120(SQLite3DB::DB *db);
 void ConvertDB0120To0121(SQLite3DB::DB *db);
+void ConvertDB0121To0122(SQLite3DB::DB *db);
 
-// TODO remove sometime after 0.1.17
-void FixCapitalBoardNames(SQLite3DB::DB *db);
+void FixBoardNames(SQLite3DB::DB *db);
 
 #endif	// _dbconversions_

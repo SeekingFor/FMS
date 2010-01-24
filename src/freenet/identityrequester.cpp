@@ -1,5 +1,6 @@
 #include "../../include/freenet/identityrequester.h"
 #include "../../include/freenet/identityxml.h"
+#include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/option.h"
 #include "../../include/unicode/unicodestring.h"
@@ -189,15 +190,10 @@ void IdentityRequester::StartRequest(const std::pair<long,long> &inputpair)
 	std::string indexstr;
 	std::string identityidstr;
 	std::string identityorderstr;
+	IdentityPublicKeyCache pkcache(m_db);
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
-	st.Bind(0,identityid);
-	st.Step();
-
-	if(st.RowReturned())
+	if(pkcache.PublicKey(identityid,publickey))
 	{
-		st.ResultText(0,publickey);
-
 		now=Poco::Timestamp();
 
 		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblIdentityRequests WHERE Day=? AND IdentityID=?;");
@@ -231,7 +227,6 @@ void IdentityRequester::StartRequest(const std::pair<long,long> &inputpair)
 
 		m_requesting.push_back(inputpair);
 	}
-	st.Finalize();
 
 	m_ids[inputpair]=true;
 

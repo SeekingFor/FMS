@@ -1,5 +1,6 @@
 #include "../../include/freenet/introductionpuzzlerequester.h"
 #include "../../include/freenet/introductionpuzzlexml.h"
+#include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/option.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/bitmapvalidator.h"
@@ -46,6 +47,7 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPv2::Message &message)
 	long identityid;
 	long index;
 	bool validmessage=true;
+	IdentityPublicKeyCache pkcache(m_db);
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -69,17 +71,12 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPv2::Message &message)
 	{
 
 		// check if last part of UUID matches first part of public key of identity who inserted it
-		st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
-		st.Bind(0,identityid);
-		st.Step();
-		if(st.RowReturned())
+		std::string publickey("");
+		if(pkcache.PublicKey(identityid,publickey))
 		{
 			std::vector<std::string> uuidparts;
 			std::vector<std::string> keyparts;
 			std::string keypart="";
-			std::string publickey="";
-
-			st.ResultText(0,publickey);
 
 			StringFunctions::SplitMultiple(publickey,"@,",keyparts);
 			StringFunctions::SplitMultiple(xml.GetUUID(),"@",uuidparts);
@@ -216,6 +213,8 @@ void IntroductionPuzzleRequester::PopulateIDList()
 	int id;
 	std::string limitnum="30";
 
+	m_db->Execute("BEGIN;");
+
 	// if we don't have an identity that we haven't seen yet, then set limit to 5
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblLocalIdentity.LocalIdentityID FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey WHERE tblIdentity.IdentityID IS NULL;");
 	st.Step();
@@ -237,6 +236,8 @@ void IntroductionPuzzleRequester::PopulateIDList()
 		m_ids[id]=false;
 		st.Step();
 	}
+
+	m_db->Execute("COMMIT;");
 }
 
 void IntroductionPuzzleRequester::StartRequest(const long &identityid)
@@ -247,14 +248,10 @@ void IntroductionPuzzleRequester::StartRequest(const long &identityid)
 	int index;
 	std::string indexstr;
 	std::string identityidstr;
+	IdentityPublicKeyCache pkcache(m_db);
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
-	st.Bind(0,identityid);
-	st.Step();
-
-	if(st.RowReturned())
+	if(pkcache.PublicKey(identityid,publickey))
 	{
-		st.ResultText(0,publickey);
 
 		now=Poco::Timestamp();
 

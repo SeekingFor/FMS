@@ -105,7 +105,7 @@ void ShowFilePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 
 const bool ShowFilePage::WillHandleURI(const std::string &uri)
 {
-	if(uri.find("showfile.htm")!=std::string::npos || (uri.size()>1 && uri[0]=='/' && m_filewhitelist.find(uri.substr(1))!=m_filewhitelist.end()))
+	if(uri.find("showfile.htm")!=std::string::npos || (m_filewhitelist.find(uri)!=m_filewhitelist.end()) || (uri.size()>1 && uri[0]=='/' && m_filewhitelist.find(uri.substr(1))!=m_filewhitelist.end()))
 	{
 		return true;
 	}

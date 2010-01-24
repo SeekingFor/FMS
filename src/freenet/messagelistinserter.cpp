@@ -50,7 +50,7 @@ void MessageListInserter::CheckForNeededInsert()
 		// query for identities that have messages in the past X days and (we haven't inserted lists for in the past 30 minutes OR identity has a record in tmpMessageListInsert)
 		sql="SELECT tblLocalIdentity.LocalIdentityID ";
 		sql+="FROM tblLocalIdentity INNER JOIN tblMessageInserts ON tblLocalIdentity.LocalIdentityID=tblMessageInserts.LocalIdentityID ";
-		sql+="WHERE tblMessageInserts.Day>=? AND ((tblLocalIdentity.LastInsertedMessageList<=? OR tblLocalIdentity.LastInsertedMessageList IS NULL OR tblLocalIdentity.LastInsertedMessageList='') OR tblLocalIdentity.LocalIdentityID IN (SELECT LocalIdentityID FROM tmpMessageListInsert)) AND tblLocalIdentity.PrivateKey IS NOT NULL AND tblLocalIdentity.PrivateKey <> '' ";
+		sql+="WHERE tblLocalIdentity.Active='true' AND tblMessageInserts.Day>=? AND ((tblLocalIdentity.LastInsertedMessageList<=? OR tblLocalIdentity.LastInsertedMessageList IS NULL OR tblLocalIdentity.LastInsertedMessageList='') OR tblLocalIdentity.LocalIdentityID IN (SELECT LocalIdentityID FROM tmpMessageListInsert)) AND tblLocalIdentity.PrivateKey IS NOT NULL AND tblLocalIdentity.PrivateKey <> '' ";
 		sql+="GROUP BY tblLocalIdentity.LocalIdentityID ";
 		sql+="ORDER BY tblLocalIdentity.LastInsertedMessageList;";
 
@@ -178,6 +178,8 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	date-=Poco::Timespan(m_daysbackward,0,0,0,0);
 	StringFunctions::Convert(localidentityid,localidentityidstr);
 
+	m_db->Execute("BEGIN;");
+
 	SQLite3DB::Statement st=m_db->Prepare("SELECT Day, InsertIndex, MessageXML, PrivateKey FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE tblLocalIdentity.LocalIdentityID=? AND Day>=? AND tblMessageInserts.MessageUUID IS NOT NULL;");
 	st.Bind(0,localidentityid);
 	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
@@ -202,6 +204,9 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		st.Step();
 	}
 	st.Finalize();
+
+	m_db->Execute("COMMIT;");
+	m_db->Execute("BEGIN;");
 
 	// Add any other messages from this local identity that were inserted by another client
 	st=m_db->Prepare("SELECT MessageID, InsertDate, MessageIndex \
@@ -247,6 +252,8 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	}
 	st.Finalize();
 
+	m_db->Execute("COMMIT;");
+	m_db->Execute("BEGIN;");
 
 	st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID, InsertDate FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL ORDER BY MessageDate DESC, MessageTime DESC LIMIT 175;");
 	st.Step();
@@ -303,6 +310,8 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		index++;
 	}
 	StringFunctions::Convert(index,indexstr);
+
+	m_db->Execute("COMMIT;");
 
 	xmlstr=mlxml.GetXML();
 

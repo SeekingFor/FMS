@@ -28,7 +28,7 @@ void SiteInserter::CheckForNeededInsert()
 		Poco::DateTime date;
 		date.assign(date.year(),date.month(),date.day(),0,0,0);
 
-		SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE PublishFreesite='true' AND (LastInsertedFreesite IS NULL OR LastInsertedFreesite<?);");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE tblLocalIdentity.Active='true' AND PublishFreesite='true' AND (LastInsertedFreesite IS NULL OR LastInsertedFreesite<?);");
 		st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 
 		st.Step();

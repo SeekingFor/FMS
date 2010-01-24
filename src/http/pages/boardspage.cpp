@@ -1,5 +1,6 @@
 #include "../../../include/http/pages/boardspage.h"
 #include "../../../include/stringfunctions.h"
+#include "../../../include/board.h"
 
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
@@ -53,7 +54,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 			std::string boarddescription="";
 
 			boardname=(*queryvars.find("boardname")).second;
-			StringFunctions::LowerCase(boardname,boardname);
+			boardname=Board::FixBoardName(boardname);
 			boarddescription=(*queryvars.find("boarddescription")).second;
 
 			if(boardname!="")

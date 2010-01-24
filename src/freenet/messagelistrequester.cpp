@@ -1,5 +1,6 @@
 #include "../../include/freenet/messagelistrequester.h"
 #include "../../include/freenet/messagelistxml.h"
+#include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/unicode/unicodestring.h"
 #include "../../include/global.h"
 
@@ -457,6 +458,8 @@ void MessageListRequester::PopulateIDList()
 	Poco::DateTime yesterday=date-Poco::Timespan(1,0,0,0,0);
 	int id;
 
+	m_ids.clear();
+
 	SQLite3DB::Statement st;
 
 	// select identities we want to query (we've seen them today) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
@@ -468,9 +471,10 @@ void MessageListRequester::PopulateIDList()
 	{
 		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity INNER JOIN vwIdentityStats ON tblIdentity.IdentityID=vwIdentityStats.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (vwIdentityStats.LastMessageDate>='"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) AND FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	}
-	st.Step();
 
-	m_ids.clear();
+	m_db->Execute("BEGIN;");
+
+	st.Step();
 
 	while(st.RowReturned())
 	{
@@ -478,6 +482,8 @@ void MessageListRequester::PopulateIDList()
 		m_ids[id]=false;
 		st.Step();
 	}
+
+	m_db->Execute("COMMIT;");
 }
 
 void MessageListRequester::StartRedirectRequest(FCPv2::Message &message)
@@ -526,14 +532,10 @@ void MessageListRequester::StartRequest(const long &id)
 	int index=0;
 	std::string indexstr;
 	std::string identityidstr;
+	IdentityPublicKeyCache pkcache(m_db);
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
-	st.Bind(0,id);
-	st.Step();
-
-	if(st.RowReturned())
+	if(pkcache.PublicKey(id,publickey))
 	{
-		st.ResultText(0,publickey);
 
 		now=Poco::Timestamp();
 
@@ -569,7 +571,6 @@ void MessageListRequester::StartRequest(const long &id)
 
 		m_requesting.push_back(id);
 	}
-	st.Finalize();
 
 	m_ids[id]=true;
 }

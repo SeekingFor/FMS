@@ -31,7 +31,7 @@ void TrustListInserter::CheckForNeededInsert()
 	{
 		date.assign(date.year(),date.month(),currentday,0,0,0);
 	}
-	SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID, PrivateKey FROM tblLocalIdentity WHERE PrivateKey IS NOT NULL AND PrivateKey <> '' AND PublishTrustList='true' AND InsertingTrustList='false' AND (LastInsertedTrustList<='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"' OR LastInsertedTrustList IS NULL);");
+	SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID, PrivateKey FROM tblLocalIdentity WHERE tblLocalIdentity.Active='true' AND PrivateKey IS NOT NULL AND PrivateKey <> '' AND PublishTrustList='true' AND InsertingTrustList='false' AND (LastInsertedTrustList<='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"' OR LastInsertedTrustList IS NULL);");
 
 	if(rs.Empty()==false)
 	{
@@ -162,6 +162,9 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 
 	// build the xml file - we only want to add identities that we recently saw, otherwise we could be inserting a ton of identities
 	date-=Poco::Timespan(15,0,0,0,0);	// identities seen in last 15 days - the maintenance page lets us delete identities not seen in 20 days, so this gives us a window where the identity won't be deleted and then found in a trust list and readded immediately
+	
+	m_db->Execute("BEGIN;");
+	
 	//SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey, LocalMessageTrust, LocalTrustListTrust, MessageTrustComment, TrustListTrustComment FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND LastSeen>=?;");
 	// we want to order by public key so we can't do identity correllation based on the sequence of identities in the list.
 	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey, tblIdentityTrust.LocalMessageTrust, tblIdentityTrust.LocalTrustListTrust, tblIdentityTrust.MessageTrustComment, tblIdentityTrust.TrustListTrustComment, tblIdentity.IdentityID, tblIdentity.DateAdded FROM tblIdentity INNER JOIN tblIdentityTrust ON tblIdentity.IdentityID=tblIdentityTrust.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND LastSeen>=? AND tblIdentityTrust.LocalIdentityID=? ORDER BY PublicKey;");
@@ -238,6 +241,8 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 
 		st.Step();
 	}
+
+	m_db->Execute("COMMIT;");
 
 	// get next insert index
 	st=m_db->Prepare("SELECT MAX(InsertIndex) FROM tblTrustListInserts WHERE LocalIdentityID=? AND Day=?;");

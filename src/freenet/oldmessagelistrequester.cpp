@@ -1,4 +1,6 @@
 #include "../../include/freenet/oldmessagelistrequester.h"
+#include "../../include/freenet/identitypublickeycache.h"
+#include "../../include/stringfunctions.h"
 
 OldMessageListRequester::OldMessageListRequester(SQLite3DB::DB *db):IMessageListRequester<std::string>(db)
 {
@@ -74,6 +76,8 @@ void OldMessageListRequester::PopulateIDList()
 						AND FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount');");
 	}
 
+	m_db->Execute("BEGIN;");
+
 	for(long i=1; i<m_messagedownloadmaxdaysbackward; i++)
 	{
 		date=Poco::DateTime();
@@ -99,6 +103,8 @@ void OldMessageListRequester::PopulateIDList()
 
 	}
 
+	m_db->Execute("COMMIT;");
+
 }
 
 void OldMessageListRequester::StartRequest(const std::string &id)
@@ -109,19 +115,17 @@ void OldMessageListRequester::StartRequest(const std::string &id)
 	std::string day("");
 	std::string identityidstr("");
 	std::string indexstr("");
+	IdentityPublicKeyCache pkcache(m_db);
+	long identityid=0;
 
 	StringFunctions::Split(id,"|",idparts);
-
-	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
 	if(idparts.size()==3)
 	{
-		st.Bind(0,idparts[1]);
+		StringFunctions::Convert(idparts[1],identityid);
 	}
-	st.Step();
 
-	if(st.RowReturned() && idparts.size()==3)
+	if(pkcache.PublicKey(identityid,publickey) && idparts.size()==3)
 	{
-		st.ResultText(0,publickey);
 
 		day=idparts[0];
 		identityidstr=idparts[1];
@@ -138,7 +142,6 @@ void OldMessageListRequester::StartRequest(const std::string &id)
 
 		m_requesting.push_back(id);
 	}
-	st.Finalize();
 
 	m_ids[id]=true;
 

@@ -2,6 +2,7 @@
 #include "../../include/option.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/freenet/trustlistxml.h"
+#include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/unicode/unicodestring.h"
 #include "../../include/global.h"
 
@@ -47,6 +48,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 	int insertcount=0;
 	int dayinsertcount=0;
 	int previnsertcount=0;
+	bool savenewidentities=false;
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -64,6 +66,20 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 
 	// receive the file
 	m_fcp->Receive(data,datalength);
+
+	// see if we will save new identities found on the trust list
+	st=m_db->Prepare("SELECT IFNULL(LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust'),0) FROM tblIdentity WHERE IdentityID=?;");
+	st.Bind(0,identityid);
+	st.Step();
+	if(st.RowReturned())
+	{
+		int result=0;
+		st.ResultInt(0,result);
+		if(result==1)
+		{
+			savenewidentities=true;
+		}
+	}
 
 	// get count of identities added in last 24 hours
 	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE DateAdded>=?;");
@@ -148,19 +164,22 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 			st.Step();
 			if(st.RowReturned()==false)
 			{
-				// allow up to 10 new identities per downloaded trust list, where total inserted in the last 24 hours may not exceed 1/10 the total number of identities we know about or 500 (whichever is smaller, minimum 10)
-				// 24 hour limit is lifted if the database didn't contain any identities inserted more than 24 hours ago (new db) - 100 new identities per trust list allowed in this case
-				if((insertcount<100 && previnsertcount==0) || (insertcount<10 && dayinsertcount<((std::min)(((std::max)(previnsertcount/10,10)),500))))
+				if(savenewidentities==true)
 				{
-					idinsert.Bind(0,identity);
-					idinsert.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
-					idinsert.Bind(2,"trust list of "+publisherid);
-					idinsert.Step(true);
-					id=idinsert.GetLastInsertRowID();
-					idinsert.Reset();
+					// allow up to 10 new identities per downloaded trust list, where total inserted in the last 24 hours may not exceed 1/10 the total number of identities we know about or 500 (whichever is smaller, minimum 10)
+					// 24 hour limit is lifted if the database didn't contain any identities inserted more than 24 hours ago (new db) - 100 new identities per trust list allowed in this case
+					if((insertcount<100 && previnsertcount==0) || (insertcount<10 && dayinsertcount<((std::min)(((std::max)(previnsertcount/10,10)),500))))
+					{
+						idinsert.Bind(0,identity);
+						idinsert.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
+						idinsert.Bind(2,"trust list of "+publisherid);
+						idinsert.Step(true);
+						id=idinsert.GetLastInsertRowID();
+						idinsert.Reset();
+					}
+					insertcount++;
+					dayinsertcount++;
 				}
-				insertcount++;
-				dayinsertcount++;
 			}
 			else
 			{
@@ -301,16 +320,31 @@ void TrustListRequester::PopulateIDList()
 	Poco::DateTime date;
 	int id;
 	std::string sql;
+	bool getnull=false;
+	Option opt(m_db);
+
+	opt.GetBool("DownloadTrustListWhenNull",getnull);
 
 	// select identities we want to query (we've seen them today and they are publishing trust list) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
-	sql="SELECT IdentityID FROM tblIdentity ";
-	sql+="WHERE Name IS NOT NULL AND Name <> '' AND PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND PublishTrustList='true' AND LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust') AND ( PeerTrustListTrust IS NULL OR PeerTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerTrustListTrust') ) AND tblIdentity.FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount')";
-	sql+="ORDER BY LocalTrustListTrust DESC, LastSeen;";
+	if(getnull==false)
+	{
+		sql="SELECT IdentityID FROM tblIdentity ";
+		sql+="WHERE Name IS NOT NULL AND Name <> '' AND PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND PublishTrustList='true' AND LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust') AND ( PeerTrustListTrust IS NULL OR PeerTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerTrustListTrust') ) AND tblIdentity.FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount')";
+		sql+="ORDER BY LocalTrustListTrust DESC, LastSeen;";
+	}
+	else
+	{
+		sql="SELECT IdentityID FROM tblIdentity ";
+		sql+="WHERE Name IS NOT NULL AND Name <> '' AND PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND PublishTrustList='true' AND (LocalTrustListTrust IS NULL OR LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust')) AND ( PeerTrustListTrust IS NULL OR PeerTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerTrustListTrust') ) AND tblIdentity.FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount')";
+		sql+="ORDER BY LocalTrustListTrust DESC, LastSeen;";
+	}
 
 	SQLite3DB::Statement st=m_db->Prepare(sql);
 	st.Step();
 
 	m_ids.clear();
+
+	m_db->Execute("BEGIN;");
 
 	while(st.RowReturned())
 	{
@@ -318,6 +352,8 @@ void TrustListRequester::PopulateIDList()
 		m_ids[id]=false;
 		st.Step();
 	}
+
+	m_db->Execute("COMMIT;");
 }
 
 void TrustListRequester::StartRequest(const long &identityid)
@@ -328,14 +364,10 @@ void TrustListRequester::StartRequest(const long &identityid)
 	int index;
 	std::string indexstr;
 	std::string identityidstr;
+	IdentityPublicKeyCache pkcache(m_db);
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
-	st.Bind(0,identityid);
-	st.Step();
-
-	if(st.RowReturned())
+	if(pkcache.PublicKey(identityid,publickey))
 	{
-		st.ResultText(0,publickey);
 
 		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblTrustListRequests WHERE Day=? AND IdentityID=?;");
 		st2.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
@@ -367,7 +399,6 @@ void TrustListRequester::StartRequest(const long &identityid)
 
 		m_requesting.push_back(identityid);
 	}
-	st.Finalize();
 
 	m_ids[identityid]=true;
 

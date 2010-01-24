@@ -341,57 +341,42 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	// remove identityid from messages where the identity has been deleted
 	m_db->Execute("UPDATE tblMessage SET IdentityID=NULL WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity);");
 
+	m_db->Execute("COMMIT;");
+
 	// try to re-attach messages from identities that were previously deleted, but have been since re-added
+	m_db->Execute("BEGIN;");
 	// first get the names from messages that have a NULL IdentityID
 	SQLite3DB::Statement st=m_db->Prepare("SELECT FromName FROM tblMessage WHERE IdentityID IS NULL GROUP BY FromName;");
-	SQLite3DB::Statement findst=m_db->Prepare("SELECT IdentityID,PublicKey FROM tblIdentity WHERE Name=?;");
+	//SQLite3DB::Statement findst=m_db->Prepare("SELECT IdentityID,PublicKey FROM tblIdentity WHERE Name=?;");
+	SQLite3DB::Statement findst=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE Name || REPLACE(REPLACE(SUBSTR(tblIdentity.PublicKey,4,44),'~',''),'-','')=?;");
 	st.Step();
 	while(st.RowReturned())
 	{
 		std::string name="";
-		std::string namepart="";
-		std::string publickey="";
 		int identityid=0;
+
 		st.ResultText(0,name);
 
-		std::vector<std::string> parts;
-		StringFunctions::Split(name,"@",parts);
-
-		// name can have a @ in it - so reattach all parts except the last which is the key
-		for(long i=0; i<parts.size()-1; i++)
-		{
-			if(i!=0)
-			{
-				namepart+="@";
-			}
-			namepart+=parts[i];
-		}
-
-		// find identities with this name
-		findst.Bind(0,namepart);
+		// find identity with this name
+		findst.Bind(0,name);
 		findst.Step();
-		while(findst.RowReturned())
+		if(findst.RowReturned())
 		{
-			publickey="";
-			identityid=0;
-			findst.ResultText(1,publickey);
-			// check if public key matches 2nd part
-			if(parts.size()>1 && publickey.find(parts[1])==4)
-			{
-				// we have the identity - so update the messages table with the identityid
-				findst.ResultInt(0,identityid);
+			// we have the identity - so update the messages table with the identityid
+			findst.ResultInt(0,identityid);
 
-				SQLite3DB::Statement st3=m_db->Prepare("UPDATE tblMessage SET IdentityID=? WHERE FromName=? AND IdentityID IS NULL;");
-				st3.Bind(0,identityid);
-				st3.Bind(1,name);
-				st3.Step();
-			}
-			findst.Step();
+			SQLite3DB::Statement st3=m_db->Prepare("UPDATE tblMessage SET IdentityID=? WHERE FromName=? AND IdentityID IS NULL;");
+			st3.Bind(0,identityid);
+			st3.Bind(1,name);
+			st3.Step();
 		}
 		findst.Reset();
 
 		st.Step();
 	}
+	m_db->Execute("COMMIT;");
+
+	m_db->Execute("BEGIN;");
 
 	// delete single use identities that are older than 7 days
 	date=Poco::Timestamp();

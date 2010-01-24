@@ -1,6 +1,7 @@
 #include "../include/dbconversions.h"
 #include "../include/db/sqlite3db.h"
 #include "../include/stringfunctions.h"
+#include "../include/board.h"
 
 #include <Poco/Timestamp.h>
 #include <Poco/DateTimeFormatter.h>
@@ -18,6 +19,7 @@ void ConvertDB0100To0101(SQLite3DB::DB *db)
 				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
 				PublishTrustList		BOOL CHECK(PublishTrustList IN('true','false')) DEFAULT 'false',\
 				PublishBoardList		BOOL CHECK(PublishBoardList IN('true','false')) DEFAULT 'false',\
+				Active					BOOL CHECK(Active IN('true','false')) DEFAULT 'true',\
 				InsertingIdentity		BOOL CHECK(InsertingIdentity IN('true','false')) DEFAULT 'false',\
 				LastInsertedIdentity	DATETIME,\
 				InsertingPuzzle			BOOL CHECK(InsertingPuzzle IN('true','false')) DEFAULT 'false',\
@@ -349,7 +351,13 @@ void ConvertDB0120To0121(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=21;");
 }
 
-void FixCapitalBoardNames(SQLite3DB::DB *db)
+void ConvertDB0121To0122(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN Active BOOL CHECK(Active IN('true','false')) DEFAULT 'true';");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=22;");
+}
+
+void FixBoardNames(SQLite3DB::DB *db)
 {
 
 	SQLite3DB::Statement st=db->Prepare("SELECT BoardID,BoardName FROM tblBoard WHERE BoardID NOT IN (SELECT BoardID FROM tblAdministrationBoard);");
@@ -359,23 +367,24 @@ void FixCapitalBoardNames(SQLite3DB::DB *db)
 	SQLite3DB::Statement upd2=db->Prepare("UPDATE tblMessage SET ReplyBoardID=? WHERE ReplyBoardID=?;");
 	SQLite3DB::Statement upd3=db->Prepare("UPDATE tblMessageBoard SET BoardID=? WHERE BoardID=?;");
 
+	db->Execute("BEGIN;");
+
 	st.Step();
 	while(st.RowReturned())
 	{
 		int boardid=0;
 		int newboardid=0;
 		std::string name="";
-		std::string lowername="";
+		std::string newname="";
 
 		st.ResultInt(0,boardid);
 		st.ResultText(1,name);
 
-		lowername=name;
-		StringFunctions::LowerCase(lowername,lowername);
+		newname=Board::FixBoardName(name);
        
-		if(name!=lowername)
+		if(name!=newname)
 		{
-			st2.Bind(0,lowername);
+			st2.Bind(0,newname);
 			st2.Step();
 
 			if(st2.RowReturned())
@@ -398,7 +407,7 @@ void FixCapitalBoardNames(SQLite3DB::DB *db)
 			}
 			else
 			{
-				upd.Bind(0,lowername);
+				upd.Bind(0,newname);
 				upd.Bind(1,boardid);
 				upd.Step();
 				upd.Reset();
@@ -409,5 +418,7 @@ void FixCapitalBoardNames(SQLite3DB::DB *db)
        
 		st.Step();
 	}
+
+	db->Execute("COMMIT;");
 
 }

@@ -31,7 +31,7 @@ void BoardListInserter::CheckForNeededInsert()
 		daysback-=Poco::Timespan(20,0,0,0,0);
 
 		// get identities who posted messages to boards in the past 20 days
-		SQLite3DB::Statement st=m_db->Prepare("SELECT tblLocalIdentity.LocalIdentityID FROM tblLocalIdentity INNER JOIN tblMessageInserts ON tblLocalIdentity.LocalIdentityID=tblMessageInserts.LocalIdentityID WHERE tblLocalIdentity.PublishBoardList='true' AND (tblLocalIdentity.LastInsertedBoardList<? OR tblLocalIdentity.LastInsertedBoardList IS NULL) AND tblMessageInserts.Day>=? GROUP BY tblLocalIdentity.LocalIdentityID;");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT tblLocalIdentity.LocalIdentityID FROM tblLocalIdentity INNER JOIN tblMessageInserts ON tblLocalIdentity.LocalIdentityID=tblMessageInserts.LocalIdentityID WHERE tblLocalIdentity.Active='true' AND tblLocalIdentity.PublishBoardList='true' AND (tblLocalIdentity.LastInsertedBoardList<? OR tblLocalIdentity.LastInsertedBoardList IS NULL) AND tblMessageInserts.Day>=? GROUP BY tblLocalIdentity.LocalIdentityID;");
 		st.Bind(0,Poco::DateTimeFormatter::format(today,"%Y-%m-%d"));
 		st.Bind(1,Poco::DateTimeFormatter::format(daysback,"%Y-%m-%d"));
 		st.Step();

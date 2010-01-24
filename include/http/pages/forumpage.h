@@ -188,7 +188,7 @@ protected:
 	{
 		std::string result("<select name=\""+name+"\">");
 		bool found=false;
-		SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID, Name, PublicKey FROM tblLocalIdentity WHERE PublicKey IS NOT NULL AND PrivateKey IS NOT NULL ORDER BY Name COLLATE NOCASE;");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID, Name, PublicKey FROM tblLocalIdentity WHERE PublicKey IS NOT NULL AND PrivateKey IS NOT NULL AND Active='true' ORDER BY Name COLLATE NOCASE;");
 		st.Step();
 		while(st.RowReturned())
 		{

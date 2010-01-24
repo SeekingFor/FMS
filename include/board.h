@@ -30,6 +30,8 @@ public:
 
 	void SetSaveReceivedMessages(const bool savereceivedmessages);
 
+	static std::string FixBoardName(const std::string &boardname);
+
 private:
 	void SetDateFromString(const std::string &datestring);
 

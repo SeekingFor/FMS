@@ -73,7 +73,11 @@ void InactiveMessageListRequester::PopulateIDList()
 	Poco::DateTime yesterday=date-Poco::Timespan(1,0,0,0,0);
 	int id;
 
+	m_ids.clear();
+
 	SQLite3DB::Statement st;
+
+	m_db->Execute("BEGIN;");
 
 	// select identities we want to query (we've seen them today) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
 	if(m_localtrustoverrides==false)
@@ -84,9 +88,8 @@ void InactiveMessageListRequester::PopulateIDList()
 	{
 		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity INNER JOIN vwIdentityStats ON tblIdentity.IdentityID=vwIdentityStats.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (vwIdentityStats.LastMessageDate IS NULL OR vwIdentityStats.LastMessageDate<'"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	}
-	st.Step();
 
-	m_ids.clear();
+	st.Step();
 
 	while(st.RowReturned())
 	{
@@ -94,4 +97,6 @@ void InactiveMessageListRequester::PopulateIDList()
 		m_ids[id]=false;
 		st.Step();
 	}
+
+	m_db->Execute("COMMIT;");
 }

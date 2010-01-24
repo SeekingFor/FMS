@@ -1,4 +1,5 @@
 #include "../../include/freenet/messagexml.h"
+#include "../../include/board.h"
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -132,12 +133,12 @@ const bool MessageXML::ParseXML(const std::string &xml)
 			if(txt->firstChild())
 			{
 				m_replyboard=SanitizeSingleString(txt->firstChild()->getNodeValue());
-				StringFunctions::LowerCase(m_replyboard,m_replyboard);
 				// strip off everything after , in board name
 				if(m_replyboard.find(",")!=std::string::npos)
 				{
 					m_replyboard.erase(m_replyboard.find(","));
 				}
+				m_replyboard=Board::FixBoardName(m_replyboard);
 			}
 		}
 		txt=XMLGetFirstChild(root,"Body");
@@ -157,12 +158,12 @@ const bool MessageXML::ParseXML(const std::string &xml)
 				if(board->firstChild())
 				{
 					std::string boardname=SanitizeSingleString(board->firstChild()->getNodeValue());
-					StringFunctions::LowerCase(boardname,boardname);
 					// strip off everything after , in board name
 					if(boardname.find(",")!=std::string::npos)
 					{
 						boardname.erase(boardname.find(","));
 					}
+					boardname=Board::FixBoardName(boardname);
 					m_boards.push_back(boardname);
 				}
 				board=XMLGetNextSibling(board,"Board");

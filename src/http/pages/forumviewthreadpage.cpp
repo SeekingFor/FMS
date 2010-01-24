@@ -515,6 +515,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 			postattachments+=thisattachment;
 			fileattachmentst.Step();
 		}
+		fileattachmentst.Reset();
 		if(postattachments!="")
 		{
 			postattachments="<div class=\"postattachments\">"+postattachments+"</div>";

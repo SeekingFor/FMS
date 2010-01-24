@@ -124,6 +124,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.MinLocalTrustListTrust.description","Specifies a local trust list trust level that a peer must have before its trust list will be included in the weighted average.  Any peers below this number will be excluded from the results.");
 	st->SetDefault("web.option.MinPeerTrustListTrust.description","Specifies a peer trust list trust level that a peer must have before its trust list will be included in the weighted average.  Any peers below this number will be excluded from the results.");
 	st->SetDefault("web.option.LocalTrustOverridesPeerTrust.description","Set to true if you want your local trust levels to override the peer levels when determining which identities you will poll.");
+	st->SetDefault("web.option.DownloadTrustListWhenNull.description","Download trust lists from identities that you have not assigned trust list trust to.  Any new identities found in these trust lists will not be added to your known identities list.");
 	st->SetDefault("web.option.MessageDownloadMaxDaysBackward.description","The maximum number of days backward that messages will be downloaded from each identity");
 	st->SetDefault("web.option.MessageListDaysBackward.description","The number of days backward that messages you have inserted will appear in your Message Lists");
 	st->SetDefault("web.option.MaxPeerMessagesPerDay.description","The maximum number of messages you will download from each peer on a given day.");
@@ -155,6 +156,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.localidentities.publishtrustlist","Publish Trust List");
 	st->SetDefault("web.page.localidentities.publishboardlist","Publish Board List");
 	st->SetDefault("web.page.localidentities.publishfreesite","Publish Freesite");
+	st->SetDefault("web.page.localidentities.active","Active");
 	st->SetDefault("web.page.localidentities.minmessagedelay","Min Message Delay");
 	st->SetDefault("web.page.localidentities.maxmessagedelay","Max Message Delay");
 	st->SetDefault("web.page.localidentities.announced","Announced? *");
@@ -166,6 +168,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.localidentities.announceddescription","* An identity is considered successfully announced when you have downloaded a trust list from someone that contains the identity.  You must trust other identities' trust lists for this to happen.  The number in parenthesis is how many trust lists the identity appears in.  You may post messages before you are announced.");
 	st->SetDefault("web.page.localidentities.singleusedescription","Single Use Identities will automatically be deleted 7 days after creation.");
 	st->SetDefault("web.page.localidentities.delaydescription","Messages that each identity sends may be delayed by a random number of minutes between min and max.  Set both to 0 to send messages as soon as possible.");
+	st->SetDefault("web.page.localidentities.active.description","Active identities will automatically let other clients know about their existence, allow posting messages, and share trust lists and message lists if so configured.  Identities that are not active will not insert any identity related file into Freenet, and cannot be used to post messages until they are set to active again.");
 
 	st->SetDefault("web.page.announceidentity.title","Announce Identity");
 	st->SetDefault("web.page.announceidentity.selectidentity","Select Identity :");

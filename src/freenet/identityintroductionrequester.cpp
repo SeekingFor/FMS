@@ -200,18 +200,21 @@ void IdentityIntroductionRequester::PopulateIDList()
 
 	date-=Poco::Timespan(1,0,0,0,0);
 
+	m_ids.clear();
+
+	m_db->Execute("BEGIN;");
+
 	// get all identities that have unsolved puzzles from yesterday or today
 	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblIntroductionPuzzleInserts WHERE Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND FoundSolution='false' GROUP BY LocalIdentityID;");
 	st.Step();
-
-	m_ids.clear();
-
 	while(st.RowReturned())
 	{
 		st.ResultInt(0,id);
 		m_ids[id]=false;
 		st.Step();
 	}
+
+	m_db->Execute("COMMIT;");
 
 }
 

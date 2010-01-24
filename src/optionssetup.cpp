@@ -668,6 +668,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Step();
 	upd.Reset();
 
+	st.Bind(0,"DownloadTrustListWhenNull");
+	st.Bind(1,"true");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Trust");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Download trust lists from identities that you have not assigned trust list trust to.  Any new identities found in these trust lists will not be added to your known identities list.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"DownloadTrustListWhenNull");
+	upd.Step();
+	upd.Reset();
+
 	st.Bind(0,"MessageDownloadMaxDaysBackward");
 	st.Bind(1,"5");
 	st.Step();

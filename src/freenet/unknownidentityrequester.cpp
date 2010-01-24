@@ -74,11 +74,13 @@ void UnknownIdentityRequester::PopulateIDList()
 	int count=0;
 	std::string countstr("0");
 
+	m_ids.clear();
+
+	m_db->Execute("BEGIN;");
+
 	// select identities we want to query (haven't seen at all) - sort by their trust level (descending)
 	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen IS NULL ORDER BY RANDOM();");
 	st.Step();
-
-	m_ids.clear();
 
 	while(st.RowReturned())
 	{
@@ -87,6 +89,8 @@ void UnknownIdentityRequester::PopulateIDList()
 		st.Step();
 		count+=1;
 	}
+
+	m_db->Execute("COMMIT;");
 
 	StringFunctions::Convert(count,countstr);
 	m_log->trace("UnknownIdentityRequester::PopulateIDList populated "+countstr+" ids");

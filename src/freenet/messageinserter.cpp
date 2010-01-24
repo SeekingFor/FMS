@@ -22,7 +22,7 @@ void MessageInserter::CheckForNeededInsert()
 	// only do 1 insert at a time
 	if(m_inserting.size()==0)
 	{
-		SQLite3DB::Statement st=m_db->Prepare("SELECT MessageUUID FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE tblLocalIdentity.PrivateKey IS NOT NULL AND tblLocalIdentity.PrivateKey <> '' AND tblMessageInserts.Inserted='false' AND tblMessageInserts.SendDate<=?;");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT MessageUUID FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE tblLocalIdentity.Active='true' AND tblLocalIdentity.PrivateKey IS NOT NULL AND tblLocalIdentity.PrivateKey <> '' AND tblMessageInserts.Inserted='false' AND tblMessageInserts.SendDate<=?;");
 		st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
 		st.Step();
 

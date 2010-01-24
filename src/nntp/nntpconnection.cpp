@@ -92,7 +92,7 @@ const bool NNTPConnection::HandleAuthInfoCommand(const NNTPCommand &command)
 		if(arg=="USER")
 		{
 			LocalIdentity localid(m_db);
-			if(localid.Load(name))
+			if(localid.Load(name) && localid.IsActive())
 			{
 				m_status.m_authuser=localid;
 				m_status.m_authenticated=true;

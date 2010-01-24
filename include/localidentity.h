@@ -15,6 +15,7 @@ public:
 	const std::string GetName() const		{ return m_name; }
 	const std::string GetPublicKey() const	{ return m_publickey; }
 	const std::string GetPrivateKey() const	{ return m_privatekey; }
+	const bool IsActive() const				{ return m_active; }
 
 private:
 	void Initialize();
@@ -23,6 +24,7 @@ private:
 	std::string m_name;
 	std::string m_publickey;
 	std::string m_privatekey;
+	bool m_active;
 };
 
 #endif	// _localidentity_

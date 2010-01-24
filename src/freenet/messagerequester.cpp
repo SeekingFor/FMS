@@ -1,5 +1,6 @@
 #include "../../include/freenet/messagerequester.h"
 #include "../../include/freenet/messagexml.h"
+#include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/unicode/unicodestring.h"
 #include "../../include/global.h"
 
@@ -108,6 +109,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 	bool inserted=false;
 	bool validmessage=true;
 	long savetoboardcount=0;
+	IdentityPublicKeyCache pkcache(m_db);
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -180,17 +182,12 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 
 		// make sure domain of message id match 43 characters of public key of identity (remove - and ~) - if not, discard message
 		// implement after 0.1.12 is released
-		st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
-		st.Bind(0,identityid);
-		st.Step();
-		if(st.RowReturned())
+		std::string publickey("");
+		if(pkcache.PublicKey(identityid,publickey))
 		{
 			std::vector<std::string> uuidparts;
 			std::vector<std::string> keyparts;
 			std::string keypart="";
-			std::string publickey="";
-
-			st.ResultText(0,publickey);
 
 			StringFunctions::SplitMultiple(publickey,"@,",keyparts);
 			StringFunctions::SplitMultiple(xml.GetMessageID(),"@",uuidparts);
@@ -455,6 +452,8 @@ void MessageRequester::PopulateIDList()
 	sql+="ORDER BY tblMessageRequests.Day DESC, tblMessageRequests.Tries ASC, tblMessageRequests.RequestIndex ASC ";
 	sql+=";";
 
+	m_db->Execute("BEGIN;");
+
 	SQLite3DB::Statement st=m_db->Prepare(sql);
 	st.Step();
 
@@ -479,6 +478,8 @@ void MessageRequester::PopulateIDList()
 		}
 		st.Step();
 	}
+
+	m_db->Execute("COMMIT;");
 
 }
 
@@ -513,19 +514,15 @@ void MessageRequester::StartRequest(const std::string &requestid)
 	std::string date;
 	std::string indexstr;
 	std::string publickey;
+	IdentityPublicKeyCache pkcache(m_db);
 
 	StringFunctions::Split(requestid,"*",parts);
 	StringFunctions::Convert(parts[0],identityid);
 	StringFunctions::Convert(parts[1],date);
 	indexstr=parts[2];
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
-	st.Bind(0,identityid);
-	st.Step();
-
-	if(st.RowReturned())
+	if(pkcache.PublicKey(identityid,publickey))
 	{
-		st.ResultText(0,publickey);
 
 		message.SetName("ClientGet");
 		message["URI"]=publickey+m_messagebase+"|"+date+"|Message|"+indexstr+".xml";
@@ -541,7 +538,7 @@ void MessageRequester::StartRequest(const std::string &requestid)
 		m_requesting.push_back(requestid);
 
 		// update tries
-		st=m_db->Prepare("UPDATE tblMessageRequests SET Tries=Tries+1 WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
+		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblMessageRequests SET Tries=Tries+1 WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
 		st.Bind(0,identityid);
 		st.Bind(1,date);
 		st.Bind(2,indexstr);

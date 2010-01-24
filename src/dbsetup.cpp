@@ -147,13 +147,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=21;
 		}
+		if(major==1 && minor==21)
+		{
+			ConvertDB0121To0122(db);
+			major=1;
+			minor=22;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,21);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,22);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=21;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=22;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -683,7 +689,7 @@ void SetupDB(SQLite3DB::DB *db)
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@L9ytg5-Yixmw~q5NKHzy6FeOaXSLCqIw3L4Fgl1dcZA,plYsHAfOJVqim1E~~6Tup98RVNvJ5dKJqPTzKcXlZv8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 
 	// TODO remove sometime after 0.1.17
-	FixCapitalBoardNames(db);
+	FixBoardNames(db);
 
 	// run analyze - may speed up some queries
 	db->Execute("ANALYZE;");

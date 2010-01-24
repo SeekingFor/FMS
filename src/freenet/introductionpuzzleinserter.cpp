@@ -34,7 +34,7 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 	if(m_inserting.size()==0)
 	{
 		// select all local ids that aren't single use and that aren't currently inserting a puzzle and are publishing a trust list
-		SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID FROM tblLocalIdentity WHERE PublishTrustList='true' AND SingleUse='false' AND PrivateKey IS NOT NULL AND PrivateKey <> '' ORDER BY LastInsertedPuzzle;");
+		SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID FROM tblLocalIdentity WHERE tblLocalIdentity.Active='true' AND PublishTrustList='true' AND SingleUse='false' AND PrivateKey IS NOT NULL AND PrivateKey <> '' ORDER BY LastInsertedPuzzle;");
 		
 		while(!rs.AtEnd())
 		{

@@ -255,6 +255,8 @@ void FrostMessageRequester::PopulateIDList()
 	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardID, BoardName FROM tblBoard WHERE BoardName LIKE ? || '%' AND SaveReceivedMessages='true';");
 	SQLite3DB::Statement st2=m_db->Prepare("SELECT Day, RequestIndex FROM tblFrostMessageRequests WHERE BoardID=? AND Day=? ORDER BY RequestIndex ASC;");
 
+	m_db->Execute("BEGIN;");
+
 	st.Bind(0,m_boardprefix);
 	st.Step();
 
@@ -316,6 +318,8 @@ void FrostMessageRequester::PopulateIDList()
 
 		st.Step();
 	}
+
+	m_db->Execute("COMMIT;");
 
 }
 

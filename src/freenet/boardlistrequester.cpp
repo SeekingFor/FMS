@@ -1,7 +1,9 @@
 #include "../../include/freenet/boardlistrequester.h"
 #include "../../include/freenet/boardlistxml.h"
+#include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/unicode/unicodestring.h"
 #include "../../include/global.h"
+#include "../../include/board.h"
 
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
@@ -94,17 +96,18 @@ const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 
+		m_db->Execute("BEGIN;");
+
 		SQLite3DB::Statement brd=m_db->Prepare("SELECT BoardID,BoardName,BoardDescription FROM tblBoard WHERE BoardName=?;");
 		SQLite3DB::Statement ins=m_db->Prepare("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,SaveReceivedMessages,AddedMethod) VALUES(?,?,?,?,?);");
 		SQLite3DB::Statement upd=m_db->Prepare("UPDATE tblBoard SET BoardDescription=? WHERE BoardID=?;");
 		for(long i=0; i<xml.GetCount(); i++)
 		{
 			int boardid;
-			UnicodeString name(xml.GetName(i));
+			UnicodeString name(Board::FixBoardName(xml.GetName(i)));
 			std::string dbdescription("");
 			UnicodeString description(xml.GetDescription(i));
 
-			name.Trim(MAX_BOARD_NAME_LENGTH);
 			description.Trim(MAX_BOARD_DESCRIPTION_LENGTH);
 
 			brd.Bind(0,name.NarrowString());
@@ -148,6 +151,8 @@ const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 		st.Bind(2,index);
 		st.Step();
 		st.Finalize();
+
+		m_db->Execute("COMMIT;");
 
 		m_log->debug("BoardListRequester::HandleAllData parsed BoardList XML file : "+message["Identifier"]);
 	}
@@ -257,16 +262,20 @@ void BoardListRequester::PopulateIDList()
 	{
 		st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(today,"%Y-%m-%d")+"' AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) AND PublishBoardList='true' AND FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	}
-	st.Step();
 
 	m_ids.clear();
 
+	m_db->Execute("BEGIN;");
+
+	st.Step();
 	while(st.RowReturned())
 	{
 		st.ResultInt(0,id);
 		m_ids[id]=false;
 		st.Step();
 	}
+
+	m_db->Execute("COMMIT;");
 
 }
 
@@ -278,14 +287,10 @@ void BoardListRequester::StartRequest(const long &identityid)
 	std::string indexstr;
 	int index;
 	std::string identityidstr;
+	IdentityPublicKeyCache pkcache(m_db);
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey FROM tblIdentity WHERE IdentityID=?;");
-	st.Bind(0,identityid);
-	st.Step();
-
-	if(st.RowReturned())
+	if(pkcache.PublicKey(identityid,publickey))
 	{
-		st.ResultText(0,publickey);
 
 		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(RequestIndex) FROM tblBoardListRequests WHERE Day=? AND IdentityID=?;");
 		st2.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
@@ -318,7 +323,6 @@ void BoardListRequester::StartRequest(const long &identityid)
 		m_requesting.push_back(identityid);
 
 	}
-	st.Finalize();
 
 	m_ids[identityid]=true;
 

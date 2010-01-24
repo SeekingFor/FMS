@@ -1,6 +1,8 @@
 #include "../include/board.h"
 #include "../include/stringfunctions.h"
 #include "../include/option.h"
+#include "../include/unicode/unicodestring.h"
+#include "../include/global.h"
 
 #include <Poco/DateTimeParser.h>
 
@@ -55,6 +57,31 @@ Board::Board(SQLite3DB::DB *db, const long boardid, const std::string &boardname
 
 }
 
+std::string Board::FixBoardName(const std::string &boardname)
+{
+	// name sure board name is lower case, trim it to max length, and change whitespace to _
+
+	std::string newboardname(boardname);
+	
+	StringFunctions::LowerCase(newboardname,newboardname);
+
+	UnicodeString uboardname(newboardname);
+	uboardname.Trim(MAX_BOARD_NAME_LENGTH);
+	for(UnicodeString::wsize_type i=0; i<uboardname.CharacterCount(); i++)
+	{
+		if(uboardname.IsWhitespace(uboardname[i]))
+		{
+			uboardname[i]='_';
+		}
+	}
+	newboardname=uboardname.NarrowString();
+	// remove and leading __
+	while(newboardname.size()>0 && newboardname[0]=='_')
+	{
+		newboardname.erase(0,1);
+	}
+	return newboardname;
+}
 
 const bool Board::Load(const long boardid)
 {

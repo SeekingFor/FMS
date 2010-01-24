@@ -33,9 +33,9 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 
 	content+="<hr>";
 
-	content+="<table class=\"small90\"><tr><th>"+m_trans->Get("web.page.localidentities.name")+"</th><th>"+m_trans->Get("web.page.localidentities.singleuse")+"</th><th>"+m_trans->Get("web.page.localidentities.publishtrustlist")+"</th><th>"+m_trans->Get("web.page.localidentities.publishboardlist")+"</th><th>"+m_trans->Get("web.page.localidentities.publishfreesite")+"</th><th>"+m_trans->Get("web.page.localidentities.minmessagedelay")+"</th><th>"+m_trans->Get("web.page.localidentities.maxmessagedelay")+"</th><th>"+m_trans->Get("web.page.localidentities.announced")+"</th></tr>";
+	content+="<table class=\"small90\"><tr><th>"+m_trans->Get("web.page.localidentities.name")+"</th><th>"+m_trans->Get("web.page.localidentities.singleuse")+"</th><th>"+m_trans->Get("web.page.localidentities.publishtrustlist")+"</th><th>"+m_trans->Get("web.page.localidentities.publishboardlist")+"</th><th>"+m_trans->Get("web.page.localidentities.publishfreesite")+"</th><th title="+SanitizeOutput(m_trans->Get("web.page.localidentities.active.description"))+">"+m_trans->Get("web.page.localidentities.active")+"</th><th>"+m_trans->Get("web.page.localidentities.minmessagedelay")+"</th><th>"+m_trans->Get("web.page.localidentities.maxmessagedelay")+"</th><th>"+m_trans->Get("web.page.localidentities.announced")+"</th></tr>";
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID,tblLocalIdentity.Name,tblLocalIdentity.PublicKey,tbLLocalIdentity.PublishTrustList,tblLocalIdentity.SingleUse,tblLocalIdentity.PublishBoardList,tblIdentity.IdentityID,tblLocalIdentity.PublishFreesite,tblLocalIdentity.MinMessageDelay,tblLocalIdentity.MaxMessageDelay FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey ORDER BY tblLocalIdentity.Name;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID,tblLocalIdentity.Name,tblLocalIdentity.PublicKey,tbLLocalIdentity.PublishTrustList,tblLocalIdentity.SingleUse,tblLocalIdentity.PublishBoardList,tblIdentity.IdentityID,tblLocalIdentity.PublishFreesite,tblLocalIdentity.MinMessageDelay,tblLocalIdentity.MaxMessageDelay,tblLocalIdentity.Active FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey ORDER BY tblLocalIdentity.Name;");
 	st.Step();
 	SQLite3DB::Statement st2=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
 
@@ -55,6 +55,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		std::string minmessagedelay="0";
 		std::string maxmessagedelay="0";
 		std::string identityidstr="";
+		std::string active="";
 
 		st.ResultText(0,id);
 		st.ResultText(1,name);
@@ -65,6 +66,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		st.ResultText(7,publishfreesite);
 		st.ResultText(8,minmessagedelay);
 		st.ResultText(9,maxmessagedelay);
+		st.ResultText(10,active);
 
 		st2.Bind(0,publickey);
 		st2.Step();
@@ -90,6 +92,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		content+="<td>"+CreateTrueFalseDropDown("publishtrustlist["+countstr+"]",publishtrustlist)+"</td>";
 		content+="<td>"+CreateTrueFalseDropDown("publishboardlist["+countstr+"]",publishboardlist)+"</td>";
 		content+="<td>"+CreateTrueFalseDropDown("publishfreesite["+countstr+"]",publishfreesite)+"</td>";
+		content+="<td>"+CreateTrueFalseDropDown("active["+countstr+"]",active)+"</td>";
 		content+="<td><input type=\"text\" size=\"2\" name=\"mindelay["+countstr+"]\" value=\""+minmessagedelay+"\"></td>";
 		content+="<td><input type=\"text\" size=\"2\" name=\"maxdelay["+countstr+"]\" value=\""+maxmessagedelay+"\"></td>";
 		
@@ -119,6 +122,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 	content+="<p class=\"paragraph\">"+m_trans->Get("web.page.localidentities.announceddescription")+"</p>";
 	content+="<p class=\"paragraph\">"+m_trans->Get("web.page.localidentities.singleusedescription")+"</p>";
 	content+="<p class=\"paragraph\">"+m_trans->Get("web.page.localidentities.delaydescription")+"</p>";
+	content+="<p class=\"paragraph\">"+m_trans->Get("web.page.localidentities.active.description")+"</p>";
 
 	return content;
 }
@@ -297,6 +301,7 @@ void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,std::string> &
 	std::vector<std::string> publishfreesite;
 	std::vector<std::string> mindelay;
 	std::vector<std::string> maxdelay;
+	std::vector<std::string> active;
 
 	CreateArgArray(queryvars,"chkidentityid",ids);
 	CreateArgArray(queryvars,"singleuse",singleuse);
@@ -305,8 +310,9 @@ void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,std::string> &
 	CreateArgArray(queryvars,"publishfreesite",publishfreesite);
 	CreateArgArray(queryvars,"mindelay",mindelay);
 	CreateArgArray(queryvars,"maxdelay",maxdelay);
+	CreateArgArray(queryvars,"active",active);
 
-	SQLite3DB::Statement update=m_db->Prepare("UPDATE tblLocalIdentity SET SingleUse=?, PublishTrustList=?, PublishBoardList=?, PublishFreesite=?, MinMessageDelay=?, MaxMessageDelay=? WHERE LocalIdentityID=?;");
+	SQLite3DB::Statement update=m_db->Prepare("UPDATE tblLocalIdentity SET SingleUse=?, PublishTrustList=?, PublishBoardList=?, PublishFreesite=?, MinMessageDelay=?, MaxMessageDelay=?, Active=? WHERE LocalIdentityID=?;");
 	for(int i=0; i<ids.size(); i++)
 	{
 		if(ids[i]!="")
@@ -322,7 +328,8 @@ void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,std::string> &
 			update.Bind(3,publishfreesite[i]);
 			update.Bind(4,minmessagedelay);
 			update.Bind(5,maxmessagedelay);
-			update.Bind(6,id);
+			update.Bind(6,active[i]);
+			update.Bind(7,id);
 			update.Step();
 			update.Reset();
 		}

@@ -113,7 +113,7 @@ const bool Message::Create(const long localidentityid, const long boardid, const
 
 const int Message::FindLocalIdentityID(const std::string &name)
 {
-	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE Name=?;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE Name=? AND Active='true';");
 	st.Bind(0,name);
 	st.Step();
 	if(st.RowReturned())
