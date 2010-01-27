@@ -153,13 +153,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=22;
 		}
+		if(major==1 && minor==22)
+		{
+			ConvertDB0122To0123(db);
+			major=1;
+			minor=23;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,22);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,23);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=22;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=23;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -194,6 +200,7 @@ void SetupDB(SQLite3DB::DB *db)
 				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
 				PublishTrustList		BOOL CHECK(PublishTrustList IN('true','false')) DEFAULT 'false',\
 				PublishBoardList		BOOL CHECK(PublishBoardList IN('true','false')) DEFAULT 'false',\
+				Active					BOOL CHECK(Active IN('true','false')) DEFAULT 'true',\
 				PublishFreesite			BOOL CHECK(PublishFreesite IN('true','false')) DEFAULT 'false',\
 				FreesiteEdition			INTEGER,\
 				InsertingIdentity		BOOL CHECK(InsertingIdentity IN('true','false')) DEFAULT 'false',\

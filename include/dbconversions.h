@@ -24,6 +24,7 @@ void ConvertDB0118To0119(SQLite3DB::DB *db);
 void ConvertDB0119To0120(SQLite3DB::DB *db);
 void ConvertDB0120To0121(SQLite3DB::DB *db);
 void ConvertDB0121To0122(SQLite3DB::DB *db);
+void ConvertDB0122To0123(SQLite3DB::DB *db);
 
 void FixBoardNames(SQLite3DB::DB *db);
 

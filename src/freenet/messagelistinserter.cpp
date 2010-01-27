@@ -299,15 +299,23 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	}
 
 	// get last inserted messagelist index for this day
+	// apparently the list might be inserted without the node notifying us, so we need to look at the message list requests as well for the identity
 	index=0;
-	st=m_db->Prepare("SELECT MAX(InsertIndex) FROM tblMessageListInserts WHERE LocalIdentityID=? AND Day=?;");
+	st=m_db->Prepare("SELECT IFNULL(MAX(ListIndex)+1,0) \
+					FROM \
+					(\
+					SELECT MAX(InsertIndex) AS ListIndex FROM tblMessageListInserts WHERE LocalIdentityID=? AND Day=?\
+					UNION\
+					SELECT MAX(RequestIndex) AS ListIndex FROM tblMessageListRequests INNER JOIN tblIdentity ON tblMessageListRequests.IdentityID=tblIdentity.IdentityID INNER JOIN tblLocalIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey WHERE tblLocalIdentity.LocalIdentityID=? AND tblMessageListRequests.Day=?\
+					);");
 	st.Bind(0,localidentityid);
 	st.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
+	st.Bind(2,localidentityid);
+	st.Bind(3,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
 	st.Step();
 	if(st.ResultNull(0)==false)
 	{
 		st.ResultInt(0,index);
-		index++;
 	}
 	StringFunctions::Convert(index,indexstr);
 

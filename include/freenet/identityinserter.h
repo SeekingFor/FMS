@@ -28,7 +28,7 @@ public:
 private:
 	void Initialize();
 	void CheckForNeededInsert();
-	void StartInsert(const long localidentityid);
+	void StartInsert(const long localidentityid, const int dayoffset=0);
 
 	Poco::DateTime m_lastchecked;
 	Poco::DateTime m_lastreceivedmessage;

@@ -24,14 +24,22 @@ void IdentityInserter::CheckForNeededInsert()
 {
 	Poco::DateTime now;
 	Poco::DateTime date;
+	Poco::DateTime nowplus30min;
 
 	// set date to 1 hour back
 	date-=Poco::Timespan(0,1,0,0,0);
+	nowplus30min+=Poco::Timespan(0,0,30,0,0);
 
 	// Because of importance of Identity.xml, if we are now at the next day we immediately want to insert identities so change the date back to 12:00 AM so we find all identities not inserted yet today
 	if(date.day()!=now.day())
 	{
 		date=now;
+		date.assign(date.year(),date.month(),date.day(),0,0,0);
+	}
+	// +30 minutes is the next day - we want to select identities that haven't inserted yet in the new day so set date to midnight of the next day
+	if(nowplus30min.day()!=now.day())
+	{
+		date=nowplus30min;
 		date.assign(date.year(),date.month(),date.day(),0,0,0);
 	}
 
@@ -40,6 +48,11 @@ void IdentityInserter::CheckForNeededInsert()
 	if(rs.Empty()==false)
 	{
 		StartInsert(rs.GetInt(0));
+		// if +30 minutes is the next day, we also insert the identity.xml file to that day
+		if(now.day()!=nowplus30min.day())
+		{
+			StartInsert(rs.GetInt(0),1);
+		}
 	}
 
 }
@@ -92,6 +105,11 @@ const bool IdentityInserter::HandleMessage(FCPv2::Message &message)
 				if(lastdate.day()==now.day())
 				{
 					m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
+				}
+				// we inserted to a future date - set date to midnight of that day
+				else if(lastdate.year()>now.year() || (lastdate.year()==now.year() && lastdate.month()>now.month()) || (lastdate.year()==now.year() && lastdate.month()==now.month() && lastdate.day()>now.day()))
+				{
+					m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+Poco::DateTimeFormatter::format(lastdate,"%Y-%m-%d")+" 00:00:00' WHERE LocalIdentityID="+idparts[1]+";");
 				}
 				else
 				{
@@ -172,9 +190,8 @@ void IdentityInserter::RegisterWithThread(FreenetMasterThread *thread)
 	thread->RegisterPeriodicProcessor(this);
 }
 
-void IdentityInserter::StartInsert(const long localidentityid)
+void IdentityInserter::StartInsert(const long localidentityid, const int dayoffset)
 {
-	Poco::DateTime date;
 	std::string idstring;
 
 	StringFunctions::Convert(localidentityid,idstring);
@@ -185,7 +202,7 @@ void IdentityInserter::StartInsert(const long localidentityid)
 	{
 		IdentityXML idxml;
 		FCPv2::Message mess;
-		Poco::DateTime now;
+		Poco::DateTime date;
 		std::string messagebase;
 		std::string data;
 		std::string datasizestr;
@@ -198,9 +215,10 @@ void IdentityInserter::StartInsert(const long localidentityid)
 		std::string freesiteedition="";
 		int edition=-1;
 
-		now=Poco::Timestamp();
+		date=Poco::Timestamp();
+		date+=Poco::Timespan(dayoffset,0,0,0,0);
 
-		SQLite3DB::Recordset rs2=m_db->Query("SELECT MAX(InsertIndex) FROM tblLocalIdentityInserts WHERE LocalIdentityID="+idstring+" AND Day='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"';");
+		SQLite3DB::Recordset rs2=m_db->Query("SELECT MAX(InsertIndex) FROM tblLocalIdentityInserts WHERE LocalIdentityID="+idstring+" AND Day='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 		if(rs2.Empty()==false)
 		{
 			if(rs2.GetField(0)==NULL)
@@ -259,22 +277,24 @@ void IdentityInserter::StartInsert(const long localidentityid)
 		StringFunctions::Convert(data.size(),datasizestr);
 
 		mess.SetName("ClientPut");
-		mess["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Identity|"+indexstr+".xml";
+		mess["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"|Identity|"+indexstr+".xml";
 		mess["Identifier"]="IdentityInserter|"+idstring+"|"+indexstr+"|"+mess["URI"];
 		mess["UploadFrom"]="direct";
 		mess["DataLength"]=datasizestr;
 		m_fcp->Send(mess);
 		m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 
+		/*
 		// test insert as editioned SSK
 		mess.Clear();
 		mess.SetName("ClientPut");
-		mess["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|Identity-"+indexstr;
+		mess["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"|Identity-"+indexstr;
 		mess["Identifier"]="IdentityInserter|"+mess["URI"];
 		mess["UploadFrom"]="direct";
 		mess["DataLength"]=datasizestr;
 		m_fcp->Send(mess);
 		m_fcp->Send(std::vector<char>(data.begin(),data.end()));
+		*/
 
 		m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='true' WHERE LocalIdentityID="+idstring+";");
 

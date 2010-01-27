@@ -19,7 +19,6 @@ void ConvertDB0100To0101(SQLite3DB::DB *db)
 				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
 				PublishTrustList		BOOL CHECK(PublishTrustList IN('true','false')) DEFAULT 'false',\
 				PublishBoardList		BOOL CHECK(PublishBoardList IN('true','false')) DEFAULT 'false',\
-				Active					BOOL CHECK(Active IN('true','false')) DEFAULT 'true',\
 				InsertingIdentity		BOOL CHECK(InsertingIdentity IN('true','false')) DEFAULT 'false',\
 				LastInsertedIdentity	DATETIME,\
 				InsertingPuzzle			BOOL CHECK(InsertingPuzzle IN('true','false')) DEFAULT 'false',\
@@ -355,6 +354,13 @@ void ConvertDB0121To0122(SQLite3DB::DB *db)
 {
 	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN Active BOOL CHECK(Active IN('true','false')) DEFAULT 'true';");
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=22;");
+}
+
+// attempt to add same column as above because new db in 0.3.49 wasn't creating this column
+void ConvertDB0122To0123(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN Active BOOL CHECK(Active IN('true','false')) DEFAULT 'true';");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=23;");
 }
 
 void FixBoardNames(SQLite3DB::DB *db)

@@ -232,6 +232,26 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.peertrust.previouspage","<-- Previous Page");
 	st->SetDefault("web.page.peertrust.nextpage","Next Page -->");
 
+	st->SetDefault("web.page.peerdetails.name","Name");
+	st->SetDefault("web.page.peerdetails.publickey","Public Key");
+	st->SetDefault("web.page.peerdetails.freesite","Freesite");
+	st->SetDefault("web.page.peerdetails.trustlistxml","Trust List XML");
+	st->SetDefault("web.page.peerdetails.trustlist","Trust List");
+	st->SetDefault("web.page.peerdetails.dateadded","Date Added");
+	st->SetDefault("web.page.peerdetails.lastseen","Last Seen");
+	st->SetDefault("web.page.peerdetails.addedmethod","Added Method");
+	st->SetDefault("web.page.peerdetails.hiddeninpeertrust","Hidden in Main Peer Trust Page");
+	st->SetDefault("web.page.peerdetails.hide","Hide");
+	st->SetDefault("web.page.peerdetails.show","Show");
+	st->SetDefault("web.page.peerdetails.messagecount","Message Count");
+	st->SetDefault("web.page.peerdetails.deletemessages","Delete Messages");
+	st->SetDefault("web.page.peerdetails.trustlistofthisidentity","Trust List of this identity");
+	st->SetDefault("web.page.peerdetails.messagetrust","Message Trust");
+	st->SetDefault("web.page.peerdetails.messagecomment","Message Comment");
+	st->SetDefault("web.page.peerdetails.trustlisttrust","Trust List Trust");
+	st->SetDefault("web.page.peerdetails.trustlistcomment","Trust List Comment");
+	st->SetDefault("web.page.peerdetails.trustofthisidentityfromotheridentities","Trust of this identity from other identities");
+
 	st->SetDefault("web.page.boards.title","Boards");
 	st->SetDefault("web.page.boards.search","Search");
 	st->SetDefault("web.page.boards.remove0messages","Remove boards with 0 messages");

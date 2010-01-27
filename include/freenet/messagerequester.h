@@ -17,7 +17,7 @@ private:
 	const bool HandleAllData(FCPv2::Message &message);
 	const bool HandleGetFailed(FCPv2::Message &message);
 
-	const long GetBoardID(const std::string &boardname, const std::string &identityname);
+	const long GetBoardInfo(const std::string &boardname, const std::string &identityname, bool &forum);
 	const bool SaveToBoard(const std::string &boardname);
 	const std::string GetIdentityName(const long identityid);
 

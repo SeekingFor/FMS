@@ -91,11 +91,11 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 			usk="";
 		}
 
-		content+="<tr><td>Name</td><td>"+SanitizeOutput(name)+"</td></tr>";
-		content+="<tr><td>Public Key</td><td class=\"smaller\">"+SanitizeOutput(publickey)+"</td></tr>";
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.name")+"</td><td>"+SanitizeOutput(name)+"</td></tr>";
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.publickey")+"</td><td class=\"smaller\">"+SanitizeOutput(publickey)+"</td></tr>";
 		if(usk!="")
 		{
-			content+="<tr><td>Freesite</td><td class=\"smaller\"><a href=\"http://"+fcphost+":"+fproxyport+"/"+SanitizeOutput(usk)+"\">"+SanitizeOutput(usk)+"</a></td></tr>";
+			content+="<tr><td>"+m_trans->Get("web.page.peerdetails.freesite")+"</td><td class=\"smaller\"><a href=\"http://"+fcphost+":"+fproxyport+"/"+SanitizeOutput(usk)+"\">"+SanitizeOutput(usk)+"</a></td></tr>";
 		}
 		if(publishtrustlist=="true")
 		{
@@ -104,12 +104,12 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 			{
 				lastseendate=lastseendate.substr(0,10);
 			}
-			content+="<tr><td>Trust List XML</td><td class=\"smaller\"><a href=\"http://"+fcphost+":"+fproxyport+"/"+SanitizeOutput(publickey)+messagebase+"|"+lastseendate+"|TrustList|0.xml\">Trust List</a></td></tr>";
+			content+="<tr><td>"+m_trans->Get("web.page.peerdetails.trustlistxml")+"</td><td class=\"smaller\"><a href=\"http://"+fcphost+":"+fproxyport+"/"+SanitizeOutput(publickey)+messagebase+"|"+lastseendate+"|TrustList|0.xml\">"+m_trans->Get("web.page.peerdetails.trustlist")+"</a></td></tr>";
 		}
-		content+="<tr><td>Date Added</td><td>"+dateadded+"</td></tr>";
-		content+="<tr><td>Last Seen</td><td>"+lastseen+"</td></tr>";
-		content+="<tr><td>Added Method</td><td class=\"smaller\">"+SanitizeOutput(addedmethod)+"</td></tr>";
-		content+="<tr><td>Hidden in Main Peer Trust Page</td>";
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.dateadded")+"</td><td>"+dateadded+"</td></tr>";
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.lastseen")+"</td><td>"+lastseen+"</td></tr>";
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.addedmethod")+"</td><td class=\"smaller\">"+SanitizeOutput(addedmethod)+"</td></tr>";
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.hiddeninpeertrust")+"</td>";
 		content+="<td>"+hidden;
 		content+="&nbsp;<form name=\"frmhidden\" method=\"POST\">";
 		content+=CreateFormPassword();
@@ -117,12 +117,12 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		if(hidden=="false")
 		{
 			content+="<input type=\"hidden\" name=\"formaction\" value=\"hide\">";
-			content+="<input type=\"submit\" value=\"Hide\">";
+			content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peerdetails.hide")+"\">";
 		}
 		else
 		{
 			content+="<input type=\"hidden\" name=\"formaction\" value=\"show\">";
-			content+="<input type=\"submit\" value=\"Show\">";
+			content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peerdetails.show")+"\">";
 		}
 		content+="</form>";
 		content+="</td></tr>";
@@ -138,13 +138,13 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		std::string messagecountstr="0";
 		st.ResultText(0,messagecountstr);
 		content+="<tr>";
-		content+="<td>Message Count</td>";
+		content+="<td>"+m_trans->Get("web.page.peerdetails.messagecount")+"</td>";
 		content+="<td>"+messagecountstr;
 		content+="&nbsp;&nbsp;<form name=\"frmdeletemessages\" method=\"POST\">";
 		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"identityid\" value=\""+identityidstr+"\">";
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"deletemessages\">";
-		content+="<input type=\"submit\" value=\"Delete Messages\">";
+		content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peerdetails.deletemessages")+"\">";
 		content+="</form>";
 		content+="</td>";
 		content+="</tr>";
@@ -159,9 +159,9 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 
 	content+="<table>";
 	content+="<tr><th colspan=\"5\">";
-	content+="Trust List of this identity";
+	content+=m_trans->Get("web.page.peerdetails.trustlistofthisidentity");
 	content+="</th></tr>";
-	content+="<tr><td></td><th>Message Trust</th><th>Message Comment</th><th>Trust List Trust</th><th>Trust Comment</th></tr>";
+	content+="<tr><td></td><th>"+m_trans->Get("web.page.peerdetails.messagetrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.messagecomment")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlisttrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlistcomment")+"</th></tr>";
 	while(st.RowReturned())
 	{
 		std::string thisid="";
@@ -193,9 +193,9 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 
 	content+="<tr><th colspan=\"5\"><hr></th></tr>";
 	content+="<tr><th colspan=\"5\">";
-	content+="Trust of this identity from other identities";
+	content+=m_trans->Get("web.page.peerdetails.trustofthisidentityfromotheridentities");
 	content+="</th></tr>";
-	content+="<tr><td></td><th>Message Trust</th><th>Message Comment</th><th>Trust List Trust</th><th>Trust Comment</th></tr>";
+	content+="<tr><td></td><th>"+m_trans->Get("web.page.peerdetails.messagetrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.messagecomment")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlisttrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlistcomment")+"</th></tr>";
 	while(st.RowReturned())
 	{
 		std::string thisid="";

@@ -3,6 +3,7 @@
 #include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/unicode/unicodestring.h"
 #include "../../include/global.h"
+#include "../../include/threadbuilder.h"
 
 #include <algorithm>
 
@@ -26,18 +27,28 @@ MessageRequester::MessageRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):II
 	Initialize();
 }
 
-const long MessageRequester::GetBoardID(const std::string &boardname, const std::string &identityname)
+const long MessageRequester::GetBoardInfo(const std::string &boardname, const std::string &identityname, bool &forum)
 {
 	std::string lowerboard=boardname;
 	StringFunctions::LowerCase(lowerboard,lowerboard);
-	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardID FROM tblBoard WHERE BoardName=?;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardID, Forum FROM tblBoard WHERE BoardName=?;");
 	st.Bind(0,lowerboard);
 	st.Step();
 
 	if(st.RowReturned())
 	{
 		int boardid;
+		std::string isforum("false");
 		st.ResultInt(0,boardid);
+		st.ResultText(1,isforum);
+		if(isforum=="true")
+		{
+			forum=true;
+		}
+		else
+		{
+			forum=false;
+		}
 		return boardid;
 	}
 	else
@@ -56,6 +67,7 @@ const long MessageRequester::GetBoardID(const std::string &boardname, const std:
 		}
 		st.Bind(3,"Message from "+identityname);
 		st.Step(true);
+		forum=false;
 		return st.GetLastInsertRowID();
 	}	
 }
@@ -110,6 +122,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 	bool validmessage=true;
 	long savetoboardcount=0;
 	IdentityPublicKeyCache pkcache(m_db);
+	ThreadBuilder tb(m_db);
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -227,6 +240,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 		{
 			std::string nntpbody="";
 			nntpbody=xml.GetBody();
+			bool tempbool;
 
 			st=m_db->Prepare("INSERT INTO tblMessage(IdentityID,FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,MessageIndex,InsertDate) VALUES(?,?,?,?,?,?,?,?,?,?);");
 			st.Bind(0,identityid);
@@ -235,7 +249,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			st.Bind(3,xml.GetTime());
 			st.Bind(4,xml.GetSubject());
 			st.Bind(5,xml.GetMessageID());
-			st.Bind(6,GetBoardID(xml.GetReplyBoard(),GetIdentityName(identityid)));
+			st.Bind(6,GetBoardInfo(xml.GetReplyBoard(),GetIdentityName(identityid),tempbool));
 			st.Bind(7,nntpbody);
 			st.Bind(8,index);
 			st.Bind(9,idparts[3]);
@@ -245,19 +259,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			if(inserted==true)
 			{
 
-				st=m_db->Prepare("INSERT INTO tblMessageBoard(MessageID,BoardID) VALUES(?,?);");
-				for(std::vector<std::string>::iterator i=boards.begin(); i!=boards.end(); i++)
-				{
-					if(SaveToBoard((*i)))
-					{
-						st.Bind(0,messageid);
-						st.Bind(1,GetBoardID((*i),GetIdentityName(identityid)));
-						st.Step();
-						st.Reset();
-					}
-				}
-				st.Finalize();
-
+				// insert reply to info before we attempt to build threads because the thread builder uses this info
 				st=m_db->Prepare("INSERT INTO tblMessageReplyTo(MessageID,ReplyToMessageUUID,ReplyOrder) VALUES(?,?,?);");
 				for(std::map<long,std::string>::iterator j=replyto.begin(); j!=replyto.end(); j++)
 				{
@@ -266,6 +268,30 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 					st.Bind(2,(*j).first);
 					st.Step();
 					st.Reset();
+				}
+				st.Finalize();
+
+				SQLite3DB::Statement latestmessagest=m_db->Prepare("UPDATE tblBoard SET LatestMessageID=(SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageBoard.BoardID=tblBoard.BoardID ORDER BY tblMessage.MessageDate DESC, tblMessage.MessageTime DESC LIMIT 0,1) WHERE tblBoard.BoardID=?;");
+				st=m_db->Prepare("INSERT INTO tblMessageBoard(MessageID,BoardID) VALUES(?,?);");
+				for(std::vector<std::string>::iterator i=boards.begin(); i!=boards.end(); i++)
+				{
+					if(SaveToBoard((*i)))
+					{
+						bool forum;
+						long boardid=GetBoardInfo((*i),GetIdentityName(identityid),forum);
+						st.Bind(0,messageid);
+						st.Bind(1,boardid);
+						st.Step();
+						st.Reset();
+
+						if(forum)
+						{
+							tb.Build(messageid,boardid,true);
+							latestmessagest.Bind(0,boardid);
+							latestmessagest.Step();
+							latestmessagest.Reset();
+						}
+					}
 				}
 				st.Finalize();
 

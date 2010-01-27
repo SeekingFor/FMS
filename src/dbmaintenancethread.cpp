@@ -28,6 +28,12 @@ DBMaintenanceThread::DBMaintenanceThread()
 
 void DBMaintenanceThread::Do10MinuteMaintenance()
 {
+	// commented out for now
+	m_log->debug("PeriodicDBMaintenance::Do10MinuteMaintenance");
+}
+
+void DBMaintenanceThread::Do30MinuteMaintenance()
+{
 	std::vector<int> m_boardlist;
 	std::vector<std::pair<long,long> > m_unthreadedmessages;
 	Option option(m_db);
@@ -90,33 +96,6 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 		latestmessagest.Step();
 		latestmessagest.Reset();
 	}
-	
-	/*
-	while(boardst.RowReturned())
-	{
-		int boardid=-1;
-
-		boardst.ResultInt(0,boardid);
-
-		selectst.Bind(0,boardid);
-		selectst.Step();
-
-		while(selectst.RowReturned())
-		{
-			int messageid=-1;
-
-			selectst.ResultInt(0,messageid);
-
-			tb.Build(messageid,boardid,true);
-
-			selectst.Step();
-		}
-		selectst.Reset();
-
-		boardst.Step();
-		boardst.Reset();
-	}
-	*/
 
 	// now rebuild threads where the message has been deleted
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblThreadPost.MessageID, tblThread.BoardID FROM tblThreadPost INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID LEFT JOIN tblMessage ON tblThreadPost.MessageID=tblMessage.MessageID WHERE tblMessage.MessageID IS NULL;");
@@ -137,27 +116,6 @@ void DBMaintenanceThread::Do10MinuteMaintenance()
 	// delete threads that have no messages
 	m_db->Execute("DELETE FROM tblThread WHERE ThreadID IN (SELECT tblThread.ThreadID FROM tblThread LEFT JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE tblThreadPost.ThreadID IS NULL);");
 
-	// TODO - remove after corruption issue fixed
-	/*
-	if(ll=="8")
-	{
-		std::string dbres=TestDBIntegrity(m_db);
-		m_log->trace("DBMaintenanceThread::Do10MinuteMaintenance() end TestDBIntegrity returned "+dbres);
-		if(dbres!="ok")
-		{
-			m_db->Execute("REINDEX;");
-			dbres=TestDBIntegrity(m_db);
-			m_log->trace("DBMaintenanceThread::Do10MinuteMaintenenace() end after reindex returned "+dbres);
-		}
-	}
-	*/
-
-	m_log->debug("PeriodicDBMaintenance::Do10MinuteMaintenance");
-}
-
-void DBMaintenanceThread::Do30MinuteMaintenance()
-{
-	// UNCOMMENT method in run when code is placed here
 	m_log->debug("PeriodicDBMaintenance::Do30MinuteMaintenance");
 }
 
@@ -469,18 +427,18 @@ void DBMaintenanceThread::run()
 	{
 		now=Poco::Timestamp();
 
+		/*
 		if((m_last10minute+Poco::Timespan(0,0,10,0,0))<=now)
 		{
 			Do10MinuteMaintenance();
 			m_last10minute=Poco::Timestamp();
 		}
-		/*
+		*/
 		if((m_last30minute+Poco::Timespan(0,0,30,0,0))<=now)
 		{
 			Do30MinuteMaintenance();
 			m_last30minute=Poco::Timestamp();
 		}
-		*/
 		if((m_last1hour+Poco::Timespan(0,1,0,0,0))<=now)
 		{
 			Do1HourMaintenance();
