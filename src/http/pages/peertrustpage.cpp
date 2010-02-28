@@ -95,7 +95,7 @@ const std::string PeerTrustPage::CreateLocalIdentityDropDown(const std::string &
 	return result;
 }
 
-const std::string PeerTrustPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string PeerTrustPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	int count=0;
 	std::string countstr;
@@ -117,7 +117,7 @@ const std::string PeerTrustPage::GenerateContent(const std::string &method, cons
 	// get localidentityid from querystring or load one from the database
 	if(queryvars.find("localidentityid")!=queryvars.end())
 	{
-		localidentityidstr=(*queryvars.find("localidentityid")).second;
+		localidentityidstr=(*queryvars.find("localidentityid")).second.GetData();
 		StringFunctions::Convert(localidentityidstr,localidentityid);
 		// insert the ID into the temporary table so we remember the identity if we load the page later
 		m_db->Execute("DELETE FROM tmpLocalIdentityPeerTrustPage;");
@@ -219,7 +219,7 @@ const std::string PeerTrustPage::GenerateContent(const std::string &method, cons
 	// if startrow is specified
 	if(queryvars.find("startrow")!=queryvars.end())
 	{
-		startrowstr=(*queryvars.find("startrow")).second;
+		startrowstr=(*queryvars.find("startrow")).second.GetData();
 		// convert back and forth, just in case a number wasn't passed in startrow
 		StringFunctions::Convert(startrowstr,startrow);
 		if(startrow<0)
@@ -232,7 +232,7 @@ const std::string PeerTrustPage::GenerateContent(const std::string &method, cons
 	// sort by
 	if(queryvars.find("sortby")!=queryvars.end())
 	{
-		sortby=(*queryvars.find("sortby")).second;
+		sortby=(*queryvars.find("sortby")).second.GetData();
 		if(sortby!="Name" && sortby!="tblIdentityTrust.LocalMessageTrust" && sortby!="PeerMessageTrust" && sortby!="tblIdentityTrust.LocalTrustListTrust" && sortby!="PeerTrustListTrust" && sortby!="MessageCount")
 		{
 			sortby="Name";
@@ -246,7 +246,7 @@ const std::string PeerTrustPage::GenerateContent(const std::string &method, cons
 	// sort order
 	if(queryvars.find("sortorder")!=queryvars.end())
 	{
-		sortorder=(*queryvars.find("sortorder")).second;
+		sortorder=(*queryvars.find("sortorder")).second.GetData();
 		if(sortorder!="ASC" && sortorder!="DESC")
 		{
 			sortorder="ASC";
@@ -260,7 +260,7 @@ const std::string PeerTrustPage::GenerateContent(const std::string &method, cons
 	// if we are searching by name
 	if(queryvars.find("namesearch")!=queryvars.end())
 	{
-		namesearch=(*queryvars.find("namesearch")).second;
+		namesearch=(*queryvars.find("namesearch")).second.GetData();
 	}
 
 	content+="<h2>"+m_trans->Get("web.page.peertrust.title")+"</h2>";

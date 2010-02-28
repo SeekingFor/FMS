@@ -35,7 +35,7 @@ const std::string AnnounceIdentityPage::CreateLocalIdentityDropDown(const std::s
 	return rval;
 }
 
-const std::string AnnounceIdentityPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string AnnounceIdentityPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	Poco::DateTime date;
 	std::string content;
@@ -71,7 +71,7 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 
 		if(queryvars.find("chkaddtrust")!=queryvars.end() && (*queryvars.find("chkaddtrust")).second!="" && queryvars.find("txtaddtrust")!=queryvars.end() && (*queryvars.find("txtaddtrust")).second!="")
 		{
-			if(StringFunctions::Convert((*queryvars.find("txtaddtrust")).second,trust))
+			if(StringFunctions::Convert((*queryvars.find("txtaddtrust")).second.GetData(),trust))
 			{
 				trust=(std::max)(0,(std::min)(100,trust));
 				addtrust=true;
@@ -80,7 +80,7 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 
 		if(queryvars.find("localidentityid")!=queryvars.end())
 		{
-			localidentityidstr=(*queryvars.find("localidentityid")).second;
+			localidentityidstr=(*queryvars.find("localidentityid")).second.GetData();
 			StringFunctions::Convert(localidentityidstr,localidentityid);
 		}
 		CreateArgArray(queryvars,"uuid",uuids);

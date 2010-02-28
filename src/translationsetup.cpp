@@ -341,7 +341,12 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.forumcreatepost.error.subject","You must enter a subject");
 	st->SetDefault("web.page.forumcreatepost.error.body","You must enter a message body");
 	st->SetDefault("web.page.forumcreatepost.error.message","Could not create message");
-		
+	st->SetDefault("web.page.forumcreatepost.upload","Upload");
+	st->SetDefault("web.page.forumcreatepost.orfreenetkey","or Freenet key");
+	st->SetDefault("web.page.forumcreatepost.attach","Attach");
+	st->SetDefault("web.page.forumcreatepost.bytes","bytes");
+	st->SetDefault("web.page.forumcreatepost.unknownsize","?");
+
 	tdir.pushDirectory("translations");
 	tdir=tdir.makeAbsolute();
 	Poco::File transfile(tdir);

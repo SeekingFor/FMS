@@ -8,7 +8,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string AddPeerPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string AddPeerPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content="";
 
@@ -18,7 +18,7 @@ const std::string AddPeerPage::GenerateContent(const std::string &method, const 
 		std::string publickey="";
 		if(queryvars.find("publickey")!=queryvars.end())
 		{
-			publickey=(*queryvars.find("publickey")).second;
+			publickey=(*queryvars.find("publickey")).second.GetData();
 		}
 		if(publickey!="" && publickey.find("SSK@")==0 && publickey[publickey.size()-1]=='/')
 		{

@@ -10,7 +10,8 @@ void ShowCaptchaPage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco:
 {
 	m_log->trace("ShowCaptchaPage::handleRequest from "+request.clientAddress().toString());
 
-	std::map<std::string,std::string> queryvars;
+	std::map<std::string,QueryVar> queryvars;
+
 	CreateQueryVarMap(request,queryvars);
 
 	if(request.getVersion()==Poco::Net::HTTPRequest::HTTP_1_1)
@@ -22,7 +23,7 @@ void ShowCaptchaPage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco:
 	if(queryvars.find("UUID")!=queryvars.end())
 	{
 		SQLite3DB::Statement st=m_db->Prepare("SELECT MimeType,PuzzleData FROM tblIntroductionPuzzleRequests WHERE UUID=?;");
-		st.Bind(0,(*queryvars.find("UUID")).second);
+		st.Bind(0,(*queryvars.find("UUID")).second.GetData());
 		st.Step();
 
 		if(st.RowReturned())

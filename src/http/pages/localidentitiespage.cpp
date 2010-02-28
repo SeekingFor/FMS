@@ -7,7 +7,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string LocalIdentitiesPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string LocalIdentitiesPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	int count;
 	std::string countstr;
@@ -127,7 +127,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 	return content;
 }
 
-void LocalIdentitiesPage::HandleDelete(const std::map<std::string,std::string> &queryvars)
+void LocalIdentitiesPage::HandleDelete(const std::map<std::string,QueryVar> &queryvars)
 {
 	int id=0;
 	std::vector<std::string> ids;
@@ -193,12 +193,12 @@ const std::string LocalIdentitiesPage::HandleExport()
 	return xml.GetXML();
 }
 
-void LocalIdentitiesPage::HandleImport(const std::map<std::string,std::string> &queryvars)
+void LocalIdentitiesPage::HandleImport(const std::map<std::string,QueryVar> &queryvars)
 {
 	if(queryvars.find("file")!=queryvars.end())
 	{
 		IdentityExportXML xml;
-		if(xml.ParseXML((*queryvars.find("file")).second))
+		if(xml.ParseXML((*queryvars.find("file")).second.GetData()))
 		{
 			SQLite3DB::Statement imp=m_db->Prepare("INSERT INTO tblLocalIdentity(Name,PublicKey,PrivateKey,SingleUse,PublishTrustList,PublishBoardList,PublishFreesite) VALUES(?,?,?,?,?,?,?);");
 			for(int i=0; i<xml.GetCount(); i++)
@@ -254,13 +254,14 @@ void LocalIdentitiesPage::handleRequest(Poco::Net::HTTPServerRequest &request, P
 {
 	m_log->trace("LocalIdentitiesPages::handleRequest from "+request.clientAddress().toString());
 
-	std::map<std::string,std::string> vars;
+	std::map<std::string,QueryVar> vars;
+
 	CreateQueryVarMap(request,vars);
 
 	std::string formaction="";
 	if(vars.find("formaction")!=vars.end() && ValidateFormPassword(vars))
 	{
-		formaction=(*vars.find("formaction")).second;
+		formaction=(*vars.find("formaction")).second.GetData();
 		if(formaction=="update")
 		{
 			HandleUpdate(vars);
@@ -291,7 +292,7 @@ void LocalIdentitiesPage::handleRequest(Poco::Net::HTTPServerRequest &request, P
 	ostr << GeneratePage(request.getMethod(),vars);
 }
 
-void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,std::string> &queryvars)
+void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,QueryVar> &queryvars)
 {
 	int id;
 	std::vector<std::string> ids;

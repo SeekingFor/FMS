@@ -39,15 +39,16 @@ void ShowFilePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 	m_log->trace("ShowFilePage::handleRequest TransferEncoding="+request.getTransferEncoding());
 	m_log->trace("ShowFilePage::handleRequest URI="+request.getURI());
 
-	std::map<std::string,std::string> queryvars;
+	std::map<std::string,QueryVar> queryvars;
+
 	CreateQueryVarMap(request,queryvars);
 
 	std::string content="";
-	if(queryvars.find("file")!=queryvars.end() && m_filewhitelist.find((*queryvars.find("file")).second)!=m_filewhitelist.end())
+	if(queryvars.find("file")!=queryvars.end() && m_filewhitelist.find((*queryvars.find("file")).second.GetData())!=m_filewhitelist.end())
 	{
 		try
 		{
-			response.sendFile((*queryvars.find("file")).second,m_filewhitelist[(*queryvars.find("file")).second]);
+			response.sendFile((*queryvars.find("file")).second.GetData(),m_filewhitelist[(*queryvars.find("file")).second.GetData()]);
 		}
 		catch(Poco::FileNotFoundException &fnf)
 		{

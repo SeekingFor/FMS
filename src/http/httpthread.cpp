@@ -35,6 +35,17 @@ void HTTPThread::run()
 				  ReplyToMessageID	INTEGER\
 				  );");
 
+	m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpFileAttachment(\
+				  FileAttachmentID	INTEGER PRIMARY KEY,\
+				  DateUploaded		DATETIME,\
+				  ForumViewStateID	TEXT,\
+				  FileName			TEXT,\
+				  Data				BLOB,\
+				  DataLength		INTEGER,\
+				  ContentType		TEXT,\
+				  FreenetKey		TEXT\
+				  );");
+
 	std::string bindaddress("0.0.0.0");
 	option.GetInt("HTTPListenPort",m_listenport);
 	option.Get("HTTPBindAddress",bindaddress);

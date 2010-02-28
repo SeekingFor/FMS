@@ -363,6 +363,12 @@ void ConvertDB0122To0123(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=23;");
 }
 
+void ConvertDB0123To0124(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN SolvedPuzzleCount INTEGER CHECK(SolvedPuzzleCount>=0) DEFAULT 0;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=24;");
+}
+
 void FixBoardNames(SQLite3DB::DB *db)
 {
 

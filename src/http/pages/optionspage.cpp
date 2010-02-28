@@ -80,7 +80,7 @@ const std::string OptionsPage::CreateTextBox(const std::string &name, const std:
 
 }
 
-const std::string OptionsPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string OptionsPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content("");
 	std::string sql("");

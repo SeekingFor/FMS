@@ -85,7 +85,7 @@ const bool Decode(const std::string &encoded, std::vector<unsigned char> &data)
 			currentbyte=(charpos<<6 & 0xC0);
 		}
 		
-		if(encoded[encodedpos+2]!='=')
+		if(encoded[encodedpos+3]!='=')
 		{
 			charpos=base64chars.find(encoded[encodedpos+3]);
 			if(charpos==std::string::npos)

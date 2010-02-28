@@ -7,7 +7,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string PeerDetailsPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string PeerDetailsPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content="";
 	int identityid=0;
@@ -34,8 +34,8 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 
 	if(queryvars.find("identityid")!=queryvars.end() && (*queryvars.find("identityid")).second!="")
 	{
-		identityidstr=(*queryvars.find("identityid")).second;
-		StringFunctions::Convert((*queryvars.find("identityid")).second,identityid);
+		identityidstr=(*queryvars.find("identityid")).second.GetData();
+		StringFunctions::Convert((*queryvars.find("identityid")).second.GetData(),identityid);
 	}
 
 	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="deletemessages" && ValidateFormPassword(queryvars))

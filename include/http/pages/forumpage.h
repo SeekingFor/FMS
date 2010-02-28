@@ -57,8 +57,8 @@ public:
 	ForumTemplatePage(SQLite3DB::DB *db, const HTMLTemplateHandler &templatehandler, const std::string &pagename):IPageHandler(db,"",pagename),m_templatehandler(templatehandler),m_viewstate(db)	{}
 
 private:
-	virtual const std::string GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)=0;
-	virtual const std::string GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+	virtual const std::string GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)=0;
+	virtual const std::string GeneratePage(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 	{
 		Option option(m_db);
 		std::map<std::string,std::string> sections;
@@ -66,7 +66,7 @@ private:
 
 		if(queryvars.find("viewstate")!=queryvars.end() && (*queryvars.find("viewstate")).second!="")
 		{
-			if(m_viewstate.LoadViewState((*queryvars.find("viewstate")).second)==false)
+			if(m_viewstate.LoadViewState((*queryvars.find("viewstate")).second.GetData())==false)
 			{
 				m_viewstate.CreateViewState();
 			}
@@ -79,7 +79,7 @@ private:
 		if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="login" && queryvars.find("localidentityid")!=queryvars.end() && (*queryvars.find("localidentityid")).second!="" && ValidateFormPassword(queryvars))
 		{
 			SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE LocalIdentityID=?;");
-			st.Bind(0,(*queryvars.find("localidentityid")).second);
+			st.Bind(0,(*queryvars.find("localidentityid")).second.GetData());
 			st.Step();
 			if(st.RowReturned())
 			{

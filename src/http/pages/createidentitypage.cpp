@@ -10,7 +10,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string CreateIdentityPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string CreateIdentityPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content="";
 
@@ -22,7 +22,7 @@ const std::string CreateIdentityPage::GenerateContent(const std::string &method,
 
 		if(queryvars.find("name")!=queryvars.end())
 		{
-			name=(*queryvars.find("name")).second;
+			name=(*queryvars.find("name")).second.GetData();
 		}
 
 		st.Bind(0,name);

@@ -8,7 +8,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string ControlBoardPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ControlBoardPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content="";
 	int boardid;
@@ -26,7 +26,7 @@ const std::string ControlBoardPage::GenerateContent(const std::string &method, c
 		if((*queryvars.find("formaction")).second=="remove" && queryvars.find("boardid")!=queryvars.end() && ValidateFormPassword(queryvars))
 		{
 			int boardid=0;
-			StringFunctions::Convert((*queryvars.find("boardid")).second,boardid);
+			StringFunctions::Convert((*queryvars.find("boardid")).second.GetData(),boardid);
 
 			st=m_db->Prepare("DELETE FROM tblAdministrationBoard WHERE BoardID=?;");
 			st.Bind(0,boardid);
@@ -49,13 +49,13 @@ const std::string ControlBoardPage::GenerateContent(const std::string &method, c
 		{
 			Poco::DateTime date;
 			st=m_db->Prepare("INSERT INTO tblBoard(BoardName,DateAdded) VALUES(?,?);");
-			st.Bind(0,(*queryvars.find("boardname")).second);
+			st.Bind(0,(*queryvars.find("boardname")).second.GetData());
 			st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 			if(st.Step(true))
 			{
 				boardid=st.GetLastInsertRowID();
-				StringFunctions::Convert((*queryvars.find("changemessagetrust")).second,changemessagetrust);
-				StringFunctions::Convert((*queryvars.find("changetrustlisttrust")).second,changetrustlisttrust);
+				StringFunctions::Convert((*queryvars.find("changemessagetrust")).second.GetData(),changemessagetrust);
+				StringFunctions::Convert((*queryvars.find("changetrustlisttrust")).second.GetData(),changetrustlisttrust);
 
 				st=m_db->Prepare("INSERT INTO tblAdministrationBoard(BoardID,ModifyLocalMessageTrust,ModifyLocalTrustListTrust) VALUES(?,?,?);");
 				st.Bind(0,boardid);

@@ -8,7 +8,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string VersionInfoPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string VersionInfoPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content="";
 
@@ -20,17 +20,17 @@ const std::string VersionInfoPage::GenerateContent(const std::string &method, co
 
 	if(queryvars.find("Major")!=queryvars.end())
 	{
-		major=(*queryvars.find("Major")).second;
+		major=(*queryvars.find("Major")).second.GetData();
 		hascriteria=true;
 	}
 	if(queryvars.find("Minor")!=queryvars.end())
 	{
-		minor=(*queryvars.find("Minor")).second;
+		minor=(*queryvars.find("Minor")).second.GetData();
 		hascriteria=true;
 	}
 	if(queryvars.find("Release")!=queryvars.end())
 	{
-		release=(*queryvars.find("Release")).second;
+		release=(*queryvars.find("Release")).second.GetData();
 		hascriteria=true;
 	}
 

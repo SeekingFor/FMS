@@ -5,18 +5,21 @@
 
 void MultiPartParser::handlePart(const Poco::Net::MessageHeader &header, std::istream &stream)
 {
-	std::string name="";
-	std::string data="";
+	QueryVar qv;
+	std::string data;
 
 	if(header.has("Content-Disposition"))
 	{
 		std::string disp;
 		Poco::Net::NameValueCollection nvc;
 		Poco::Net::MessageHeader::splitParameters(header["Content-Disposition"],disp,nvc);
-		name=nvc.get("name","");
+		qv.SetName(nvc.get("name",""));
+		qv.SetFileName(nvc.get("filename",""));
+		qv.SetContentType(header["Content-Type"]);
 
 		Poco::StreamCopier::copyToString(stream,data);
+		qv.SetData(data);
 
-		vars[name]=data;
+		m_vars[qv.GetName()]=qv;
 	}
 }

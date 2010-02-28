@@ -5,15 +5,17 @@
 #include <map>
 #include <string>
 
+#include "queryvar.h"
+
 class MultiPartParser:public Poco::Net::PartHandler
 {
 public:
 	void handlePart(const Poco::Net::MessageHeader &header, std::istream &stream);
 
-	std::map<std::string,std::string> GetVars()	{ return vars; }
+	std::map<std::string,QueryVar> GetVars()			{ return m_vars; }
 
 private:
-	std::map<std::string,std::string> vars;
+	std::map<std::string,QueryVar> m_vars;
 };
 
 #endif	// _multipartparser_

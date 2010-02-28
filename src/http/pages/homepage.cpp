@@ -8,7 +8,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string HomePage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string HomePage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 
 	Option option(m_db);

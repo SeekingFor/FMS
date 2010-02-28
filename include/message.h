@@ -25,6 +25,8 @@ public:
 
 	void SetFromName(const std::string &fromname)	{ m_fromname=fromname; }
 
+	void AddInsertFileAttachment(const std::string &filename, const std::string &mimetype, const std::vector<unsigned char> &data);
+
 	const std::string GetNNTPHeaders() const;
 	const std::string GetNNTPArticleID() const;
 	const std::string GetNNTPBody() const;
@@ -48,7 +50,7 @@ public:
 	const bool Load(const std::string &messageuuid);
 	
 	const bool ParseNNTPMessage(const std::string &nntpmessage);
-	const bool Create(const long localidentityid, const long boardid, const std::string &subject, const std::string &body, const std::string &references);
+	const bool Create(const long localidentityid, const long boardid, const std::string &subject, const std::string &body, const std::vector<std::string> &references);
 
 	const bool PostedToAdministrationBoard()		{ return CheckForAdministrationBoard(m_boards); }
 

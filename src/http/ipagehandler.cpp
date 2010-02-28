@@ -42,9 +42,9 @@ IPageHandler::IPageHandler(SQLite3DB::DB *db, const std::string &templatestr, co
 
 }
 
-void IPageHandler::CreateArgArray(const std::map<std::string,std::string> &vars, const std::string &basename, std::vector<std::string> &args)
+void IPageHandler::CreateArgArray(const std::map<std::string,QueryVar> &vars, const std::string &basename, std::vector<std::string> &args)
 {
-	for(std::map<std::string,std::string>::const_iterator i=vars.begin(); i!=vars.end(); i++)
+	for(std::map<std::string,QueryVar>::const_iterator i=vars.begin(); i!=vars.end(); i++)
 	{
 		if((*i).first.find(basename)==0 && (*i).first.find("[")!=std::string::npos && (*i).first.find("]")!=std::string::npos)
 		{
@@ -62,7 +62,7 @@ void IPageHandler::CreateArgArray(const std::map<std::string,std::string> &vars,
 			{
 				args.push_back("");
 			}
-			args[index]=(*i).second;
+			args[index]=(*i).second.GetData();
 		}
 	}
 }
@@ -132,11 +132,11 @@ const std::string IPageHandler::CreateTrueFalseDropDown(const std::string &name,
 	return rval;
 }
 
-void IPageHandler::CreateQueryVarMap(Poco::Net::HTTPServerRequest &request, std::map<std::string,std::string> &vars)
+void IPageHandler::CreateQueryVarMap(Poco::Net::HTTPServerRequest &request, std::map<std::string,QueryVar> &vars)
 {
 	for(Poco::Net::HTTPServerRequest::ConstIterator i=request.begin(); i!=request.end(); i++)
 	{
-		vars[(*i).first]=(*i).second;
+		vars[(*i).first]=QueryVar((*i).first,(*i).second);
 	}
 
 	// handle HTMLForm and multiparts
@@ -144,7 +144,7 @@ void IPageHandler::CreateQueryVarMap(Poco::Net::HTTPServerRequest &request, std:
 	Poco::Net::HTMLForm form(request,request.stream(),mpp);
 	for(Poco::Net::HTMLForm::ConstIterator i=form.begin(); i!=form.end(); i++)
 	{
-		vars[(*i).first]=(*i).second;
+		vars[(*i).first]=QueryVar((*i).first,(*i).second);
 	}
 
 	// for a POST method, the HTMLForm won't grab vars off the query string so we
@@ -155,14 +155,14 @@ void IPageHandler::CreateQueryVarMap(Poco::Net::HTTPServerRequest &request, std:
 		Poco::Net::HTMLForm form1(request,request.stream(),mpp);
 		for(Poco::Net::HTMLForm::ConstIterator i=form1.begin(); i!=form1.end(); i++)
 		{
-			vars[(*i).first]=(*i).second;
+			vars[(*i).first]=QueryVar((*i).first,(*i).second);
 		}
 		request.setMethod("POST");
 	}
 
 	// get any multiparts
-	std::map<std::string,std::string> mpvars=mpp.GetVars();
-	for(std::map<std::string,std::string>::iterator i=mpvars.begin(); i!=mpvars.end(); i++)
+	std::map<std::string,QueryVar> mpvars=mpp.GetVars();
+	for(std::map<std::string,QueryVar>::iterator i=mpvars.begin(); i!=mpvars.end(); i++)
 	{
 		vars[(*i).first]=(*i).second;
 	}
@@ -193,7 +193,7 @@ const std::string IPageHandler::GenerateNavigationLinks()
 
 }
 
-const std::string IPageHandler::GeneratePage(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string IPageHandler::GeneratePage(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	return StringFunctions::Replace(StringFunctions::Replace(m_template,"[NAVLINKS]",GenerateNavigationLinks()),"[CONTENT]",GenerateContent(method,queryvars));
 }
@@ -202,7 +202,7 @@ void IPageHandler::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 {
 	m_log->trace("IPageHandler::handleRequest from "+request.clientAddress().toString());
 
-	std::map<std::string,std::string> vars;
+	std::map<std::string,QueryVar> vars;
 
 	CreateQueryVarMap(request,vars);
 
@@ -240,7 +240,7 @@ const std::string IPageHandler::SanitizeTextAreaOutput(const std::string &input)
 	return SanitizeOutput(input,skip);
 }
 
-const bool IPageHandler::ValidateFormPassword(const std::map<std::string,std::string> &vars)
+const bool IPageHandler::ValidateFormPassword(const std::map<std::string,QueryVar> &vars)
 {
 	Poco::DateTime date;
 	date-=Poco::Timespan(0,1,0,0,0);
@@ -249,11 +249,11 @@ const bool IPageHandler::ValidateFormPassword(const std::map<std::string,std::st
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 	st.Step();
 
-	std::map<std::string,std::string>::const_iterator i=vars.find("formpassword");
+	std::map<std::string,QueryVar>::const_iterator i=vars.find("formpassword");
 	if(i!=vars.end())
 	{
 		st=m_db->Prepare("SELECT COUNT(*) FROM tmpFormPassword WHERE Password=?;");
-		st.Bind(0,(*i).second);
+		st.Bind(0,(*i).second.GetData());
 		st.Step();
 		if(st.RowReturned())
 		{

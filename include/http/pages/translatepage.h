@@ -11,7 +11,7 @@ public:
 	IPageHandler *New()	{ return new TranslatePage(m_db,m_template); }
 
 private:
-	const std::string GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars);
+	const std::string GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars);
 };
 
 #endif	// _translatepage_

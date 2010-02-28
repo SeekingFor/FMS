@@ -5,14 +5,14 @@
 	#include <xmem.h>
 #endif
 
-const std::string ExecQueryPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ExecQueryPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content="";
 	std::string query="";
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="execute" && queryvars.find("query")!=queryvars.end() && (*queryvars.find("query")).second!="" && ValidateFormPassword(queryvars))
 	{
-		query=(*queryvars.find("query")).second;
+		query=(*queryvars.find("query")).second.GetData();
 		SQLite3DB::Recordset rs=m_db->Query(query);
 
 		content+="<table>";

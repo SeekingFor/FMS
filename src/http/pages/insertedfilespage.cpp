@@ -6,7 +6,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string InsertedFilesPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string InsertedFilesPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content="<h2>"+m_trans->Get("web.page.insertedfiles.title")+"</h2>";
 
@@ -19,7 +19,7 @@ const std::string InsertedFilesPage::GenerateContent(const std::string &method, 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="removefile" && queryvars.find("fileid")!=queryvars.end() && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement del=m_db->Prepare("DELETE FROM tblFileInserts WHERE FileInsertID=?;");
-		del.Bind(0,(*queryvars.find("fileid")).second);
+		del.Bind(0,(*queryvars.find("fileid")).second.GetData());
 		del.Step();
 	}
 

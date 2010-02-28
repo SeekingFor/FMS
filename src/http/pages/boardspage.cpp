@@ -33,7 +33,7 @@ const std::string BoardsPage::BuildQueryString(const long startrow, const std::s
 
 }
 
-const std::string BoardsPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string BoardsPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	int boardcount=0;
 	std::string content="";
@@ -53,9 +53,9 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 			std::string boardname="";
 			std::string boarddescription="";
 
-			boardname=(*queryvars.find("boardname")).second;
+			boardname=(*queryvars.find("boardname")).second.GetData();
 			boardname=Board::FixBoardName(boardname);
-			boarddescription=(*queryvars.find("boarddescription")).second;
+			boarddescription=(*queryvars.find("boarddescription")).second.GetData();
 
 			if(boardname!="")
 			{
@@ -134,7 +134,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 	// if startrow is specified
 	if(queryvars.find("startrow")!=queryvars.end())
 	{
-		startrowstr=(*queryvars.find("startrow")).second;
+		startrowstr=(*queryvars.find("startrow")).second.GetData();
 		// convert back and forth, just in case a number wasn't passed in startrow
 		StringFunctions::Convert(startrowstr,startrow);
 		if(startrow<0)
@@ -147,7 +147,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 	// if we are searching by name
 	if(queryvars.find("boardsearch")!=queryvars.end())
 	{
-		boardsearch=(*queryvars.find("boardsearch")).second;
+		boardsearch=(*queryvars.find("boardsearch")).second.GetData();
 	}
 
 	content+="<h2>"+m_trans->Get("web.page.boards.title")+"</h2>";

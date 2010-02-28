@@ -10,7 +10,7 @@
 	#include <xmem.h>
 #endif
 
-const std::string PeerMaintenancePage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string PeerMaintenancePage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content="";
 	SQLite3DB::Statement st;
@@ -46,7 +46,7 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 		else if((*queryvars.find("formaction")).second=="removedaysago" && queryvars.find("daysago")!=queryvars.end() && (*queryvars.find("daysago")).second!="")
 		{
 			int tempint=10000;
-			StringFunctions::Convert((*queryvars.find("daysago")).second,tempint);
+			StringFunctions::Convert((*queryvars.find("daysago")).second.GetData(),tempint);
 			date=Poco::Timestamp();
 			date-=Poco::Timespan(tempint,0,0,0,0);
 			st=m_db->Prepare("DELETE FROM tblIdentity WHERE LastSeen<?;");
@@ -56,7 +56,7 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 		else if((*queryvars.find("formaction")).second=="removenulldaysago" && queryvars.find("daysago")!=queryvars.end() && (*queryvars.find("daysago")).second!="")
 		{
 			int tempint=10000;
-			StringFunctions::Convert((*queryvars.find("daysago")).second,tempint);
+			StringFunctions::Convert((*queryvars.find("daysago")).second.GetData(),tempint);
 			date=Poco::Timestamp();
 			date-=Poco::Timespan(tempint,0,0,0,0);
 			st=m_db->Prepare("DELETE FROM tblIdentity WHERE LastSeen<? AND LocalMessageTrust IS NULL AND LocalTrustListTrust IS NULL;");

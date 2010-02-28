@@ -10,12 +10,12 @@
 	#include <xmem.h>
 #endif
 
-const std::string ShowPendingMessagePage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string ShowPendingMessagePage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="delete" && ValidateFormPassword(queryvars))
 	{
-		m_log->information("User requested to delete message "+(*queryvars.find("uuid")).second);
-		m_db->Execute("DELETE FROM tblMessageInserts WHERE MessageUUID=\""+(*queryvars.find("uuid")).second+"\"");
+		m_log->information("User requested to delete message "+(*queryvars.find("uuid")).second.GetData());
+		m_db->Execute("DELETE FROM tblMessageInserts WHERE MessageUUID=\""+(*queryvars.find("uuid")).second.GetData()+"\"");
 	}
 
 	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID, MessageXML, SendDate, MessageUUID FROM tblMessageInserts WHERE Inserted='false';");

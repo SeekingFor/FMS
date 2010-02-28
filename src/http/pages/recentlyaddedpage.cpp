@@ -6,7 +6,7 @@
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/Timespan.h>
 
-const std::string RecentlyAddedPage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string RecentlyAddedPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content="";
 	Poco::DateTime date;

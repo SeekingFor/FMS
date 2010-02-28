@@ -2,7 +2,7 @@
 #include <vector>
 #include <algorithm>
 
-const std::string TranslatePage::GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars)
+const std::string TranslatePage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string content("");
 	std::vector<std::string> keys;
@@ -17,26 +17,26 @@ const std::string TranslatePage::GenerateContent(const std::string &method, cons
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="showtranslate" && queryvars.find("id")!=queryvars.end() && ValidateFormPassword(queryvars))
 	{
 		page=2;
-		id=(*queryvars.find("id")).second;
+		id=(*queryvars.find("id")).second.GetData();
 	}
 	else if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="translate" && queryvars.find("id")!=queryvars.end() && queryvars.find("translation")!=queryvars.end() && ValidateFormPassword(queryvars))
 	{
-		if(std::find(keys.begin(),keys.end(),(*queryvars.find("id")).second)!=keys.end())
+		if(std::find(keys.begin(),keys.end(),(*queryvars.find("id")).second.GetData())!=keys.end())
 		{
 			if((*queryvars.find("translation")).second!="")
 			{
-				m_trans->SetLocalized((*queryvars.find("id")).second,(*queryvars.find("translation")).second);
+				m_trans->SetLocalized((*queryvars.find("id")).second.GetData(),(*queryvars.find("translation")).second.GetData());
 			}
 			else
 			{
-				m_trans->EraseLocalized((*queryvars.find("id")).second);
+				m_trans->EraseLocalized((*queryvars.find("id")).second.GetData());
 			}
 			m_trans->SaveLocalizedTranslation();
 		}
 		if(queryvars.find("chkgotonextuntranslated")!=queryvars.end() && (*queryvars.find("chkgotonextuntranslated")).second=="true")
 		{
 			id="";
-			std::vector<std::string>::const_iterator thisid=std::find(keys.begin(),keys.end(),(*queryvars.find("id")).second);
+			std::vector<std::string>::const_iterator thisid=std::find(keys.begin(),keys.end(),(*queryvars.find("id")).second.GetData());
 			if(thisid!=keys.end())
 			{
 				thisid++;

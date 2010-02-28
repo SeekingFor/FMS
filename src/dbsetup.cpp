@@ -159,13 +159,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=23;
 		}
+		if(major==1 && minor==23)
+		{
+			ConvertDB0123To0124(db);
+			major=1;
+			minor=24;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,23);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,24);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=23;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=24;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -268,7 +274,8 @@ void SetupDB(SQLite3DB::DB *db)
 				AddedMethod				TEXT,\
 				Hidden					BOOL CHECK(Hidden IN('true','false')) DEFAULT 'false',\
 				PurgeDate				DATETIME,\
-				FailureCount			INTEGER CHECK(FailureCount>=0) DEFAULT 0\
+				FailureCount			INTEGER CHECK(FailureCount>=0) DEFAULT 0,\
+				SolvedPuzzleCount		INTEGER CHECK(SolvedPuzzleCount>=0) DEFAULT 0\
 				);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblIdentityRequests(\
@@ -685,7 +692,7 @@ void SetupDB(SQLite3DB::DB *db)
 	// insert Tommy[D]'s public key
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@EefdujDZxdWxl0qusX0cJofGmJBvd3dF4Ty61PZy8Y8,4-LkBILohhpX7znBPXZWEUoK2qQZs-CLbUFO3-yKJIo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert DoorsOnFire's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@F1x03zWQR4dAqJT8FueZnmWhVE9RuPg1Z4oeItkQ1qw,8DCU7gsHn61lSvYPyjaqsg4oMzBSEP1JhBVMMX-J8sM,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@F1x03zWQR4dAqJT8FueZnmWhVE9RuPg1Z4oeItkQ1qw,8DCU7gsHn61lSvYPyjaqsg4oMzBSEP1JhBVMMX-J8sM,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert interrupt's public key
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@04RAn8gPQ~Cd7zGHkzui-Vz0jW-YNNLwfUnj5zI8i3I,H1CQ1U8cbs~y0o8qFYKUmpfySti80avdR~q3ADDb448,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert The Seeker's public key

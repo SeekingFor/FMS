@@ -33,6 +33,11 @@ Message::Message(SQLite3DB::DB *db, const long dbmessageid, const long boardid):
 	LoadDB(dbmessageid,boardid);
 }
 
+void Message::AddInsertFileAttachment(const std::string &filename, const std::string &mimetype, const std::vector<unsigned char> &data)
+{
+	m_insertfileattachments.push_back(insertfileattachment(filename,mimetype,data));
+}
+
 const bool Message::CheckForAdministrationBoard(const std::vector<std::string> &boards)
 {
 	std::string name;
@@ -54,7 +59,7 @@ const bool Message::CheckForAdministrationBoard(const std::vector<std::string> &
 	return false;
 }
 
-const bool Message::Create(const long localidentityid, const long boardid, const std::string &subject, const std::string &body, const std::string &references)
+const bool Message::Create(const long localidentityid, const long boardid, const std::string &subject, const std::string &body, const std::vector<std::string> &references)
 {
 	Initialize();
 
@@ -103,9 +108,10 @@ const bool Message::Create(const long localidentityid, const long boardid, const
 
 	m_body=body;
 
-	if(references!="")
+	long currentref=0;
+	for(std::vector<std::string>::const_iterator i=references.begin(); i!=references.end(); i++, currentref++)
 	{
-		m_inreplyto[0]=references;
+		m_inreplyto[currentref]=(*i);
 	}
 
 	return true;

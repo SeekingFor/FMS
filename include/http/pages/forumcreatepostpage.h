@@ -2,20 +2,7 @@
 #define _forumcreatepostpage_
 
 #include "forumpage.h"
-/*
-class ForumCreatePostPage:public ForumPage
-{
-public:
-	ForumCreatePostPage(SQLite3DB::DB *db, const std::string &templatestr):ForumPage(db,templatestr,"forumcreatepost.htm")	{}
 
-	IPageHandler *New()		{ return new ForumCreatePostPage(m_db,m_template); }
-private:
-	const std::string GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars);
-
-	const std::string LocalIdentityDropDown(const std::string &name, const std::string &selectedid);
-	
-};
-*/
 class ForumTemplateCreatePostPage:public ForumTemplatePage
 {
 public:
@@ -24,7 +11,22 @@ public:
 	IPageHandler *New()		{ return new ForumTemplateCreatePostPage(m_db,m_templatehandler); }
 
 private:
-	const std::string GenerateContent(const std::string &method, const std::map<std::string,std::string> &queryvars);
+	const std::string GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars);
+
+	struct fileattachment
+	{
+	public:
+		fileattachment():m_id(0),m_filename(""),m_data(""),m_datasize(-1),m_contenttype(""),m_freenetkey("")	{}
+		int m_id;
+		std::string m_filename;
+		std::string m_data;
+		int m_datasize;
+		std::string m_contenttype;
+		std::string m_freenetkey;
+	};
+
+	void ClearFileAttachments(const std::string &viewstateid);
+	void LoadFileAttachments(const std::string &viewstateid, std::vector<fileattachment> &fileattachments);
 
 };
 
