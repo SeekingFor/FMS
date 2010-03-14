@@ -1,5 +1,6 @@
 #include "../../../include/http/pages/peermaintenancepage.h"
 #include "../../../include/stringfunctions.h"
+#include "../../../include/option.h"
 
 #include <Poco/DateTime.h>
 #include <Poco/Timestamp.h>
@@ -12,10 +13,15 @@
 
 const std::string PeerMaintenancePage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
-	std::string content="";
+	std::string content("");
+	std::string sql("");
 	SQLite3DB::Statement st;
 	std::string tempval;
 	Poco::DateTime date;
+	bool m_localtrustoverrides=false;
+	Option opt(m_db);
+
+	opt.GetBool("LocalTrustOverridesPeerTrust",m_localtrustoverrides);
 
 	if(queryvars.find("formaction")!=queryvars.end() && ValidateFormPassword(queryvars))
 	{
@@ -95,6 +101,24 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 	st.ResultText(0,tempval);
 	content+="<td>"+tempval+"</td>";
 	content+="<td>"+m_trans->Get("web.page.peermaintenance.knownpeers")+"</td>";
+	content+="</tr>";
+
+	content+="<tr>";
+	sql="SELECT COUNT(*) FROM tblIdentity WHERE ";
+	if(m_localtrustoverrides==true)
+	{
+		sql+="(tblIdentity.LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (tblIdentity.LocalMessageTrust IS NULL AND (tblIdentity.PeerMessageTrust IS NULL OR tblIdentity.PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust'))))";
+	}
+	else
+	{
+		sql+="(tblIdentity.LocalMessageTrust IS NULL OR tblIdentity.LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust'))";
+		sql+="AND (tblIdentity.PeerMessageTrust IS NULL OR tblIdentity.PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust'))";
+	}
+	st=m_db->Prepare(sql);
+	st.Step();
+	st.ResultText(0,tempval);
+	content+="<td>"+tempval+"</td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.trustedcount")+"</td>";
 	content+="</tr>";
 
 	content+="<tr>";

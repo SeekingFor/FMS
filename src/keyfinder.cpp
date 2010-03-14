@@ -43,7 +43,7 @@ void KeyFinderHTMLRenderVisitor::Visit(KeyFinderItem &item)
 	else if(item.GetItemType()==KeyFinderItem::TYPE_KEY)
 	{
 		const KeyFinderItemKey *keyitem=dynamic_cast<const KeyFinderItemKey *>(&item);
-		m_rendered+="<a href=\"http://"+m_fproxyhost+":"+m_fproxyport+"/"+keyitem->GetKeyPart()+StringFunctions::UriEncode(keyitem->GetFilePart())+"\">";
+		m_rendered+="<a href=\""+m_fproxyprotocol+"://"+m_fproxyhost+":"+m_fproxyport+"/"+keyitem->GetKeyPart()+StringFunctions::UriEncode(keyitem->GetFilePart())+"\">";
 		if(keyitem->GetFilePart()=="")
 		{
 			m_rendered+=keyitem->GetKeyPart();
@@ -204,12 +204,13 @@ void KeyFinderParser::Cleanup(std::vector<KeyFinderItem *> &items)
 	items.clear();
 }
 
-std::string KeyFinderHTMLRenderer::Render(const std::string &message, const std::string &fproxyhost, const std::string &fproxyport)
+std::string KeyFinderHTMLRenderer::Render(const std::string &message, const std::string &fproxyprotocol, const std::string &fproxyhost, const std::string &fproxyport)
 {
 	KeyFinderHTMLRenderVisitor rv;
 	std::vector<KeyFinderItem *> items=KeyFinderParser::ParseMessage(message);
 	rv.SetFProxyHost(fproxyhost);
 	rv.SetFProxyPort(fproxyport);
+	rv.SetFProxyProtocol(fproxyprotocol);
 
 	for(std::vector<KeyFinderItem *>::const_iterator i=items.begin(); i!=items.end(); i++)
 	{

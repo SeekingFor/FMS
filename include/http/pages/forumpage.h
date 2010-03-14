@@ -134,6 +134,8 @@ private:
 		sections["FORMPASSWORD"]=CreateFormPassword();
 		option.Get("FCPHost",sections["FCPHOST"]);
 		option.Get("FProxyPort",sections["FPROXYPORT"]);
+		option.Get("FProxyProtocol",sections["FPROXYPROTOCOL"]);
+		option.Get("FProxyHost",sections["FPROXYHOST"]);
 
 		m_templatehandler.PerformReplacements(output,sections,output);
 		m_templatehandler.PerformTranslations(output,*m_trans,output);

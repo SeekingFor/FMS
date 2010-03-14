@@ -89,7 +89,11 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.StartFreenetUpdater.description","Set to true to start the Freenet Updater thread and connect to Freenet.  Set to false to prevent communication with Freenet.");
 	st->SetDefault("web.option.FCPHost.description","Host name or address of Freenet node.");
 	st->SetDefault("web.option.FCPPort.description","The port that Freenet is listening for FCP connections on.");
+	st->SetDefault("web.option.FProxyHost.description","Host name or address of FProxy.");
 	st->SetDefault("web.option.FProxyPort.description","The port that Freenet is listening for http connections on.");
+	st->SetDefault("web.option.FProxyProtocol.description","FProxy protocol.");
+	st->SetDefault("web.option.FProxyProtocol.http","http");
+	st->SetDefault("web.option.FProxyProtocol.https","https");
 	st->SetDefault("web.option.FCPTimeout.description","FCP Timeout in seconds.  If the connected Freenet node doesn't send any data to FMS in this this time period, FMS will try to reconnect to the node.");
 	st->SetDefault("web.option.DefaultRequestPriorityClass.description","The default PriorityClass for requests.");
 	st->SetDefault("web.option.DefaultRequestPriorityClass.0","0 - Emergency");
@@ -199,6 +203,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.peermaintenance.recentlyadded","Recently Added Peers");
 	st->SetDefault("web.page.peermaintenance.stats","Stats");
 	st->SetDefault("web.page.peermaintenance.knownpeers","known peers");
+	st->SetDefault("web.page.peermaintenance.trustedcount","peers have sufficient message trust to download their messages");
 	st->SetDefault("web.page.peermaintenance.neverseen","never seen");
 	st->SetDefault("web.page.peermaintenance.remove","Remove");
 	st->SetDefault("web.page.peermaintenance.lastseen20days","last seen more than 20 days ago");
@@ -259,6 +264,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.boards.addboard","Add Board");
 	st->SetDefault("web.page.boards.name","Name");
 	st->SetDefault("web.page.boards.description","Description");
+	st->SetDefault("web.page.boards.messagecount","Message Count");
 	st->SetDefault("web.page.boards.savereceivedmessages","Save Received Messages *");
 	st->SetDefault("web.page.boards.forum","Forum");
 	st->SetDefault("web.page.boards.addedmethod","Added Method");

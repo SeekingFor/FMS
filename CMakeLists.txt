@@ -53,8 +53,8 @@ src/freenet/fcpv2.cpp
 src/freenet/fileinserter.cpp
 src/freenet/fmsversionrequester.cpp
 src/freenet/fmsversionxml.cpp
+src/freenet/freenetkeys.cpp
 src/freenet/freenetmasterthread.cpp
-src/freenet/freenetssk.cpp
 src/freenet/identityinserter.cpp
 src/freenet/identityintroductioninserter.cpp
 src/freenet/identityintroductionrequester.cpp

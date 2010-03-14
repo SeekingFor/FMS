@@ -436,15 +436,7 @@ void MessageRequester::Initialize()
 		m_savemessagesfromnewboards=false;
 	}
 
-	option.Get("LocalTrustOverridesPeerTrust",tempval);
-	if(tempval=="true")
-	{
-		m_localtrustoverrides=true;
-	}
-	else
-	{
-		m_localtrustoverrides=false;
-	}
+	option.GetBool("LocalTrustOverridesPeerTrust",m_localtrustoverrides);
 
 }
 

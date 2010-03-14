@@ -12,9 +12,11 @@ const std::string InsertedFilesPage::GenerateContent(const std::string &method, 
 
 	Option option(m_db);
 	std::string node="localhost";
-	option.Get("FCPHost",node);
+	option.Get("FProxyHost",node);
 	std::string fproxyport="8888";
 	option.Get("FProxyPort",fproxyport);
+	std::string fproxyprotocol("http");
+	option.Get("FProxyProtocol",fproxyprotocol);
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="removefile" && queryvars.find("fileid")!=queryvars.end() && ValidateFormPassword(queryvars))
 	{
@@ -38,7 +40,7 @@ const std::string InsertedFilesPage::GenerateContent(const std::string &method, 
 		st.ResultText(2,sizestr);
 		st.ResultText(3,insertidstr);
 
-		content+="<a href=\"http://"+node+":"+fproxyport+"/"+StringFunctions::UriEncode(key)+"\">"+SanitizeOutput(filename)+"</a> - "+sizestr+" bytes";
+		content+="<a href=\""+fproxyprotocol+"://"+node+":"+fproxyport+"/"+StringFunctions::UriEncode(key)+"\">"+SanitizeOutput(filename)+"</a> - "+sizestr+" bytes";
 		content+="<form name=\"frmRemove"+insertidstr+"\" method=\"POST\">";
 		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"formaction\" value=\"removefile\">";

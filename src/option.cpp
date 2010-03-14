@@ -35,9 +35,9 @@ const bool Option::Get(const std::string &option, std::string &value)
 const bool Option::GetBool(const std::string &option, bool &value)
 {
 	std::string valstr="";
-	if(Get(option,valstr) && valstr=="true" || valstr=="false")
+	if(Get(option,valstr) && valstr=="true" || valstr=="false" || valstr=="1" || valstr=="0")
 	{
-		if(valstr=="true")
+		if(valstr=="true" || valstr=="1")
 		{
 			value=true;
 		}

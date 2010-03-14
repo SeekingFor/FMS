@@ -20,7 +20,8 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 	std::string dateadded="";
 	std::string addedmethod="";
 	std::string usk="";
-	std::string fcphost="127.0.0.1";
+	std::string fproxyhost="127.0.0.1";
+	std::string fproxyprotocol("http");
 	std::string hidden="";
 	int freesiteedition=-1;
 	std::string publishtrustlist="";
@@ -30,7 +31,8 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 	std::string fproxyport="8888";
 	option.Get("FProxyPort",fproxyport);
 	option.Get("MessageBase",messagebase);
-	option.Get("FCPHost",fcphost);
+	option.Get("FProxyHost",fproxyhost);
+	option.Get("FProxyProtocol",fproxyprotocol);
 
 	if(queryvars.find("identityid")!=queryvars.end() && (*queryvars.find("identityid")).second!="")
 	{
@@ -95,7 +97,7 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.publickey")+"</td><td class=\"smaller\">"+SanitizeOutput(publickey)+"</td></tr>";
 		if(usk!="")
 		{
-			content+="<tr><td>"+m_trans->Get("web.page.peerdetails.freesite")+"</td><td class=\"smaller\"><a href=\"http://"+fcphost+":"+fproxyport+"/"+SanitizeOutput(usk)+"\">"+SanitizeOutput(usk)+"</a></td></tr>";
+			content+="<tr><td>"+m_trans->Get("web.page.peerdetails.freesite")+"</td><td class=\"smaller\"><a href=\""+fproxyprotocol+"://"+fproxyhost+":"+fproxyport+"/"+SanitizeOutput(usk)+"\">"+SanitizeOutput(usk)+"</a></td></tr>";
 		}
 		if(publishtrustlist=="true")
 		{
@@ -104,7 +106,7 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 			{
 				lastseendate=lastseendate.substr(0,10);
 			}
-			content+="<tr><td>"+m_trans->Get("web.page.peerdetails.trustlistxml")+"</td><td class=\"smaller\"><a href=\"http://"+fcphost+":"+fproxyport+"/"+SanitizeOutput(publickey)+messagebase+"|"+lastseendate+"|TrustList|0.xml\">"+m_trans->Get("web.page.peerdetails.trustlist")+"</a></td></tr>";
+			content+="<tr><td>"+m_trans->Get("web.page.peerdetails.trustlistxml")+"</td><td class=\"smaller\"><a href=\""+fproxyprotocol+"://"+fproxyhost+":"+fproxyport+"/"+SanitizeOutput(publickey)+messagebase+"|"+lastseendate+"|TrustList|0.xml\">"+m_trans->Get("web.page.peerdetails.trustlist")+"</a></td></tr>";
 		}
 		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.dateadded")+"</td><td>"+dateadded+"</td></tr>";
 		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.lastseen")+"</td><td>"+lastseen+"</td></tr>";

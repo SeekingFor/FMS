@@ -172,7 +172,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 	st.Finalize();
 
 
-	sql="SELECT BoardID,BoardName,BoardDescription,SaveReceivedMessages,AddedMethod,Forum FROM tblBoard WHERE BoardID NOT IN (SELECT BoardID FROM tblAdministrationBoard)";
+	sql="SELECT BoardID,BoardName,BoardDescription,SaveReceivedMessages,AddedMethod,Forum,MessageCount FROM tblBoard WHERE BoardID NOT IN (SELECT BoardID FROM tblAdministrationBoard)";
 	if(boardsearch!="")
 	{
 		sql+=" AND (BoardName LIKE '%' || ? || '%' OR BoardDescription LIKE '%' || ? || '%')";
@@ -208,7 +208,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 
 	content+="<tr><td colspan=\"4\"><hr><form name=\"frmboards\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"</td></tr>";
 	content+="<tr>";
-	content+="<th>"+m_trans->Get("web.page.boards.name")+"</th><th>"+m_trans->Get("web.page.boards.description")+"</th><th>"+m_trans->Get("web.page.boards.savereceivedmessages")+"</th><th>"+m_trans->Get("web.page.boards.forum")+"</th><th>"+m_trans->Get("web.page.boards.addedmethod")+"</th>";
+	content+="<th>"+m_trans->Get("web.page.boards.name")+"</th><th>"+m_trans->Get("web.page.boards.description")+"</th><th>"+m_trans->Get("web.page.boards.messagecount")+"</th><th>"+m_trans->Get("web.page.boards.savereceivedmessages")+"</th><th>"+m_trans->Get("web.page.boards.forum")+"</th><th>"+m_trans->Get("web.page.boards.addedmethod")+"</th>";
 	content+="</tr>";	
 	while(st.RowReturned() && rownum<rowsperpage)
 	{
@@ -219,6 +219,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 		std::string savereceivedmessages="";
 		std::string addedmethod="";
 		std::string forum="";
+		std::string messagecountstr="";
 
 		st.ResultText(0,boardidstr);
 		st.ResultText(1,boardname);
@@ -226,6 +227,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 		st.ResultText(3,savereceivedmessages);
 		st.ResultText(4,addedmethod);
 		st.ResultText(5,forum);
+		st.ResultText(6,messagecountstr);
 
 		StringFunctions::Convert(rownum,rownumstr);
 
@@ -234,6 +236,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 		content+="<td><input type=\"hidden\" name=\"boardid["+rownumstr+"]\" value=\""+boardidstr+"\">";
 		content+="<input type=\"hidden\" name=\"oldboarddescription["+rownumstr+"]\" value=\""+StringFunctions::Replace(SanitizeOutput(boarddescription),"&nbsp;"," ")+"\">";
 		content+="<input type=\"text\" name=\"boarddescription["+rownumstr+"]\" value=\""+SanitizeOutput(boarddescription)+"\" size=\"40\" maxlength=\""MAX_BOARD_DESCRIPTION_LENGTH_STR"\"></td>";
+		content+="<td style=\"text-align:right;\">"+messagecountstr+"</td>";
 		content+="<td>";
 		content+="<input type=\"hidden\" name=\"oldsavereceivedmessages["+rownumstr+"]\" value=\""+savereceivedmessages+"\">";
 		content+="<input type=\"checkbox\" name=\"savereceivedmessages["+rownumstr+"]\" value=\"true\"";
@@ -272,7 +275,7 @@ const std::string BoardsPage::GenerateContent(const std::string &method, const s
 		}
 		if(startrow+rowsperpage<boardcount)
 		{
-			while(cols<4)
+			while(cols<5)
 			{
 				content+="<td></td>";
 				cols++;

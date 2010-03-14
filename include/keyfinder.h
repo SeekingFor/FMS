@@ -79,12 +79,14 @@ class KeyFinderHTMLRenderVisitor:public KeyFinderRenderVisitor
 public:
 	virtual void Visit(KeyFinderItem &item);
 
-	void SetFProxyHost(const std::string &host)	{ m_fproxyhost=host; }
-	void SetFProxyPort(const std::string &port) { m_fproxyport=port; }
+	void SetFProxyHost(const std::string &host)				{ m_fproxyhost=host; }
+	void SetFProxyPort(const std::string &port)				{ m_fproxyport=port; }
+	void SetFProxyProtocol(const std::string &protocol)		{ m_fproxyprotocol=protocol; }
 
 private:
 	std::string m_fproxyhost;
 	std::string m_fproxyport;
+	std::string m_fproxyprotocol;
 };
 
 class KeyFinderParser
@@ -97,7 +99,7 @@ public:
 class KeyFinderHTMLRenderer
 {
 public:
-	static std::string Render(const std::string &message, const std::string &fproxyhost, const std::string &fproxyport);
+	static std::string Render(const std::string &message, const std::string &fproxyprotocol, const std::string &fproxyhost, const std::string &fproxyport);
 };
 
 #endif	// _keyfinder_

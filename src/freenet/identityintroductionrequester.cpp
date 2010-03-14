@@ -1,6 +1,6 @@
 #include "../../include/freenet/identityintroductionrequester.h"
 #include "../../include/freenet/identityintroductionxml.h"
-#include "../../include/freenet/freenetssk.h"
+#include "../../include/freenet/freenetkeys.h"
 #include "../../include/option.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/hex.h"
@@ -37,7 +37,7 @@ void IdentityIntroductionRequester::FCPDisconnected()
 
 const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 {
-	FreenetSSK ssk;
+	FreenetSSKKey ssk;
 	Poco::DateTime date;
 	std::vector<std::string> idparts;
 	std::vector<char> data;
@@ -62,20 +62,17 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 	// parse file into xml and update the database
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
-
-		ssk.SetPublicKey(xml.GetIdentity());
-
 		// mark puzzle found
 		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblIntroductionPuzzleInserts SET FoundSolution='true' WHERE UUID=?;");
 		st.Bind(0,idparts[3]);
 		st.Step();
 		st.Finalize();
 
-		if(ssk.ValidPublicKey()==true)
+		if(ssk.TryParse(xml.GetIdentity())==true)
 		{
 			// try to find existing identity with this SSK
 			st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
-			st.Bind(0,xml.GetIdentity());
+			st.Bind(0,ssk.GetBaseKey());
 			st.Step();
 			if(st.RowReturned()==false)
 			{
@@ -83,7 +80,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 				st.Finalize();
 				date=Poco::Timestamp();
 				st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod,SolvedPuzzleCount) VALUES(?,?,?,1);");
-				st.Bind(0,xml.GetIdentity());
+				st.Bind(0,ssk.GetBaseKey());
 				st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 				st.Bind(2,"solved captcha");
 				st.Step();
@@ -102,7 +99,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 		}
 		else
 		{
-			m_log->error("IdentityIntroductionRequester::HandleAllData parsed, public SSK key was not valid.");
+			m_log->error("IdentityIntroductionRequester::HandleAllData parsed, public SSK key was not valid : "+xml.GetIdentity());
 		}
 
 		m_log->debug("IdentityIntroductionRequester::HandleAllData parsed IdentityIntroduction XML file : "+message["Identifier"]);

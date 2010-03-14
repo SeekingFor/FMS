@@ -15,11 +15,13 @@ const std::string HomePage::GenerateContent(const std::string &method, const std
 
 	std::string messagecountstr="";
 	std::string filecountstr="";
-	std::string fcphost="127.0.0.1";
+	std::string fproxyhost="127.0.0.1";
 	std::string fproxyport="8888";
+	std::string fproxyprotocol="http";
 
-	option.Get("FCPHost",fcphost);
+	option.Get("FProxyHost",fproxyhost);
 	option.Get("FProxyPort",fproxyport);
+	option.Get("FProxyProtocol",fproxyprotocol);
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="shutdown" && ValidateFormPassword(queryvars))
 	{
@@ -64,7 +66,7 @@ const std::string HomePage::GenerateContent(const std::string &method, const std
 
 		if(currentmajor<major || (currentmajor==major && currentminor<minor) || (currentmajor==major && currentminor==minor && currentrelease<release))
 		{
-			content+="<strong>"+m_trans->Get("web.page.home.oldversion")+" <a href=\"http://"+fcphost+":"+fproxyport+"/"+freesite+"\">FMS "+majorstr+"."+minorstr+"."+releasestr+"</a></strong><br>";
+			content+="<strong>"+m_trans->Get("web.page.home.oldversion")+" <a href=\""+fproxyprotocol+"://"+fproxyhost+":"+fproxyport+"/"+freesite+"\">FMS "+majorstr+"."+minorstr+"."+releasestr+"</a></strong><br>";
 			content+=m_trans->Get("web.page.home.releaseinfo")+" <a href=\"versioninfo.htm?Major="+majorstr+"&Minor="+minorstr+"&Release="+releasestr+"\">"+m_trans->Get("web.page.home.releaseinfohere")+"</a><br>";
 			showgenericupdate=false;
 		}
@@ -77,7 +79,7 @@ const std::string HomePage::GenerateContent(const std::string &method, const std
 
 	if(showgenericupdate)
 	{
-		content+=m_trans->Get("web.page.home.checknewreleases")+" <a href=\"http://"+fcphost+":"+fproxyport+"/"+FMS_FREESITE_USK+"\">"+m_trans->Get("web.page.home.fmsfreesite")+"</a><br>";
+		content+=m_trans->Get("web.page.home.checknewreleases")+" <a href=\""+fproxyprotocol+"://"+fproxyhost+":"+fproxyport+"/"+FMS_FREESITE_USK+"\">"+m_trans->Get("web.page.home.fmsfreesite")+"</a><br>";
 	}
 
 	content+=m_trans->Get("web.page.home.admininstructions");

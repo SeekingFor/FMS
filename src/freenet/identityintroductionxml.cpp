@@ -1,5 +1,5 @@
 #include "../../include/freenet/identityintroductionxml.h"
-#include "../../include/freenet/freenetssk.h"
+#include "../../include/freenet/freenetkeys.h"
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -29,7 +29,7 @@ void IdentityIntroductionXML::Initialize()
 
 const bool IdentityIntroductionXML::ParseXML(const std::string &xml)
 {
-	FreenetSSK ssk;
+	FreenetSSKKey ssk;
 	bool parsed=false;
 	Poco::XML::DOMParser dp;
 
@@ -49,13 +49,12 @@ const bool IdentityIntroductionXML::ParseXML(const std::string &xml)
 			if(txt->firstChild())
 			{
 				m_identity=SanitizeSingleString(txt->firstChild()->getNodeValue());
+				if(ssk.TryParse(m_identity)==false)
+				{
+					return false;
+				}
+				m_identity=ssk.GetBaseKey();
 			}
-		}
-
-		ssk.SetPublicKey(m_identity);
-		if(ssk.ValidPublicKey()==false)
-		{
-			return false;
 		}
 
 		parsed=true;

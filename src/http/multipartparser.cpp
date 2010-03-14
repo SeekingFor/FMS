@@ -15,7 +15,14 @@ void MultiPartParser::handlePart(const Poco::Net::MessageHeader &header, std::is
 		Poco::Net::MessageHeader::splitParameters(header["Content-Disposition"],disp,nvc);
 		qv.SetName(nvc.get("name",""));
 		qv.SetFileName(nvc.get("filename",""));
-		qv.SetContentType(header["Content-Type"]);
+		if(header.has("Content-Type"))
+		{
+			qv.SetContentType(header["Content-Type"]);
+		}
+		else
+		{
+			qv.SetContentType("");
+		}
 
 		Poco::StreamCopier::copyToString(stream,data);
 		qv.SetData(data);

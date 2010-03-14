@@ -5,6 +5,7 @@
 #include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/unicode/unicodestring.h"
 #include "../../include/global.h"
+#include "../../include/freenet/freenetkeys.h"
 
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/Timespan.h>
@@ -152,6 +153,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		SQLite3DB::Statement idinsert=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES(?,?,?);");
 		
 		// loop through all trust entries in xml and add to database if we don't already know them
+		FreenetSSKKey ssk;
 		for(long i=0; i<xml.TrustCount(); i++)
 		{
 			int id=-1;
@@ -166,19 +168,26 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 			{
 				if(savenewidentities==true)
 				{
-					// allow up to 10 new identities per downloaded trust list, where total inserted in the last 24 hours may not exceed 1/10 the total number of identities we know about or 500 (whichever is smaller, minimum 10)
-					// 24 hour limit is lifted if the database didn't contain any identities inserted more than 24 hours ago (new db) - 100 new identities per trust list allowed in this case
-					if((insertcount<100 && previnsertcount==0) || (insertcount<10 && dayinsertcount<((std::min)(((std::max)(previnsertcount/10,10)),500))))
+					if(ssk.TryParse(identity)==true)
 					{
-						idinsert.Bind(0,identity);
-						idinsert.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
-						idinsert.Bind(2,"trust list of "+publisherid);
-						idinsert.Step(true);
-						id=idinsert.GetLastInsertRowID();
-						idinsert.Reset();
+						// allow up to 10 new identities per downloaded trust list, where total inserted in the last 24 hours may not exceed 1/10 the total number of identities we know about or 500 (whichever is smaller, minimum 10)
+						// 24 hour limit is lifted if the database didn't contain any identities inserted more than 24 hours ago (new db) - 100 new identities per trust list allowed in this case
+						if((insertcount<100 && previnsertcount==0) || (insertcount<10 && dayinsertcount<((std::min)(((std::max)(previnsertcount/10,10)),500))))
+						{
+							idinsert.Bind(0,ssk.GetBaseKey());
+							idinsert.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
+							idinsert.Bind(2,"trust list of "+publisherid);
+							idinsert.Step(true);
+							id=idinsert.GetLastInsertRowID();
+							idinsert.Reset();
+						}
+						insertcount++;
+						dayinsertcount++;
 					}
-					insertcount++;
-					dayinsertcount++;
+					else
+					{
+						m_log->warning("TrustListRequester::HandleAllData invalid SSK : "+identity);
+					}
 				}
 			}
 			else

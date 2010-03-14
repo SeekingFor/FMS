@@ -313,7 +313,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 				keyname=keyname.substr(slashpos+1);
 			}
 
-			attachmentvars["THREADPOSTATTACHMENTLINK"]="<a href=\"http://[FCPHOST]:[FPROXYPORT]/"+StringFunctions::UriEncode(key)+"\"><img src=\"images/attach.png\" border=\"0\" style=\"vertical-align:bottom;\"> "+SanitizeOutput(keyname)+"</a>";
+			attachmentvars["THREADPOSTATTACHMENTLINK"]="<a href=\"[FPROXYPROTOCOL]://[FPROXYHOST]:[FPROXYPORT]/"+StringFunctions::UriEncode(key)+"\"><img src=\"images/attach.png\" border=\"0\" style=\"vertical-align:bottom;\"> "+SanitizeOutput(keyname)+"</a>";
 			attachmentvars["THREADPOSTATTACHMENTSIZE"]=sizestr+" bytes";
 
 			m_templatehandler.PerformReplacements(threadpostattachment,attachmentvars,thisattachment);
@@ -378,7 +378,7 @@ const std::string ForumTemplateViewThreadPage::FixBody(const std::string &body)
 
 	if(m_detectlinks==true)
 	{
-		output=KeyFinderHTMLRenderer::Render(output,"[FCPHOST]","[FPROXYPORT]");
+		output=KeyFinderHTMLRenderer::Render(output,"[PROXYPROTOCL]","[FPROXYHOST]","[FPROXYPORT]");
 	}
 	if(m_showsmilies==true)
 	{

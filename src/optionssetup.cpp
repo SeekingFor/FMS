@@ -332,6 +332,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Step();
 	upd.Reset();
 
+	st.Bind(0,"FProxyHost");
+	st.Bind(1,"127.0.0.1");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Freenet Connection");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"Host name or address of FProxy.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"FProxyHost");
+	upd.Step();
+	upd.Reset();
+
 	st.Bind(0,"FProxyPort");
 	st.Bind(1,"8888");
 	st.Step();
@@ -345,6 +361,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(6);
 	upd.Bind(7,"simple");
 	upd.Bind(8,"FProxyPort");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"FProxyProtocol");
+	st.Bind(1,"http");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Freenet Connection");
+	upd.Bind(1,order++);
+	upd.Bind(2,"http|http|https|https");
+	upd.Bind(3,"FProxy protocol.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"FProxyProtocol");
 	upd.Step();
 	upd.Reset();
 
