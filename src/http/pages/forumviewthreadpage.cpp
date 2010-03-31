@@ -199,7 +199,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	// thread posts
 	m_templatehandler.GetSection("THREADPOSTROWODD",threadpostrowodd);
 	m_templatehandler.GetSection("THREADPOSTROWEVEN",threadpostroweven);
-	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblMessage.Body FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID WHERE tblThreadPost.ThreadID=? ORDER BY tblThreadPost.PostOrder;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblMessage.Body, tblIdentity.PublicKey || (SELECT OptionValue FROM tblOption WHERE Option='MessageBase') || '|' || tblMessage.InsertDate || '|Message-' || tblMessage.MessageIndex FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID LEFT JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE tblThreadPost.ThreadID=? ORDER BY tblThreadPost.PostOrder;");
 	st.Bind(0,threadidstr);
 	st.Step();
 	while(st.RowReturned())
@@ -213,6 +213,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		std::string subject="";
 		std::string datetime="";
 		std::string body="";
+		std::string postlink="";
 		
 		st.ResultInt(0,messageid);
 		st.ResultText(0,messageidstr);
@@ -221,6 +222,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		st.ResultText(3,subject);
 		st.ResultText(4,datetime);
 		st.ResultText(5,body);
+		st.ResultText(6,postlink);
 
 		if(postcount==0)
 		{
@@ -336,6 +338,14 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 			postvars["THREADPOSTAUTHORNAME"]=FixAuthorName(fromname);
 		}
 		postvars["THREADPOSTTITLE"]=SanitizeOutput(subject,skipspace);
+		if(identityidstr!="" && postlink!="")
+		{
+			postvars["THREADPOSTLINK"]="<a href=\"[FPROXYPROTOCOL]://[FPROXYHOST]:[FPROXYPORT]/"+StringFunctions::UriEncode(postlink)+"?type=text/plain\"><img src=\"images/link.png\" border=\"0\" title=\""+m_trans->Get("web.page.forumviewthread.permalink")+"\"></a>";
+		}
+		else
+		{
+			postvars["THREADPOSTLINK"]="";
+		}
 		postvars["THREADPOSTDATE"]=datetime;
 		postvars["THREADPOSTREPLYLINK"]="<a href=\"forumcreatepost.htm?viewstate="+m_viewstate.GetViewStateID()+"&replytomessageid="+messageidstr+"&threadid="+threadidstr+"&boardid="+boardidstr+"&page="+pagestr+"\"><img src=\"images/mail_reply.png\" border=\"0\" style=\"vertical-align:bottom;\">"+m_trans->Get("web.page.forumviewthread.reply")+"</a>";
 
@@ -373,12 +383,14 @@ const std::string ForumTemplateViewThreadPage::FixBody(const std::string &body)
 	output=StringFunctions::Replace(output,"&","&amp;");
 	output=StringFunctions::Replace(output,"<","&lt;");
 	output=StringFunctions::Replace(output,">","&gt;");
+	output=StringFunctions::Replace(output,"[","&#91;");
+	output=StringFunctions::Replace(output,"]","&#93;");
 
 	output=QuoterHTMLRenderer::Render(output);
 
 	if(m_detectlinks==true)
 	{
-		output=KeyFinderHTMLRenderer::Render(output,"[PROXYPROTOCL]","[FPROXYHOST]","[FPROXYPORT]");
+		output=KeyFinderHTMLRenderer::Render(output,"[FPROXYPROTOCOL]","[FPROXYHOST]","[FPROXYPORT]");
 	}
 	if(m_showsmilies==true)
 	{

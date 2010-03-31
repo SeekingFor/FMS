@@ -104,6 +104,37 @@ const std::string HomePage::GenerateContent(const std::string &method, const std
 		st.ResultText(0,filecountstr);
 	}
 	content+=m_trans->Get("web.page.home.fileswaiting")+filecountstr+"<br>";
+
+
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblMessageInserts WHERE Inserted='true';");
+	st.Step();
+	if(st.RowReturned())
+	{
+		st.ResultText(0,messagecountstr);
+	}
+	/*
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblMessageInserts WHERE MessageUUID IN (SELECT MessageUUID FROM tblMessage);");
+	st.Step();
+	if(st.RowReturned())
+	{
+		st.ResultText(0,filecountstr);
+	}
+	*/
+	content+=m_trans->Get("web.page.home.msgsinserted")+" "+messagecountstr;//+" / "+filecountstr;
+	if (messagecountstr!="0") //show link to message page
+	{
+		content+=" (<a href=\"showinsertedmessage.htm\">"+m_trans->Get("web.page.home.show")+"</a>)";
+	}
+	content+="<br>";
+
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblMessage;");
+	st.Step();
+	if(st.RowReturned())
+	{
+		st.ResultText(0,filecountstr);
+	}
+	content+=m_trans->Get("web.page.home.msgsreceived")+" "+filecountstr+" (<a href=\"showreceivedmessage.htm\">"+m_trans->Get("web.page.home.show")+"</a>)<br>";
+
 	content+="<p class=\"paragraph\">";
 	content+="<form name=\"frmshutdown\" method=\"POST\">";
 	content+=CreateFormPassword();

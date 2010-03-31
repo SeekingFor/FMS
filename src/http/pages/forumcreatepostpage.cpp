@@ -347,6 +347,9 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 	vars["AUTHORDROPDOWN"]=CreateLocalIdentityDropDown("localidentityid",localidentityidstr);
 	vars["SUBJECTTEXTBOX"]="<input type=\"text\" name=\"subject\" maxlength=\"60\" size=\"60\" value=\""+SanitizeOutput(subject)+"\">";
 	vars["MESSAGETEXTAREA"]="<textarea name=\"body\" cols=\"80\" rows=\"30\">"+SanitizeTextAreaOutput(body)+"</textarea>";
+	// must do this after sanitize, because sanitize will convert & to &amp;
+	vars["MESSAGETEXTAREA"]=StringFunctions::Replace(vars["MESSAGETEXTAREA"],"[","&#91;");
+	vars["MESSAGETEXTAREA"]=StringFunctions::Replace(vars["MESSAGETEXTAREA"],"]","&#93;");
 
 	vars["STARTFORM"]="<form name=\"frmcreatemessage\" method=\"post\" action=\""+m_pagename+"\" enctype=\"multipart/form-data\">";
 	vars["STARTFORM"]+="<input type=\"hidden\" name=\"boardid\" value=\""+boardidstr+"\">";

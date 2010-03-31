@@ -380,6 +380,7 @@ void MessageRequester::Initialize()
 	Option option(m_db);
 
 	option.GetInt("MaxMessageRequests",m_maxrequests);
+	StringFunctions::Convert(m_maxrequests,tempval);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
@@ -392,6 +393,7 @@ void MessageRequester::Initialize()
 
 	m_maxdaysbackward=0;
 	option.GetInt("MessageDownloadMaxDaysBackward",m_maxdaysbackward);
+	StringFunctions::Convert(m_maxdaysbackward,tempval);
 	if(m_maxdaysbackward<0)
 	{
 		m_maxdaysbackward=0;
@@ -404,6 +406,7 @@ void MessageRequester::Initialize()
 
 	m_maxpeermessages=0;
 	option.GetInt("MaxPeerMessagesPerDay",m_maxpeermessages);
+	StringFunctions::Convert(m_maxpeermessages,tempval);
 	if(m_maxpeermessages<1)
 	{
 		m_maxpeermessages=1;
@@ -416,6 +419,7 @@ void MessageRequester::Initialize()
 
 	m_maxboardspermessage=0;
 	option.GetInt("MaxBoardsPerMessage",m_maxboardspermessage);
+	StringFunctions::Convert(m_maxboardspermessage,tempval);
 	if(m_maxboardspermessage<1)
 	{
 		m_maxboardspermessage=1;
@@ -426,16 +430,8 @@ void MessageRequester::Initialize()
 		m_log->warning("Option MaxBoardsPerMessage is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
 
-	option.Get("SaveMessagesFromNewBoards",tempval);
-	if(tempval=="true")
-	{
-		m_savemessagesfromnewboards=true;
-	}
-	else
-	{
-		m_savemessagesfromnewboards=false;
-	}
-
+	option.GetBool("SaveMessagesFromNewBoards",m_savemessagesfromnewboards);
+	
 	option.GetBool("LocalTrustOverridesPeerTrust",m_localtrustoverrides);
 
 }

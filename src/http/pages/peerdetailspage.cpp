@@ -22,13 +22,14 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 	std::string usk="";
 	std::string fproxyhost="127.0.0.1";
 	std::string fproxyprotocol("http");
+	std::string fproxyport="8888";
 	std::string hidden="";
 	int freesiteedition=-1;
 	std::string publishtrustlist="";
 	std::string messagebase="";
 
 	Option option(m_db);
-	std::string fproxyport="8888";
+
 	option.Get("FProxyPort",fproxyport);
 	option.Get("MessageBase",messagebase);
 	option.Get("FProxyHost",fproxyhost);
@@ -127,6 +128,26 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 			content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peerdetails.show")+"\">";
 		}
 		content+="</form>";
+
+		// Last received msg list
+		st=m_db->Prepare("SELECT mlr.Day, mlr.RequestIndex FROM tblIdentity i, tblMessageListRequests mlr WHERE i.IdentityID=? AND i.IdentityID=mlr.IdentityID AND mlr.Found='true' ORDER by Day DESC, RequestIndex DESC LIMIT 1;");
+		st.Bind(0,identityid);
+		st.Step();
+		if(st.RowReturned())
+		{
+			std::string day="", idx="";
+			st.ResultText(0,day);
+			st.ResultText(1,idx);
+			day = day.substr(0,4)+"."+day.substr(5,2)+"."+day.substr(8,2);
+			dateadded = "<a href=\""+fproxyprotocol+"://"+fproxyhost+":"+fproxyport+"/USK"+publickey.substr(3)+messagebase+"|"+day+"|MessageList/"+idx+"/MessageList.xml?type=text/plain\">From "+day+", edition "+idx+"</a>";
+		}
+		else
+		{
+			dateadded = "<i>"+m_trans->Get("web.page.peerdetails.never")+"</i>";
+		}
+
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.lastreceivedmessagelist")+"</td><td>"+dateadded+"</td></tr>";
+
 		content+="</td></tr>";
 	}
 
@@ -142,6 +163,8 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		content+="<tr>";
 		content+="<td>"+m_trans->Get("web.page.peerdetails.messagecount")+"</td>";
 		content+="<td>"+messagecountstr;
+		content+="&nbsp;&nbsp;(<a href=\"showreceivedmessage.htm?identityid="+identityidstr+"\">"+m_trans->Get("web.page.peerdetails.show")+"</a>)";
+		content+="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 		content+="&nbsp;&nbsp;<form name=\"frmdeletemessages\" method=\"POST\">";
 		content+=CreateFormPassword();
 		content+="<input type=\"hidden\" name=\"identityid\" value=\""+identityidstr+"\">";

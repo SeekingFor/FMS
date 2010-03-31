@@ -132,6 +132,7 @@ private:
 		sections["PAGETITLE"]="FMS Forum";
 		sections["FORUMCONTENT"]=GenerateContent(method,queryvars);
 		sections["FORMPASSWORD"]=CreateFormPassword();
+		sections["VIEWSTATEQS"]="viewstate="+m_viewstate.GetViewStateID();
 		option.Get("FCPHost",sections["FCPHOST"]);
 		option.Get("FProxyPort",sections["FPROXYPORT"]);
 		option.Get("FProxyProtocol",sections["FPROXYPROTOCOL"]);

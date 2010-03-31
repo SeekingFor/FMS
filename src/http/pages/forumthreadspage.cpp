@@ -151,6 +151,7 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 		}
 		replycountst.Reset();
 
+		rowvars["THREADLASTPOSTIMAGE"]="<a href=\"forumviewthread.htm?viewstate="+m_viewstate.GetViewStateID()+"&threadid="+threadidstr+"&page="+pagestr+"&boardid="+boardidstr+"#"+lastmessageidstr+"\"><img border=\"0\" src=\"images/latest_reply.png\"></a>";
 		rowvars["THREADLASTPOSTDATE"]=lastmessagedate;
 		rowvars["THREADLASTPOSTAUTHOR"]="<a href=\"peerdetails.htm?identityid="+lastmessageidentityidstr+"\">"+FixAuthorName(lastmessagefromname)+"</a>";
 

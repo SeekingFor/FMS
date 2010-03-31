@@ -55,7 +55,8 @@ void KeyFinderHTMLRenderVisitor::Visit(KeyFinderItem &item)
 
 std::vector<KeyFinderItem *> KeyFinderParser::ParseMessage(const std::string &message)
 {
-	Poco::RegularExpression keyre("(freenet:)?(CHK@){1}([0-9A-Za-z-~]{43},){2}([0-9A-Za-z-~]){7}");//(([\\S])*(([\\S ])*(\\.[\\S]{3}))?)");
+	Poco::RegularExpression keyre("(http(s)?://[\\S]+?/)?(freenet:)?(CHK@){1}([0-9A-Za-z-~]{43},){2}([0-9A-Za-z-~]){7}");//(([\\S])*(([\\S ])*(\\.[\\S]{3}))?)");
+	Poco::RegularExpression protocolre("(http(s)?://[\\S]+?/)?");
 	Poco::RegularExpression filenamere("/([\\S ]*?\\.[\\S]{3})|/([\\S]*)");
 	std::vector<std::string::size_type> replacedchars;
 	std::string workmessage(message);
@@ -63,6 +64,7 @@ std::vector<KeyFinderItem *> KeyFinderParser::ParseMessage(const std::string &me
 	bool prevnewline=false;
 	bool prevblock=false;
 	Poco::RegularExpression::Match keymatch;
+	Poco::RegularExpression::Match protocolmatch;
 	Poco::RegularExpression::Match filematch;
 	std::vector<Poco::RegularExpression::Match> keymatches;
 	std::string::size_type replacedoffset=0;
@@ -171,6 +173,15 @@ std::vector<KeyFinderItem *> KeyFinderParser::ParseMessage(const std::string &me
 		std::string keypart("");
 		std::string filepart("");
 		std::string wholekey(workmessage.substr((*mi).offset,(*mi).length));
+
+		protocolre.match(wholekey,protocolmatch);
+		if(protocolmatch.offset!=std::string::npos)
+		{
+			wholekey.erase(0,protocolmatch.length);
+			(*mi).offset+=protocolmatch.length;
+			(*mi).length-=protocolmatch.length;
+		}
+
 		std::string::size_type slashpos=wholekey.find("/");
 		if(slashpos!=std::string::npos)
 		{

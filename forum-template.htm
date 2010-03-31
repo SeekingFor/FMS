@@ -17,7 +17,7 @@
 <!--[BEGIN FORUMLINKHEADER]-->
 <tr>
 	<td colspan="5" class="forumlinkheader">
-		<a href="/index.htm">{translation.web.navlink.home}</a> | <a href="[FPROXYPROTOCOL]://[FPROXYHOST]:[FPROXYPORT]/">{translation.web.navlink.browsefreenet}</a> | <a href="/forummain.htm">{translation.web.navlink.browseforums}</a>
+		<a href="/index.htm">{translation.web.navlink.home}</a> | <a href="[FPROXYPROTOCOL]://[FPROXYHOST]:[FPROXYPORT]/">{translation.web.navlink.browsefreenet}</a> | <a href="/forummain.htm?[VIEWSTATEQS]">{translation.web.navlink.browseforums}</a>
 	</td>
 </tr>
 <!--[END FORUMLINKHEADER]-->
@@ -143,7 +143,7 @@
 <!--[END FORUMTHREADPAGES]-->
 
 <!--[BEGIN THREADLASTPOSTINFO]-->
-	[THREADLASTPOSTDATE]<br />{translation.web.page.forumthreads.by} [THREADLASTPOSTAUTHOR]
+	[THREADLASTPOSTDATE] [THREADLASTPOSTIMAGE]<br />{translation.web.page.forumthreads.by} [THREADLASTPOSTAUTHOR]
 <!--[END THREADLASTPOSTINFO]-->
 
 
@@ -191,7 +191,8 @@
 	[THREADPOSTTITLE] {translation.web.page.forumviewthread.on} [THREADPOSTDATE]
 	</td>
 	<td>
-	[THREADPOSTREPLYLINK]
+        <span class="postlink">[THREADPOSTLINK]</span>
+        <span class="replylink">[THREADPOSTREPLYLINK]</span>
 	</td>
 </tr>
 <tr class="lightbg">
@@ -208,7 +209,8 @@
 	[THREADPOSTTITLE] {translation.web.page.forumviewthread.on} [THREADPOSTDATE]
 	</td>
 	<td>
-	[THREADPOSTREPLYLINK]
+        <span class="postlink">[THREADPOSTLINK]</span>
+        <span class="replylink">[THREADPOSTREPLYLINK]</span>
 	</td>	
 </tr>
 <tr class="darkbg">

@@ -114,7 +114,9 @@ src/http/pages/peertrustpage.cpp
 src/http/pages/recentlyaddedpage.cpp
 src/http/pages/showcaptchapage.cpp
 src/http/pages/showfilepage.cpp
+src/http/pages/showinsertedmessagepage.cpp
 src/http/pages/showpendingmessagepage.cpp
+src/http/pages/showreceivedmessagepage.cpp
 src/http/pages/translatepage.cpp
 src/http/pages/versioninfopage.cpp
 src/nntp/extensiontrust.cpp

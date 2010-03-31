@@ -26,6 +26,8 @@
 //ROBERT CHANGE
 #include "../../include/http/pages/showpendingmessagepage.h"
 #include "../../include/http/pages/translatepage.h"
+#include "../../include/http/pages/showinsertedmessagepage.h"
+#include "../../include/http/pages/showreceivedmessagepage.h"
 
 #include <cstdio>
 
@@ -104,6 +106,8 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db):ID
 	m_pagehandlers.push_back(new ForumTemplateCreatePostPage(m_db,m_forumtemplatehandler));
 	//ROBERT CHANGE
 	m_pagehandlers.push_back(new ShowPendingMessagePage(m_db,templatestr));
+	m_pagehandlers.push_back(new ShowInsertedMessagePage(m_db,templatestr));
+	m_pagehandlers.push_back(new ShowReceivedMessagePage(m_db,templatestr));
 	// homepage must be last - catch all page handler
 	m_pagehandlers.push_back(new HomePage(m_db,templatestr));
 

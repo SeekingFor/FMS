@@ -39,6 +39,9 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.home.messageswaiting","Messages waiting to be inserted:");
 	st->SetDefault("web.page.home.showmessageswaiting","show messages");
 	st->SetDefault("web.page.home.fileswaiting","Files waiting to be inserted:");
+	st->SetDefault("web.page.home.msgsinserted","Inserted messages:");
+	st->SetDefault("web.page.home.msgsreceived","Received messages:");
+	st->SetDefault("web.page.home.show","show");
 	st->SetDefault("web.page.home.shutdownfms","Shutdown FMS");
 
 	st->SetDefault("web.page.options.title","Options");
@@ -256,6 +259,10 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.peerdetails.trustlisttrust","Trust List Trust");
 	st->SetDefault("web.page.peerdetails.trustlistcomment","Trust List Comment");
 	st->SetDefault("web.page.peerdetails.trustofthisidentityfromotheridentities","Trust of this identity from other identities");
+	st->SetDefault("web.page.peerdetails.never","never");
+	st->SetDefault("web.page.peerdetails.lastreceivedmessagelist","Last received message list");
+	st->SetDefault("web.page.peerdetails.on","on");
+	st->SetDefault("web.page.peerdetails.edition","edition");
 
 	st->SetDefault("web.page.boards.title","Boards");
 	st->SetDefault("web.page.boards.search","Search");
@@ -335,6 +342,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.forumviewthread.trustlist","Trust List");
 	st->SetDefault("web.page.forumviewthread.on","on");
 	st->SetDefault("web.page.forumviewthread.reply","Reply");
+	st->SetDefault("web.page.forumviewthread.permalink","Permalink");
 
 	st->SetDefault("web.page.forumcreatepost.forum","Forum :");
 	st->SetDefault("web.page.forumcreatepost.from","From");
@@ -352,6 +360,25 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.forumcreatepost.attach","Attach");
 	st->SetDefault("web.page.forumcreatepost.bytes","bytes");
 	st->SetDefault("web.page.forumcreatepost.unknownsize","?");
+
+	st->SetDefault("web.page.insertedmessages.msgssent","messages sent");
+	st->SetDefault("web.page.insertedmessages.showallusers","show all users");
+	st->SetDefault("web.page.insertedmessages.identity","Identity");
+	st->SetDefault("web.page.insertedmessages.boards","Boards");
+	st->SetDefault("web.page.insertedmessages.subject","Subject");
+	st->SetDefault("web.page.insertedmessages.senton","Sent on (UTC)");
+	st->SetDefault("web.page.insertedmessages.nextpage","Next Page -->");
+	st->SetDefault("web.page.insertedmessages.prevpage","<-- Previous Page");
+
+	st->SetDefault("web.page.receivedmessages.msgsreceived","messages received");
+	st->SetDefault("web.page.receivedmessages.showallusers","show all users");
+	st->SetDefault("web.page.receivedmessages.identity","Identity");
+	st->SetDefault("web.page.receivedmessages.board","Board");
+	st->SetDefault("web.page.receivedmessages.subject","Subject");
+	st->SetDefault("web.page.receivedmessages.time","Time (UTC)");
+	st->SetDefault("web.page.receivedmessages.nextpage","Next Page -->");
+	st->SetDefault("web.page.receivedmessages.prevpage","<-- Previous Page");
+	st->SetDefault("web.page.receivedmessages.from","from");
 
 	tdir.pushDirectory("translations");
 	tdir=tdir.makeAbsolute();
