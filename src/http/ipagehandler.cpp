@@ -217,7 +217,7 @@ void IPageHandler::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 
 }
 
-const std::string IPageHandler::SanitizeOutput(const std::string &input, const std::vector<std::string> &skipelements)
+const std::string IPageHandler::SanitizeOutput(const std::string &input, const std::vector<std::string> &skipelements) const
 {
 	std::string output(input);
 	

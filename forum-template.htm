@@ -29,6 +29,7 @@
 	</td>
 	<td colspan="3" class="forumloginheader">
 		[FORUMLOGINHEADER]
+		[FORUMSEARCH]
 	</td>
 </tr>
 <!--[END FORUMLOCATIONHEADER]-->
@@ -37,7 +38,16 @@
 &#0187; <a href="[BREADCRUMBLINK]">[BREADCRUMBNAME]</a> 
 <!--[END LOCATIONBREADCRUMB]-->
 
-
+<!--[BEGIN FORUMSEARCHBOX]-->
+<div id="forumsearchbox">
+<form name="frmsearch" action="[FORUMSEARCHBOXACTION]" method="post">
+<input type="hidden" name="formaction" value="search">
+[FORUMSEARCHBOXEXTRAFIELDS]
+<input type="text" name="searchquery" class="search" style="width:250px;">
+<input type="submit" value="{translation.web.page.forum.searchbox.search}">
+</form>
+</div>
+<!--[END FORUMSEARCHBOX]-->
 
 
 
@@ -64,18 +74,19 @@
 <table width="100%">
 	[FORUMLINKHEADER]
 	[FORUMLOCATIONHEADER]
-	<tr><td colspan="5">
-	<table width="100%">
-	<tr class="forumcolumnheader">
-		<th class="forumcolumnheadernew">{translation.web.page.forummain.header.new}</th>
-		<th class="forumcolumnheaderforum">{translation.web.page.forummain.header.forum}</th>
-		<th class="forumcolumnheaderposts">{translation.web.page.forummain.header.posts}</th>
-		<th class="forumcolumnheaderlastpost">{translation.web.page.forummain.header.lastpost}</th>
+	<tr>
+		<td colspan="5">
+			<table width="100%">
+				<tr class="forumcolumnheader">
+					<th class="forumcolumnheadernew">{translation.web.page.forummain.header.new}</th>
+					<th class="forumcolumnheaderforum">{translation.web.page.forummain.header.forum}</th>
+					<th class="forumcolumnheaderposts">{translation.web.page.forummain.header.posts}</th>
+					<th class="forumcolumnheaderlastpost">{translation.web.page.forummain.header.lastpost}</th>
+				</tr>
+				[FORUMROWS]
+			</table>
+		</td>
 	</tr>
-	[FORUMROWS]
-	</td>
-	</tr>
-	</table>
 </table>
 <!--[END FORUMMAINCONTENT]-->
 
@@ -272,7 +283,7 @@
 	<tr>
 		<td colspan="5">
 			<table>
-				<tr
+				<tr>
 					<td colspan="2" style="text-align:center;font-weight:bolder;color:#ee0000;">
 						[ERROR]
 					</td>
@@ -344,3 +355,151 @@
 	</tr>
 </table>
 <!--[END FORUMCREATEPOSTSUCCESSFULSEND]-->
+
+
+
+
+
+
+
+
+
+<!--[BEGIN FORUMSEARCHCONTENT]-->
+<table width="100%">
+	[FORUMLINKHEADER]
+	[FORUMLOCATIONHEADER]
+	<tr>
+		<td colspan="5">
+			[FORUMSEARCHCRITERIA]
+		</td>
+	</tr>
+	[FORUMSEARCHRESULTS]
+</table>
+<!--[END FORUMSEARCHCONTENT]-->
+
+<!--[BEGIN FORUMSEARCHCRITERIA]-->
+<center>
+<table class="forumsearch">
+	<tr>
+		<td class="heading">
+			{translation.web.page.forumsearch.searchtext}
+		</td>
+		<td>
+			<form name="frmsearch" action="[FORUMSEARCHBOXACTION]" method="post">
+			<input type="hidden" name="formaction" value="search">
+			[FORUMSEARCHBOXEXTRAFIELDS]
+			[FORUMSEARCHQUERY]
+		</td>
+		<td rowspan="7" style="vertical-align:top;">
+			<strong>{translation.web.page.forumsearch.examples}</strong><br />
+			<em>{translation.web.page.forumsearch.searchnotes}</em><br />
+			{translation.web.page.forumsearch.example1}<br />
+			{translation.web.page.forumsearch.example2}<br />
+			{translation.web.page.forumsearch.example3}<br />
+			{translation.web.page.forumsearch.example4}<br />
+			{translation.web.page.forumsearch.example5}
+		</td>
+	</tr>
+	<tr>
+		<td class="heading">
+			{translation.web.page.forumsearch.subject}
+		</td>
+		<td>
+			[FORUMSEARCHSUBJECT]
+		</td>
+	</tr>
+	<tr>
+		<td class="heading">
+			{translation.web.page.forumsearch.author}
+		</td>
+		<td>
+			[FORUMSEARCHAUTHOR]
+		</td>
+	</tr>
+	<tr>
+		<td class="heading">
+			{translation.web.page.forumsearch.board}
+		</td>
+		<td>
+			[FORUMSEARCHBOARDID]
+		</td>
+	</tr>
+	<tr>
+		<td class="heading">
+			{translation.web.page.forumsearch.daterange}
+		</td>
+		<td>
+			[FORUMSEARCHSTARTDATE] - [FORUMSEARCHENDDATE]
+		</td>
+	</tr>
+	<tr>
+		<td class="heading">
+			{translation.web.page.forumsearch.sortby}
+		</td>
+		<td>
+			[FORUMSEARCHSORTBY] [FORUMSEARCHSORTORDER]
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" style="text-align:center;">
+			<input type="submit" value="{translation.web.page.forumsearch.search}">
+			</form>
+		</td>
+	</tr>
+</table>
+</center>
+<!--[END FORUMSEARCHCRITERIA]-->
+
+<!--[BEGIN FORUMSEARCHRESULTS]-->
+<table class="forumsearch" style="width:100%;">
+	<tr>
+		<th>{translation.web.page.forumsearch.header.author}</th>
+		<th>{translation.web.page.forumsearch.header.subject}</th>
+		<th>{translation.web.page.forumsearch.header.date}</th>
+		<th>{translation.web.page.forumsearch.header.board}</th>
+	</tr>
+	[SEARCHRESULTROWS]
+</table>
+<!--[END FORUMSEARCHRESULTS]-->
+
+<!--[BEGIN SEARCHRESULTEVEN]-->
+<tr class="lightbg topborder">
+	<td>
+		[AUTHOR]
+	</td>
+	<td>
+		[SUBJECT]
+	</td>
+	<td>
+		[DATE]
+	</td>
+	<td>
+		[BOARD]
+	</td>
+</tr>
+<!--[END SEARCHRESULTEVEN]-->
+
+<!--[BEGIN SEARCHRESULTODD]-->
+<tr class="darkbg topborder">
+	<td>
+		[AUTHOR]
+	</td>
+	<td>
+		[SUBJECT]
+	</td>
+	<td>
+		[DATE]
+	</td>
+	<td>
+		[BOARD]
+	</td>
+</tr>
+<!--[END SEARCHRESULTODD]-->
+
+<!--[BEGIN SEARCHRESULTLIMITED]-->
+<tr>
+	<td colspan="5" style="font-weight:bolder;">
+		{translation.web.page.forumsearch.limited50}
+	</td>
+</tr>
+<!--[END SEARCHRESULTLIMITED]-->

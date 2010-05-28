@@ -92,22 +92,6 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 			std::string nntpbody="";
 			nntpbody=xml.GetBody();
 
-			//add file keys/sizes to body
-			std::vector<MessageXML::fileattachment> fileattachments=xml.GetFileAttachments();
-			if(fileattachments.size()>0)
-			{
-				nntpbody+="\r\nAttachments";
-			}
-			for(std::vector<MessageXML::fileattachment>::iterator i=fileattachments.begin(); i!=fileattachments.end(); i++)
-			{
-				std::string sizestr="0";
-				StringFunctions::Convert((*i).m_size,sizestr);
-
-				nntpbody+="\r\n"+(*i).m_key;
-				nntpbody+="\r\n"+sizestr+" bytes";
-				nntpbody+="\r\n";
-			}
-
 			st=m_db->Prepare("INSERT INTO tblMessage(FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,InsertDate,MessageIndex) VALUES(?,?,?,?,?,?,?,?,?);");
 			st.Bind(0,xml.GetFrostAuthor());
 			st.Bind(1,xml.GetDate());
@@ -144,6 +128,17 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 					st.Reset();
 				}
 				st.Finalize();
+
+				st=m_db->Prepare("INSERT INTO tblMessageFileAttachment(MessageID,Key,Size) VALUES(?,?,?);");
+				std::vector<MessageXML::fileattachment> fileattachments=xml.GetFileAttachments();
+				for(std::vector<MessageXML::fileattachment>::iterator i=fileattachments.begin(); i!=fileattachments.end(); i++)
+				{
+					st.Bind(0,messageid);
+					st.Bind(1,(*i).m_key);
+					st.Bind(2,(*i).m_size);
+					st.Step();
+					st.Reset();
+				}
 
 				m_log->debug("FrostMessageRequester::HandleAllData parsed Message XML file : "+message["Identifier"]);
 
@@ -334,13 +329,14 @@ void FrostMessageRequester::StartRequest(const std::string &id)
 
 	Poco::DateTimeParser::tryParse(idparts[2],date,tz);
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName FROM tblBoard WHERE BoardID=?;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, FrostPublicKey FROM tblBoard WHERE BoardID=?;");
 	st.Bind(0,idparts[0]);
 	st.Step();
 
 	if(st.RowReturned())
 	{
 		std::string boardname="";
+		std::string publickey="";
 
 		st.ResultText(0,boardname);
 		// erase prefix from the board name
@@ -348,9 +344,21 @@ void FrostMessageRequester::StartRequest(const std::string &id)
 		{
 			boardname.erase(0,m_boardprefix.size());
 		}
+		st.ResultText(0,publickey);
+		if(!(publickey.find("SSK@")==0 && publickey.rfind("/")==(publickey.size()-1)))
+		{
+			publickey="";
+		}
 
 		message.SetName("ClientGet");
-		message["URI"]="KSK@frost|message|"+m_frostmessagebase+"|"+Poco::DateTimeFormatter::format(date,"%Y.%n.%e")+"-"+boardname+"-"+idparts[1]+".xml";
+		if(publickey=="")
+		{
+			message["URI"]="KSK@frost|message|"+m_frostmessagebase+"|"+Poco::DateTimeFormatter::format(date,"%Y.%n.%e")+"-"+boardname+"-"+idparts[1]+".xml";
+		}
+		else
+		{
+			message["URI"]=publickey+boardname+"|"+Poco::DateTimeFormatter::format(date,"%Y.%n.%e")+"-"+idparts[1]+".xml";
+		}
 		message["Identifier"]=m_fcpuniquename+"|"+id+"|"+message["URI"];
 		message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 		message["ReturnType"]="direct";
@@ -359,6 +367,10 @@ void FrostMessageRequester::StartRequest(const std::string &id)
 		m_fcp->Send(message);
 
 		m_requesting.push_back(id);
+	}
+	else
+	{
+		m_log->error("FrostMessageRequester::StartRequest unable to find db record for "+id);
 	}
 
 	m_ids[id]=true;

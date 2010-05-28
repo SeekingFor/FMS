@@ -1,4 +1,5 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" >
 <head>
 <title>FMS - Quick Start Guide</title>
 <meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type" />
@@ -21,12 +22,12 @@
 	</ul>
 	
 	<div class="section">
-		<a name="overview"><h2>Overview</h2></a>
+		<a id="overview"></a><h2>Overview</h2>
 		FMS allows Freenet users to anonymously and securely send text messages in a spam resilient environment.  Messages inserted in Freenet are signed by the author, ensuring the validity of the message and preventing any tampering.  FMS mitigates spam by allowing each identity to rate other users of the system and allowing that identity to share those ratings with others.  Messages posted with FMS may be read via a web interface in a forum like fashion, or through a properly configured newsreader in a usenet like fashion.  FMS provides a web interface for configuration and administration purposes.
 	</div>
 	
 	<div class="section">
-		<a name="installation"><h2>Installation</h2></a>
+		<a id="installation"></a><h2>Installation</h2>
 		FMS may be installed by downloading the source and compiling a binary, or downloading a binary that has already been compiled for your system from the FMS Freesite.  Only files distributed directly from the FMS Freesite are official, and any other distribution avenue should be thoroughly examined before trusting the files that are available, especially for precompiled binaries.  Instructions for compiling can be found in the readme.txt file in the FMS source directory.
 		<p />
 		Windows users may download the precompiled binary from the FMS Freesite.  Unzip this file into any directory on your computer, and make sure to keep the subdirectories intact when unzipping.  Depending on your computer's configuration, you may need to also download the Windows Runtime files from the FMS Freesite as well.  Unzip this file into the same directory that you unzipped FMS into.  This will create a Microsoft.VC80.CRT directory with several DLLs under the FMS directory.
@@ -39,30 +40,30 @@
 	</div>
 	
 	<div class="section">
-		<a name="configuration"><h2>Configuration</h2></a>
+		<a id="configuration"></a><h2>Configuration</h2>
 		After starting FMS, you may open your browser and go to <a href="http://localhost:8080">http://localhost:8080</a>.  This is the web interface of FMS, where you may administer your FMS installation.  Click on the <a href="http://localhost:8080/options.htm">Options</a> link in the navigation bar to see a list of options available.  You may view and change advanced options by clicking the advanced link near the top of the options page.
 		<p />
 		If you are running FMS on the same computer you are running Freenet, the default options should work for you.  If FMS isn't running on the same computer as Freenet, or you need to change a port, this is the place to do so.  Each option has a description that explains what it is used for.  For instance, if you need to change the address of your Freenet node, find FCPHost in the options, and change the setting to the correct address of your Freenet node.  After you are done changing options, you must save the changes by clicking the save button at the bottom of the options page.  Please keep in mind that most changes to options require FMS to be restarted to take affect.
 	</div>
 	
 	<div class="section">
-		<a name="identities"><h2>Identities</h2></a>
+		<a id="identities"></a><h2>Identities</h2>
 		In order to start posting messages you must first create an identity.  Each identity is given a public/private keypair in Freenet where only they are able to post but everyone is allowed to read.  This is what prevents spoofing and ensures messages have not been tampered with.  To create an identity, go to the <a href="http://localhost:8080">Create Identity</a> link on the FMS web interface.  Type a name into the box and click on the create button.
 		<p />
 		You may view your identities by going to the <a href="http://localhost:8080/localidentities.htm">Local Identities</a> link.  There are a few identity specific options here that you can change.  The Single Use drop down is used if you want to create a throw away identity.  Single use identities will automatically be deleted 5 days after creation.  Publishing a trust list will let other identities see what trust ratings you have assigned.  It is better to leave this off until you get comfortable with using FMS first.  Publishing a board list will publish a list of boards you have recently posted to.  Publishing a Freesite will insert a Freesite into Freenet every day that contains your last 10 posts and your trust list if you are publishing it.  More details about the Freesite can be found in the readme.txt file.  The min and max message delays allows you to add a delay from the time you send a message until it is inserted into Freenet.  The announced column lets you know how many other identities that you trust know about you.  See the <a href="#announcing">Announcing Your Identity</a> section for details about announcing an identity.
 		<p />
-		In order for your client to learn about new identities, it is necessary to assign positive trust list trust to an identity you already know about.  See the <a href="#assigningtrust">Assigning Trust</a> section of the guide for details on how to assign trust to an identity.  It is important to note that the web interface will never show you announced to more identities than the number that you have downloaded trust lists from.
+		In order for your client to learn about new identities, it is necessary to assign positive trust list trust to an identity you already know about.  See the <a href="#assigningtrust">Assigning Trust</a> section of the guide for details on how to assign trust to an identity.  It is important to note that the web interface will never show you announced to more identities than you have assigned a positive trust list trust to.
 	</div>
 	
 	<div class="section">
-		<a name="announcing"><h2>Announcing Your Identity</h2></a>
+		<a id="announcing"></a><h2>Announcing Your Identity</h2>
 		In order to let other users know about a new identity, it is necessary to announce that identity.  Currently announcing an identity involves correctly solving captchas created by other identities.  When the identity that created the captcha sees the solution, it will add you to its list of known identities, which in turn will appear on its trust list and be distributed throughout FMS.
 		<p />
 		To announce your new identity, go to the <a href="http://localhost:8080/announceidentity.htm">Announce Identity</a> page of the web interface.  Select the new identity in the drop down and type the answers to some of the captchas.  There is no penalty for skipping a captcha, or getting a captcha wrong.  Just be sure to solve at least 10 captchas to make sure that your identity gets propagated to every client.  After you type the answers to a few captchas, click the announce button to send them.  It will take at least a few hours to become announced, but you may still post messages in an unannounced state.  In order to see yourself as announced, you must add trust to a few trust lists of other identities.  Adding trust to at least 5 trust lists is recommended as the minimum, however you may add trust to as many as you want.
 	</div>
 	
 	<div class="section">
-		<a name="postingmessages"><h2>Posting Messages</h2></a>
+		<a id="postingmessages"></a><h2>Posting Messages</h2>
 		FMS provides a forum style mesage system on the web interface on the <a href="http://localhost:8080/forummain.htm">Browse Forums</a> link.  You may post a new message by clicking the "New Post" link inside a forum, or reply to a message by clicking the "Reply" link next to an existing post.  Click the send button after you are done composing your message, and the message will be inserted in Freenet for others to download and read.
 		<p />
 		You may also decide to use the usenet style message interface.  You will need to configure your newsreader to connect to the machine FMS is running on port 1119.  The user name should be the nickname you typed when creating the identity, and anything can be placed in the email or real name fields.  It should be noted that all unnecessary headers sent from your newsreader are dropped, and all necessary headers are scrubbed of any identifying information before the message is inserted in Freenet.
@@ -73,7 +74,7 @@
 	</div>
 	
 	<div class="section">
-		<a name="assigningtrust"><h2>Assigning Trust</h2></a>
+		<a id="assigningtrust"></a><h2>Assigning Trust</h2>
 		FMS allows each identity to assign trust to other identities and publish this list to help distribute the mitigation of spam.  There are 2 trust ratings that you can assign to an identity, message trust and trust list trust.  The ratings range from 0 to 100, with 0 being the worst rating, 50 being neutral, and 100 being the best.  An identity may also have no rating, which means that no determination has been made about them.  Ratings can be assigned via the web interface at <a href="http://localhost:8080/peertrust.htm">Peer Trust</a>, or if you are using Thunderbird, through the plugin available through the FMS Freesite.
 		<p />
 		The first trust rating that can be assigned is message trust.  This is the trust rating that determines if this identity is posting spam or not.  If you notice an identity who posts good quality posts, you may want to increase their message trust.  Conversely, if you notice an identity posting junk, you may want to decrease their message trust.  Identities whose message trust rating falls below a minimum value, either directly from you or from other trust lists, will be ignored and you won't see any new messages from them.  These minimum values can be configured in the Options section of the web interface.

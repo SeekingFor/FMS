@@ -22,6 +22,7 @@ ShowFilePage::ShowFilePage(SQLite3DB::DB *db):IPageHandler(db)
 	m_filewhitelist["images/circleminus.png"]="image/png";
 	m_filewhitelist["images/latest_reply.png"]="image/png";
 	m_filewhitelist["images/link.png"]="image/png";
+	m_filewhitelist["images/search.png"]="image/png";
 	m_filewhitelist["styles/basestyle.css"]="text/css";
 	m_filewhitelist["styles/forumstyle.css"]="text/css";
 	

@@ -23,6 +23,7 @@
 #include "../../include/http/pages/forumthreadspage.h"
 #include "../../include/http/pages/forumviewthreadpage.h"
 #include "../../include/http/pages/forumcreatepostpage.h"
+#include "../../include/http/pages/forumsearchpage.h"
 //ROBERT CHANGE
 #include "../../include/http/pages/showpendingmessagepage.h"
 #include "../../include/http/pages/translatepage.h"
@@ -104,6 +105,7 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db):ID
 	m_pagehandlers.push_back(new ForumTemplateThreadsPage(m_db,m_forumtemplatehandler));
 	m_pagehandlers.push_back(new ForumTemplateViewThreadPage(m_db,m_forumtemplatehandler));
 	m_pagehandlers.push_back(new ForumTemplateCreatePostPage(m_db,m_forumtemplatehandler));
+	m_pagehandlers.push_back(new ForumSearchPage(m_db,m_forumtemplatehandler));
 	//ROBERT CHANGE
 	m_pagehandlers.push_back(new ShowPendingMessagePage(m_db,templatestr));
 	m_pagehandlers.push_back(new ShowInsertedMessagePage(m_db,templatestr));

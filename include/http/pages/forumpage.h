@@ -129,8 +129,15 @@ private:
 
 		m_templatehandler.GetSection("FORUMPAGE",output);
 
+
 		sections["PAGETITLE"]="FMS Forum";
 		sections["FORUMCONTENT"]=GenerateContent(method,queryvars);
+
+		// these need to come after GenerateContent
+		sections["FORUMSEARCH"]="";
+		sections["FORUMSEARCHBOXACTION"]="forumsearch.htm";
+		sections["FORUMSEARCHBOXEXTRAFIELDS"]="<input type=\"hidden\" name=\"viewstate\" value=\""+m_viewstate.GetViewStateID()+"\">"+CreateFormPassword()+CreateForumSearchBoxExtraFields();
+
 		sections["FORMPASSWORD"]=CreateFormPassword();
 		sections["VIEWSTATEQS"]="viewstate="+m_viewstate.GetViewStateID();
 		option.Get("FCPHost",sections["FCPHOST"]);
@@ -226,6 +233,11 @@ protected:
 		result+="</select>";
 
 		return result;
+	}
+
+	virtual const std::string CreateForumSearchBoxExtraFields() const
+	{
+		return std::string("");
 	}
 
 	const HTMLTemplateHandler &m_templatehandler;

@@ -3,6 +3,16 @@
 #include <cmath>
 #include <algorithm>
 
+const std::string ForumTemplateThreadsPage::CreateForumSearchBoxExtraFields() const
+{
+	std::string boardidstr("");
+
+	StringFunctions::Convert(m_viewstate.GetBoardID(),boardidstr);
+
+	return "<input type=\"hidden\" name=\"boardid\" value=\""+boardidstr+"\">";
+
+}
+
 const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	std::string result("");
@@ -217,6 +227,10 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 		vars["PAGENUMBERS"]="";
 		vars["PAGENUMBERFORM"]="";
 	}
+
+	std::string forumsearchbox("");
+	m_templatehandler.GetSection("FORUMSEARCHBOX",forumsearchbox);
+	vars["FORUMSEARCH"]=forumsearchbox;
 
 	std::vector<std::string> ignored;
 	ignored.push_back("FORUMTHREADPAGES");

@@ -105,6 +105,10 @@ const std::string ForumTemplateMainPage::GenerateContent(const std::string &meth
 
 	vars["FORUMROWS"]=forumrows;
 
+	std::string forumsearchbox("");
+	m_templatehandler.GetSection("FORUMSEARCHBOX",forumsearchbox);
+	vars["FORUMSEARCH"]=forumsearchbox;
+
 	m_templatehandler.PerformReplacements(maincontent,vars,result);
 
 	return result;

@@ -77,7 +77,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		st2.Reset();
 
 		content+="<tr>";
-		content+="<td title=\""+publickey+"\"><form name=\"frmupdate\""+countstr+"\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\">";
+		content+="<td title=\""+publickey+"\"><form name=\"frmupdate"+countstr+"\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\">";
 		if(identityidstr!="")
 		{
 			content+="<a href=\"peerdetails.htm?identityid="+identityidstr+"\">";
@@ -111,7 +111,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		trustst.Reset();
 
 		content+="<td><input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.update")+"\"></form></td>";
-		content+="<td><form name=\"frmdel\""+countstr+"\" method=\"POST\" action=\"confirm.htm\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"delete\"><input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\"><input type=\"hidden\" name=\"targetpage\" value=\"localidentities.htm\"><input type=\"hidden\" name=\"confirmdescription\" value=\""+m_trans->Get("web.page.localidentities.confirmdelete")+" "+SanitizeOutput(CreateShortIdentityName(name,publickey))+"?\"><input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.delete")+"\"></form></td>";
+		content+="<td><form name=\"frmdel"+countstr+"\" method=\"POST\" action=\"confirm.htm\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"delete\"><input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\"><input type=\"hidden\" name=\"targetpage\" value=\"localidentities.htm\"><input type=\"hidden\" name=\"confirmdescription\" value=\""+m_trans->Get("web.page.localidentities.confirmdelete")+" "+SanitizeOutput(CreateShortIdentityName(name,publickey))+"?\"><input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.delete")+"\"></form></td>";
 		content+="</tr>";
 		content+="<tr><td></td><td colspan=\"7\" class=\"smaller\">"+publickey+"</td></tr>";
 		st.Step();

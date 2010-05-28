@@ -23,6 +23,7 @@
 							padding:5px;
 							padding-left:10px;
 							font-weight:bolder;
+							vertical-align:top;
 						}
 						
 .forumloginheader		{
@@ -59,6 +60,12 @@
 						
 .forumcolumnheaderlastpost	{
 								width:400px;
+							}
+							
+#forumsearchbox				{
+								padding-top:5px;
+								padding-bottom:5px;
+								text-align:right;
 							}
 
 tr.forumrow	.forumname		{
@@ -227,4 +234,29 @@ table.createpost td				{
 
 .quotelevel8					{
 									background-color:#6F6F6F;
+								}
+								
+table.forumsearch				{
+									margin-bottom:5px;
+								}
+								
+table.forumsearch .heading		{
+									text-align:right;
+									font-weight:bolder;
+								}
+table.forumsearch td			{
+									padding:5px;	
+								}
+
+table.forumsearch tr.darkbg		{
+									background-color:#DDEEFF;
+								}
+								
+table.forumsearch tr.lightbg	{
+									background-color:#FFFFFF;
+								}
+								
+table.forumsearch tr.topborder	{
+									border-top-style:solid;
+									border-top-width:2px;
 								}

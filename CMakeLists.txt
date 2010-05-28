@@ -102,6 +102,7 @@ src/http/pages/createidentitypage.cpp
 src/http/pages/execquerypage.cpp
 src/http/pages/forumcreatepostpage.cpp
 src/http/pages/forummainpage.cpp
+src/http/pages/forumsearchpage.cpp
 src/http/pages/forumthreadspage.cpp
 src/http/pages/forumviewthreadpage.cpp
 src/http/pages/homepage.cpp
@@ -152,7 +153,6 @@ ELSE(ALTERNATE_CAPTCHA)
 ENDIF(ALTERNATE_CAPTCHA)
 
 IF(FROST_SUPPORT)
-# TODO - add source files for frost support
 	SET(FMS_SRC ${FMS_SRC}
 	src/freenet/frostidentity.cpp
 	src/freenet/frostmessagerequester.cpp

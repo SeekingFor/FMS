@@ -119,7 +119,7 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 
 		st=m_db->Prepare("INSERT INTO tblIdentityRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
 		st.Bind(0,identityid);
-		st.Bind(1,idparts[4]);
+		st.Bind(1,idparts[5]);
 		st.Bind(2,index);
 		st.Step();
 		st.Finalize();
@@ -131,7 +131,7 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 		// bad data - mark index
 		st=m_db->Prepare("INSERT INTO tblIdentityRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
 		st.Bind(0,identityid);
-		st.Bind(1,idparts[4]);
+		st.Bind(1,idparts[5]);
 		st.Bind(2,index);
 		st.Step();
 		st.Finalize();
@@ -164,7 +164,7 @@ const bool IdentityRequester::HandleGetFailed(FCPv2::Message &message)
 	{
 		st=m_db->Prepare("INSERT INTO tblIdentityRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
 		st.Bind(0,identityid);
-		st.Bind(1,idparts[4]);
+		st.Bind(1,idparts[5]);
 		st.Bind(2,index);
 		st.Step();
 		st.Finalize();

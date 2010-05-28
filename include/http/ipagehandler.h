@@ -44,7 +44,7 @@ protected:
 	const bool ValidateFormPassword(const std::map<std::string,QueryVar> &vars);
 
 	// replaces html elements with encoded characters (i.e. < becomes &lt;)
-	const std::string SanitizeOutput(const std::string &input, const std::vector<std::string> &skipelements=std::vector<std::string>());
+	const std::string SanitizeOutput(const std::string &input, const std::vector<std::string> &skipelements=std::vector<std::string>()) const;
 	// don't replace space with &nbsp;, because browser might convert to unicode non breaking space character
 	const std::string SanitizeTextAreaOutput(const std::string &input);
 

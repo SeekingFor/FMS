@@ -369,6 +369,19 @@ void ConvertDB0123To0124(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=24;");
 }
 
+void ConvertDB0124To0125(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblBoard ADD COLUMN FrostPublicKey TEXT;");
+	db->Execute("ALTER TABLE tblBoard ADD COLUMN FrostPrivateKey TEXT;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=25;");
+}
+
+void ConvertDB0125To0126(SQLite3DB::DB *db)
+{
+	db->Execute("DELETE FROM tblIdentityRequests;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=26;");
+}
+
 void FixBoardNames(SQLite3DB::DB *db)
 {
 

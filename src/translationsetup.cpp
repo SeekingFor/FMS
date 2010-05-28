@@ -26,6 +26,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.navlink.insertedfiles","Inserted Files");
 	st->SetDefault("web.navlink.browseforums","Browse Forums");
 	st->SetDefault("web.navlink.browsefreenet","Browse Freenet");
+	st->SetDefault("web.navlink.search","Search");
 
 	st->SetDefault("web.page.home.title","Home");
 	st->SetDefault("web.page.home.fmsversion","FMS version");
@@ -310,6 +311,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.forum.nonewposts","No New Posts");
 	st->SetDefault("web.page.forum.signin","Sign In");
 	st->SetDefault("web.page.forum.signout","Sign Out");
+	st->SetDefault("web.page.forum.searchbox.search","Search");
 
 	st->SetDefault("web.page.forummain.header.new","New");
 	st->SetDefault("web.page.forummain.header.forum","Forum");
@@ -360,6 +362,32 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.forumcreatepost.attach","Attach");
 	st->SetDefault("web.page.forumcreatepost.bytes","bytes");
 	st->SetDefault("web.page.forumcreatepost.unknownsize","?");
+
+	st->SetDefault("web.page.forumsearch.search","Search");
+	st->SetDefault("web.page.forumsearch.searchtext","Search Text");
+	st->SetDefault("web.page.forumsearch.author","Author");
+	st->SetDefault("web.page.forumsearch.board","Board");
+	st->SetDefault("web.page.forumsearch.daterange","Date Range");
+	st->SetDefault("web.page.forumsearch.sortby","Sort By");
+	st->SetDefault("web.page.forumsearch.subject","Subject");
+	st->SetDefault("web.page.forumsearch.sortorder.ascending","Ascending");
+	st->SetDefault("web.page.forumsearch.sortorder.descending","Descending");
+	st->SetDefault("web.page.forumsearch.sortby.date","Date");
+	st->SetDefault("web.page.forumsearch.sortby.board","Board");
+	st->SetDefault("web.page.forumsearch.sortby.subject","Subject");
+	st->SetDefault("web.page.forumsearch.sortby.author","Author");
+	st->SetDefault("web.page.forumsearch.limited50","Search results limited to first 50 matches.");
+	st->SetDefault("web.page.forumsearch.header.author","Author");
+	st->SetDefault("web.page.forumsearch.header.subject","Subject");
+	st->SetDefault("web.page.forumsearch.header.date","Date");
+	st->SetDefault("web.page.forumsearch.header.board","Board");
+	st->SetDefault("web.page.forumsearch.examples","Search Text Examples");
+	st->SetDefault("web.page.forumsearch.example1","one two three 			: Finds messages that contain the text one two and three anywhere in the message");
+	st->SetDefault("web.page.forumsearch.example2","\"one two\" -three		: Finds messages that contain the exact phrase \"one two\" but not the text three");
+	st->SetDefault("web.page.forumsearch.example3","one OR two NOT three	: Finds messages that contain the text one or messages that contain the text two but not the text three");
+	st->SetDefault("web.page.forumsearch.example4","\"one or two or three\"	: Finds messages that contain the exact phrase \"one or two or three\"");
+	st->SetDefault("web.page.forumsearch.example5","one AND -\"two three\" 	: Finds messages that contain the text one but not the phrase \"two three\"");
+	st->SetDefault("web.page.forumsearch.searchnotes","Phrases surrounded by \" are searched for verbatim.  NOT and - are synonymous.  Likewise AND and + are synonymous.  AND is the default qualifier if one isn't specified.  Use OR to make the text match either all conditions on the left side of the OR or all the conditions on the right side.  Using multiple ORs is possible.");
 
 	st->SetDefault("web.page.insertedmessages.msgssent","messages sent");
 	st->SetDefault("web.page.insertedmessages.showallusers","show all users");

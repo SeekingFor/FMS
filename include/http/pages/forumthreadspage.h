@@ -12,6 +12,8 @@ public:
 
 private:
 	const std::string GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars);
+
+	const std::string CreateForumSearchBoxExtraFields() const;
 };
 
 #endif	// _forumthreads_page_

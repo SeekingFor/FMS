@@ -89,6 +89,16 @@ const int HTMLTemplateHandler::PerformReplacements(const std::string &text, cons
 					replaced++;
 					didreplace=true;
 				}
+				else	// section was not in the supplied vars, so grab it from another section if we can
+				{
+					vari=m_section.find(section);
+					if(vari!=m_section.end())
+					{
+						worktext.replace(startpos,(endpos-startpos)+1,(*vari).second);
+						replaced++;
+						didreplace=true;
+					}
+				}
 			}
 		}
 

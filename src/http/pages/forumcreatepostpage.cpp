@@ -251,6 +251,7 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 				}
 				if(mess.StartFreenetInsert())
 				{
+					m_viewstate.UnsetReplyToMessageID();
 					page=1;
 				}
 			}
@@ -409,6 +410,8 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 		m_templatehandler.GetSection("FORUMCREATEPOSTSUCCESSFULSEND",maincontent);
 	}
 	m_templatehandler.PerformReplacements(maincontent,vars,result);
+
+	vars["FORUMSEARCH"]="";
 
 	return result;
 }

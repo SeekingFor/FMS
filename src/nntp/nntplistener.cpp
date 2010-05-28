@@ -152,7 +152,7 @@ void NNTPListener::StartListen()
 					if(sock!=INVALID_SOCKET)
 					{
 						#ifndef _WIN32
-						const char optval='1';
+						const int optval=1;
 						setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,&optval,sizeof(optval));
 						#endif
 						if(bind(sock,current->ai_addr,current->ai_addrlen)==0)
