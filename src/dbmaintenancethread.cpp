@@ -385,6 +385,12 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	m_db->Execute("UPDATE tblIdentity SET FailureCount=0 WHERE FailureCount<(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
 	m_db->Execute("UPDATE tblIdentity SET FailureCount=FailureCount-(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction') WHERE FailureCount>=(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
 
+	// delete null entries from tblMessageInserts
+	date=Poco::Timestamp();
+	st=m_db->Prepare("DELETE FROM tblMessageInserts WHERE MessageUUID IS NULL AND MessageXML IS NULL AND SendDate IS NULL AND Inserted='true' AND Day<?;");
+	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+	st.Step();
+
 	st.Finalize();
 	findst.Finalize();
 

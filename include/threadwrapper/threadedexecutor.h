@@ -11,7 +11,8 @@ class ThreadedExecutor
 public:
 	~ThreadedExecutor();
 
-	void Start(CancelableRunnable *runnable);
+	const int Start(CancelableRunnable *runnable);
+	const int Start(CancelableRunnable *runnable, const std::string &name);
 
 	void Join();
 	void Cancel();

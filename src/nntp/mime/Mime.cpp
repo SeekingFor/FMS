@@ -14,6 +14,7 @@
 #include <time.h>
 #include <cstring>
 #include <cstdio>
+#include <sstream>
 
 #ifndef _WIN32
 	#define stricmp strcasecmp
@@ -108,7 +109,50 @@ bool CMimeField::GetParameter(const char* pszAttr, string& strValue) const
 	if (!FindParameter(pszAttr, nPos, nSize))
 	{
 		strValue.clear();
-		return false;
+
+		if(pszAttr!=0)
+		{
+			// parameters might have been continued on another line with param*0, param*1, param*2
+			std::string tempval("");
+			std::string tempparam("");
+			int paramnum=0;
+			std::ostringstream numstr;
+
+			numstr << paramnum++;
+			tempparam=std::string(pszAttr)+"*"+numstr.str();
+			while(FindParameter(tempparam.c_str(),nPos,nSize)==true)
+			{
+				if(m_strValue[nPos]=='"')
+				{
+					nPos++;
+					nSize--;
+					if(nSize>0 && m_strValue[nPos+nSize-1]=='"')
+					{
+						nSize--;
+					}
+				}
+
+				if(nSize>0)
+				{
+					tempval+=m_strValue.substr(nPos,nSize);
+				}
+
+				numstr.str("");
+				numstr << paramnum++;
+				tempparam=std::string(pszAttr)+"*"+numstr.str();
+			}
+
+			strValue=tempval;
+		}
+
+		if(strValue!="")
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	if (m_strValue[nPos] == '"')

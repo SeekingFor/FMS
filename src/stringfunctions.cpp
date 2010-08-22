@@ -1,6 +1,7 @@
 #include "../include/stringfunctions.h"
 
 #include <algorithm>
+#include <limits>
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -15,6 +16,8 @@ void LowerCase(const std::string &str, std::string &output)
 	std::transform(str.begin(),str.end(),output.begin(),tolower);
 }
 
+#ifdef _DEBUG
+/* This function is actually faster doing replaces in debug mode */
 std::string Replace(const std::string &input, const std::string &find, const std::string &replace)
 {
 	std::string returnstr=input;
@@ -29,6 +32,174 @@ std::string Replace(const std::string &input, const std::string &find, const std
 	return returnstr;
 
 }
+#else
+/* http://www.allquests.com/question/2561981/c-std-string-find-and-replace-all.html */
+/*
+template <class T, int n>
+class MeteredAllocator
+{
+public:
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T* pointer;
+	typedef const T* const_pointer;
+	typedef T& reference;
+	typedef const T& const_reference;
+	typedef T value_type;
+
+	pointer address(reference value) const
+	{
+		return &value;
+	}
+
+	const_pointer address(const_reference value) const
+	{
+		return &value;
+	}
+
+	template <class U>
+	struct rebind {
+		typedef MeteredAllocator<U, -1> other;
+	};
+
+	size_type max_size() const 
+	{
+		return std::numeric_limits<size_t>::max() / sizeof(T);
+	}
+
+	pointer allocate(size_type num, std::allocator<void>::const_pointer /* hint *//* = 0)
+	{
+		m_nHits++;
+		m_nVolume += num * sizeof(T);
+
+		return (pointer) ::operator new(num*sizeof(T));
+	}
+
+	void deallocate(pointer p, size_type num)
+	{
+		delete( (value_type*) p );
+	}
+
+	void construct(pointer p, const T& value)
+	{
+		new((value_type*)p) T(value);
+	}
+
+	MeteredAllocator(): m_n(n), m_nHits(0), m_nVolume(0)
+	{
+	}
+
+	template <class U, int o>
+	MeteredAllocator(const MeteredAllocator<U,o> &ma): m_n(ma.m_n),m_nVolume(ma.m_nVolume),m_nHits(ma.m_nHits)
+	{
+	}
+
+	~MeteredAllocator()
+	{
+	}
+
+	template <class U, int o>
+	const bool operator==(const MeteredAllocator<U,o> &ma)
+	{
+		return (m_n==ma.m_n && m_nVolume==ma.m_nVolume && m_nHits==ma.m_nHits);
+	}
+
+public:
+	int m_n;
+	size_t m_nVolume;
+	size_t m_nHits;
+};
+*/
+
+
+template <class T, int n>
+class MeteredAllocator:public std::allocator<T>
+{
+public:
+	typedef std::allocator<T> base;
+	typedef typename base::size_type size_type;
+	typedef typename base::difference_type difference_type;
+	typedef typename base::pointer pointer;
+	typedef typename base::const_pointer const_pointer;
+	typedef typename base::reference reference;
+	typedef typename base::const_reference const_reference;
+	typedef typename base::value_type value_type;
+
+	MeteredAllocator() throw():m_n(n),m_nVolume(0),m_nHits(0) {}
+	MeteredAllocator(const MeteredAllocator<T,n> &ma) throw():m_n(n),m_nVolume(0),m_nHits(0),base(ma) {}
+	template <class U, int o>
+	MeteredAllocator(const MeteredAllocator<U,o> &ma) throw():m_n(o),m_nVolume(0),m_nHits(0),base(ma) {}
+	~MeteredAllocator() throw() {}
+
+	template<typename U>
+	struct rebind
+	{
+		typedef MeteredAllocator<U,-1> other;
+	};
+
+	size_type max_size() const 
+	{
+		return std::numeric_limits<size_t>::max() / sizeof(T);
+	}
+
+	pointer allocate(size_type num, std::allocator<void>::const_pointer /* hint */ = 0)
+	{
+		m_nHits++;
+		m_nVolume += num * sizeof(T);
+
+		return (pointer) ::operator new(num*sizeof(T));
+	}
+
+	void deallocate(pointer p, size_type num)
+	{
+		delete( (value_type*) p );
+	}
+
+	void construct(pointer p, const T& value)
+	{
+		new((value_type*)p) T(value);
+	}
+
+private:
+	int m_n;
+	size_t m_nVolume;
+	size_t m_nHits;
+};
+
+
+typedef std::basic_string<char, std::char_traits<char>, MeteredAllocator<char, 2> > metered_string;
+
+inline metered_string replaceAll(const metered_string &s, const metered_string &f, const metered_string &r)
+{
+	if ( s.empty() || f.empty() || f == r || s.find(f) == metered_string::npos )
+	{
+		return s;
+	}
+
+	std::basic_stringstream<char, std::char_traits<char>, MeteredAllocator<char, 2> > build_it;
+	metered_string::size_type i = 0;
+	for (metered_string::size_type pos; ( pos = s.find( f, i ) ) != metered_string::npos; )
+	{
+		build_it.write( &s[i], pos - i );
+		build_it << r;
+		i = pos + f.size();
+	}
+	if ( i != s.size() )
+	{
+		build_it.write( &s[i], s.size() - i );
+	}
+
+	return build_it.str();
+}
+
+std::string Replace(const std::string &input, const std::string &find, const std::string &replace)
+{
+	metered_string ms=replaceAll(metered_string(input.begin(),input.end()),metered_string(find.begin(),find.end()),metered_string(replace.begin(),replace.end()));
+	return std::string(ms.begin(),ms.end());
+}
+#endif	// _DEBUG
+
+
 
 void Split(const std::string &str, const std::string &delim, std::vector<std::string> &output)
 {

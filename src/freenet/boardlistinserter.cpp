@@ -120,7 +120,7 @@ const bool BoardListInserter::StartInsert(const long &localidentityid)
 	daysback-=Poco::Timespan(20,0,0,0,0);
 
 	// get boards
-	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName,BoardDescription FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID INNER JOIN tblMessage ON tblMessageBoard.MessageID=tblMessage.MessageID INNER JOIN tblMessageInserts ON tblMessage.MessageUUID=tblMessageInserts.MessageUUID WHERE tblMessageInserts.LocalIdentityID=? AND tblMessageInserts.Day>=? GROUP BY tblBoard.BoardID;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName,BoardDescription FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID INNER JOIN tblMessage ON tblMessageBoard.MessageID=tblMessage.MessageID INNER JOIN tblMessageInserts ON tblMessage.MessageUUID=tblMessageInserts.MessageUUID WHERE tblMessageInserts.LocalIdentityID=? AND tblMessageInserts.Day>=? GROUP BY tblBoard.BoardID ORDER BY tblBoard.BoardName;");
 	st.Bind(0,localidentityid);
 	st.Bind(1,Poco::DateTimeFormatter::format(daysback,"%Y-%m-%d"));
 	st.Step();

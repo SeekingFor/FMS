@@ -1,8 +1,6 @@
 #include "../include/keyfinder.h"
 #include "../include/stringfunctions.h"
 
-#include <Poco/RegularExpression.h>
-
 KeyFinderItemText::KeyFinderItemText():KeyFinderItem(TYPE_TEXT),m_text("")
 {
 
@@ -53,11 +51,16 @@ void KeyFinderHTMLRenderVisitor::Visit(KeyFinderItem &item)
 	}
 }
 
+KeyFinderParser::KeyFinderParser():
+m_keyre("(http(s)?://[\\S]+?/)?(freenet:)?(((CHK@){1}([0-9A-Za-z-~]{43},){2}([0-9A-Za-z-~]){7})|(USK@([0-9A-Za-z-~]{43},){2}([0-9A-Za-z-~]){7}/[\\S]+?/-?\\d+/?))"),
+m_protocolre("(http(s)?://[\\S]+?/)?"),
+m_filenamere("/([\\S ]*?\\.[\\S]{3})|/([\\S]*)")
+{
+
+}
+
 std::vector<KeyFinderItem *> KeyFinderParser::ParseMessage(const std::string &message)
 {
-	Poco::RegularExpression keyre("(http(s)?://[\\S]+?/)?(freenet:)?(CHK@){1}([0-9A-Za-z-~]{43},){2}([0-9A-Za-z-~]){7}");//(([\\S])*(([\\S ])*(\\.[\\S]{3}))?)");
-	Poco::RegularExpression protocolre("(http(s)?://[\\S]+?/)?");
-	Poco::RegularExpression filenamere("/([\\S ]*?\\.[\\S]{3})|/([\\S]*)");
 	std::vector<std::string::size_type> replacedchars;
 	std::string workmessage(message);
 	std::vector<KeyFinderItem *> items;
@@ -74,7 +77,14 @@ std::vector<KeyFinderItem *> KeyFinderParser::ParseMessage(const std::string &me
 	// find all characters we are going to ignore - (newlines and the start of block quotes)
 	for(std::string::size_type pos=0; pos<message.size(); pos++)
 	{
-		if(message[pos]=='\r' || message[pos]=='\n')
+		// single /r or /r/n or /n is ok, but we will skip double /r/r or /n/r or /n/n
+		if(message[pos]=='\r' && (pos==0 || (message[pos-1]!='\r' && message[pos-1]!='\n')))
+		{
+			replacedchars.push_back(pos);
+			prevnewline=true;
+			prevblock=false;
+		}
+		else if(message[pos]=='\n' && (pos==0 || (message[pos-1]!='\n')))
 		{
 			replacedchars.push_back(pos);
 			prevnewline=true;
@@ -106,10 +116,10 @@ std::vector<KeyFinderItem *> KeyFinderParser::ParseMessage(const std::string &me
 	}
 
 	// find every key that matches
-	keyre.match(workmessage,keymatch);
+	m_keyre.match(workmessage,keymatch);
 	while(keymatch.offset!=std::string::npos)
 	{
-		filenamere.match(workmessage,keymatch.offset+keymatch.length,filematch);
+		m_filenamere.match(workmessage,keymatch.offset+keymatch.length,filematch);
 		if(filematch.offset!=std::string::npos && filematch.offset==keymatch.offset+keymatch.length)
 		{
 			// find the next new line position after the file name
@@ -129,10 +139,16 @@ std::vector<KeyFinderItem *> KeyFinderParser::ParseMessage(const std::string &me
 				filematch.length=nextnewlinepos-filematch.offset;
 			}
 
+			// trim off trailing \r\n or \t
+			while(filematch.length>0 && (workmessage[keymatch.offset+keymatch.length+filematch.length-1]=='\r' || workmessage[keymatch.offset+keymatch.length+filematch.length-1]=='\n' || workmessage[keymatch.offset+keymatch.length+filematch.length-1]=='\t'))
+			{
+				filematch.length--;
+			}
+
 			keymatch.length+=filematch.length;
 		}
 		keymatches.push_back(keymatch);
-		keyre.match(workmessage,keymatch.offset+keymatch.length,keymatch);
+		m_keyre.match(workmessage,keymatch.offset+keymatch.length,keymatch);
 	}
 
 	// put back replaced chars, but not if it is inside a key
@@ -174,7 +190,7 @@ std::vector<KeyFinderItem *> KeyFinderParser::ParseMessage(const std::string &me
 		std::string filepart("");
 		std::string wholekey(workmessage.substr((*mi).offset,(*mi).length));
 
-		protocolre.match(wholekey,protocolmatch);
+		m_protocolre.match(wholekey,protocolmatch);
 		if(protocolmatch.offset!=std::string::npos)
 		{
 			wholekey.erase(0,protocolmatch.length);
@@ -218,7 +234,7 @@ void KeyFinderParser::Cleanup(std::vector<KeyFinderItem *> &items)
 std::string KeyFinderHTMLRenderer::Render(const std::string &message, const std::string &fproxyprotocol, const std::string &fproxyhost, const std::string &fproxyport)
 {
 	KeyFinderHTMLRenderVisitor rv;
-	std::vector<KeyFinderItem *> items=KeyFinderParser::ParseMessage(message);
+	std::vector<KeyFinderItem *> items=m_parser.ParseMessage(message);
 	rv.SetFProxyHost(fproxyhost);
 	rv.SetFProxyPort(fproxyport);
 	rv.SetFProxyProtocol(fproxyprotocol);
@@ -228,6 +244,6 @@ std::string KeyFinderHTMLRenderer::Render(const std::string &message, const std:
 		rv.Visit(*(*i));
 	}
 
-	KeyFinderParser::Cleanup(items);
+	m_parser.Cleanup(items);
 	return rv.Rendered();
 }

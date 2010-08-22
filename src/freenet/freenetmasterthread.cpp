@@ -116,6 +116,12 @@ const bool FreenetMasterThread::HandleMessage(FCPv2::Message &message)
 			i++;
 		}
 
+		// we don't care about unhandled ExpectedHashes or CompatibilityMode messages
+		if(message.GetName()=="ExpectedHashes" || message.GetName()=="CompatibilityMode")
+		{
+			handled=true;
+		}
+
 		if(handled==false)
 		{
 			std::string info("");

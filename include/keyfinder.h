@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include <Poco/RegularExpression.h>
+
 class KeyFinderVisitor;
 
 class KeyFinderItem
@@ -92,14 +94,21 @@ private:
 class KeyFinderParser
 {
 public:
-	static std::vector<KeyFinderItem *> ParseMessage(const std::string &message);
-	static void Cleanup(std::vector<KeyFinderItem *> &items);
+	KeyFinderParser();
+	std::vector<KeyFinderItem *> ParseMessage(const std::string &message);
+	void Cleanup(std::vector<KeyFinderItem *> &items);
+private:
+	Poco::RegularExpression m_keyre;
+	Poco::RegularExpression m_protocolre;
+	Poco::RegularExpression m_filenamere;
 };
 
 class KeyFinderHTMLRenderer
 {
 public:
-	static std::string Render(const std::string &message, const std::string &fproxyprotocol, const std::string &fproxyhost, const std::string &fproxyport);
+	std::string Render(const std::string &message, const std::string &fproxyprotocol, const std::string &fproxyhost, const std::string &fproxyport);
+private:
+	KeyFinderParser m_parser;
 };
 
 #endif	// _keyfinder_

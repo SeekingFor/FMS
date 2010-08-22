@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 
+#include "../../../include/keyfinder.h"
+
 class QuoterVisitor;
 
 class QuoterItem
@@ -75,6 +77,8 @@ class QuoterRenderVisitor:public QuoterVisitor
 public:
 	virtual ~QuoterRenderVisitor()			{ }
 	const std::string &Rendered() const		{ return m_rendered; }
+
+	virtual void Clear()					{ m_rendered.clear(); }
 protected:
 	std::string m_rendered;
 };
@@ -82,7 +86,13 @@ protected:
 class QuoterHTMLRenderVisitor:public QuoterRenderVisitor
 {
 public:
+	QuoterHTMLRenderVisitor():m_detectlinks(false)	{ }
 	virtual void Visit(const QuoterItem &item);
+
+	void SetDetectLinks(const bool detectlinks)		{ m_detectlinks=detectlinks; }
+private:
+	KeyFinderHTMLRenderer m_keyrenderer;
+	bool m_detectlinks;
 };
 
 class QuoterParser
@@ -97,7 +107,12 @@ private:
 class QuoterHTMLRenderer
 {
 public:
-	static std::string Render(const std::string &message);
+	std::string Render(const std::string &message);
+
+	void SetDetectLinks(const bool detectlinks)	{ m_detectlinks=detectlinks; m_rv.SetDetectLinks(detectlinks); }
+private:
+	QuoterHTMLRenderVisitor m_rv;
+	bool m_detectlinks;
 };
 
 #endif	// _quoter_

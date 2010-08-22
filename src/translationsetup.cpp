@@ -66,6 +66,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.Language.spanish.prop","Spanish");
 	st->SetDefault("web.option.Language.russian.prop","Russian");
 	st->SetDefault("web.option.Language.french.prop","French (Français)");
+	st->SetDefault("web.option.Language.swedish.prop","Swedish (Svenska)");
 	st->SetDefault("web.option.Language.unlisted.prop","Unlisted/Other");
 	st->SetDefault("web.option.LogLevel.description","The maximum logging level that will be written to file.  Higher levels will include all messages from the previous levels.");
 	st->SetDefault("web.option.LogLevel.1","1 - Fatal Errors");

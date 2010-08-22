@@ -382,6 +382,13 @@ void ConvertDB0125To0126(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=26;");
 }
 
+void ConvertDB0126To0127(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblPeerTrust ADD COLUMN MessageTrustChange INTEGER DEFAULT 0;");
+	db->Execute("ALTER TABLE tblPeerTrust ADD COLUMN TrustListTrustChange INTEGER DEFAULT 0;");
+	db->Execute("UPDATE tblPeerTrust Set Major=1, Minor=27;");
+}
+
 void FixBoardNames(SQLite3DB::DB *db)
 {
 

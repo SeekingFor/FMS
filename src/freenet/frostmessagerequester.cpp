@@ -344,7 +344,7 @@ void FrostMessageRequester::StartRequest(const std::string &id)
 		{
 			boardname.erase(0,m_boardprefix.size());
 		}
-		st.ResultText(0,publickey);
+		st.ResultText(1,publickey);
 		if(!(publickey.find("SSK@")==0 && publickey.rfind("/")==(publickey.size()-1)))
 		{
 			publickey="";

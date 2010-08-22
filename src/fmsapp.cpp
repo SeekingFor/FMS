@@ -287,21 +287,26 @@ void FMSApp::showOptions()
 
 void FMSApp::StartThreads()
 {
+	int threadid=0;
 	std::string tempval("");
 	Option option(m_db);
 
 	// always start the DB maintenance thread
 	logger().trace("FMSApp::StartThreads starting DBMaintenanceThread");
-	m_threads.Start(new DBMaintenanceThread());
+	threadid=m_threads.Start(new DBMaintenanceThread(),"DBMaintenance");
+	if(isInteractive())
+	{
+		std::cout << "Started DB Maintenance Thread : " << threadid << std::endl;
+	}
 
 	option.Get("StartHTTP",tempval);
 	if(tempval=="true")
 	{
 		logger().trace("FMSApp::StartThreads starting HTTPThread");
-		m_threads.Start(new HTTPThread());
+		threadid=m_threads.Start(new HTTPThread(),"HTTP");
 		if(isInteractive())
 		{
-			std::cout << "Started HTTP Thread" << std::endl;
+			std::cout << "Started HTTP Thread : " << threadid << std::endl;
 		}
 	}
 	else
@@ -314,10 +319,10 @@ void FMSApp::StartThreads()
 	if(tempval=="true")
 	{
 		logger().trace("FMSApp::StartThreads starting NNTPListener");
-		m_threads.Start(new NNTPListener());
+		threadid=m_threads.Start(new NNTPListener(),"NNTPListener");
 		if(isInteractive())
 		{
-			std::cout << "Started NNTP Thread" << std::endl;
+			std::cout << "Started NNTP Thread : " << threadid << std::endl;
 		}
 	}
 	else
@@ -330,10 +335,10 @@ void FMSApp::StartThreads()
 	if(tempval=="true")
 	{
 		logger().trace("FMSApp::StartThreads starting FreenetMasterThread");
-		m_threads.Start(new FreenetMasterThread());
+		threadid=m_threads.Start(new FreenetMasterThread(),"Freenet");
 		if(isInteractive())
 		{
-			std::cout << "Started Freenet FCP Thread" << std::endl;
+			std::cout << "Started Freenet FCP Thread : " << threadid << std::endl;
 		}
 	}
 	else

@@ -82,7 +82,14 @@ void QuoterHTMLRenderVisitor::Visit(const QuoterItem &item)
 	if(item.GetItemType()==QuoterItem::TYPE_TEXT)
 	{
 		const QuoterItemText *textitem=dynamic_cast<const QuoterItemText *>(&item);
-		m_rendered+=textitem->GetText();
+		if(m_detectlinks==true)
+		{
+			m_rendered+=m_keyrenderer.Render(textitem->GetText(),"[FPROXYPROTOCOL]","[FPROXYHOST]","[FPROXYPORT]");
+		}
+		else
+		{
+			m_rendered+=textitem->GetText();
+		}
 	}
 	else if(item.GetItemType()==QuoterItem::TYPE_AREA)
 	{
@@ -181,12 +188,11 @@ QuoterItem *QuoterParser::ParseArea(const std::string &block, const int level)
 
 std::string QuoterHTMLRenderer::Render(const std::string &message)
 {
-	QuoterHTMLRenderVisitor rv;
-	std::string rval("");
 	QuoterItem *item=QuoterParser::ParseMessage(message);
 
-	rv.Visit(*item);
-	rval=rv.Rendered();
+	m_rv.Clear();
+	m_rv.Visit(*item);
+	std::string rval=m_rv.Rendered();
 
 	QuoterParser::Cleanup(item);
 

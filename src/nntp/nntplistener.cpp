@@ -79,7 +79,7 @@ void NNTPListener::run()
 					socklen_t addrlen=sizeof(addr);
 					newsock=accept((*listeni),(struct sockaddr *)&addr,&addrlen);
 					m_log->information("NNTPListener::run NNTP client connected");
-					m_connections.Start(new NNTPConnection(newsock));
+					m_connections.Start(new NNTPConnection(newsock),"NNTPConnection");
 				}
 			}
 		}

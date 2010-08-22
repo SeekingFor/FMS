@@ -31,13 +31,16 @@
 #include "../../include/http/pages/showreceivedmessagepage.h"
 
 #include <cstdio>
+#include <Poco/Path.h>
 
 FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db):IDatabase(db)
 {
 	Option option(m_db);
 
+	Poco::Path path;
+
 	// set template
-	std::string templatestr="<html><head></head><body><a href=\"home.htm\">Home</a><br><h1>Could not open template.htm!  Place in program directory and restart!</h1><br>[CONTENT]</body></html>";
+	std::string templatestr="<html><head></head><body><a href=\"home.htm\">Home</a><br><h1>Could not open template.htm!  Place in "+path.absolute().toString(Poco::Path::PATH_NATIVE)+" and restart!</h1><br>[CONTENT]</body></html>";
 	FILE *infile=fopen("template.htm","rb");
 	if(infile)
 	{

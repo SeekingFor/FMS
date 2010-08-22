@@ -2,8 +2,6 @@
 #include "../../../include/stringfunctions.h"
 #include "../../../include/unicode/unicodeformatter.h"
 #include "../../../include/option.h"
-#include "../../../include/quoter.h"
-#include "../../../include/keyfinder.h"
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -14,6 +12,7 @@ ForumTemplateViewThreadPage::ForumTemplateViewThreadPage(SQLite3DB::DB *db, cons
 	Option option(db);
 	option.GetBool("ForumDetectLinks",m_detectlinks);
 	option.GetBool("ForumShowSmilies",m_showsmilies);
+	m_htmlrenderer.SetDetectLinks(m_detectlinks);
 }
 
 const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
@@ -386,12 +385,14 @@ const std::string ForumTemplateViewThreadPage::FixBody(const std::string &body)
 	output=StringFunctions::Replace(output,"[","&#91;");
 	output=StringFunctions::Replace(output,"]","&#93;");
 
-	output=QuoterHTMLRenderer::Render(output);
+	output=m_htmlrenderer.Render(output);
 
+	/*
 	if(m_detectlinks==true)
 	{
 		output=KeyFinderHTMLRenderer::Render(output,"[FPROXYPROTOCOL]","[FPROXYHOST]","[FPROXYPORT]");
 	}
+	*/
 	if(m_showsmilies==true)
 	{
 		output=m_emot.Replace(output);

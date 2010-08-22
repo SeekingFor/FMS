@@ -177,13 +177,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=26;
 		}
+		if(major==1 && minor==26)
+		{
+			ConvertDB0126To0127(db);
+			major=1;
+			minor=27;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,26);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,27);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=26;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=27;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -351,7 +357,9 @@ void SetupDB(SQLite3DB::DB *db)
 				MessageTrust			INTEGER CHECK(MessageTrust BETWEEN 0 AND 100),\
 				TrustListTrust			INTEGER CHECK(TrustListTrust BETWEEN 0 AND 100),\
 				MessageTrustComment		TEXT,\
-				TrustListTrustComment	TEXT\
+				TrustListTrustComment	TEXT,\
+				MessageTrustChange		INTEGER DEFAULT 0,\
+				TrustListTrustChange	INTEGER DEFAULT 0\
 				);");
 
 	db->Execute("CREATE INDEX IF NOT EXISTS idxPeerTrust_IdentityID ON tblPeerTrust (IdentityID);");

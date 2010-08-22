@@ -141,6 +141,12 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 
 		m_db->Execute("BEGIN;");
 
+		m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpPeerTrust(IdentityID INTEGER,TargetIdentityID INTEGER,MessageTrust INTEGER,TrustListTrust INTEGER);");
+		st=m_db->Prepare("INSERT INTO tmpPeerTrust(IdentityID,TargetIdentityID,MessageTrust,TrustListTrust) SELECT IdentityID,TargetIdentityID,MessageTrust,TrustListTrust FROM tblPeerTrust WHERE IdentityID=?;");
+		st.Bind(0,identityid);
+		st.Step();
+		st.Finalize();
+
 		// drop all existing peer trust from this identity - we will rebuild it when we go through each trust in the xml file
 		st=m_db->Prepare("DELETE FROM tblPeerTrust WHERE IdentityID=?;");
 		st.Bind(0,identityid);
@@ -248,6 +254,14 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		st.Bind(2,index);
 		st.Step();
 		st.Finalize();
+
+		st=m_db->Prepare("UPDATE tblPeerTrust SET MessageTrustChange=IFNULL(MessageTrust-IFNULL((SELECT MessageTrust FROM tmpPeerTrust WHERE tmpPeerTrust.IdentityID=? AND tmpPeerTrust.TargetIdentityID=tblPeerTrust.TargetIdentityID),MessageTrust),0), TrustListTrustChange=IFNULL(TrustListTrust-IFNULL((SELECT TrustListTrust FROM tmpPeerTrust WHERE tmpPeerTrust.IdentityID=? AND tmpPeerTrust.TargetIdentityID=tblPeerTrust.TargetIdentityID),TrustListTrust),0)  WHERE IdentityID=?;");
+		st.Bind(0,identityid);
+		st.Bind(1,identityid);
+		st.Bind(2,identityid);
+		st.Step();
+
+		m_db->Execute("DROP TABLE tmpPeerTrust;");
 
 		m_db->Execute("COMMIT;");
 

@@ -11,8 +11,10 @@
 class CancelableThread
 {
 public:
-	CancelableThread():m_runnable(0),m_thread(new Poco::Thread),m_wasjoined(false)			{}
-	CancelableThread(CancelableRunnable *runnable):m_runnable(runnable),m_thread(new Poco::Thread),m_wasjoined(false)	{ if(m_thread && m_runnable) { m_thread->start(*runnable); } }
+	CancelableThread():m_runnable(0),m_thread(new Poco::Thread),m_wasjoined(false)								{}
+	CancelableThread(const std::string &name):m_runnable(0),m_thread(new Poco::Thread(name)),m_wasjoined(false)	{}
+	CancelableThread(CancelableRunnable *runnable):m_runnable(runnable),m_thread(new Poco::Thread),m_wasjoined(false)									{ if(m_thread && m_runnable) { m_thread->start(*runnable); } }
+	CancelableThread(CancelableRunnable *runnable, const std::string &name):m_runnable(runnable),m_thread(new Poco::Thread(name)),m_wasjoined(false)	{ if(m_thread && m_runnable) { m_thread->start(*runnable); } }
 	~CancelableThread()
 	{
 		if(m_thread)
@@ -48,6 +50,19 @@ public:
 	// these methods implemented from Poco::Thread
 	void join()					{ if(m_thread) { m_thread->join(); m_wasjoined=true; } }
 	bool isRunning() const		{ if(m_thread) { return m_thread->isRunning(); } else { return false; } }
+
+	const int GetThreadID() const
+	{
+		if(m_thread)
+		{
+#if defined(POCO_VERSION) && POCO_VERSION>=0x01030600
+			return static_cast<int>(m_thread->tid());
+#else
+			return static_cast<int>(m_thread->id());
+#endif
+		}
+		return 0;
+	}
 
 private:
 

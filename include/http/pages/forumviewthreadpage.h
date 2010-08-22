@@ -3,6 +3,7 @@
 
 #include "forumpage.h"
 #include "../../../include/http/emoticonreplacer.h"
+#include "../../../include/quoter.h"
 
 class ForumTemplateViewThreadPage:public ForumTemplatePage
 {
@@ -17,6 +18,7 @@ private:
 	
 	bool m_showsmilies;
 	bool m_detectlinks;
+	QuoterHTMLRenderer m_htmlrenderer;
 	EmoticonReplacer m_emot;
 
 };
