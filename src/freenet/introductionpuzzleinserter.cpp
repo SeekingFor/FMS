@@ -277,6 +277,7 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmldatasizestr;
+		message["Metadata.ContentType"]="";
 		m_fcp->Send(message);
 		m_fcp->Send(std::vector<char>(xmldata.begin(),xmldata.end()));
 

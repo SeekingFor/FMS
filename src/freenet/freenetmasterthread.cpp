@@ -262,7 +262,16 @@ void FreenetMasterThread::run()
 		}
 		catch(Poco::Exception &e)
 		{
-			m_log->error("FreenetMasterThread::run caught exception : "+e.displayText());
+			m_log->error("FreenetMasterThread::run caught Poco exception : "+e.displayText());
+		}
+		catch(std::exception &e)
+		{
+			std::string message("");
+			if(e.what())
+			{
+					message=e.what();
+			}
+			m_log->error("FreenetMasterThread::run caught std exception : "+message);
 		}
 		catch(...)
 		{

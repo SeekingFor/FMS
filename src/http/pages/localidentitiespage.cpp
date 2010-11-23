@@ -39,7 +39,8 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 	st.Step();
 	SQLite3DB::Statement st2=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
 
-	SQLite3DB::Statement trustst=m_db->Prepare("SELECT COUNT(*) FROM tblPeerTrust LEFT JOIN tblIdentity ON tblPeerTrust.TargetIdentityID=tblIdentity.IdentityID WHERE tblIdentity.PublicKey=? GROUP BY tblPeerTrust.TargetIdentityID;");
+	//SQLite3DB::Statement trustst=m_db->Prepare("SELECT COUNT(*) FROM tblPeerTrust LEFT JOIN tblIdentity ON tblPeerTrust.TargetIdentityID=tblIdentity.IdentityID WHERE tblIdentity.PublicKey=? GROUP BY tblPeerTrust.TargetIdentityID;");
+	SQLite3DB::Statement trustst=m_db->Prepare("SELECT COUNT(*) FROM tblPeerTrust WHERE TargetIdentityID=? GROUP BY TargetIdentityID;");
 
 	count=0;
 	while(st.RowReturned())
@@ -54,6 +55,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		std::string publishfreesite="";
 		std::string minmessagedelay="0";
 		std::string maxmessagedelay="0";
+		int identityid=0;
 		std::string identityidstr="";
 		std::string active="";
 
@@ -73,6 +75,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		if(st2.RowReturned())
 		{
 			st2.ResultText(0,identityidstr);
+			st2.ResultInt(0,identityid);
 		}
 		st2.Reset();
 
@@ -96,7 +99,8 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		content+="<td><input type=\"text\" size=\"2\" name=\"mindelay["+countstr+"]\" value=\""+minmessagedelay+"\"></td>";
 		content+="<td><input type=\"text\" size=\"2\" name=\"maxdelay["+countstr+"]\" value=\""+maxmessagedelay+"\"></td>";
 		
-		trustst.Bind(0,publickey);
+		//trustst.Bind(0,publickey);
+		trustst.Bind(0,identityid);
 		trustst.Step();
 		if(trustst.RowReturned())
 		{

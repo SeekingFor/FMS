@@ -26,7 +26,7 @@ const std::string BoardsPage::BuildQueryString(const long startrow, const std::s
 		{
 			returnval+="&";
 		}
-		returnval+="boardsearch="+boardsearch;
+		returnval+="boardsearch="+StringFunctions::UriEncode(boardsearch);
 	}
 
 	return returnval;

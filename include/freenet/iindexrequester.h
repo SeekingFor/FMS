@@ -87,6 +87,7 @@ void IIndexRequester<IDTYPE>::FCPConnected()
 	if(m_fcpuniquename.find("|")!=std::string::npos)
 	{
 		m_log->fatal("IIndexRequester<IDTYPE>::FCPConnected fcpuniquename "+m_fcpuniquename+" contains | character!  This is not a valid character!");
+		StringFunctions::Replace(m_fcpuniquename,"|","_");
 	}
 
 	m_lastreceived=Poco::Timestamp();
@@ -195,6 +196,7 @@ void IIndexRequester<IDTYPE>::Process()
 	{
 		PopulateIDList();
 		m_tempdate=now;
+		m_lastreceived=now;
 	}
 	// if we haven't received any messages to this object in 10 minutes, clear the requests and repopulate id list
 	if(m_ids.size()>0 && m_lastreceived<(now-Poco::Timespan(0,0,10,0,0)))

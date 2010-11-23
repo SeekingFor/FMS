@@ -281,6 +281,8 @@ void IdentityInserter::StartInsert(const long localidentityid, const int dayoffs
 		mess["Identifier"]="IdentityInserter|"+idstring+"|"+indexstr+"|"+mess["URI"];
 		mess["UploadFrom"]="direct";
 		mess["DataLength"]=datasizestr;
+		mess["Metadata.ContentType"]="";
+		mess["ExtraInsertsSingleBlock"]="2";
 		m_fcp->Send(mess);
 		m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 

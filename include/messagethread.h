@@ -26,8 +26,8 @@ public:
 	const std::vector<threadnode> GetNodes()		{ return m_nodes; }
 	
 private:
-	const threadnode GetOriginalMessageNode(const long messageid, const long boardid);
-	void AddChildren(const long messageid, const long level, const long boardid);
+	const threadnode GetOriginalMessageNode(const long messageid, const long boardid, const unsigned int currentdepth);
+	void AddChildren(const long messageid, const long level, const long boardid, const unsigned int currentdepth);
 
 	class datecompare
 	{

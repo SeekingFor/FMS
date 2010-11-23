@@ -6,6 +6,8 @@
 #include <Poco/Timespan.h>
 #include <Poco/DateTimeFormatter.h>
 
+#include <sstream>
+
 #ifdef XMEM
 	#include <xmem.h>
 #endif
@@ -174,13 +176,22 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	std::string xmlsizestr;
 	int index;
 	std::string indexstr;
+	int messagecount=0;
 
 	date-=Poco::Timespan(m_daysbackward,0,0,0,0);
 	StringFunctions::Convert(localidentityid,localidentityidstr);
 
 	m_db->Execute("BEGIN;");
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT Day, InsertIndex, MessageXML, PrivateKey FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE tblLocalIdentity.LocalIdentityID=? AND Day>=? AND tblMessageInserts.MessageUUID IS NOT NULL;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT PrivateKey FROM tblLocalIdentity WHERE LocalIdentityID=?;");
+	st.Bind(0,localidentityid);
+	st.Step();
+	if(st.RowReturned())
+	{
+		st.ResultText(0,privatekey);
+	}
+
+	st=m_db->Prepare("SELECT Day, InsertIndex, MessageXML FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE tblLocalIdentity.LocalIdentityID=? AND Day>=? AND tblMessageInserts.MessageUUID IS NOT NULL;");
 	st.Bind(0,localidentityid);
 	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Step();
@@ -195,13 +206,13 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		st.ResultText(0,day);
 		st.ResultInt(1,index);
 		st.ResultText(2,xmlstr);
-		st.ResultText(3,privatekey);
 
 		messxml.ParseXML(xmlstr);
 
 		mlxml.AddMessage(day,index,messxml.GetBoards());
 
 		st.Step();
+		messagecount++;
 	}
 	st.Finalize();
 
@@ -255,47 +266,53 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	m_db->Execute("COMMIT;");
 	m_db->Execute("BEGIN;");
 
-	st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID, InsertDate FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL ORDER BY MessageDate DESC, MessageTime DESC LIMIT 175;");
-	st.Step();
-
-	while(st.RowReturned())
+	if(messagecount<600)
 	{
-		std::string day="";
-		int index=0;
-		std::string publickey="";
-		std::vector<std::string> boardlist;
-		int messageid=0;
-		std::string insertdate="";
-		
-		st.ResultText(0,day);
-		st.ResultInt(1,index);
-		st.ResultText(2,publickey);
-		st.ResultInt(3,messageid);
-		st.ResultText(4,insertdate);
+		std::ostringstream limitstr;
+		limitstr << (600-messagecount);
 
-		st2.Bind(0,messageid);
-		st2.Step();
-		while(st2.RowReturned())
-		{
-			std::string boardname="";
-			st2.ResultText(0,boardname);
-			StringFunctions::LowerCase(boardname,boardname);
-			boardlist.push_back(boardname);
-			st2.Step();
-		}
-		st2.Reset();
-
-		// TODO - remove insertdate empty check sometime after 0.3.32 release and get rid of using day
-		if(insertdate!="")
-		{
-			mlxml.AddExternalMessage(publickey,insertdate,index,boardlist);
-		}
-		else
-		{
-			mlxml.AddExternalMessage(publickey,day,index,boardlist);
-		}
-
+		st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID, InsertDate FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL ORDER BY MessageDate DESC, MessageTime DESC LIMIT "+limitstr.str()+";");
 		st.Step();
+
+		while(st.RowReturned())
+		{
+			std::string day="";
+			int index=0;
+			std::string publickey="";
+			std::vector<std::string> boardlist;
+			int messageid=0;
+			std::string insertdate="";
+			
+			st.ResultText(0,day);
+			st.ResultInt(1,index);
+			st.ResultText(2,publickey);
+			st.ResultInt(3,messageid);
+			st.ResultText(4,insertdate);
+
+			st2.Bind(0,messageid);
+			st2.Step();
+			while(st2.RowReturned())
+			{
+				std::string boardname="";
+				st2.ResultText(0,boardname);
+				StringFunctions::LowerCase(boardname,boardname);
+				boardlist.push_back(boardname);
+				st2.Step();
+			}
+			st2.Reset();
+
+			// TODO - remove insertdate empty check sometime after 0.3.32 release and get rid of using day
+			if(insertdate!="")
+			{
+				mlxml.AddExternalMessage(publickey,insertdate,index,boardlist);
+			}
+			else
+			{
+				mlxml.AddExternalMessage(publickey,day,index,boardlist);
+			}
+
+			st.Step();
+		}
 	}
 
 	// get last inserted messagelist index for this day

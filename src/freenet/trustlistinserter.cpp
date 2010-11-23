@@ -268,6 +268,7 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	message["Identifier"]="TrustListInserter|"+localidentityidstr+"|"+indexstr+"|"+message["URI"];
 	message["UploadFrom"]="direct";
 	message["DataLength"]=datasizestr;
+	message["Metadata.ContentType"]="";
 	m_fcp->Send(message);
 	m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 

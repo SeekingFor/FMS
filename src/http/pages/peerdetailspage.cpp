@@ -62,7 +62,7 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		del.Step();
 	}
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT Name,PublicKey,DateAdded,LastSeen,AddedMethod,Hidden,FreesiteEdition,PublishTrustList FROM tblIdentity WHERE IdentityID=?;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT Name,PublicKey,DateAdded,LastSeen,AddedMethod,Hidden,FreesiteEdition,PublishTrustList,PeerMessageTrust,PeerTrustListTrust FROM tblIdentity WHERE IdentityID=?;");
 	st.Bind(0,identityid);
 	st.Step();
 
@@ -80,6 +80,8 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 			st.ResultInt(6,freesiteedition);
 		}
 		st.ResultText(7,publishtrustlist);
+		st.ResultText(8,messagetrust);
+		st.ResultText(9,trustlisttrust);
 
 		usk=publickey;
 		if(freesiteedition>=0 && usk.find("SSK@")==0)
@@ -149,6 +151,8 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.lastreceivedmessagelist")+"</td><td>"+dateadded+"</td></tr>";
 
 		content+="</td></tr>";
+		content+="<tr><td>"+m_trans->Get("web.page.peertrust.peermessagetrust")+"</td><td>"+messagetrust+"</td></tr>";
+		content+="<tr><td>"+m_trans->Get("web.page.peertrust.peertrustlisttrust")+"</td><td>"+trustlisttrust+"</td></tr>";
 	}
 
 	// get message count posted by this identity
@@ -177,12 +181,73 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 
 	content+="</table>";
 
+	content+="<table class=\"small90\">";
+	content+="<col align=\"right\"><col width=\"30\"><col><col width=\"30\"><col><col width=\"30\">";
+	content+="<thead>";
+	content+="<tr><th colspan=\"6\" align=\"center\"><a href=\"peertrust.htm?namesearch="+SanitizeOutput(publickey)+"\">";
+	content+=m_trans->Get("web.page.peerdetails.localtrustofidentity");
+	content+="</a></th></tr>";
+	content+="<tr>";
+	content+="<tr><th>"+m_trans->Get("web.page.peerdetails.localtrustlistof")+"</th><th>"+m_trans->Get("web.page.peerdetails.messagetrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.messagecomment")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlisttrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlistcomment")+"</th></tr>";
+	content+="</tr>";
+	content+="</thead>";
+
+	content+="<tbody>";
+	st=m_db->Prepare("SELECT LocalIdentityID,Name,PublicKey,LocalMessageTrust,MessageTrustComment,LocalTrustListTrust,TrustListTrustComment FROM tblLocalIdentity JOIN tblIdentityTrust USING (LocalIdentityID) WHERE IdentityID=? ORDER BY Name");
+	st.Bind(0,identityid);
+	st.Step();
+
+	while(st.RowReturned())
+	{
+		std::string localidentityid="";
+		std::string localname="";
+		std::string localpublickey="";
+		std::string messagetrustcomment="";
+		std::string trustlisttrustcomment="";
+
+		st.ResultText(0,localidentityid);
+		st.ResultText(1,localname);
+		st.ResultText(2,localpublickey);
+		st.ResultText(3,messagetrust);
+		st.ResultText(4,messagetrustcomment);
+		st.ResultText(5,trustlisttrust);
+		st.ResultText(6,trustlisttrustcomment);
+
+		content+="<tr>";
+		content+="<form method=\"POST\" action=\"peertrust.htm\">";
+		content+=CreateFormPassword();
+		content+="<input type=\"hidden\" name=\"formaction\" value=\"update\">";
+		content+="<input type=\"hidden\" name=\"namesearch\" value=\""+SanitizeOutput(publickey)+"\">";
+		content+="<input type=\"hidden\" name=\"localidentityid\" value=\""+localidentityid+"\">";
+		content+="<input type=\"hidden\" name=\"identityid[0]\" value=\""+identityidstr+"\">";
+		content+="<td title=\""+SanitizeOutput(localpublickey)+"\">"+SanitizeOutput(CreateShortIdentityName(localname,localpublickey))+"</td>";
+		content+="<td>";
+		content+="<input type=\"hidden\" name=\"oldlocalmessagetrust[0]\" value=\""+messagetrust+"\">";
+		content+="<input type=\"text\" name=\"localmessagetrust[0]\" value=\""+messagetrust+"\" size=\"2\" maxlength=\"3\" class=\"small90\">";
+		content+="</td><td>";
+		content+="<input type=\"hidden\" name=\"oldmessagetrustcomment[0]\" value=\""+SanitizeOutput(messagetrustcomment)+"\">";
+		content+="<input type=\"text\" name=\"messagetrustcomment[0]\" value=\""+SanitizeOutput(messagetrustcomment)+"\" maxlength=\"50\" class=\"small90\">";
+		content+="</td><td>";
+		content+="<input type=\"hidden\" name=\"oldlocaltrustlisttrust[0]\" value=\""+trustlisttrust+"\">";
+		content+="<input type=\"text\" name=\"localtrustlisttrust[0]\" value=\""+trustlisttrust+"\" size=\"2\" maxlength=\"3\" class=\"small90\">";
+		content+="</td><td>";
+		content+="<input type=\"hidden\" name=\"oldtrustlisttrustcomment[0]\" value=\""+SanitizeOutput(trustlisttrustcomment)+"\">";
+		content+="<input type=\"text\" name=\"trustlisttrustcomment[0]\" value=\""+SanitizeOutput(trustlisttrustcomment)+"\" maxlength=\"50\" class=\"small90\">";
+		content+="</td><td>";
+		content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peertrust.updatetrust")+"\">";
+		content+="</form>";
+		content+="</td>";
+		content+="</tr>";
+		st.Step();
+	}
+	content+="</tbody>";
+	content+="</table>";
 
 	st=m_db->Prepare("SELECT Name,PublicKey,MessageTrust,TrustListTrust,tblIdentity.IdentityID,tblPeerTrust.MessageTrustComment,tblPeerTrust.TrustListTrustComment FROM tblPeerTrust INNER JOIN tblIdentity ON tblPeerTrust.TargetIdentityID=tblIdentity.IdentityID WHERE tblPeerTrust.IdentityID=? ORDER BY Name COLLATE NOCASE;");
 	st.Bind(0,identityid);
 	st.Step();
 
-	content+="<table>";
+	content+="<table class=\"small90\">";
 	content+="<tr><th colspan=\"5\">";
 	content+=m_trans->Get("web.page.peerdetails.trustlistofthisidentity");
 	content+="</th></tr>";

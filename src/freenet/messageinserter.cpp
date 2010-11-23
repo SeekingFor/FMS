@@ -230,6 +230,8 @@ const bool MessageInserter::StartInsert(const std::string &messageuuid)
 		message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmlsizestr;
+		message["Metadata.ContentType"]="";
+		message["ExtraInsertsSingleBlock"]="2";
 		m_fcp->Send(message);
 		m_fcp->Send(std::vector<char>(xml.begin(),xml.end()));
 
@@ -241,6 +243,8 @@ const bool MessageInserter::StartInsert(const std::string &messageuuid)
 		message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmlsizestr;
+		message["Metadata.ContentType"]="";
+		message["ExtraInsertsSingleBlock"]="2";
 		m_fcp->Send(message);
 		m_fcp->Send(std::vector<char>(xml.begin(),xml.end()));
 

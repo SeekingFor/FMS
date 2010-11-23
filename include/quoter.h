@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include "../../../include/keyfinder.h"
+#include "keyfinder.h"
 
 class QuoterVisitor;
 

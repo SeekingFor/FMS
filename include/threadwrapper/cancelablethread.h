@@ -59,7 +59,7 @@ public:
 		Guard guard(m_threadmutex);
 		if(m_thread)
 		{
-#if defined(POCO_VERSION) && POCO_VERSION>=0x01030600
+#if defined(POCO_VERSION) && POCO_VERSION>=0x01030600 && !defined(__APPLE__) && !defined(__DARWIN__)
 			return static_cast<int>(m_thread->tid());
 #else
 			return static_cast<int>(m_thread->id());

@@ -143,6 +143,9 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.AddNewPostFromIdentities.description","Set to true to automatically create new identities when you send a message using a new name.  If you set this to false, posting messages will fail until you manually create the identity.");
 	st->SetDefault("web.option.DeleteMessagesOlderThan.description","Automatically delete messages older than this many days.  Use -1 to keep messages forever.");
 	st->SetDefault("web.option.DownloadFrostMessages.description","Enable downloading of Frost messages.");
+	st->SetDefault("web.option.AttachmentKeyType.CHK@","Canonical key (CHK@)");
+	st->SetDefault("web.option.AttachmentKeyType.SSK@","Random key (SSK@)");
+	st->SetDefault("web.option.AttachmentKeyType.description","Key type used for inserting attachment. Canonical key (CHK@): This will always produce the same key for the same file, so is convenient for filesharing. However, if the bad guys can predict what files you are going to insert, they may be able to use this to trace you a lot more easily. Random key (SSK@). This is much safer than the first option, but the key will be different every time you or somebody else inserts the key. Use this if you are the original source of some sensitive data.");
 	st->SetDefault("web.option.FrostMessageBase.description","A unique string used by Frost clients who want to communicate with each other.");
 	st->SetDefault("web.option.FrostBoardPrefix.description","Messages to boards defined in FMS with this prefix will be downloaded from Frost.  You must manually add boards with this prefix to FMS to download Frost messages from those boards.  The prefix is removed to determine the name of the Frost board to download messages from.");
 	st->SetDefault("web.option.FrostSaveAnonymousMessages.description","Save Frost messages posted by Anonymous authors.");
@@ -265,6 +268,8 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.peerdetails.lastreceivedmessagelist","Last received message list");
 	st->SetDefault("web.page.peerdetails.on","on");
 	st->SetDefault("web.page.peerdetails.edition","edition");
+	st->SetDefault("web.page.peerdetails.localtrustofidentity","Local Trust of this identity");
+	st->SetDefault("web.page.peerdetails.localtrustlistof","Local Trust List of");
 
 	st->SetDefault("web.page.boards.title","Boards");
 	st->SetDefault("web.page.boards.search","Search");

@@ -501,6 +501,8 @@ void IMessageListRequester<IDTYPE>::StartRedirectRequest(FCPv2::Message &message
 
 	IIndexRequester<IDTYPE>::m_fcp->Send(newmessage);
 
+	IIndexRequester<IDTYPE>::m_log->debug(IIndexRequester<IDTYPE>::m_fcpuniquename+"::StartRedirectRequest started redirect request of "+message["Identifier"]+" to "+newmessage["URI"]);
+
 }
 
 #endif	// _imessagelistrequester_

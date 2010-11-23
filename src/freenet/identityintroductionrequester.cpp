@@ -14,37 +14,37 @@
 	#include <xmem.h>
 #endif
 
-IdentityIntroductionRequester::IdentityIntroductionRequester(SQLite3DB::DB *db):IDatabase(db)
+IdentityIntroductionRequester::IdentityIntroductionRequester(SQLite3DB::DB *db):IIndexRequester<std::string>(db)
 {
 	Initialize();
 }
 
-IdentityIntroductionRequester::IdentityIntroductionRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IDatabase(db),IFCPConnected(fcp)
+IdentityIntroductionRequester::IdentityIntroductionRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):IIndexRequester<std::string>(db,fcp)
 {
 	Initialize();
 }
 
-void IdentityIntroductionRequester::FCPConnected()
+const std::string IdentityIntroductionRequester::GetIDFromIdentifier(const std::string &identifier)
 {
-	m_requesting.clear();
-	PopulateIDList();
-}
-
-void IdentityIntroductionRequester::FCPDisconnected()
-{
-	
+	std::string UUID("");
+	std::vector<std::string> idparts;
+	StringFunctions::Split(identifier,"|",idparts);
+	if(idparts.size()>=3)
+	{
+		StringFunctions::Convert(idparts[3],UUID);
+	}
+	return UUID;
 }
 
 const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 {
 	FreenetSSKKey ssk;
 	Poco::DateTime date;
-	std::vector<std::string> idparts;
 	std::vector<char> data;
 	long datalength;
 	IdentityIntroductionXML xml;
+	const std::string UUID = GetIDFromIdentifier(message["Identifier"]);
 
-	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
 
 	// wait for all data to be received from connection
@@ -64,7 +64,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 	{
 		// mark puzzle found
 		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblIntroductionPuzzleInserts SET FoundSolution='true' WHERE UUID=?;");
-		st.Bind(0,idparts[3]);
+		st.Bind(0,UUID);
 		st.Step();
 		st.Finalize();
 
@@ -108,7 +108,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 	{
 
 		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblIntroductionPuzzleInserts SET FoundSolution='true' WHERE UUID=?;");
-		st.Bind(0,idparts[3]);
+		st.Bind(0,UUID);
 		st.Step();
 		st.Finalize();		
 
@@ -116,7 +116,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 	}
 
 	// remove UUID from request list
-	RemoveFromRequestList(idparts[3]);
+	RemoveFromRequestList(UUID);
 
 	return true;
 }
@@ -139,49 +139,14 @@ const bool IdentityIntroductionRequester::HandleGetFailed(FCPv2::Message &messag
 	}
 
 	// remove UUID from request list
-	RemoveFromRequestList(idparts[3]);
+	RemoveFromRequestList(GetIDFromIdentifier(message["Identifier"]));
 
 	return true;
 }
 
-const bool IdentityIntroductionRequester::HandleMessage(FCPv2::Message &message)
-{
-
-	if(message["Identifier"].find("IdentityIntroductionRequester")==0)
-	{
-		
-		// ignore DataFound
-		if(message.GetName()=="DataFound")
-		{
-			return true;
-		}
-
-		if(message.GetName()=="AllData")
-		{
-			return HandleAllData(message);
-		}
-
-		if(message.GetName()=="GetFailed")
-		{
-			return HandleGetFailed(message);
-		}
-
-		if(message.GetName()=="IdentifierCollision")
-		{
-			// remove one of the ids from the requesting list
-			std::vector<std::string> idparts;
-			StringFunctions::Split(message["Identifier"],"|",idparts);
-			RemoveFromRequestList(idparts[3]);
-			return true;
-		}
-
-	}
-
-	return false;
-}
-
 void IdentityIntroductionRequester::Initialize()
 {
+	m_fcpuniquename="IdentityIntroductionRequester";
 	m_maxrequests=0;
 	Option option(m_db);
 	option.GetInt("MaxIdentityIntroductionRequests",m_maxrequests);
@@ -194,14 +159,11 @@ void IdentityIntroductionRequester::Initialize()
 	{
 		m_log->warning("Option MaxIdentityIntroductionRequests is currently set at more than 100.  This value might be incorrectly configured.");
 	}
-	option.Get("MessageBase",m_messagebase);
-	m_tempdate=Poco::Timestamp();
 }
 
 void IdentityIntroductionRequester::PopulateIDList()
 {
 	Poco::DateTime date;
-	int id;
 
 	date-=Poco::Timespan(1,0,0,0,0);
 
@@ -209,72 +171,21 @@ void IdentityIntroductionRequester::PopulateIDList()
 
 	m_db->Execute("BEGIN;");
 
-	// get all identities that have unsolved puzzles from yesterday or today
-	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblIntroductionPuzzleInserts WHERE Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND FoundSolution='false' GROUP BY LocalIdentityID;");
+	// get all non-solved puzzles from yesterday and today for this identity
+	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID FROM tblIntroductionPuzzleInserts WHERE Day>=? AND FoundSolution='false';");
+	st.Bind(0, Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Step();
+
 	while(st.RowReturned())
 	{
-		st.ResultInt(0,id);
-		m_ids[id]=false;
+		std::string uuid;
+		st.ResultText(0,uuid);
+		m_ids[uuid]=false;
 		st.Step();
 	}
 
 	m_db->Execute("COMMIT;");
 
-}
-
-void IdentityIntroductionRequester::Process()
-{
-	// max is the smaller of the config value or the total number of identities we will request from
-	long max=m_maxrequests>m_ids.size() ? m_ids.size() : m_maxrequests;
-
-		// try to keep up to max requests going
-	if(m_requesting.size()<max)
-	{
-		std::map<long,bool>::iterator i=m_ids.begin();
-		while(i!=m_ids.end() && (*i).second==true)
-		{
-			i++;
-		}
-
-		if(i!=m_ids.end())
-		{
-			StartRequests((*i).first);
-		}
-		else
-		{
-			// we requested from all ids in the list, repopulate the list
-			PopulateIDList();
-		}
-	}
-	// special case - if there were 0 identities on the list when we started then we will never get a chance to repopulate the list
-	// this will recheck for ids every minute
-	Poco::DateTime now;
-	if(m_ids.size()==0 && m_tempdate<(now-Poco::Timespan(0,0,1,0,0)))
-	{
-		PopulateIDList();
-		m_tempdate=now;
-	}
-}
-
-void IdentityIntroductionRequester::RegisterWithThread(FreenetMasterThread *thread)
-{
-	thread->RegisterFCPConnected(this);
-	thread->RegisterFCPMessageHandler(this);
-	thread->RegisterPeriodicProcessor(this);
-}
-
-void IdentityIntroductionRequester::RemoveFromRequestList(const std::string &UUID)
-{
-	std::vector<std::string>::iterator i=m_requesting.begin();
-	while(i!=m_requesting.end() && (*i)!=UUID)
-	{
-		i++;
-	}
-	if(i!=m_requesting.end())
-	{
-		m_requesting.erase(i);
-	}
 }
 
 void IdentityIntroductionRequester::StartRequest(const std::string &UUID)
@@ -311,30 +222,6 @@ void IdentityIntroductionRequester::StartRequest(const std::string &UUID)
 
 	}
 
-}
-
-void IdentityIntroductionRequester::StartRequests(const long localidentityid)
-{
-	Poco::DateTime date;
-	std::string localidentityidstr;
-	std::string uuid;
-
-	date-=Poco::Timespan(1,0,0,0,0);
-	StringFunctions::Convert(localidentityid,localidentityidstr);
-
-	// get all non-solved puzzles from yesterday and today for this identity
-	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID FROM tblIntroductionPuzzleInserts WHERE LocalIdentityID="+localidentityidstr+" AND Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND FoundSolution='false';");
-	st.Step();
-
-	// start requests for all non-solved puzzles
-	while(st.RowReturned())
-	{
-		uuid="";
-		st.ResultText(0,uuid);
-		StartRequest(uuid);
-		st.Step();
-	}
-
-	m_ids[localidentityid]=true;
+	m_ids[UUID]=true;
 
 }

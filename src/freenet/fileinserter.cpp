@@ -78,10 +78,12 @@ const bool FileInserter::StartInsert(const long &fileinsertid)
 	std::string mimetype="";
 	int datalen=-1;
 	std::vector<char> data;
+	std::string keytype="CHK@";
+	Option option(m_db);
 
 	StringFunctions::Convert(fileinsertid,fileinsertidstr);
 
-
+	option.Get("AttachmentKeyType",keytype);
 	SQLite3DB::Statement st=m_db->Prepare("SELECT FileName,Size,Data,MimeType FROM tblFileInserts WHERE FileInsertID=?;");
 	st.Bind(0,fileinsertid);
 	st.Step();
@@ -96,7 +98,8 @@ const bool FileInserter::StartInsert(const long &fileinsertid)
 	StringFunctions::Convert(data.size(),sizestr);
 
 	message.SetName("ClientPut");
-	message["URI"]="CHK@";
+	message["URI"]=keytype;
+
 	message["TargetFilename"]=filename;
 	if(mimetype!="")
 	{

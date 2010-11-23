@@ -145,6 +145,7 @@ void IdentityIntroductionInserter::StartInsert(const long localidentityid, const
 		message["Identifier"]="IdentityIntroductionInserter|"+message["URI"];
 		message["UploadFrom"]="direct";
 		message["DataLength"]=datasizestr;
+		message["Metadata.ContentType"]="";
 
 		m_fcp->Send(message);
 		m_fcp->Send(std::vector<char>(data.begin(),data.end()));

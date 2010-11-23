@@ -733,7 +733,7 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Reset();
 
 	st.Bind(0,"MessageListDaysBackward");
-	st.Bind(1,"5");
+	st.Bind(1,"10");
 	st.Step();
 	st.Reset();
 	upd.Bind(0,"Messages");
@@ -841,6 +841,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(6);
 	upd.Bind(7,"simple");
 	upd.Bind(8,"DeleteMessagesOlderThan");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"AttachmentKeyType");
+	st.Bind(1,"CHK@");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Messages");
+	upd.Bind(1,order++);
+	upd.Bind(2,"CHK@|Canonical key|SSK@|Random key");
+	upd.Bind(3,"Key type used for inserting attachment. Canonical key (CHK@): This will always produce the same key for the same file, so is convenient for filesharing. However, if the bad guys can predict what files you are going to insert, they may be able to use this to trace you a lot more easily. Random key (SSK@). This is much safer than the first option, but the key will be different every time you or somebody else inserts the key. Use this if you are the original source of some sensitive data.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"AttachmentKeyType");
 	upd.Step();
 	upd.Reset();
 

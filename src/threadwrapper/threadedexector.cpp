@@ -52,11 +52,11 @@ void ThreadedExecutor::Join()
 
 const int ThreadedExecutor::Start(CancelableRunnable *runnable)
 {
-	CancelableThread *newthread=new CancelableThread(runnable);
-	m_threads.push_back(newthread);
 	CleanupCompleted();
+	CancelableThread *newthread=new CancelableThread(runnable);
 	if(newthread)
 	{
+		m_threads.push_back(newthread);
 		return newthread->GetThreadID();
 	}
 	else
@@ -67,11 +67,11 @@ const int ThreadedExecutor::Start(CancelableRunnable *runnable)
 
 const int ThreadedExecutor::Start(CancelableRunnable *runnable, const std::string &name)
 {
-	CancelableThread *newthread=new CancelableThread(runnable,name);
-	m_threads.push_back(newthread);
 	CleanupCompleted();
+	CancelableThread *newthread=new CancelableThread(runnable,name);
 	if(newthread)
 	{
+		m_threads.push_back(newthread);
 		return newthread->GetThreadID();
 	}
 	else

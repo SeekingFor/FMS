@@ -522,6 +522,8 @@ void MessageListRequester::StartRedirectRequest(FCPv2::Message &message)
 
 	m_fcp->Send(newmessage);
 
+	m_log->debug(m_fcpuniquename+"::StartRedirectRequest started redirect request of "+message["Identifier"]+" to "+newmessage["URI"]);
+
 }
 
 void MessageListRequester::StartRequest(const long &id)

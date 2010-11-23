@@ -173,6 +173,7 @@ const bool BoardListInserter::StartInsert(const long &localidentityid)
 	message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 	message["UploadFrom"]="direct";
 	message["DataLength"]=datasizestr;
+	message["Metadata.ContentType"]="";
 	m_fcp->Send(message);
 	m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 

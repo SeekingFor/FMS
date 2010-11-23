@@ -7,55 +7,59 @@
 	#include <xmem.h>
 #endif
 
-void MessageThread::AddChildren(const long messageid, const long level, const long boardid)
+void MessageThread::AddChildren(const long messageid, const long level, const long boardid, const unsigned int currentdepth)
 {
-	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessageReplyTo.MessageID, tblMessage1.Subject, tblMessage1.FromName, tblMessage1.MessageDate || ' ' || tblMessage1.MessageTime FROM tblMessage INNER JOIN tblMessageReplyTo ON tblMessage.MessageUUID=tblMessageReplyTo.ReplyToMessageUUID INNER JOIN tblMessage AS 'tblMessage1' ON tblMessageReplyTo.MessageID=tblMessage1.MessageID INNER JOIN tblMessageBoard ON tblMessage1.MessageID=tblMessageBoard.MessageID WHERE tblMessage.MessageID=? AND tblMessageBoard.BoardID=? AND tblMessageReplyTo.ReplyOrder=0 ORDER BY tblMessage1.MessageDate || ' ' || tblMessage1.MessageTime;");
-	st.Bind(0,messageid);
-	st.Bind(1,boardid);
-	st.Step();
-	while(st.RowReturned())
+	if(currentdepth<1000)
 	{
-		int childid=0;
-		std::string subject="";
-		std::string fromname="";
-		std::string datetime="";
-		st.ResultInt(0,childid);
-		st.ResultText(1,subject);
-		st.ResultText(2,fromname);
-		st.ResultText(3,datetime);
-
-		if(childid!=messageid)
-		{
-			threadnode node;
-			node.m_messageid=childid;
-			node.m_level=level;
-			node.m_subject=subject;
-			node.m_fromname=fromname;
-			node.m_date=datetime;
-			m_nodes.push_back(node);
-
-			AddChildren(childid,level+1,boardid);
-		}
-		else
-		{
-			std::string mid("");
-			std::string bid("");
-			StringFunctions::Convert(messageid,mid);
-			StringFunctions::Convert(boardid,bid);
-			m_log->debug("MessageThread::AddChildren messageid "+mid+" tried to add itself as child in board "+bid);
-		}
-		
+		SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessageReplyTo.MessageID, tblMessage1.Subject, tblMessage1.FromName, tblMessage1.MessageDate || ' ' || tblMessage1.MessageTime FROM tblMessage INNER JOIN tblMessageReplyTo ON tblMessage.MessageUUID=tblMessageReplyTo.ReplyToMessageUUID INNER JOIN tblMessage AS 'tblMessage1' ON tblMessageReplyTo.MessageID=tblMessage1.MessageID INNER JOIN tblMessageBoard ON tblMessage1.MessageID=tblMessageBoard.MessageID WHERE tblMessage.MessageID=? AND tblMessage1.MessageID!=? AND tblMessageBoard.BoardID=? AND tblMessageReplyTo.ReplyOrder=0 ORDER BY tblMessage1.MessageDate || ' ' || tblMessage1.MessageTime;");
+		st.Bind(0,messageid);
+		st.Bind(1,messageid);
+		st.Bind(2,boardid);
 		st.Step();
-	}	
+		while(st.RowReturned())
+		{
+			int childid=0;
+			std::string subject="";
+			std::string fromname="";
+			std::string datetime="";
+			st.ResultInt(0,childid);
+			st.ResultText(1,subject);
+			st.ResultText(2,fromname);
+			st.ResultText(3,datetime);
+
+			if(childid!=messageid)
+			{
+				threadnode node;
+				node.m_messageid=childid;
+				node.m_level=level;
+				node.m_subject=subject;
+				node.m_fromname=fromname;
+				node.m_date=datetime;
+				m_nodes.push_back(node);
+
+				AddChildren(childid,level+1,boardid,currentdepth+1);
+			}
+			else
+			{
+				std::string mid("");
+				std::string bid("");
+				StringFunctions::Convert(messageid,mid);
+				StringFunctions::Convert(boardid,bid);
+				m_log->debug("MessageThread::AddChildren messageid "+mid+" tried to add itself as child in board "+bid);
+			}
+			
+			st.Step();
+		}
+	}
 }
 
-const MessageThread::threadnode MessageThread::GetOriginalMessageNode(const long messageid, const long boardid)
+const MessageThread::threadnode MessageThread::GetOriginalMessageNode(const long messageid, const long boardid, const unsigned int currentdepth)
 {
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.Subject, tblMessage.FromName, tblMessage.MessageDate || ' ' || tblMessage.MessageTime FROM tblMessageReplyTo INNER JOIN tblMessage ON tblMessageReplyTo.ReplyToMessageUUID=tblMessage.MessageUUID INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageReplyTo.ReplyOrder=0 AND tblMessageReplyTo.MessageID=? AND tblMessageBoard.BoardID=?;");
 	st.Bind(0,messageid);
 	st.Bind(1,boardid);
 	st.Step();
-	if(st.RowReturned())
+	if(st.RowReturned() && currentdepth<1000)
 	{
 		int id=0;
 		std::string subject="";
@@ -73,7 +77,7 @@ const MessageThread::threadnode MessageThread::GetOriginalMessageNode(const long
 		node.m_fromname=fromname;
 		node.m_date=datetime;
 
-		return GetOriginalMessageNode(node.m_messageid,boardid);
+		return GetOriginalMessageNode(node.m_messageid,boardid,currentdepth+1);
 	}
 	else
 	{
@@ -102,13 +106,13 @@ const MessageThread::threadnode MessageThread::GetOriginalMessageNode(const long
 
 const bool MessageThread::Load(const long messageid, const long boardid, const bool bydate)
 {
-	threadnode originalmessagenode=GetOriginalMessageNode(messageid,boardid);
+	threadnode originalmessagenode=GetOriginalMessageNode(messageid,boardid,0);
 	
 	if(originalmessagenode.m_messageid>=0)
 	{
 		m_nodes.push_back(originalmessagenode);
 		
-		AddChildren(originalmessagenode.m_messageid,1,boardid);
+		AddChildren(originalmessagenode.m_messageid,1,boardid,0);
 
 		if(bydate==true)
 		{
