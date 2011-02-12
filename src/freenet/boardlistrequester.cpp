@@ -271,7 +271,7 @@ void BoardListRequester::PopulateIDList()
 	while(st.RowReturned())
 	{
 		st.ResultInt(0,id);
-		m_ids[id]=false;
+		m_ids[id].m_requested=false;
 		st.Step();
 	}
 
@@ -320,10 +320,10 @@ void BoardListRequester::StartRequest(const long &identityid)
 
 		m_fcp->Send(message);
 
-		m_requesting.push_back(identityid);
+		StartedRequest(identityid,message["Identifier"]);
 
 	}
 
-	m_ids[identityid]=true;
+	m_ids[identityid].m_requested=true;
 
 }

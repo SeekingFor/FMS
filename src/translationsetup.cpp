@@ -138,7 +138,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.MessageListDaysBackward.description","The number of days backward that messages you have inserted will appear in your Message Lists");
 	st->SetDefault("web.option.MaxPeerMessagesPerDay.description","The maximum number of messages you will download from each peer on a given day.");
 	st->SetDefault("web.option.MaxBoardsPerMessage.description","The maximum number of boards a received message may be sent to.  Boards over this limit will be ignored.");
-	st->SetDefault("web.option.SaveMessagesFromNewBoards.description","Set to true to automatically save messages posted to new boards.  Set to false to ignore messages to new boards.");
+	st->SetDefault("web.option.SaveMessagesFromNewBoards.description","Set to true to automatically create boards and save messages posted to them if you currently don't know about the board.  Set to false if you don't want messages posted only to new boards automatically added.  Boards from cross-posted messages are still added.");
 	st->SetDefault("web.option.ChangeMessageTrustOnReply.description","How much the local message trust level of an identity should change when you reply to one of their messages.");
 	st->SetDefault("web.option.AddNewPostFromIdentities.description","Set to true to automatically create new identities when you send a message using a new name.  If you set this to false, posting messages will fail until you manually create the identity.");
 	st->SetDefault("web.option.DeleteMessagesOlderThan.description","Automatically delete messages older than this many days.  Use -1 to keep messages forever.");
@@ -312,6 +312,8 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.translate.title","Translate");
 	st->SetDefault("web.page.translate.translatebutton","Translate");
 	st->SetDefault("web.page.translate.gotonextuntranslated","Go to next untranslated string");
+
+	st->SetDefault("web.page.forum.fmsforum","FMS Forum");
 
 	st->SetDefault("web.page.forum.newposts","New Posts");
 	st->SetDefault("web.page.forum.nonewposts","No New Posts");

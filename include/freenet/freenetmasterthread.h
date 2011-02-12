@@ -10,6 +10,9 @@
 
 #include "../threadwrapper/cancelablerunnable.h"
 
+#include <set>
+#include <string>
+
 // forward declaration
 class IFreenetRegistrable;
 
@@ -42,6 +45,7 @@ private:
 	std::vector<IFCPMessageHandler *> m_fcpmessagehandlers;
 	bool m_receivednodehello;
 	int m_fcptimeout;
+	std::set<std::string> m_ignoredmessages;
 
 };
 

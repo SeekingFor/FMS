@@ -290,7 +290,7 @@ void FrostMessageRequester::PopulateIDList()
 					{
 						std::string istr="";
 						StringFunctions::Convert(i,istr);
-						m_ids[boardidstr+"|"+istr+"|"+day]=false;
+						m_ids[boardidstr+"|"+istr+"|"+day].m_requested=false;
 					}
 				}
 
@@ -306,7 +306,7 @@ void FrostMessageRequester::PopulateIDList()
 			{
 				std::string istr="";
 				StringFunctions::Convert(i,istr);	
-				m_ids[boardidstr+"|"+istr+"|"+day]=false;
+				m_ids[boardidstr+"|"+istr+"|"+day].m_requested=false;
 			}
 
 		}
@@ -366,13 +366,13 @@ void FrostMessageRequester::StartRequest(const std::string &id)
 
 		m_fcp->Send(message);
 
-		m_requesting.push_back(id);
+		StartedRequest(id,message["Identifier"]);
 	}
 	else
 	{
 		m_log->error("FrostMessageRequester::StartRequest unable to find db record for "+id);
 	}
 
-	m_ids[id]=true;
+	m_ids[id].m_requested=true;
 
 }

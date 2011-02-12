@@ -14,12 +14,17 @@ public:
 
 private:
 	const std::string GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars);
+	const std::string GetPageTitle(const std::string &method, const std::map<std::string,QueryVar> &queryvars);
 	const std::string FixBody(const std::string &body);
 	
 	bool m_showsmilies;
 	bool m_detectlinks;
+	int m_minlocalmessagetrust;
+	int m_minpeermessagetrust;
+	bool m_localtrustoverrides;
 	QuoterHTMLRenderer m_htmlrenderer;
 	EmoticonReplacer m_emot;
+	std::string m_pagetitle;
 
 };
 

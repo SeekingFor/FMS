@@ -94,7 +94,7 @@ void OldMessageListRequester::PopulateIDList()
 			st.ResultText(0,identityid);
 			st.ResultText(1,index);
 
-			m_ids[Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"|"+identityid+"|"+index]=false;
+			m_ids[Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"|"+identityid+"|"+index].m_requested=false;
 
 			st.Step();
 		}
@@ -140,9 +140,9 @@ void OldMessageListRequester::StartRequest(const std::string &id)
 
 		m_fcp->Send(message);
 
-		m_requesting.push_back(id);
+		StartedRequest(id,message["Identifier"]);
 	}
 
-	m_ids[id]=true;
+	m_ids[id].m_requested=true;
 
 }

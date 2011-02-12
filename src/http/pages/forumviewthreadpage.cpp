@@ -9,10 +9,18 @@
 
 ForumTemplateViewThreadPage::ForumTemplateViewThreadPage(SQLite3DB::DB *db, const HTMLTemplateHandler &templatehandler):ForumTemplatePage(db,templatehandler,"forumviewthread.htm"),m_emot("images/smilies/")
 {
+	m_localtrustoverrides=false;
+	m_minlocalmessagetrust=0;
+	m_minpeermessagetrust=0;
+
 	Option option(db);
 	option.GetBool("ForumDetectLinks",m_detectlinks);
 	option.GetBool("ForumShowSmilies",m_showsmilies);
+	option.GetBool("LocalTrustOverridesPeerTrust",m_localtrustoverrides);
+	option.GetInt("MinLocalMessageTrust",m_minlocalmessagetrust);
+	option.GetInt("MinPeerMessageTrust",m_minpeermessagetrust);
 	m_htmlrenderer.SetDetectLinks(m_detectlinks);
+	m_pagetitle=GetBasePageTitle();
 }
 
 const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
@@ -213,6 +221,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		std::string datetime="";
 		std::string body="";
 		std::string postlink="";
+		bool allowreply=true;
 		
 		st.ResultInt(0,messageid);
 		st.ResultText(0,messageidstr);
@@ -225,6 +234,10 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 
 		if(postcount==0)
 		{
+			if(subject!="")
+			{
+				m_pagetitle+=" - "+SanitizeOutput(boardname,skipspace)+" - "+SanitizeOutput(subject,skipspace);
+			}
 			breadcrumblinks.push_back(std::pair<std::string,std::string>(m_pagename+"?viewstate="+m_viewstate.GetViewStateID()+"&threadid="+threadidstr+"&boardid="+boardidstr+"&page="+pagestr,SanitizeOutput(subject,skipspace)));
 		}
 
@@ -236,6 +249,8 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		}
 		else
 		{
+			int lmt=0;
+			int pmt=0;
 			std::string localmessagetrust("");
 			std::string localtrustlisttrust("");
 			std::string peermessagetrust("");
@@ -249,6 +264,12 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 				{
 					truststpeeronly.ResultText(0,peermessagetrust);
 					truststpeeronly.ResultText(1,peertrustlisttrust);
+					truststpeeronly.ResultInt(0,pmt);
+					if(peermessagetrust!="" && pmt<m_minpeermessagetrust)
+					{
+						allowreply=false;
+					}
+
 				}
 				truststpeeronly.Reset();
 			}
@@ -263,6 +284,20 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 					truststboth.ResultText(1,peermessagetrust);
 					truststboth.ResultText(2,localtrustlisttrust);
 					truststboth.ResultText(3,peertrustlisttrust);
+					truststboth.ResultInt(0,lmt);
+					truststboth.ResultInt(1,pmt);
+					if(localmessagetrust=="")
+					{
+						lmt=100;
+					}
+					if(peermessagetrust=="")
+					{
+						pmt=100;
+					}
+					if(((m_localtrustoverrides==false || localmessagetrust=="") && (pmt<m_minpeermessagetrust || lmt<m_minlocalmessagetrust)) || (m_localtrustoverrides==true && (lmt<m_minlocalmessagetrust)))
+					{
+						allowreply=false;
+					}
 				}
 				truststboth.Reset();
 			}
@@ -346,7 +381,15 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 			postvars["THREADPOSTLINK"]="";
 		}
 		postvars["THREADPOSTDATE"]=datetime;
-		postvars["THREADPOSTREPLYLINK"]="<a href=\"forumcreatepost.htm?viewstate="+m_viewstate.GetViewStateID()+"&replytomessageid="+messageidstr+"&threadid="+threadidstr+"&boardid="+boardidstr+"&page="+pagestr+"\"><img src=\"images/mail_reply.png\" border=\"0\" style=\"vertical-align:bottom;\">"+m_trans->Get("web.page.forumviewthread.reply")+"</a>";
+
+		if(allowreply==true)
+		{
+			postvars["THREADPOSTREPLYLINK"]="<a href=\"forumcreatepost.htm?viewstate="+m_viewstate.GetViewStateID()+"&replytomessageid="+messageidstr+"&threadid="+threadidstr+"&boardid="+boardidstr+"&page="+pagestr+"\"><img src=\"images/mail_reply.png\" border=\"0\" style=\"vertical-align:bottom;\">"+m_trans->Get("web.page.forumviewthread.reply")+"</a>";
+		}
+		else
+		{
+			postvars["THREADPOSTREPLYLINK"]="";
+		}
 
 		postcount++;
 
@@ -372,6 +415,11 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	m_templatehandler.PerformReplacements(maincontent,vars,result);
 
 	return result;
+}
+
+const std::string ForumTemplateViewThreadPage::GetPageTitle(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
+{
+	return m_pagetitle;
 }
 
 const std::string ForumTemplateViewThreadPage::FixBody(const std::string &body)

@@ -116,6 +116,12 @@ const bool IdentityInserter::HandleMessage(FCPv2::Message &message)
 					m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID="+idparts[1]+";");
 				}
 				m_db->Execute("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
+				
+				SQLite3DB::Statement st=m_db->Prepare("INSERT OR REPLACE INTO tmpLocalIdentityRedirectInsert(LocalIdentityID,Redirect) VALUES(?,?);");
+				st.Bind(0,idparts[1]);
+				st.Bind(1,StringFunctions::UriDecode(message["URI"]));
+				st.Step();
+				
 				m_log->debug("IdentityInserter::HandleMessage inserted Identity xml");
 			}
 			else

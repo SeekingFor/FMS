@@ -219,7 +219,7 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 				}
 			}
 
-			if(mess.Create(localidentityid,boardid,subject,body,references))
+			if(boardid>0 && mess.Create(localidentityid,boardid,subject,body,references))
 			{
 
 				// add all attachments
@@ -258,6 +258,10 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 			else
 			{
 				error=m_trans->Get("web.page.forumcreatepost.error.message");
+				if(boardid<=0)
+				{
+					m_log->debug("ForumTemplateCreatePostPage::GenerateContent error with boardid.  boardidstr="+boardidstr+" threadidstr="+threadidstr+" replytomessageidstr="+replytomessageidstr);
+				}
 			}
 		}
 	}

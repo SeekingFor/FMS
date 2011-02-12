@@ -48,6 +48,10 @@ UnlikeCaptcha1::UnlikeCaptcha1(const std::string &imagedir):m_imagedir(imagedir)
 		}
 
 	}
+	catch(Poco::PathNotFoundException &e)
+	{
+		// normal when directory doesn't exist, no logging necessary
+	}
 	catch(Poco::Exception &e)
 	{
 		m_log->error("UnlikeCaptcha1 caught "+e.displayText());

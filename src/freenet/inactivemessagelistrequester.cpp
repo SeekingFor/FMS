@@ -94,7 +94,7 @@ void InactiveMessageListRequester::PopulateIDList()
 	while(st.RowReturned())
 	{
 		st.ResultInt(0,id);
-		m_ids[id]=false;
+		m_ids[id].m_requested=false;
 		st.Step();
 	}
 

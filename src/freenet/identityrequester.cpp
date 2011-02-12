@@ -154,26 +154,47 @@ const bool IdentityRequester::HandleGetFailed(FCPv2::Message &message)
 	long index;
 	long identityorder;
 
-	StringFunctions::Split(message["Identifier"],"|",idparts);
-	StringFunctions::Convert(idparts[1],identityid);
-	StringFunctions::Convert(idparts[2],index);
-	StringFunctions::Convert(idparts[3],identityorder);
-
-	// if this is a fatal error - insert index into database so we won't try to download this index again
-	if(message["Fatal"]=="true")
+	if(message["Identifier"].find(".xml")!=std::string::npos)
 	{
-		st=m_db->Prepare("INSERT INTO tblIdentityRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
-		st.Bind(0,identityid);
-		st.Bind(1,idparts[5]);
-		st.Bind(2,index);
-		st.Step();
-		st.Finalize();
 
-		m_log->error(m_fcpuniquename+"::HandleGetFailed fatal error requesting "+message["Identifier"]);
+		StringFunctions::Split(message["Identifier"],"|",idparts);
+		StringFunctions::Convert(idparts[1],identityid);
+		StringFunctions::Convert(idparts[2],index);
+		StringFunctions::Convert(idparts[3],identityorder);
+
+		// if this is a fatal error - insert index into database so we won't try to download this index again
+		if(message["Fatal"]=="true")
+		{
+			st=m_db->Prepare("INSERT INTO tblIdentityRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
+			st.Bind(0,identityid);
+			st.Bind(1,idparts[5]);
+			st.Bind(2,index);
+			st.Step();
+			st.Finalize();
+
+			m_log->error(m_fcpuniquename+"::HandleGetFailed fatal error requesting "+message["Identifier"]);
+		}
+
+		// remove this identityid from request list
+		RemoveFromRequestList(std::pair<long,long>(identityorder,identityid));
+
 	}
+	else
+	{
+		if(message["RedirectURI"]!="")
+		{
+			FCPv2::Message mess("ClientGet");
+			mess["URI"]=StringFunctions::UriDecode(message["RedirectURI"]);
+			mess["Identifier"]=message["Identifier"];
+			mess["PriorityClass"]=m_defaultrequestpriorityclassstr;
+			mess["ReturnType"]="direct";
+			mess["MaxSize"]="10000";			// 10 KB
 
-	// remove this identityid from request list
-	RemoveFromRequestList(std::pair<long,long>(identityorder,identityid));
+			m_fcp->Send(mess);
+
+			m_log->debug(m_fcpuniquename+"::HandleGetFailed started redirect request for "+mess["URI"]);
+		}
+	}
 
 	return true;
 
@@ -225,11 +246,25 @@ void IdentityRequester::StartRequest(const std::pair<long,long> &inputpair)
 
 		m_fcp->Send(message);
 
-		m_requesting.push_back(inputpair);
+		m_log->trace(m_fcpuniquename+"::StartRequest started request for "+message["Identifier"]);
+
+		StartedRequest(inputpair,message["Identifier"]);
+
+		// if this is from the UnknownIdentityRequester, also request the editioned USK
+		if(m_fcpuniquename=="UnknownIdentityRequester")
+		{
+			message.Clear();
+			message.SetName("ClientGet");
+			message["URI"]="USK"+publickey.substr(3)+m_messagebase+"|IdentityRedirect/0/";
+			message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|"+identityorderstr+"|"+message["URI"];
+			message["PriorityClass"]=m_defaultrequestpriorityclassstr;
+			message["ReturnType"]="direct";
+			message["MaxSize"]="10000";
+			m_log->trace(m_fcpuniquename+"::StartRequest started request for "+message["Identifier"]);
+		}
+
 	}
 
-	m_ids[inputpair]=true;
-
-	m_log->trace(m_fcpuniquename+"::StartRequest started request for "+message["Identifier"]);
+	m_ids[inputpair].m_requested=true;
 
 }

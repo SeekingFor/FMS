@@ -3,6 +3,7 @@
 #include "../../include/stringfunctions.h"
 #include "../../include/freenet/unkeyedidcreator.h"
 #include "../../include/freenet/identityinserter.h"
+#include "../../include/freenet/identityredirectinserter.h"
 #include "../../include/freenet/knownidentityrequester.h"
 #include "../../include/freenet/unknownidentityrequester.h"
 #include "../../include/freenet/introductionpuzzleinserter.h"
@@ -40,7 +41,10 @@
 
 FreenetMasterThread::FreenetMasterThread():m_receivednodehello(false)
 {
-
+	m_ignoredmessages.insert("ExpectedHashes");
+	m_ignoredmessages.insert("CompatibilityMode");
+	m_ignoredmessages.insert("ExpectedMIME");
+	m_ignoredmessages.insert("ExpectedDataLength");
 }
 
 FreenetMasterThread::~FreenetMasterThread()
@@ -116,8 +120,9 @@ const bool FreenetMasterThread::HandleMessage(FCPv2::Message &message)
 			i++;
 		}
 
-		// we don't care about unhandled ExpectedHashes or CompatibilityMode messages
-		if(message.GetName()=="ExpectedHashes" || message.GetName()=="CompatibilityMode")
+		
+		// we don't care about unhandled messages
+		if(m_ignoredmessages.find(message.GetName())!=m_ignoredmessages.end())
 		{
 			handled=true;
 		}
@@ -185,6 +190,8 @@ void FreenetMasterThread::run()
 	m_log->debug("FreenetMasterThread::run thread started.");
 
 	LoadDatabase();
+
+	m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpLocalIdentityRedirectInsert(LocalIdentityID INTEGER PRIMARY KEY, Redirect TEXT);");
 
 
 
@@ -321,6 +328,7 @@ void FreenetMasterThread::Setup()
 
 	m_registrables.push_back(new UnkeyedIDCreator(m_db,&m_fcp));
 	m_registrables.push_back(new IdentityInserter(m_db,&m_fcp));
+	m_registrables.push_back(new IdentityRedirectInserter(m_db,&m_fcp));
 	m_registrables.push_back(new KnownIdentityRequester(m_db,&m_fcp));
 	m_registrables.push_back(new UnknownIdentityRequester(m_db,&m_fcp));
 	m_registrables.push_back(new IntroductionPuzzleInserter(m_db,&m_fcp));

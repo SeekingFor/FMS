@@ -56,7 +56,18 @@ class ForumTemplatePage:public IPageHandler
 public:
 	ForumTemplatePage(SQLite3DB::DB *db, const HTMLTemplateHandler &templatehandler, const std::string &pagename):IPageHandler(db,"",pagename),m_templatehandler(templatehandler),m_viewstate(db)	{}
 
+protected:
+	const std::string GetBasePageTitle()
+	{
+		return m_trans->Get("web.page.forum.fmsforum");
+	}
+
 private:
+
+	virtual const std::string GetPageTitle(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
+	{
+		return GetBasePageTitle();
+	}
 	virtual const std::string GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)=0;
 	virtual const std::string GeneratePage(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 	{
@@ -130,8 +141,8 @@ private:
 		m_templatehandler.GetSection("FORUMPAGE",output);
 
 
-		sections["PAGETITLE"]="FMS Forum";
 		sections["FORUMCONTENT"]=GenerateContent(method,queryvars);
+		sections["PAGETITLE"]=GetPageTitle(method,queryvars);
 
 		// these need to come after GenerateContent
 		sections["FORUMSEARCH"]="";

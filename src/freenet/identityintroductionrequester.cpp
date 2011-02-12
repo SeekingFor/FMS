@@ -180,7 +180,7 @@ void IdentityIntroductionRequester::PopulateIDList()
 	{
 		std::string uuid;
 		st.ResultText(0,uuid);
-		m_ids[uuid]=false;
+		m_ids[uuid].m_requested=false;
 		st.Step();
 	}
 
@@ -218,10 +218,10 @@ void IdentityIntroductionRequester::StartRequest(const std::string &UUID)
 
 		m_fcp->Send(message);
 
-		m_requesting.push_back(UUID);
+		StartedRequest(UUID,message["Identifier"]);
 
 	}
 
-	m_ids[UUID]=true;
+	m_ids[UUID].m_requested=true;
 
 }

@@ -70,11 +70,11 @@ void IIndexInserter<IDTYPE>::FCPConnected()
 	// make sure variables have been initialized by the derived class
 	if(m_fcpuniquename=="")
 	{
-		m_log->fatal("IIndexInserter<IDTYPE>::FCPConnected fcpuniquename not initialized correctly!");
+		m_log->fatal(m_fcpuniquename+"::FCPConnected fcpuniquename not initialized correctly!");
 	}
 	if(m_fcpuniquename.find("|")!=std::string::npos)
 	{
-		m_log->fatal("IIndexInserter<IDTYPE>::FCPConnected fcpuniquename : "+m_fcpuniquename+" contains | character!  This is not a valid character!");
+		m_log->fatal(m_fcpuniquename+"::FCPConnected fcpuniquename : "+m_fcpuniquename+" contains | character!  This is not a valid character!");
 	}
 
 	m_inserting.clear();
@@ -92,7 +92,7 @@ const bool IIndexInserter<IDTYPE>::HandleMessage(FCPv2::Message &message)
 
 	if(message["Identifier"].find(m_fcpuniquename)==0)
 	{
-		m_log->trace("IIndexInserter<IDTYPE>::HandleMessage "+m_fcpuniquename+" received "+message.GetName()+"  ID="+message["Identifier"]+"  URI="+message["URI"]);
+		m_log->trace(m_fcpuniquename+"::HandleMessage "+m_fcpuniquename+" received "+message.GetName()+"  ID="+message["Identifier"]+"  URI="+message["URI"]);
 
 		if(message.GetName()=="URIGenerated")
 		{
@@ -117,7 +117,7 @@ const bool IIndexInserter<IDTYPE>::HandleMessage(FCPv2::Message &message)
 			StringFunctions::Split(message["Identifier"],"|",idparts);
 			StringFunctions::Convert(idparts[1],id);
 			RemoveFromInsertList(id);
-			m_log->debug("IIndexInserter<IDTYPE>::HandleMessage IdentifierCollision for "+m_fcpuniquename+" "+message["Identifier"]);
+			m_log->debug(m_fcpuniquename+"::HandleMessage IdentifierCollision for "+m_fcpuniquename+" "+message["Identifier"]);
 			return true;
 		}
 	}

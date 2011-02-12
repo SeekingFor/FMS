@@ -85,7 +85,7 @@ void UnknownIdentityRequester::PopulateIDList()
 	while(st.RowReturned())
 	{
 		st.ResultInt(0,id);
-		m_ids[std::pair<long,long>(count,id)]=false;
+		m_ids[std::pair<long,long>(count,id)].m_requested=false;
 		st.Step();
 		count+=1;
 	}

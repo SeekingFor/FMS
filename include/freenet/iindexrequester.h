@@ -37,6 +37,15 @@ public:
 	virtual void RegisterWithThread(FreenetMasterThread *thread);
 
 protected:
+
+	struct idstruct
+	{
+		idstruct():m_requested(false),m_fcpidentifier("")	{ }
+
+		bool m_requested;
+		std::string m_fcpidentifier;
+	};
+
 	void InitializeIIndexRequester();
 	virtual void Initialize()=0;		// initialize m_maxrequests and m_fcpuniquename
 	virtual void PopulateIDList()=0;
@@ -45,18 +54,22 @@ protected:
 	virtual const bool HandleGetFailed(FCPv2::Message &message)=0;
 	virtual const IDTYPE GetIDFromIdentifier(const std::string &identifier)=0;
 	virtual void RemoveFromRequestList(const IDTYPE id);
+	void RemoveFCPRequest(const std::string &identifier);
+	void StartedRequest(const IDTYPE &id, const std::string &identifier);
 
 	Poco::DateTime m_tempdate;
 	Poco::DateTime m_lastreceived;
 	Poco::DateTime m_lastpopulated;
 	std::string m_messagebase;
-	std::map<IDTYPE,bool> m_ids;			// map of all ids we know and whether we have requested file from them yet
-	std::vector<IDTYPE> m_requesting;		// list of ids we are currently requesting from
+	std::map<IDTYPE,idstruct> m_ids;			// map of all ids we know and whether we have requested file from them yet
 	std::string m_defaultrequestpriorityclassstr;
 
 	// these MUST be populated by child class
 	int m_maxrequests;
 	std::string m_fcpuniquename;
+
+private:
+	std::vector<IDTYPE> m_requesting;		// list of ids we are currently requesting from
 
 };
 
@@ -78,15 +91,15 @@ void IIndexRequester<IDTYPE>::FCPConnected()
 	// make sure variables have been initialized by the derived class
 	if(m_maxrequests==-1)
 	{
-		m_log->fatal("IIndexRequester<IDTYPE>::FCPConnected maxrequests not initialized correctly!");
+		m_log->fatal(m_fcpuniquename+"::FCPConnected maxrequests not initialized correctly!");
 	}
 	if(m_fcpuniquename=="")
 	{
-		m_log->fatal("IIndexRequester<IDTYPE>::FCPConnected fcpuniquename not initialized correctly!");
+		m_log->fatal(m_fcpuniquename+"::FCPConnected fcpuniquename not initialized correctly!");
 	}
 	if(m_fcpuniquename.find("|")!=std::string::npos)
 	{
-		m_log->fatal("IIndexRequester<IDTYPE>::FCPConnected fcpuniquename "+m_fcpuniquename+" contains | character!  This is not a valid character!");
+		m_log->fatal(m_fcpuniquename+"::FCPConnected fcpuniquename "+m_fcpuniquename+" contains | character!  This is not a valid character!");
 		StringFunctions::Replace(m_fcpuniquename,"|","_");
 	}
 
@@ -138,6 +151,11 @@ const bool IIndexRequester<IDTYPE>::HandleMessage(FCPv2::Message &message)
 			RemoveFromRequestList(id);
 			return true;
 		}
+
+		if(message.GetName()=="PersistentRequestRemoved")
+		{
+			m_log->trace(m_fcpuniquename+"::HandleMessage handled PersistentRequestRemoved for "+message["Identifier"]);
+		}
 	}
 
 	return false;
@@ -169,9 +187,9 @@ void IIndexRequester<IDTYPE>::Process()
 	// try to keep up to max requests going
 	if(m_requesting.size()<max)
 	{
-		typename std::map<IDTYPE,bool>::iterator i=m_ids.begin();
+		typename std::map<IDTYPE,idstruct>::iterator i=m_ids.begin();
 
-		while(i!=m_ids.end() && (*i).second==true)
+		while(i!=m_ids.end() && (*i).second.m_requested==true)
 		{
 			i++;
 		}
@@ -201,7 +219,11 @@ void IIndexRequester<IDTYPE>::Process()
 	// if we haven't received any messages to this object in 10 minutes, clear the requests and repopulate id list
 	if(m_ids.size()>0 && m_lastreceived<(now-Poco::Timespan(0,0,10,0,0)))
 	{
-		m_log->error("IIndexRequester<IDTYPE>::Process "+m_fcpuniquename+" Object has not received any messages in 10 minutes.  Restarting requests.");
+		m_log->error(m_fcpuniquename+"::Process has not received any messages in 10 minutes.  Restarting requests.");
+		for(typename std::vector<IDTYPE>::const_iterator i=m_requesting.begin(); i!=m_requesting.end(); i++)
+		{
+			RemoveFCPRequest(m_ids[(*i)].m_fcpidentifier);
+		}
 		FCPConnected();
 	}
 
@@ -213,6 +235,18 @@ void IIndexRequester<IDTYPE>::RegisterWithThread(FreenetMasterThread *thread)
 	thread->RegisterFCPConnected(this);
 	thread->RegisterFCPMessageHandler(this);
 	thread->RegisterPeriodicProcessor(this);
+}
+
+template <class IDTYPE>
+void IIndexRequester<IDTYPE>::RemoveFCPRequest(const std::string &identifier)
+{
+	FCPv2::Message message("RemoveRequest");
+	message["Identifier"]=identifier;
+	message["Global"]="false";
+
+	m_fcp->Send(message);
+
+	m_log->trace(m_fcpuniquename+"::RemoveFCPRequest removing "+identifier);
 }
 
 template <class IDTYPE>
@@ -228,6 +262,13 @@ void IIndexRequester<IDTYPE>::RemoveFromRequestList(const IDTYPE id)
 	{
 		//m_log->trace("IIndexRequester<IDTYPE>::RemoveFromRequestList no matching id found!");
 	}
+}
+
+template <class IDTYPE>
+void IIndexRequester<IDTYPE>::StartedRequest(const IDTYPE &id, const std::string &identifier)
+{
+	m_requesting.push_back(id);
+	m_ids[id].m_fcpidentifier=identifier;
 }
 
 #endif	// _iindexrequester_

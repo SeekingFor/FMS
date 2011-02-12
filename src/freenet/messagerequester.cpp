@@ -487,7 +487,7 @@ void MessageRequester::PopulateIDList()
 		{
 			if(m_ids.find(val1+"*"+val2+"*"+val3)==m_ids.end())
 			{
-				m_ids[val1+"*"+val2+"*"+val3]=false;
+				m_ids[val1+"*"+val2+"*"+val3].m_requested=false;
 			}
 		}
 		st.Step();
@@ -549,7 +549,7 @@ void MessageRequester::StartRequest(const std::string &requestid)
 
 		m_fcp->Send(message);
 
-		m_requesting.push_back(requestid);
+		StartedRequest(requestid,message["Identifier"]);
 
 		// update tries
 		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblMessageRequests SET Tries=Tries+1 WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
@@ -561,6 +561,6 @@ void MessageRequester::StartRequest(const std::string &requestid)
 		m_log->debug("MessageRequester::StartRequest requesting "+message["Identifier"]);
 	}
 	
-	m_ids[requestid]=true;
+	m_ids[requestid].m_requested=true;
 
 }

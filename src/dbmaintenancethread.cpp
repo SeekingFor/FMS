@@ -306,7 +306,7 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	// first get the names from messages that have a NULL IdentityID
 	SQLite3DB::Statement st=m_db->Prepare("SELECT FromName FROM tblMessage WHERE IdentityID IS NULL GROUP BY FromName;");
 	//SQLite3DB::Statement findst=m_db->Prepare("SELECT IdentityID,PublicKey FROM tblIdentity WHERE Name=?;");
-	SQLite3DB::Statement findst=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE Name || REPLACE(REPLACE(SUBSTR(tblIdentity.PublicKey,4,44),'~',''),'-','')=?;");
+	SQLite3DB::Statement findst=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE Name || SUBSTR(tblIdentity.PublicKey,4,44)=?;");
 	st.Step();
 	while(st.RowReturned())
 	{
@@ -395,7 +395,7 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	findst.Finalize();
 
 	// If at least 2 days have passed without retrieving one of our own inserted messages, reset the date of the message insert so it will be inserted again.
-	m_db->Execute("UPDATE tblMessageInserts SET Day=NULL, InsertIndex=NULL, Inserted='false' WHERE MessageUUID IN (SELECT tblMessageInserts.MessageUUID FROM tblMessageInserts LEFT JOIN tblMessage ON tblMessageInserts.MessageUUID=tblMessage.MessageUUID WHERE Inserted='true' AND SendDate>=(SELECT date('now','-' || (SELECT CASE WHEN OptionValue<=0 THEN 30 WHEN OptionValue>30 THEN 30 ELSE OptionValue END FROM tblOption WHERE Option='DeleteMessagesOlderThan') || ' days')) AND tblMessage.MessageUUID IS NULL);");
+	m_db->Execute("UPDATE tblMessageInserts SET Day=NULL, InsertIndex=NULL, Inserted='false' WHERE MessageUUID IN (SELECT tblMessageInserts.MessageUUID FROM tblMessageInserts LEFT JOIN tblMessage ON tblMessageInserts.MessageUUID=tblMessage.MessageUUID WHERE Inserted='true' AND SendDate>=(SELECT date('now','-' || (SELECT CASE WHEN OptionValue<=0 THEN 30 WHEN OptionValue>30 THEN 30 ELSE OptionValue END FROM tblOption WHERE Option='DeleteMessagesOlderThan') || ' days')) AND tblMessage.MessageUUID IS NULL AND tblMessageInserts.SendDate<date('now','-2 days'));");
 
 	m_db->Execute("COMMIT;");
 

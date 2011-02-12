@@ -386,7 +386,38 @@ void ConvertDB0126To0127(SQLite3DB::DB *db)
 {
 	db->Execute("ALTER TABLE tblPeerTrust ADD COLUMN MessageTrustChange INTEGER DEFAULT 0;");
 	db->Execute("ALTER TABLE tblPeerTrust ADD COLUMN TrustListTrustChange INTEGER DEFAULT 0;");
-	db->Execute("UPDATE tblPeerTrust Set Major=1, Minor=27;");
+	db->Execute("UPDATE tblDBVersion Set Major=1, Minor=27;");
+}
+
+void ConvertDB0127To0128(SQLite3DB::DB *db)
+{
+
+	db->Execute("CREATE TEMPORARY TABLE tblIdentityTemp AS SELECT * FROM tblIdentity;");
+	db->Execute("DROP TABLE IF EXISTS tblIdentity;");
+	db->Execute("CREATE TABLE IF NOT EXISTS tblIdentity(\
+				IdentityID				INTEGER PRIMARY KEY AUTOINCREMENT,\
+				PublicKey				TEXT UNIQUE,\
+				Name					TEXT,\
+				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
+				PublishTrustList		BOOL CHECK(PublishTrustList IN('true','false')) DEFAULT 'false',\
+				PublishBoardList		BOOL CHECK(PublishBoardList IN('true','false')) DEFAULT 'false',\
+				FreesiteEdition			INTEGER,\
+				DateAdded				DATETIME,\
+				LastSeen				DATETIME,\
+				LocalMessageTrust		INTEGER CHECK(LocalMessageTrust BETWEEN 0 AND 100) DEFAULT NULL,\
+				PeerMessageTrust		INTEGER CHECK(PeerMessageTrust BETWEEN 0 AND 100) DEFAULT NULL,\
+				LocalTrustListTrust		INTEGER CHECK(LocalTrustListTrust BETWEEN 0 AND 100) DEFAULT NULL,\
+				PeerTrustListTrust		INTEGER CHECK(PeerTrustListTrust BETWEEN 0 AND 100) DEFAULT NULL,\
+				AddedMethod				TEXT,\
+				Hidden					BOOL CHECK(Hidden IN('true','false')) DEFAULT 'false',\
+				PurgeDate				DATETIME,\
+				FailureCount			INTEGER CHECK(FailureCount>=0) DEFAULT 0,\
+				SolvedPuzzleCount		INTEGER CHECK(SolvedPuzzleCount>=0) DEFAULT 0\
+				);");
+	db->Execute("INSERT INTO tblIdentity SELECT IdentityID,PublicKey,Name,SingleUse,PublishTrustList,PublishBoardList,FreesiteEdition,DateAdded,LastSeen,LocalMessageTrust,PeerMessageTrust,LocalTrustListTrust,PeerTrustListTrust,AddedMethod,Hidden,PurgeDate,FailureCount,SolvedPuzzleCount FROM tblIdentityTemp;");
+	db->Execute("DROP TABLE IF EXISTS tblIdentityTemp;");
+
+	db->Execute("UPDATE tblDBVersion Set Major=1, Minor=28;");
 }
 
 void FixBoardNames(SQLite3DB::DB *db)

@@ -88,6 +88,8 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 		boardnamest.ResultText(0,boardname);
 	}
 
+	m_pagetitle+=" - "+SanitizeOutput(boardname);
+
 	breadcrumblinks.push_back(std::pair<std::string,std::string>("forummain.htm?viewstate="+m_viewstate.GetViewStateID(),SanitizeOutput(m_trans->Get("web.navlink.browseforums"))));
 	breadcrumblinks.push_back(std::pair<std::string,std::string>(m_pagename+"?viewstate="+m_viewstate.GetViewStateID()+"&boardid="+boardidstr+"&page="+pagestr,SanitizeOutput(boardname)));
 	CreateBreadcrumbLinks(breadcrumblinks,result);

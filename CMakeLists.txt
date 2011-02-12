@@ -60,6 +60,7 @@ src/freenet/identityintroductioninserter.cpp
 src/freenet/identityintroductionrequester.cpp
 src/freenet/identityintroductionxml.cpp
 src/freenet/identitypublickeycache.cpp
+src/freenet/identityredirectinserter.cpp
 src/freenet/identityrequester.cpp
 src/freenet/identityxml.cpp
 src/freenet/inactivemessagelistrequester.cpp

@@ -133,6 +133,7 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 	std::string boardsstr="";
 	std::string datestr="";
 	std::vector<std::string> dateparts;
+	int futurecount=0;
 
 	GetBoardList(boards);
 
@@ -200,7 +201,7 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 			if(CheckDateNotFuture(xml.GetDate(i))==false)
 			{
 				addmessage=false;
-				m_log->error(m_fcpuniquename+"::HandleAllData date for message is in future! "+xml.GetDate(i));
+				futurecount++;
 			}
 
 			if(addmessage==true && CheckDateWithinMaxDays(xml.GetDate(i))==false)
@@ -234,6 +235,13 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 			{
 				//m_log->trace("MessageListRequester::HandleAllData will not download message posted to "+boardsstr+" on "+xml.GetDate(i));
 			}
+		}
+
+		if(futurecount>0)
+		{
+			std::string futurecountstr("0");
+			StringFunctions::Convert(futurecount,futurecountstr);
+			m_log->error(m_fcpuniquename+"::HandleAllData ignored "+futurecountstr+" entries for future messages!");
 		}
 
 		// insert external message indexes
@@ -479,7 +487,7 @@ void MessageListRequester::PopulateIDList()
 	while(st.RowReturned())
 	{
 		st.ResultInt(0,id);
-		m_ids[id]=false;
+		m_ids[id].m_requested=false;
 		st.Step();
 	}
 
@@ -571,8 +579,8 @@ void MessageListRequester::StartRequest(const long &id)
 
 		m_fcp->Send(message);
 
-		m_requesting.push_back(id);
+		StartedRequest(id,message["Identifier"]);
 	}
 
-	m_ids[id]=true;
+	m_ids[id].m_requested=true;
 }

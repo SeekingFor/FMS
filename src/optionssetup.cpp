@@ -787,7 +787,7 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(0,"Messages");
 	upd.Bind(1,order++);
 	upd.Bind(2,"true|true|false|false");
-	upd.Bind(3,"Set to true to automatically save messages posted to new boards.  Set to false to ignore messages to new boards.");
+	upd.Bind(3,"Set to true to automatically create boards and save messages posted to them if you currently don't know about the board.  Set to false if you don't want messages posted only to new boards automatically added.  Boards from cross-posted messages are still added.");
 	upd.Bind(4,"select");
 	upd.Bind(5);
 	upd.Bind(6);

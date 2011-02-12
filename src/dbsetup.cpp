@@ -183,13 +183,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=27;
 		}
+		if(major==1 && minor==27)
+		{
+			ConvertDB0127To0128(db);
+			major=1;
+			minor=28;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,27);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,28);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=27;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=28;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -276,7 +282,7 @@ void SetupDB(SQLite3DB::DB *db)
 		PurgeDate is not used yet
 	*/
 	db->Execute("CREATE TABLE IF NOT EXISTS tblIdentity(\
-				IdentityID				INTEGER PRIMARY KEY,\
+				IdentityID				INTEGER PRIMARY KEY AUTOINCREMENT,\
 				PublicKey				TEXT UNIQUE,\
 				Name					TEXT,\
 				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
@@ -654,7 +660,7 @@ void SetupDB(SQLite3DB::DB *db)
 					DELETE FROM tblIntroductionPuzzleRequests WHERE IdentityID=old.IdentityID;\
 					DELETE FROM tblMessageListRequests WHERE IdentityID=old.IdentityID;\
 					DELETE FROM tblMessageRequests WHERE IdentityID=old.IdentityID;\
-					DELETE FROM tblPeerTrust WHERE IdentityID=old.IdentityID;\
+					DELETE FROM tblPeerTrust WHERE IdentityID=old.IdentityID OR TargetIdentityID=old.IdentityID;\
 					DELETE FROM tblTrustListRequests WHERE IdentityID=old.IdentityID;\
 					DELETE FROM tblIdentityTrust WHERE IdentityID=old.IdentityID;\
 				END;");
