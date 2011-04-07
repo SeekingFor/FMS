@@ -141,8 +141,8 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 
 		m_db->Execute("BEGIN;");
 
-		m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpPeerTrust(IdentityID INTEGER,TargetIdentityID INTEGER,MessageTrust INTEGER,TrustListTrust INTEGER);");
-		st=m_db->Prepare("INSERT INTO tmpPeerTrust(IdentityID,TargetIdentityID,MessageTrust,TrustListTrust) SELECT IdentityID,TargetIdentityID,MessageTrust,TrustListTrust FROM tblPeerTrust WHERE IdentityID=?;");
+		m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpPeerTrust(IdentityID INTEGER,TargetIdentityID INTEGER,MessageTrust INTEGER,TrustListTrust INTEGER,MessageTrustChange INTEGER,TrustListTrustChange INTEGER);");
+		st=m_db->Prepare("INSERT INTO tmpPeerTrust(IdentityID,TargetIdentityID,MessageTrust,TrustListTrust,MessageTrustChange,TrustListTrustChange) SELECT IdentityID,TargetIdentityID,MessageTrust,TrustListTrust,MessageTrustChange,TrustListTrustChange FROM tblPeerTrust WHERE IdentityID=?;");
 		st.Bind(0,identityid);
 		st.Step();
 		st.Finalize();
@@ -255,7 +255,18 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		st.Step();
 		st.Finalize();
 
-		st=m_db->Prepare("UPDATE tblPeerTrust SET MessageTrustChange=IFNULL(MessageTrust-IFNULL((SELECT MessageTrust FROM tmpPeerTrust WHERE tmpPeerTrust.IdentityID=? AND tmpPeerTrust.TargetIdentityID=tblPeerTrust.TargetIdentityID),MessageTrust),0), TrustListTrustChange=IFNULL(TrustListTrust-IFNULL((SELECT TrustListTrust FROM tmpPeerTrust WHERE tmpPeerTrust.IdentityID=? AND tmpPeerTrust.TargetIdentityID=tblPeerTrust.TargetIdentityID),TrustListTrust),0)  WHERE IdentityID=?;");
+		m_db->Execute("CREATE TEMPORARY VIEW IF NOT EXISTS vwPeerTrustChange AS\
+						SELECT tblPeerTrust.IdentityID, tblPeerTrust.TargetIdentityID,\
+						CASE WHEN IFNULL(tblPeerTrust.MessageTrust,0)=IFNULL(tmpPeerTrust.MessageTrust,0) THEN IFNULL(tmpPeerTrust.MessageTrustChange,0)\
+						ELSE IFNULL(tblPeerTrust.MessageTrust,0)-IFNULL(tmpPeerTrust.MessageTrust,0)\
+						END AS MessageTrustChange,\
+						CASE WHEN IFNULL(tblPeerTrust.TrustListTrust,0)=IFNULL(tmpPeerTrust.TrustListTrust,0) THEN IFNULL(tmpPeerTrust.TrustListTrustChange,0)\
+						ELSE IFNULL(tblPeerTrust.TrustListTrust,0)-IFNULL(tmpPeerTrust.TrustListTrust,0)\
+						END AS TrustListTrustChange\
+						FROM tblPeerTrust\
+						INNER JOIN tmpPeerTrust ON tblPeerTrust.IdentityID=tmpPeerTrust.IdentityID AND tblPeerTrust.TargetIdentityID=tmpPeerTrust.TargetIdentityID;");
+
+		st=m_db->Prepare("UPDATE tblPeerTrust SET MessageTrustChange=IFNULL((SELECT vwPeerTrustChange.MessageTrustChange FROM vwPeerTrustChange WHERE vwPeerTrustChange.IdentityID=? AND vwPeerTrustChange.TargetIdentityID=tblPeerTrust.TargetIdentityID),0), TrustListTrustChange=IFNULL((SELECT vwPeerTrustChange.TrustListTrustChange FROM vwPeerTrustChange WHERE vwPeerTrustChange.IdentityID=? AND vwPeerTrustChange.TargetIdentityID=tblPeerTrust.TargetIdentityID),0)  WHERE IdentityID=?;");
 		st.Bind(0,identityid);
 		st.Bind(1,identityid);
 		st.Bind(2,identityid);

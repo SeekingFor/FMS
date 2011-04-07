@@ -243,7 +243,7 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 	content+="</tbody>";
 	content+="</table>";
 
-	st=m_db->Prepare("SELECT Name,PublicKey,MessageTrust,TrustListTrust,tblIdentity.IdentityID,tblPeerTrust.MessageTrustComment,tblPeerTrust.TrustListTrustComment FROM tblPeerTrust INNER JOIN tblIdentity ON tblPeerTrust.TargetIdentityID=tblIdentity.IdentityID WHERE tblPeerTrust.IdentityID=? ORDER BY Name COLLATE NOCASE;");
+	st=m_db->Prepare("SELECT Name,PublicKey,MessageTrust,TrustListTrust,tblIdentity.IdentityID,tblPeerTrust.MessageTrustComment,tblPeerTrust.TrustListTrustComment,MessageTrustChange,TrustListTrustChange FROM tblPeerTrust INNER JOIN tblIdentity ON tblPeerTrust.TargetIdentityID=tblIdentity.IdentityID WHERE tblPeerTrust.IdentityID=? ORDER BY Name COLLATE NOCASE;");
 	st.Bind(0,identityid);
 	st.Step();
 
@@ -251,12 +251,14 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 	content+="<tr><th colspan=\"5\">";
 	content+=m_trans->Get("web.page.peerdetails.trustlistofthisidentity");
 	content+="</th></tr>";
-	content+="<tr><td></td><th>"+m_trans->Get("web.page.peerdetails.messagetrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.messagecomment")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlisttrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlistcomment")+"</th></tr>";
+	content+="<tr><td></td><th>"+m_trans->Get("web.page.peerdetails.messagetrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.lastchange")+"</th><th>"+m_trans->Get("web.page.peerdetails.messagecomment")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlisttrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.lastchange")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlistcomment")+"</th></tr>";
 	while(st.RowReturned())
 	{
 		std::string thisid="";
 		std::string messagetrustcomment="";
 		std::string trustlisttrustcomment="";
+		std::string messagetrustchange="";
+		std::string trustlisttrustchange="";
 
 		st.ResultText(0,name);
 		st.ResultText(1,publickey);
@@ -265,19 +267,23 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		st.ResultText(4,thisid);
 		st.ResultText(5,messagetrustcomment);
 		st.ResultText(6,trustlisttrustcomment);
+		st.ResultText(7,messagetrustchange);
+		st.ResultText(8,trustlisttrustchange);
 
 		content+="<tr>";
 		content+="<td><a href=\"peerdetails.htm?identityid="+thisid+"\">"+SanitizeOutput(CreateShortIdentityName(name,publickey))+"</a></td>";
 		content+="<td "+GetClassString(messagetrust)+">"+messagetrust+"</td>";
+		content+="<td>"+messagetrustchange+"</td>";
 		content+="<td>"+SanitizeOutput(messagetrustcomment)+"</td>";
 		content+="<td "+GetClassString(trustlisttrust)+">"+trustlisttrust+"</td>";
+		content+="<td>"+trustlisttrustchange+"</td>";
 		content+="<td>"+SanitizeOutput(trustlisttrustcomment)+"</td>";
 		content+="</tr>\r\n";
 
 		st.Step();
 	}
 
-	st=m_db->Prepare("SELECT Name,PublicKey,MessageTrust,TrustListTrust,tblIdentity.IdentityID,tblPeerTrust.MessageTrustComment,tblPeerTrust.TrustListTrustComment FROM tblPeerTrust INNER JOIN tblIdentity ON tblPeerTrust.IdentityID=tblIdentity.IdentityID WHERE tblPeerTrust.TargetIdentityID=? ORDER BY Name COLLATE NOCASE;");
+	st=m_db->Prepare("SELECT Name,PublicKey,MessageTrust,TrustListTrust,tblIdentity.IdentityID,tblPeerTrust.MessageTrustComment,tblPeerTrust.TrustListTrustComment,MessageTrustChange,TrustListTrustChange FROM tblPeerTrust INNER JOIN tblIdentity ON tblPeerTrust.IdentityID=tblIdentity.IdentityID WHERE tblPeerTrust.TargetIdentityID=? ORDER BY Name COLLATE NOCASE;");
 	st.Bind(0,identityid);
 	st.Step();
 
@@ -285,12 +291,14 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 	content+="<tr><th colspan=\"5\">";
 	content+=m_trans->Get("web.page.peerdetails.trustofthisidentityfromotheridentities");
 	content+="</th></tr>";
-	content+="<tr><td></td><th>"+m_trans->Get("web.page.peerdetails.messagetrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.messagecomment")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlisttrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlistcomment")+"</th></tr>";
+	content+="<tr><td></td><th>"+m_trans->Get("web.page.peerdetails.messagetrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.lastchange")+"</th><th>"+m_trans->Get("web.page.peerdetails.messagecomment")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlisttrust")+"</th><th>"+m_trans->Get("web.page.peerdetails.lastchange")+"</th><th>"+m_trans->Get("web.page.peerdetails.trustlistcomment")+"</th></tr>";
 	while(st.RowReturned())
 	{
 		std::string thisid="";
 		std::string messagetrustcomment="";
 		std::string trustlisttrustcomment="";
+		std::string messagetrustchange="";
+		std::string trustlisttrustchange="";
 
 		st.ResultText(0,name);
 		st.ResultText(1,publickey);
@@ -299,12 +307,16 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		st.ResultText(4,thisid);
 		st.ResultText(5,messagetrustcomment);
 		st.ResultText(6,trustlisttrustcomment);
+		st.ResultText(7,messagetrustchange);
+		st.ResultText(8,trustlisttrustchange);
 
 		content+="<tr>";
 		content+="<td><a href=\"peerdetails.htm?identityid="+thisid+"\">"+SanitizeOutput(CreateShortIdentityName(name,publickey))+"</a></td>";
 		content+="<td "+GetClassString(messagetrust)+">"+messagetrust+"</td>";
+		content+="<td>"+messagetrustchange+"</td>";
 		content+="<td>"+SanitizeOutput(messagetrustcomment)+"</td>";
 		content+="<td "+GetClassString(trustlisttrust)+">"+trustlisttrust+"</td>";
+		content+="<td>"+trustlisttrustchange+"</td>";
 		content+="<td>"+SanitizeOutput(trustlisttrustcomment)+"</td>";
 		content+="</tr>";
 

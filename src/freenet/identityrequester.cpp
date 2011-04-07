@@ -194,6 +194,10 @@ const bool IdentityRequester::HandleGetFailed(FCPv2::Message &message)
 
 			m_log->debug(m_fcpuniquename+"::HandleGetFailed started redirect request for "+mess["URI"]);
 		}
+		else
+		{
+			m_log->trace(m_fcpuniquename+"::HandleGetFailed for "+message["Identifier"]+" message = "+message.GetFCPString());
+		}
 	}
 
 	return true;
@@ -260,6 +264,9 @@ void IdentityRequester::StartRequest(const std::pair<long,long> &inputpair)
 			message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 			message["ReturnType"]="direct";
 			message["MaxSize"]="10000";
+
+			m_fcp->Send(message);
+
 			m_log->trace(m_fcpuniquename+"::StartRequest started request for "+message["Identifier"]);
 		}
 

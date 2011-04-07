@@ -462,6 +462,8 @@ const bool SiteInserter::StartInsert(const long &localidentityid)
 
 	m_inserting.push_back(localidentityid);
 
+	m_log->trace("SiteInserter::StartInsert started site insert for "+message["Identifier"]);
+
 	return true;
 
 }

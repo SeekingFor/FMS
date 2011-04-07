@@ -270,6 +270,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.peerdetails.edition","edition");
 	st->SetDefault("web.page.peerdetails.localtrustofidentity","Local Trust of this identity");
 	st->SetDefault("web.page.peerdetails.localtrustlistof","Local Trust List of");
+	st->SetDefault("web.page.peerdetails.lastchange","Last Change");
 
 	st->SetDefault("web.page.boards.title","Boards");
 	st->SetDefault("web.page.boards.search","Search");
@@ -353,6 +354,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.forumviewthread.on","on");
 	st->SetDefault("web.page.forumviewthread.reply","Reply");
 	st->SetDefault("web.page.forumviewthread.permalink","Permalink");
+	st->SetDefault("web.page.forumviewthread.shareablelink","Shareable Link");
 
 	st->SetDefault("web.page.forumcreatepost.forum","Forum :");
 	st->SetDefault("web.page.forumcreatepost.from","From");

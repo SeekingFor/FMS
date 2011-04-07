@@ -62,6 +62,7 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 	{
 		std::vector<std::string> boards=xml.GetBoards();
 		std::map<long,std::string> replyto=xml.GetInReplyTo();
+		std::string messageuuid(xml.GetMessageID());
 
 		if(xml.GetFrostAuthor()!="Anonymous" && frostid.FromPublicKey(xml.GetFrostPublicKey())==false)
 		{
@@ -84,6 +85,13 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 
 		if(xml.GetFrostAuthor()=="Anonymous" && m_saveanonymous==false)
 		{
+			validmessage=false;
+		}
+
+		// make sure there isn't any weird chars in uuid
+		if(messageuuid.find_first_of("\":;><")!=std::string::npos)
+		{
+			m_log->error("FrostMessageRequester::HandleAllData Message ID contained unexpected characters : "+message["Identifier"]);
 			validmessage=false;
 		}
 

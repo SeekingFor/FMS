@@ -160,6 +160,8 @@ IF(FROST_SUPPORT)
 	src/freenet/frostmessagexml.cpp)
 ENDIF(FROST_SUPPORT)
 
+ADD_SUBDIRECTORY(resources)
+
 # Get a relative list of include files.
 FILE(GLOB_RECURSE FMS_INC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/*.h)
 

@@ -16,6 +16,7 @@ private:
 	const std::string GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars);
 	const std::string GetPageTitle(const std::string &method, const std::map<std::string,QueryVar> &queryvars);
 	const std::string FixBody(const std::string &body);
+	const std::string FixUUIDAnchor(const std::string &uuid);
 	
 	bool m_showsmilies;
 	bool m_detectlinks;

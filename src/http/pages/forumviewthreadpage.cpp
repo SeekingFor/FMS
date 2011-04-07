@@ -23,6 +23,11 @@ ForumTemplateViewThreadPage::ForumTemplateViewThreadPage(SQLite3DB::DB *db, cons
 	m_pagetitle=GetBasePageTitle();
 }
 
+const std::string ForumTemplateViewThreadPage::FixUUIDAnchor(const std::string &uuid)
+{
+	return StringFunctions::Replace(StringFunctions::Replace(uuid,"\"","_"),">","_");
+}
+
 const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	int postcount=0;
@@ -48,6 +53,31 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 
 	skipspace.push_back(" ");
 
+	if(queryvars.find("messageuuid")!=queryvars.end())
+	{
+		SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.MessageID, tblThreadPost.ThreadID, tblThread.BoardID FROM tblMessage LEFT JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID LEFT JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE MessageUUID=?;");
+		st.Bind(0,(*queryvars.find("messageuuid")).second.GetData());
+		st.Step();
+		if(st.RowReturned())
+		{
+			int messageid=0;
+			int threadid=0;
+			int boardid=0;
+
+			st.ResultInt(2,boardid);
+			m_viewstate.SetBoardID(boardid);
+
+			if(st.ResultNull(1)==false)
+			{
+				st.ResultInt(1,threadid);
+				m_viewstate.SetThreadID(threadid);
+			}
+			else
+			{
+				m_viewstate.SetThreadID(0);
+			}
+		}
+	}
 	if(queryvars.find("threadid")!=queryvars.end())
 	{
 		int temp=0;
@@ -206,7 +236,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	// thread posts
 	m_templatehandler.GetSection("THREADPOSTROWODD",threadpostrowodd);
 	m_templatehandler.GetSection("THREADPOSTROWEVEN",threadpostroweven);
-	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblMessage.Body, tblIdentity.PublicKey || (SELECT OptionValue FROM tblOption WHERE Option='MessageBase') || '|' || tblMessage.InsertDate || '|Message-' || tblMessage.MessageIndex FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID LEFT JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE tblThreadPost.ThreadID=? ORDER BY tblThreadPost.PostOrder;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblMessage.Body, tblIdentity.PublicKey || (SELECT OptionValue FROM tblOption WHERE Option='MessageBase') || '|' || tblMessage.InsertDate || '|Message-' || tblMessage.MessageIndex, tblMessage.MessageUUID FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID LEFT JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE tblThreadPost.ThreadID=? ORDER BY tblThreadPost.PostOrder;");
 	st.Bind(0,threadidstr);
 	st.Step();
 	while(st.RowReturned())
@@ -221,6 +251,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		std::string datetime="";
 		std::string body="";
 		std::string postlink="";
+		std::string messageuuid="";
 		bool allowreply=true;
 		
 		st.ResultInt(0,messageid);
@@ -231,6 +262,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		st.ResultText(4,datetime);
 		st.ResultText(5,body);
 		st.ResultText(6,postlink);
+		st.ResultText(7,messageuuid);
 
 		if(postcount==0)
 		{
@@ -241,7 +273,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 			breadcrumblinks.push_back(std::pair<std::string,std::string>(m_pagename+"?viewstate="+m_viewstate.GetViewStateID()+"&threadid="+threadidstr+"&boardid="+boardidstr+"&page="+pagestr,SanitizeOutput(subject,skipspace)));
 		}
 
-		postvars["THREADPOSTANCHOR"]="<a name=\""+messageidstr+"\"></a>";
+		postvars["THREADPOSTANCHOR"]="<a name=\""+messageidstr+"\"></a><a name=\""+FixUUIDAnchor(messageuuid)+"\"></a>";
 
 		if(identityidstr=="")
 		{
@@ -380,6 +412,8 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		{
 			postvars["THREADPOSTLINK"]="";
 		}
+		postvars["THREADPOSTLINK"]+="&nbsp;<a href=\""+m_pagename+"?messageuuid="+FixUUIDAnchor(messageuuid)+"#"+FixUUIDAnchor(messageuuid)+"\"><img src=\"images/link.png\" border=\"0\" title=\""+m_trans->Get("web.page.forumviewthread.shareablelink")+"\"></a>";
+
 		postvars["THREADPOSTDATE"]=datetime;
 
 		if(allowreply==true)

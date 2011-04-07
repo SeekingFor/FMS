@@ -31,10 +31,16 @@ private:
 	void showOptions();
 	void handleSetOption(const std::string &name, const std::string &value);
 	void setOptions();
+	void handleVersion(const std::string &name, const std::string &value);
+	void displayVersion();
+#ifdef _WIN32
+	void handleServiceStart(const std::string &name, const std::string &value);
+#endif
 
 	bool m_displayhelp;
 	bool m_showoptions;
 	bool m_setoption;
+	bool m_dontstartup;
 	std::map<std::string,std::string> m_setoptions;
 	std::string m_logtype;
 	std::string m_workingdirectory;

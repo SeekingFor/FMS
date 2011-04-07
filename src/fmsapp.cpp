@@ -22,6 +22,7 @@
 #include <cstring>
 
 #ifdef _WIN32
+	#include <Poco/Util/WinService.h>
 	#include <direct.h>
 #else
 	#include <unistd.h>
@@ -32,7 +33,7 @@
 	#include <tomcrypt.h>
 #endif
 
-FMSApp::FMSApp():m_displayhelp(false),m_showoptions(false),m_setoption(false),m_logtype("file"),m_workingdirectory("")
+FMSApp::FMSApp():m_displayhelp(false),m_showoptions(false),m_setoption(false),m_dontstartup(false),m_logtype("file"),m_workingdirectory("")
 {
 	// get current working dir so we can go to it later
 	char wd[1024];
@@ -54,6 +55,10 @@ void FMSApp::defineOptions(Poco::Util::OptionSet &options)
 	options.addOption(Poco::Util::Option("log","l","Select type of log output (file|stdout|stderr).",false,"type",true).repeatable(false).callback(Poco::Util::OptionCallback<FMSApp>(this,&FMSApp::handleLogOption)));
 	options.addOption(Poco::Util::Option("showoptions","","Show all options that can be set and their current values.",false).repeatable(false).callback(Poco::Util::OptionCallback<FMSApp>(this,&FMSApp::handleShowOptions)));
 	options.addOption(Poco::Util::Option("setoption","","Set an option.  Values are not validated, so be sure to set them correctly.",false,"option=value",true).repeatable(true).callback(Poco::Util::OptionCallback<FMSApp>(this,&FMSApp::handleSetOption)));
+#ifdef _WIN32	
+	options.addOption(Poco::Util::Option("servicestart","ss","Sets service startup to manual or automatic",false,"type",true).repeatable(false).callback(Poco::Util::OptionCallback<FMSApp>(this,&FMSApp::handleServiceStart)));
+#endif
+	options.addOption(Poco::Util::Option("version","v","Displays FMS version",false).repeatable(false).callback(Poco::Util::OptionCallback<FMSApp>(this,&FMSApp::handleVersion)));
 }
 
 void FMSApp::displayHelp()
@@ -63,6 +68,11 @@ void FMSApp::displayHelp()
 	helpFormatter.setUsage("OPTIONS");
 	helpFormatter.setHeader("The Freenet Message System.");
 	helpFormatter.format(std::cout);
+}
+
+void FMSApp::displayVersion()
+{
+	std::cout << FMS_VERSION;
 }
 
 void FMSApp::handleHelp(const std::string &name, const std::string &value)
@@ -79,6 +89,46 @@ void FMSApp::handleLogOption(const std::string &name, const std::string &value)
 		m_logtype=value;
 	}
 }
+
+#ifdef _WIN32
+void FMSApp::handleServiceStart(const std::string &name, const std::string &value)
+{
+	m_dontstartup=true;
+	std::string servicename = config().getString("application.baseName");
+	try
+	{
+		Poco::Util::WinService service(servicename);
+		if(service.isRegistered())
+		{
+			if(value=="manual")
+			{
+				service.setStartup(Poco::Util::WinService::SVC_MANUAL_START);
+			}
+			else if(value=="automatic")
+			{
+				service.setStartup(Poco::Util::WinService::SVC_AUTO_START);
+			}
+			else
+			{
+				std::cout << "Unknown start type " << value << "." << std::endl;
+				std::cout << "Service start type must be manual or automatic." << std::endl;
+			}
+		}
+		else
+		{
+			std::cout << "The service is not registered.  You must register the service first." << std::endl;
+		}
+	}
+	catch(Poco::Exception &e)
+	{
+		std::cout << "Caught exception " << e.what() << std::endl;
+	}
+	catch(...)
+	{
+		std::cout << "Caught unknown exception" << std::endl;
+	}
+}
+#endif
 
 void FMSApp::handleSetOption(const std::string &name, const std::string &value)
 {
@@ -100,6 +150,13 @@ void FMSApp::handleSetOption(const std::string &name, const std::string &value)
 void FMSApp::handleShowOptions(const std::string &name, const std::string &value)
 {
 	m_showoptions=true;
+}
+
+void FMSApp::handleVersion(const std::string &name, const std::string &value)
+{
+	m_dontstartup=true;
+	displayVersion();
+	stopOptionsProcessing();
 }
 
 void FMSApp::initialize(Poco::Util::Application &self)
@@ -202,6 +259,9 @@ int FMSApp::main(const std::vector<std::string> &args)
 	else if(m_setoption)
 	{
 		setOptions();
+	}
+	else if(m_dontstartup)
+	{
 	}
 	else
 	{

@@ -161,6 +161,7 @@ web.page.createidentity.createdidentity= Identités créées
 web.page.createidentity.title= Créer une identité
 web.page.execquery.executequery= Exécuter une requête
 web.page.execquery.title= Exécuter une requête
+web.page.forum.fmsforum= Forum FMS
 web.page.forum.newposts= Nouveau message
 web.page.forum.nonewposts= Pas de nouveau message
 web.page.forum.searchbox.search= Chercher
