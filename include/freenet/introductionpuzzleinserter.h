@@ -16,7 +16,7 @@ private:
 	void Initialize();
 	void CheckForNeededInsert();
 	const bool StartInsert(const long &localidentityid);
-	void GenerateCaptcha(std::string &encodeddata, std::string &solution, std::string &captchatype, std::string &mimetype);
+	void GenerateCaptcha(std::string &encodeddata, std::string &solution, const std::string &requestedcaptchatype, std::string &captchatype, std::string &mimetype);
 	const bool HandlePutSuccessful(FCPv2::Message &message);
 	const bool HandlePutFailed(FCPv2::Message &message);
 

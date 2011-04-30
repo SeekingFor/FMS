@@ -22,8 +22,9 @@ void ShowCaptchaPage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco:
 	std::string content="";
 	if(queryvars.find("UUID")!=queryvars.end())
 	{
+		std::string uuid=(*queryvars.find("UUID")).second.GetData();
 		SQLite3DB::Statement st=m_db->Prepare("SELECT MimeType,PuzzleData FROM tblIntroductionPuzzleRequests WHERE UUID=?;");
-		st.Bind(0,(*queryvars.find("UUID")).second.GetData());
+		st.Bind(0,uuid);
 		st.Step();
 
 		if(st.RowReturned())
@@ -39,8 +40,18 @@ void ShowCaptchaPage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco:
 			// mime type should be short and have a / in it - otherwise skip
 			if(mime.size()<50 && mime.find("/")!=std::string::npos)
 			{
+				std::string fname(uuid);
+				if(mime=="image/bmp")
+				{
+					fname+=".bmp";
+				}
+				else if(mime=="audio/x-wav")
+				{
+					fname+=".wav";
+				}
 				response.setContentType(mime);
 				response.setContentLength(data.size());
+				response.set("Content-Disposition","attachment; filename="+fname);
 				content+=std::string(data.begin(),data.end());
 			}
 		}

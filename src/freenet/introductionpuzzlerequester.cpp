@@ -108,10 +108,19 @@ const bool IntroductionPuzzleRequester::HandleAllData(FCPv2::Message &message)
 		val.SetMax(200,200);
 		std::vector<unsigned char> puzzledata;
 		Base64::Decode(xml.GetPuzzleData(),puzzledata);
-		if(xml.GetMimeType()!="image/bmp" || val.Validate(puzzledata)==false)
+
+		if(xml.GetMimeType()=="image/bmp")
 		{
-			m_log->error("IntroductionPuzzleRequester::HandleAllData received bad mime type and/or data for "+message["Identifier"]);
+			if(val.Validate(puzzledata)==false)
+			{
+				m_log->error("IntroductionPuzzleRequester::HandleAllData received bad data for "+message["Identifier"]);
+				validmessage=false;
+			}
+		}
+		else if(xml.GetMimeType()!="audio/x-wav")
+		{
 			validmessage=false;
+			m_log->error("IntroductionPuzzleRequester::HandleAllData received bad mime type "+xml.GetMimeType()+" for "+message["Identifier"]);
 		}
 
 		st=m_db->Prepare("INSERT INTO tblIntroductionPuzzleRequests(IdentityID,Day,RequestIndex,Found,UUID,Type,MimeType,PuzzleData) VALUES(?,?,?,?,?,?,?,?);");
@@ -173,14 +182,17 @@ const bool IntroductionPuzzleRequester::HandleGetFailed(FCPv2::Message &message)
 	// if this is a fatal error - insert index into database so we won't try to download this index again
 	if(message["Fatal"]=="true")
 	{
-		st=m_db->Prepare("INSERT INTO tblIntroductionPuzzleRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
-		st.Bind(0,identityid);
-		st.Bind(1,idparts[4]);
-		st.Bind(2,index);
-		st.Step();
-		st.Finalize();
+		if(message["Code"]!="25")
+		{
+			st=m_db->Prepare("INSERT INTO tblIntroductionPuzzleRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
+			st.Bind(0,identityid);
+			st.Bind(1,idparts[4]);
+			st.Bind(2,index);
+			st.Step();
+			st.Finalize();
+		}
 
-		m_log->error("IntroductionPuzzleRequester::HandleGetFailed fatal error requesting "+message["Identifier"]);
+		m_log->error("IntroductionPuzzleRequester::HandleGetFailed fatal error code="+message["Code"]+" requesting "+message["Identifier"]);
 	}
 
 	// remove this identityid from request list

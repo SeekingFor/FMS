@@ -84,7 +84,7 @@ const bool FMSVersionRequester::HandleGetFailed(FCPv2::Message &message)
 			Option option(m_db);
 			option.Set("FMSVersionEdition",editionstr);
 		}
-		m_log->debug("FMSVersionRequester::HandleGetFailed Fatal GetFailed for "+message["Identifier"]);
+		m_log->debug("FMSVersionRequester::HandleGetFailed Fatal GetFailed code="+message["Code"]+" for "+message["Identifier"]);
 	}
 
 	return true;

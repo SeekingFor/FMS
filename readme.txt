@@ -67,8 +67,8 @@ know about.
 
 CAPTCHAS
 --------
-There are currently 2 main types of captcha images that FMS uses to introduce
-new identities.
+There are currently 3 main types of captchas that FMS uses to introduce new 
+identities.
 
 The first type is an image that contains scrambled and obscured characters.  In
 order to solve this type of captcha, you must type in the exact characters that
@@ -99,6 +99,11 @@ collection of images when using this type of captcha, and you obviously need at
 least 3 images of each type of object.  Also, don't share your image collection
 with other users.  This would give any potential malicious user all the
 information they need to easily solve your captchas.
+
+The third type of captcha is an audio file in which the speaker will announce a
+series of letters.  There is some background noise in the audio that should be
+ignored.  The letters that are clearly spoken should be entered in lower case
+without spaces between them.
 
 EXITING
 -------

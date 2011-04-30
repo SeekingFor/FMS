@@ -187,12 +187,15 @@ const bool FrostMessageRequester::HandleGetFailed(FCPv2::Message &message)
 
 	if(message["Fatal"]=="true")
 	{
-		// insert index so we won't try it again
-		SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblFrostMessageRequests(BoardID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
-		st.Bind(0,idparts[1]);
-		st.Bind(1,idparts[3]);
-		st.Bind(2,idparts[2]);
-		st.Step();
+		if(message["Code"]!="25")
+		{
+			// insert index so we won't try it again
+			SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblFrostMessageRequests(BoardID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
+			st.Bind(0,idparts[1]);
+			st.Bind(1,idparts[3]);
+			st.Bind(2,idparts[2]);
+			st.Step();
+		}
 	}
 
 	m_log->trace("FrostMessageRequester::HandleGetFailed handled failure "+message["Code"]+" of "+message["Identifier"]);
@@ -211,6 +214,7 @@ void FrostMessageRequester::Initialize()
 	Option option(m_db);
 
 	option.GetInt("FrostMaxMessageRequests",m_maxrequests);
+	option.Get("FrostMaxMessageRequests",tempval);
 	if(m_maxrequests<1)
 	{
 		m_maxrequests=1;
@@ -223,6 +227,7 @@ void FrostMessageRequester::Initialize()
 
 	m_maxdaysbackward=0;
 	option.GetInt("FrostMessageMaxDaysBackward",m_maxdaysbackward);
+	option.Get("FrostMessageMaxDaysBackward",tempval);
 	if(m_maxdaysbackward<0)
 	{
 		m_maxdaysbackward=0;

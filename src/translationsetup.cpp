@@ -172,6 +172,10 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.localidentities.minmessagedelay","Min Message Delay");
 	st->SetDefault("web.page.localidentities.maxmessagedelay","Max Message Delay");
 	st->SetDefault("web.page.localidentities.announced","Announced? *");
+	st->SetDefault("web.page.localidentities.puzzletype","Introduction Puzzle Type");
+	st->SetDefault("web.page.localidentities.puzzletype.image","Image Captcha With Letters");
+	st->SetDefault("web.page.localidentities.puzzletype.unlikeimage","Image Captcha With 4 Pictures");
+	st->SetDefault("web.page.localidentities.puzzletype.audio","Audio Captcha With Letters");
 	st->SetDefault("web.page.localidentities.yes","Yes");
 	st->SetDefault("web.page.localidentities.no","No");
 	st->SetDefault("web.page.localidentities.update","Update");
@@ -189,6 +193,8 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.announceidentity.waitforpuzzles","You must wait for some puzzles to be downloaded.  Make sure you have assigned trust to some other identities' trust lists and check back later.");
 	st->SetDefault("web.page.announceidentity.announce","Announce");
 	st->SetDefault("web.page.announceidentity.charactercaptcha.instructions","Type the characters that appear in the image");
+	st->SetDefault("web.page.announceidentity.audiocaptcha.instructions","Type the distinct characters that you hear in lower case without spaces, ignoring the background noise");
+	st->SetDefault("web.page.announceidentity.listen","Listen");
 	st->SetDefault("web.page.announceidentity.unlikecaptcha1.whichpanelunlike","Which panel is unlike the rest?");
 	st->SetDefault("web.page.announceidentity.unlikecaptcha1.unlikeobject","What object appears in this panel?");
 	st->SetDefault("web.page.announceidentity.unlikecaptcha1.similarobject","What object appears in the other panels?");
@@ -367,6 +373,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.forumcreatepost.error.subject","You must enter a subject");
 	st->SetDefault("web.page.forumcreatepost.error.body","You must enter a message body");
 	st->SetDefault("web.page.forumcreatepost.error.message","Could not create message");
+	st->SetDefault("web.page.forumcreatepost.error.toobig","Your post is too big");
 	st->SetDefault("web.page.forumcreatepost.upload","Upload");
 	st->SetDefault("web.page.forumcreatepost.orfreenetkey","or Freenet key");
 	st->SetDefault("web.page.forumcreatepost.attach","Attach");

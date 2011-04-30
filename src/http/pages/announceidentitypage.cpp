@@ -183,7 +183,7 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 				}
 			}
 
-			if(willshow && thisid!=lastid && (captchatype=="captcha" || captchatype=="unlikecaptcha1"))
+			if(willshow && thisid!=lastid && (captchatype=="captcha" || captchatype=="unlikecaptcha1" || captchatype=="audiocaptcha1"))
 			{
 				StringFunctions::Convert(shown,countstr);
 				if(shown>0 && shown%4==0)
@@ -191,7 +191,14 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 					content+="</tr>\r\n<tr>";
 				}
 				content+="<td style=\"vertical-align:top;\" title=\""+m_trans->Get("web.page.announceidentity.from")+" "+SanitizeOutput(CreateShortIdentityName(name,pubkey))+"\">";
-				content+="<img src=\"showcaptcha.htm?UUID="+uuid+"\"><br />";
+				if(captchatype=="captcha" || captchatype=="unlikecaptcha1")
+				{
+					content+="<img src=\"showcaptcha.htm?UUID="+uuid+"\"><br />";
+				}
+				else
+				{
+					content+="<a href=\"showcaptcha.htm?UUID="+uuid+"\">"+m_trans->Get("web.page.announceidentity.listen")+"</a><br />";
+				}
 				content+="<input type=\"hidden\" name=\"uuid["+countstr+"]\" value=\""+SanitizeOutput(uuid)+"\">";
 				content+="<input type=\"hidden\" name=\"day["+countstr+"]\" value=\""+day+"\">";
 				content+="<input type=\"hidden\" name=\"captchatype["+countstr+"]\" value=\""+SanitizeOutput(captchatype)+"\">";
@@ -216,6 +223,11 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 					content+="<br />";
 					content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.unlikecaptcha1.similarobject")+"</span><br />";
 					content+="<input type=\"text\" name=\"similarobject["+countstr+"]\">";
+				}
+				else if(captchatype=="audiocaptcha1")
+				{
+					content+="<span class=\"small90\">"+m_trans->Get("web.page.announceidentity.audiocaptcha.instructions")+"</span><br />";
+					content+="<input type=\"text\" name=\"solution["+countstr+"]\">";
 				}
 				content+="</td>\r\n";
 				lastid=thisid;

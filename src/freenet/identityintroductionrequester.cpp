@@ -130,12 +130,15 @@ const bool IdentityIntroductionRequester::HandleGetFailed(FCPv2::Message &messag
 	// fatal error - don't try to download again
 	if(message["Fatal"]=="true")
 	{
-		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblIntroductionPuzzleInserts SET FoundSolution='true' WHERE UUID=?;");
-		st.Bind(0,idparts[3]);
-		st.Step();
-		st.Finalize();
+		if(message["Code"]!="25")
+		{
+			SQLite3DB::Statement st=m_db->Prepare("UPDATE tblIntroductionPuzzleInserts SET FoundSolution='true' WHERE UUID=?;");
+			st.Bind(0,idparts[3]);
+			st.Step();
+			st.Finalize();
+		}
 
-		m_log->debug("IdentityIntroductionRequester::HandleAllData Fatal GetFailed for "+message["Identifier"]);
+		m_log->debug("IdentityIntroductionRequester::HandleAllData Fatal GetFailed code="+message["Code"]+" for "+message["Identifier"]);
 	}
 
 	// remove UUID from request list

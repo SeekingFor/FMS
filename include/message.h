@@ -54,8 +54,13 @@ public:
 
 	const bool PostedToAdministrationBoard()		{ return CheckForAdministrationBoard(m_boards); }
 
+	const bool PrepareFreenetInsert();
 	const bool StartFreenetInsert();
 	void HandleAdministrationMessage();
+
+	const std::string GetMessageXML(const bool withfakeattachmentkeys=false) const;
+
+	static const long MaxMessageXMLSize()	{ return 1000000; }
 
 private:
 	void Initialize();

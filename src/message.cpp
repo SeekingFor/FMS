@@ -146,6 +146,44 @@ const int Message::FindLocalIdentityID(const std::string &name)
 	}
 }
 
+const std::string Message::GetMessageXML(const bool withfakeattachmentkeys) const
+{
+	MessageXML xml;
+
+	if(m_boards.size()>0)
+	{
+		xml.SetMessageID(m_messageuuid);
+		xml.SetSubject(m_subject);
+		xml.SetBody(m_body);
+		xml.SetReplyBoard(m_replyboardname);
+
+		for(std::vector<std::string>::const_iterator i=m_boards.begin(); i!=m_boards.end(); i++)
+		{
+			xml.AddBoard((*i));
+		}
+		
+		for(std::map<long,std::string>::const_iterator j=m_inreplyto.begin(); j!=m_inreplyto.end(); j++)
+		{
+			xml.AddInReplyTo((*j).first,(*j).second);
+		}
+
+		xml.SetDate(Poco::DateTimeFormatter::format(m_datetime,"%Y-%m-%d"));
+		xml.SetTime(Poco::DateTimeFormatter::format(m_datetime,"%H:%M:%S"));
+
+		// fake attachment keys
+		if(withfakeattachmentkeys==true)
+		{
+			for(std::vector<insertfileattachment>::const_iterator i=m_insertfileattachments.begin(); i!=m_insertfileattachments.end(); i++)
+			{
+				xml.AddFileAttachment("CHK@###########################################,###########################################,#######/"+(*i).m_filename,(*i).m_data.size());
+			}
+		}
+
+	}
+
+	return xml.GetXML();
+}
+
 const std::string Message::GetNNTPArticleID() const
 {
 	// old message - before 0.1.12 - doesn't have @domain so add @freenetproject.org
@@ -1033,31 +1071,63 @@ const std::string Message::SanitizeFromName(const std::string &fromname) const
 	return StringFunctions::Replace(fromname,",","_");
 }
 
-const bool Message::StartFreenetInsert()
+const bool Message::PrepareFreenetInsert()
 {
-
-	MessageXML xml;
 	int localidentityid=-1;
 
 	StripAdministrationBoards();
 
+	if(m_boards.size()==0)
+	{
+		return false;
+	}
+
+	localidentityid=FindLocalIdentityID(m_fromname);
+	if(localidentityid==-1)
+	{
+		return false;
+	}
+
+	// add the message delay if there is one
+	SQLite3DB::Statement st=m_db->Prepare("SELECT MinMessageDelay,MaxMessageDelay FROM tblLocalIdentity WHERE LocalIdentityID=?;");
+	st.Bind(0,localidentityid);
+	st.Step();
+	if(st.RowReturned())
+	{
+		int min=0;
+		int max=0;
+		st.ResultInt(0,min);
+		st.ResultInt(1,max);
+
+		min<0 ? min=0 : false;
+		max<0 ? max=0 : false;
+		min>max ? min=max : false;
+
+		if(min==max)
+		{
+			m_datetime+=Poco::Timespan(0,0,min,0,0);
+		}
+		else if(max>min)
+		{
+			int delay=(rand()%(max-min))+min;
+			m_datetime+=Poco::Timespan(0,0,delay,0,0);
+		}
+
+	}
+	st.Finalize();
+
+	// set date in xml file AFTER we set the delay
+
+
+	return true;
+}
+
+const bool Message::StartFreenetInsert()
+{
+	int localidentityid=-1;
+
 	if(m_boards.size()>0)
 	{
-
-		xml.SetMessageID(m_messageuuid);
-		xml.SetSubject(m_subject);
-		xml.SetBody(m_body);
-		xml.SetReplyBoard(m_replyboardname);
-		
-		for(std::vector<std::string>::iterator i=m_boards.begin(); i!=m_boards.end(); i++)
-		{
-			xml.AddBoard((*i));
-		}
-		
-		for(std::map<long,std::string>::iterator j=m_inreplyto.begin(); j!=m_inreplyto.end(); j++)
-		{
-			xml.AddInReplyTo((*j).first,(*j).second);
-		}
 
 		localidentityid=FindLocalIdentityID(m_fromname);
 		if(localidentityid==-1)
@@ -1065,42 +1135,10 @@ const bool Message::StartFreenetInsert()
 			return false;
 		}
 
-		// add the message delay if there is one
-		SQLite3DB::Statement st=m_db->Prepare("SELECT MinMessageDelay,MaxMessageDelay FROM tblLocalIdentity WHERE LocalIdentityID=?;");
-		st.Bind(0,localidentityid);
-		st.Step();
-		if(st.RowReturned())
-		{
-			int min=0;
-			int max=0;
-			st.ResultInt(0,min);
-			st.ResultInt(1,max);
-
-			min<0 ? min=0 : false;
-			max<0 ? max=0 : false;
-			min>max ? min=max : false;
-
-			if(min==max)
-			{
-				m_datetime+=Poco::Timespan(0,0,min,0,0);
-			}
-			else if(max>min)
-			{
-				int delay=(rand()%(max-min))+min;
-				m_datetime+=Poco::Timespan(0,0,delay,0,0);
-			}
-
-		}
-		st.Finalize();
-
-		// set date in xml file AFTER we set the delay
-		xml.SetDate(Poco::DateTimeFormatter::format(m_datetime,"%Y-%m-%d"));
-		xml.SetTime(Poco::DateTimeFormatter::format(m_datetime,"%H:%M:%S"));
-
-		st=m_db->Prepare("INSERT INTO tblMessageInserts(LocalIdentityID,MessageUUID,MessageXML,SendDate) VALUES(?,?,?,?);");
+		SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblMessageInserts(LocalIdentityID,MessageUUID,MessageXML,SendDate) VALUES(?,?,?,?);");
 		st.Bind(0,localidentityid);
 		st.Bind(1,m_messageuuid);
-		st.Bind(2,xml.GetXML());
+		st.Bind(2,GetMessageXML(false));
 		st.Bind(3,Poco::DateTimeFormatter::format(m_datetime,"%Y-%m-%d %H:%M:%S"));
 		st.Step();
 

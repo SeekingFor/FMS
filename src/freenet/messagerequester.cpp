@@ -348,14 +348,17 @@ const bool MessageRequester::HandleGetFailed(FCPv2::Message &message)
 	// if this is a fatal error - insert index into database so we won't try to download this index again
 	if(message["Fatal"]=="true")
 	{
-		st=m_db->Prepare("UPDATE tblMessageRequests SET Found='true' WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
-		st.Bind(0,identityid);
-		st.Bind(1,idparts[3]);
-		st.Bind(2,index);
-		st.Step();
-		st.Finalize();
+		if(message["Code"]!="25")
+		{
+			st=m_db->Prepare("UPDATE tblMessageRequests SET Found='true' WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
+			st.Bind(0,identityid);
+			st.Bind(1,idparts[3]);
+			st.Bind(2,index);
+			st.Step();
+			st.Finalize();
+		}
 
-		m_log->error("MessageRequester::HandleGetFailed fatal error requesting "+message["Identifier"]);
+		m_log->error("MessageRequester::HandleGetFailed fatal error code="+message["Code"]+" requesting "+message["Identifier"]);
 	}
 
 	// increase the failure count of the identity who gave us this index

@@ -249,10 +249,14 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 				{
 					mess.HandleAdministrationMessage();
 				}
-				if(mess.StartFreenetInsert())
+				if(mess.PrepareFreenetInsert() && mess.GetMessageXML(true).size()<=Message::MaxMessageXMLSize() && mess.StartFreenetInsert())
 				{
 					m_viewstate.UnsetReplyToMessageID();
 					page=1;
+				}
+				if(mess.GetMessageXML(true).size()>Message::MaxMessageXMLSize())
+				{
+					error=m_trans->Get("web.page.forumcreatepost.error.toobig");
 				}
 			}
 			else

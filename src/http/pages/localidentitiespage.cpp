@@ -7,6 +7,39 @@
 	#include <xmem.h>
 #endif
 
+const std::string LocalIdentitiesPage::CreatePuzzleTypeDropDown(const std::string &name, const std::string &selected)
+{
+	std::string rval="";
+
+	rval+="<select name=\""+name+"\">";
+	rval+="<option value=\"image\"";
+	if(selected=="image")
+	{
+		rval+=" SELECTED";
+	}
+	rval+=">"+m_trans->Get("web.page.localidentities.puzzletype.image")+"</option>";
+
+	rval+="<option value=\"unlikeimage\"";
+	if(selected=="unlikeimage")
+	{
+		rval+=" SELECTED";
+	}
+	rval+=">"+m_trans->Get("web.page.localidentities.puzzletype.unlikeimage")+"</option>";
+
+#ifdef AUDIO_CAPTCHA
+	rval+="<option value=\"audio\"";
+	if(selected=="audio")
+	{
+		rval+=" SELECTED";
+	}
+	rval+=">"+m_trans->Get("web.page.localidentities.puzzletype.audio")+"</option>";
+#endif
+
+	rval+="</select>";
+
+	return rval;
+}
+
 const std::string LocalIdentitiesPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	int count;
@@ -33,9 +66,9 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 
 	content+="<hr>";
 
-	content+="<table class=\"small90\"><tr><th>"+m_trans->Get("web.page.localidentities.name")+"</th><th>"+m_trans->Get("web.page.localidentities.singleuse")+"</th><th>"+m_trans->Get("web.page.localidentities.publishtrustlist")+"</th><th>"+m_trans->Get("web.page.localidentities.publishboardlist")+"</th><th>"+m_trans->Get("web.page.localidentities.publishfreesite")+"</th><th title="+SanitizeOutput(m_trans->Get("web.page.localidentities.active.description"))+">"+m_trans->Get("web.page.localidentities.active")+"</th><th>"+m_trans->Get("web.page.localidentities.minmessagedelay")+"</th><th>"+m_trans->Get("web.page.localidentities.maxmessagedelay")+"</th><th>"+m_trans->Get("web.page.localidentities.announced")+"</th></tr>";
+	content+="<table class=\"small90\">";
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID,tblLocalIdentity.Name,tblLocalIdentity.PublicKey,tbLLocalIdentity.PublishTrustList,tblLocalIdentity.SingleUse,tblLocalIdentity.PublishBoardList,tblIdentity.IdentityID,tblLocalIdentity.PublishFreesite,tblLocalIdentity.MinMessageDelay,tblLocalIdentity.MaxMessageDelay,tblLocalIdentity.Active FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey ORDER BY tblLocalIdentity.Name;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID,tblLocalIdentity.Name,tblLocalIdentity.PublicKey,tbLLocalIdentity.PublishTrustList,tblLocalIdentity.SingleUse,tblLocalIdentity.PublishBoardList,tblIdentity.IdentityID,tblLocalIdentity.PublishFreesite,tblLocalIdentity.MinMessageDelay,tblLocalIdentity.MaxMessageDelay,tblLocalIdentity.Active,tblLocalIdentity.IntroductionPuzzleType FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey ORDER BY tblLocalIdentity.Name;");
 	st.Step();
 	SQLite3DB::Statement st2=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
 
@@ -58,6 +91,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		int identityid=0;
 		std::string identityidstr="";
 		std::string active="";
+		std::string introductionpuzzletype="";
 
 		st.ResultText(0,id);
 		st.ResultText(1,name);
@@ -69,6 +103,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		st.ResultText(8,minmessagedelay);
 		st.ResultText(9,maxmessagedelay);
 		st.ResultText(10,active);
+		st.ResultText(11,introductionpuzzletype);
 
 		st2.Bind(0,publickey);
 		st2.Step();
@@ -79,6 +114,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		}
 		st2.Reset();
 
+		content+="<tr><th>"+m_trans->Get("web.page.localidentities.name")+"</th><th>"+m_trans->Get("web.page.localidentities.singleuse")+"</th><th>"+m_trans->Get("web.page.localidentities.publishtrustlist")+"</th><th>"+m_trans->Get("web.page.localidentities.publishboardlist")+"</th><th>"+m_trans->Get("web.page.localidentities.publishfreesite")+"</th><th title="+SanitizeOutput(m_trans->Get("web.page.localidentities.active.description"))+">"+m_trans->Get("web.page.localidentities.active")+"</th><th>"+m_trans->Get("web.page.localidentities.minmessagedelay")+"</th><th>"+m_trans->Get("web.page.localidentities.maxmessagedelay")+"</th><th>"+m_trans->Get("web.page.localidentities.announced")+"</th></tr>";
 		content+="<tr>";
 		content+="<td title=\""+publickey+"\"><form name=\"frmupdate"+countstr+"\" method=\"POST\"><input type=\"hidden\" name=\"formaction\" value=\"update\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\">";
 		if(identityidstr!="")
@@ -113,12 +149,24 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 			content+="<td>"+m_trans->Get("web.page.localidentities.no")+"</td>";
 		}
 		trustst.Reset();
-
-		content+="<td><input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.update")+"\"></form></td>";
-		content+="<td><form name=\"frmdel"+countstr+"\" method=\"POST\" action=\"confirm.htm\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"delete\"><input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\"><input type=\"hidden\" name=\"targetpage\" value=\"localidentities.htm\"><input type=\"hidden\" name=\"confirmdescription\" value=\""+m_trans->Get("web.page.localidentities.confirmdelete")+" "+SanitizeOutput(CreateShortIdentityName(name,publickey))+"?\"><input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.delete")+"\"></form></td>";
+		
+		content+="</tr><tr>";
+		content+="<td colspan=\"3\" style=\"text-align:right;font-weight:bolder;\">"+m_trans->Get("web.page.localidentities.puzzletype")+"</td>";
+		content+="<td colspan=\"2\">"+CreatePuzzleTypeDropDown("puzzletype["+countstr+"]",introductionpuzzletype)+"</td>";
 		content+="</tr>";
+
 		content+="<tr><td></td><td colspan=\"7\" class=\"smaller\">"+publickey+"</td></tr>";
+		
+		content+="<tr><td colspan=\"9\"><table width=\"100%\">";
+		content+="<td style=\"text-align:right;padding-right:10px;\"><input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.update")+"\"></form></td>";
+		content+="<td style=\"text-align:left;padding-left:10px;\"><form name=\"frmdel"+countstr+"\" method=\"POST\" action=\"confirm.htm\">"+CreateFormPassword()+"<input type=\"hidden\" name=\"formaction\" value=\"delete\"><input type=\"hidden\" name=\"chkidentityid["+countstr+"]\" value=\""+id+"\"><input type=\"hidden\" name=\"targetpage\" value=\"localidentities.htm\"><input type=\"hidden\" name=\"confirmdescription\" value=\""+m_trans->Get("web.page.localidentities.confirmdelete")+" "+SanitizeOutput(CreateShortIdentityName(name,publickey))+"?\"><input type=\"submit\" value=\""+m_trans->Get("web.page.localidentities.delete")+"\"></form></td>";
+		content+="</table></td></tr>";
+
 		st.Step();
+		if(st.RowReturned())
+		{
+			content+="<tr><td style=\"height:25px;font-size:1pt;\">&nbsp;</td></tr>";
+		}
 		count++;
 	}
 
@@ -307,6 +355,7 @@ void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,QueryVar> &que
 	std::vector<std::string> mindelay;
 	std::vector<std::string> maxdelay;
 	std::vector<std::string> active;
+	std::vector<std::string> puzzletype;
 
 	CreateArgArray(queryvars,"chkidentityid",ids);
 	CreateArgArray(queryvars,"singleuse",singleuse);
@@ -316,8 +365,9 @@ void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,QueryVar> &que
 	CreateArgArray(queryvars,"mindelay",mindelay);
 	CreateArgArray(queryvars,"maxdelay",maxdelay);
 	CreateArgArray(queryvars,"active",active);
+	CreateArgArray(queryvars,"puzzletype",puzzletype);
 
-	SQLite3DB::Statement update=m_db->Prepare("UPDATE tblLocalIdentity SET SingleUse=?, PublishTrustList=?, PublishBoardList=?, PublishFreesite=?, MinMessageDelay=?, MaxMessageDelay=?, Active=? WHERE LocalIdentityID=?;");
+	SQLite3DB::Statement update=m_db->Prepare("UPDATE tblLocalIdentity SET SingleUse=?, PublishTrustList=?, PublishBoardList=?, PublishFreesite=?, MinMessageDelay=?, MaxMessageDelay=?, Active=?, IntroductionPuzzleType=? WHERE LocalIdentityID=?;");
 	for(int i=0; i<ids.size(); i++)
 	{
 		if(ids[i]!="")
@@ -334,7 +384,8 @@ void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,QueryVar> &que
 			update.Bind(4,minmessagedelay);
 			update.Bind(5,maxmessagedelay);
 			update.Bind(6,active[i]);
-			update.Bind(7,id);
+			update.Bind(7,puzzletype[i]);
+			update.Bind(8,id);
 			update.Step();
 			update.Reset();
 		}

@@ -420,6 +420,13 @@ void ConvertDB0127To0128(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion Set Major=1, Minor=28;");
 }
 
+void ConvertDB0128To0129(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN IntroductionPuzzleType TEXT DEFAULT 'image';");
+
+	db->Execute("UPDATE tblDBVersion Set Major=1, Minor=29;");
+}
+
 void FixBoardNames(SQLite3DB::DB *db)
 {
 

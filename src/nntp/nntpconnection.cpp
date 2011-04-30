@@ -1031,13 +1031,20 @@ void NNTPConnection::HandlePostedMessage(const std::string &message)
 		{
 			mess.HandleAdministrationMessage();
 		}
-		if(mess.StartFreenetInsert())
+		if(mess.PrepareFreenetInsert() && mess.GetMessageXML().size()<=Message::MaxMessageXMLSize() && mess.StartFreenetInsert())
 		{
 			SendBufferedLine("240 Article received OK");
 		}
 		else
 		{
-			SendBufferedLine("441 Posting failed.  Make sure the identity you are sending with exists!");
+			if(mess.GetMessageXML().size()>Message::MaxMessageXMLSize())
+			{
+				SendBufferedLine("441 Posting failed.  Your message was too large to post.");
+			}
+			else
+			{
+				SendBufferedLine("441 Posting failed.  Make sure you have created the identity you are posting with.");
+			}
 		}
 	}
 	else

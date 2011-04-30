@@ -189,13 +189,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=28;
 		}
+		if(major==1 && minor==28)
+		{
+			ConvertDB0128To0129(db);
+			major=1;
+			minor=29;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,28);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,29);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=28;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=29;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -230,6 +236,7 @@ void SetupDB(SQLite3DB::DB *db)
 				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
 				PublishTrustList		BOOL CHECK(PublishTrustList IN('true','false')) DEFAULT 'false',\
 				PublishBoardList		BOOL CHECK(PublishBoardList IN('true','false')) DEFAULT 'false',\
+				IntroductionPuzzleType	TEXT DEFAULT 'image',\
 				Active					BOOL CHECK(Active IN('true','false')) DEFAULT 'true',\
 				PublishFreesite			BOOL CHECK(PublishFreesite IN('true','false')) DEFAULT 'false',\
 				FreesiteEdition			INTEGER,\
@@ -713,8 +720,8 @@ void SetupDB(SQLite3DB::DB *db)
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@Ofm~yZivDJ5Z2fSzZbMiLEUUQaIc0KHRdZMBTaPLO6I,WLm4s4hNbOOurJ6ijfOq4odz7-dN7uTUvYxJRwWnlMI,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// inserts boardstat's public key
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@aYWBb6zo2AM13XCNhsmmRKMANEx6PG~C15CWjdZziKA,X1pAG4EIqR1gAiyGFVZ1iiw-uTlh460~rFACJ7ZHQXk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
-	// insert void's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@Io8dkKWKkDfLVZ8n218hLRQV2K~20EIUk2hgWkneHEs,yy5MbLSpcYOMyX6mim0vofV7Sxdtsv-8uVOeFDf7ML0,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	// insert void's public key - haven't seen in a while - disabling 2011-04-30
+	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@Io8dkKWKkDfLVZ8n218hLRQV2K~20EIUk2hgWkneHEs,yy5MbLSpcYOMyX6mim0vofV7Sxdtsv-8uVOeFDf7ML0,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert herb's public key
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@5FeJUDg2ZdEqo-u4yoYWc1zF4tgPwOWlqcAJVGCoRv8,ptJ1y0YBkdU9S5DeYC8AsLH0SrmTE9S3w2HKZvl5QKo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert Tommy[D]'s public key
@@ -727,8 +734,8 @@ void SetupDB(SQLite3DB::DB *db)
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@cI~w2hrvvyUa1E6PhJ9j5cCoG1xmxSooi7Nez4V2Gd4,A3ArC3rrJBHgAJV~LlwY9kgxM8kUR2pVYXbhGFtid78,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert benjamin's public key
 	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@y7xEHiGMGlivnCq-a8SpYU0YO-XRNI3LcJHB8tCeaXI,lRZOVc0pEHTEPqZUJqc5qRv6JDxHZzqc~ybEC~I2y~A,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
-	// insert Oncle Jack's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@L9ytg5-Yixmw~q5NKHzy6FeOaXSLCqIw3L4Fgl1dcZA,plYsHAfOJVqim1E~~6Tup98RVNvJ5dKJqPTzKcXlZv8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	// insert Oncle Jack's public key - haven't seen in a while - disabling 2011-04-30
+	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@L9ytg5-Yixmw~q5NKHzy6FeOaXSLCqIw3L4Fgl1dcZA,plYsHAfOJVqim1E~~6Tup98RVNvJ5dKJqPTzKcXlZv8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 
 	// TODO remove sometime after 0.1.17
 	FixBoardNames(db);

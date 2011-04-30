@@ -16,6 +16,8 @@ private:
 	const bool WillHandleURI(const std::string &uri);
 	const std::string GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars);
 
+	const std::string CreatePuzzleTypeDropDown(const std::string &name, const std::string &selected);
+
 	void HandleUpdate(const std::map<std::string,QueryVar> &queryvars);
 	void HandleDelete(const std::map<std::string,QueryVar> &queryvars);
 	void HandleImport(const std::map<std::string,QueryVar> &queryvars);
