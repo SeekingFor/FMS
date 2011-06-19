@@ -1,4 +1,5 @@
 #include "../../include/db/sqlite3db.h"
+#include "../../include/stringfunctions.h"
 
 #ifdef QUERY_LOG
 #include <Poco/Logger.h>
@@ -13,6 +14,10 @@
 
 namespace SQLite3DB
 {
+
+bool SQLite3DB::DB::m_profiling=false;
+std::map<std::string,SQLite3DB::DB::ProfileData> SQLite3DB::DB::m_profiledata;
+Poco::FastMutex SQLite3DB::DB::m_profilemutex;
 
 DB::DB()
 {
@@ -125,6 +130,16 @@ const int DB::GetLastError(std::string &errormessage)
 	}
 }
 
+void DB::GetProfileData(std::map<std::string,ProfileData> &profiledata, const bool cleardata)
+{
+	Poco::ScopedLock<Poco::FastMutex> guard(m_profilemutex);
+	profiledata=m_profiledata;
+	if(cleardata==true)
+	{
+		m_profiledata.clear();
+	}
+}
+
 void DB::Initialize()
 {
 	m_db=NULL;
@@ -147,6 +162,10 @@ const bool DB::Open(const std::string &filename)
 		m_lastresult=sqlite3_open(filename.c_str(),&m_db);
 		if(m_lastresult==SQLITE_OK)
 		{
+			if(IsProfiling())
+			{
+				StartProfiling();
+			}
 			return true;
 		}
 		else
@@ -187,6 +206,19 @@ Statement DB::Prepare(const std::string &sql)
 	}
 }
 
+void DB::ProfileCallback(void *db, const char *sql, sqlite3_uint64 tottime)
+{
+	Poco::ScopedLock<Poco::FastMutex> guard(m_profilemutex);
+
+	if(sql && sql[0]!=0)
+	{
+		std::string ssql(sql);
+		ssql=StringFunctions::Replace(ssql,"\t"," ");
+		m_profiledata[ssql].m_count++;
+		m_profiledata[ssql].m_time+=tottime;
+	}
+}
+
 Recordset DB::Query(const std::string &sql)
 {
 	if(IsOpen())
@@ -224,6 +256,13 @@ const int DB::SetBusyTimeout(const int ms)
 	{
 		return SQLITE_ERROR;
 	}
+}
+
+void DB::StartProfiling()
+{
+	Poco::ScopedLock<Poco::FastMutex> guard(m_profilemutex);
+	sqlite3_profile(m_db,DB::ProfileCallback,this);
+	m_profiling=true;
 }
 
 }	// namespace

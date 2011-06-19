@@ -37,6 +37,7 @@ src/messagelist.cpp
 src/messagethread.cpp
 src/option.cpp
 src/optionssetup.cpp
+src/proglockfile.cpp
 src/quoter.cpp
 src/socketdefines.cpp
 src/stringfunctions.cpp

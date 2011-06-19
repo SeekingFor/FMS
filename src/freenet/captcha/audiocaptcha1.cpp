@@ -146,7 +146,11 @@ const bool AudioCaptcha1::Generate()
 		return false;
 	}
 
+#ifdef _WIN32
 	int rate=espeak_Initialize(AUDIO_OUTPUT_SYNCHRONOUS,100,".\\",0);
+#else
+	int rate=espeak_Initialize(AUDIO_OUTPUT_SYNCHRONOUS,100,"./",0);
+#endif
 
 	noise.SetSampleRate(rate);
 	background.SetSampleRate(rate);
@@ -162,9 +166,11 @@ const bool AudioCaptcha1::Generate()
 	// do puzzle letters
 	m_solution.clear();
 	int count=(rand()%4)+5;
+
+	puzzle.GetSamples().resize(puzzle.GetSamples().size()+(rate/10));
 	for(int i=0; i<count; i++)
 	{
-		int samplesbefore=LongRand()%(rate/2);
+		int samplesbefore=ULongRand()%(rate/2);
 		puzzle.GetSamples().resize(puzzle.GetSamples().size()+samplesbefore);
 
 		char newchar=(rand()%26)+97;
@@ -178,9 +184,10 @@ const bool AudioCaptcha1::Generate()
 			return false;
 		}
 
-		int samplesafter=LongRand()%(rate/2);
+		int samplesafter=ULongRand()%(rate/2);
 		puzzle.GetSamples().resize(puzzle.GetSamples().size()+samplesafter);
 	}
+	puzzle.GetSamples().resize(puzzle.GetSamples().size()+(rate/10));
 
 	// do background noise now
 	espeak_SetParameter(espeakVOLUME,30,0);
@@ -236,14 +243,14 @@ const bool AudioCaptcha1::GetSolution(std::vector<unsigned char> &solution)
 	return true;
 }
 
-const long AudioCaptcha1::LongRand() const
+const unsigned long AudioCaptcha1::ULongRand() const
 {
-	long rnum=0;
+	unsigned long rnum=0;
 	// low bytes don't have good randomness so offset by 4
 	rnum|=((rand() >> 4) & 0xff);
 	rnum|=((rand() << 4) & 0xff00);
 	rnum|=((rand() << 12) & 0xff0000);
-	rnum|=((rand() << 16) & 0xff000000);
+	rnum|=((rand() << 20) & 0xff000000);
 
 	return rnum;
 }

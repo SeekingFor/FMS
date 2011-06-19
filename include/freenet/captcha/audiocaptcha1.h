@@ -44,7 +44,7 @@ private:
 		std::vector<short> m_buffer;
 	};
 
-	const long LongRand() const;
+	const unsigned long ULongRand() const;
 	void GenerateNoise(int numsamples, AudioStream &result);
 	void CombineStreams(std::vector<AudioStream *> &streams, AudioStream &result);
 

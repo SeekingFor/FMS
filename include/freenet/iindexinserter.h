@@ -39,6 +39,7 @@ protected:
 	virtual void Initialize()=0;		// initialize m_fcpuniquename
 	virtual const bool HandlePutSuccessful(FCPv2::Message &message)=0;
 	virtual const bool HandlePutFailed(FCPv2::Message &message)=0;
+	virtual const bool HandleSimpleProgress(FCPv2::Message &message);
 	virtual const bool StartInsert(const IDTYPE &id)=0;
 	virtual void CheckForNeededInsert()=0;
 	virtual void RemoveFromInsertList(const IDTYPE id);
@@ -120,8 +121,20 @@ const bool IIndexInserter<IDTYPE>::HandleMessage(FCPv2::Message &message)
 			m_log->debug(m_fcpuniquename+"::HandleMessage IdentifierCollision for "+m_fcpuniquename+" "+message["Identifier"]);
 			return true;
 		}
+
+		if(message.GetName()=="SimpleProgress")
+		{
+			return HandleSimpleProgress(message);
+		}
+
 	}
 
+	return false;
+}
+
+template <class IDTYPE>
+const bool IIndexInserter<IDTYPE>::HandleSimpleProgress(FCPv2::Message &message)
+{
 	return false;
 }
 

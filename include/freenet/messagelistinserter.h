@@ -13,6 +13,7 @@ private:
 	void Initialize();
 	const bool HandlePutSuccessful(FCPv2::Message &message);
 	const bool HandlePutFailed(FCPv2::Message &message);
+	const bool HandleSimpleProgress(FCPv2::Message &message);
 	const bool StartInsert(const long &localidentityid);
 	void CheckForNeededInsert();
 

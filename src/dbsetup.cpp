@@ -195,13 +195,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=29;
 		}
+		if(major==1 && minor==29)
+		{
+			ConvertDB0129To0130(db);
+			major=1;
+			minor=30;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,29);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,30);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=29;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=30;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -231,6 +237,7 @@ void SetupDB(SQLite3DB::DB *db)
 	db->Execute("CREATE TABLE IF NOT EXISTS tblLocalIdentity(\
 				LocalIdentityID			INTEGER PRIMARY KEY,\
 				Name					TEXT,\
+				Signature				TEXT,\
 				PublicKey				TEXT UNIQUE,\
 				PrivateKey				TEXT UNIQUE,\
 				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
@@ -292,6 +299,8 @@ void SetupDB(SQLite3DB::DB *db)
 				IdentityID				INTEGER PRIMARY KEY AUTOINCREMENT,\
 				PublicKey				TEXT UNIQUE,\
 				Name					TEXT,\
+				Signature				TEXT,\
+				ShowSignature			BOOL CHECK(ShowSignature IN (0,1)) DEFAULT 1,\
 				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
 				PublishTrustList		BOOL CHECK(PublishTrustList IN('true','false')) DEFAULT 'false',\
 				PublishBoardList		BOOL CHECK(PublishBoardList IN('true','false')) DEFAULT 'false',\
@@ -657,6 +666,7 @@ void SetupDB(SQLite3DB::DB *db)
 				BEGIN \
 					DELETE FROM tblMessageBoard WHERE tblMessageBoard.MessageID=old.MessageID;\
 					DELETE FROM tblMessageReplyTo WHERE tblMessageReplyTo.MessageID=old.MessageID;\
+					DELETE FROM tblMessageFileAttachment WHERE tblMessageFileAttachment.MessageID=old.MessageID;\
 				END;");
 
 	db->Execute("DROP TRIGGER IF EXISTS trgDeleteIdentity;");

@@ -18,6 +18,11 @@ std::string IdentityXML::GetXML()
 
 	root->appendChild(XMLCreateCDATAElement(doc,"Name",m_name));
 
+	if(m_signature!="")
+	{
+		root->appendChild(XMLCreateCDATAElement(doc,"Signature",m_signature));
+	}
+
 	root->appendChild(XMLCreateBooleanElement(doc,"SingleUse",m_singleuse));
 
 	root->appendChild(XMLCreateBooleanElement(doc,"PublishTrustList",m_publishtrustlist));
@@ -40,6 +45,7 @@ void IdentityXML::Initialize()
 	m_publishboardlist=false;
 	m_singleuse=false;
 	m_freesiteedition=-1;
+	m_signature="";
 }
 
 const bool IdentityXML::ParseXML(const std::string &xml)
@@ -64,6 +70,15 @@ const bool IdentityXML::ParseXML(const std::string &xml)
 			if(txt->firstChild())
 			{
 				m_name=txt->firstChild()->getNodeValue();
+			}
+		}
+
+		txt=XMLGetFirstChild(root,"Signature");
+		if(txt)
+		{
+			if(txt->firstChild())
+			{
+				m_signature=txt->firstChild()->getNodeValue();
 			}
 		}
 		

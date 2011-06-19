@@ -13,7 +13,8 @@ command.  To turn off charset conversion to UTF-8 when sending messages, add a
 -D DO_CHARSET_CONVERSION=OFF.  Compiling with charset conversion turned on is
 recommended.  If you would like to compile using the alternate captchas, add a
 -D ALTERNATE_CAPTCHA=ON to the cmake command line. This option requires the
-FreeImage library to be installed.
+FreeImage library to be installed.  Enable generation of audio captchas by
+adding -D AUDIO_CAPTCHA=ON to the cmake command line.
 
 Query logging may be turned on by adding a -D QUERY_LOG=ON.  This will create a
 file called query.log in the working directory.  Straight SQL statements will

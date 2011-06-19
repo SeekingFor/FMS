@@ -99,7 +99,7 @@ const bool MessageListInserter::HandlePutFailed(FCPv2::Message &message)
 	// reset the last inserted xml doc to nothing so we will try to insert this one again
 	m_lastinsertedxml[localidentityid]="";
 
-	m_log->trace("MessageListInserter::HandlePutFailed insert failed for "+message["Identifier"]);
+	m_log->trace("MessageListInserter::HandlePutFailed insert failed with code "+message["Code"]+" for "+message["Identifier"]);
 
 	return true;
 
@@ -149,6 +149,12 @@ const bool MessageListInserter::HandlePutSuccessful(FCPv2::Message &message)
 
 	m_log->debug("MessageListInserter::HandlePutSuccessful successfully inserted MessageList.");
 
+	return true;
+}
+
+const bool MessageListInserter::HandleSimpleProgress(FCPv2::Message &message)
+{
+	m_laststartedinsert=Poco::Timestamp();
 	return true;
 }
 
@@ -362,6 +368,7 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		message["Identifier"]=m_fcpuniquename+"|"+localidentityidstr+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|"+message["URI"];
 		message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 		message["DefaultName"]="MessageList.xml";
+		message["Verbosity"]="1";
 		message["Files.0.Name"]="MessageList.xml";
 		message["Files.0.UploadFrom"]="direct";
 		message["Files.0.DataLength"]=xmlsizestr;

@@ -46,10 +46,14 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	std::string threadpostattachment("");
 	std::string postattachments("");
 	std::string trusttable("");
+	bool showsignatures=false;
+	Option opt(m_db);
 	std::vector<std::string> skipspace;
 	SQLite3DB::Statement fileattachmentst=m_db->Prepare("SELECT Key, Size FROM tblMessageFileAttachment WHERE MessageID=?;");
 	SQLite3DB::Statement truststpeeronly=m_db->Prepare("SELECT PeerMessageTrust, PeerTrustListTrust FROM tblIdentity WHERE IdentityID=?;");
 	SQLite3DB::Statement truststboth=m_db->Prepare("SELECT tblIdentityTrust.LocalMessageTrust, tblIdentity.PeerMessageTrust, tblIdentityTrust.LocalTrustListTrust, tblIdentity.PeerTrustListTrust FROM tblIdentity LEFT JOIN tblIdentityTrust ON tblIdentity.IdentityID=tblIdentityTrust.IdentityID WHERE tblIdentity.IdentityID=? AND tblIdentityTrust.LocalIdentityID=?;");
+
+	opt.GetBool("ForumShowSignatures",showsignatures);
 
 	skipspace.push_back(" ");
 
@@ -94,6 +98,11 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	if(queryvars.find("page")!=queryvars.end())
 	{
 		pagestr=(*queryvars.find("page")).second.GetData();
+		int temp=0;
+		if(StringFunctions::Convert(pagestr,temp)==true)
+		{
+			m_viewstate.SetPage(temp);
+		}
 	}
 	else
 	{
@@ -104,6 +113,11 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	if(queryvars.find("boardid")!=queryvars.end())
 	{
 		boardidstr=(*queryvars.find("boardid")).second.GetData();
+		int temp=0;
+		if(StringFunctions::Convert(boardidstr,temp)==true)
+		{
+			m_viewstate.SetBoardID(temp);
+		}
 	}
 	else
 	{
@@ -234,9 +248,11 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	vars["MARKUNREADLINK"]="<a href=\""+m_pagename+"?viewstate="+m_viewstate.GetViewStateID()+"&formaction=markunread&threadid="+threadidstr+"&boardid="+boardidstr+"&page="+pagestr+"\"><img src=\"images/mail_generic.png\" border=\"0\" style=\"vertical-align:bottom;\">"+m_trans->Get("web.page.forumviewthread.markunread")+"</a>";
 
 	// thread posts
-	m_templatehandler.GetSection("THREADPOSTROWODD",threadpostrowodd);
-	m_templatehandler.GetSection("THREADPOSTROWEVEN",threadpostroweven);
-	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblMessage.Body, tblIdentity.PublicKey || (SELECT OptionValue FROM tblOption WHERE Option='MessageBase') || '|' || tblMessage.InsertDate || '|Message-' || tblMessage.MessageIndex, tblMessage.MessageUUID FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID LEFT JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE tblThreadPost.ThreadID=? ORDER BY tblThreadPost.PostOrder;");
+	std::vector<std::string> ignoredsig;
+	ignoredsig.push_back("THREADPOSTSIGNATUREDIV");	// don't replace this div when we get the section, we'll replace it later
+	m_templatehandler.GetSection("THREADPOSTROWODD",threadpostrowodd,ignoredsig);
+	m_templatehandler.GetSection("THREADPOSTROWEVEN",threadpostroweven,ignoredsig);
+	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblMessage.Body, tblIdentity.PublicKey || (SELECT OptionValue FROM tblOption WHERE Option='MessageBase') || '|' || tblMessage.InsertDate || '|Message-' || tblMessage.MessageIndex, tblMessage.MessageUUID, tblIdentity.Signature, tblIdentity.ShowSignature FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID LEFT JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE tblThreadPost.ThreadID=? ORDER BY tblThreadPost.PostOrder;");
 	st.Bind(0,threadidstr);
 	st.Step();
 	while(st.RowReturned())
@@ -252,6 +268,8 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		std::string body="";
 		std::string postlink="";
 		std::string messageuuid="";
+		std::string signature="";
+		std::string showidsignature="0";
 		bool allowreply=true;
 		
 		st.ResultInt(0,messageid);
@@ -263,6 +281,8 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		st.ResultText(5,body);
 		st.ResultText(6,postlink);
 		st.ResultText(7,messageuuid);
+		st.ResultText(8,signature);
+		st.ResultText(9,showidsignature);
 
 		if(postcount==0)
 		{
@@ -381,7 +401,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 				keyname=keyname.substr(slashpos+1);
 			}
 
-			attachmentvars["THREADPOSTATTACHMENTLINK"]="<a href=\"[FPROXYPROTOCOL]://[FPROXYHOST]:[FPROXYPORT]/"+StringFunctions::UriEncode(key)+"\"><img src=\"images/attach.png\" border=\"0\" style=\"vertical-align:bottom;\"> "+SanitizeOutput(keyname)+"</a>";
+			attachmentvars["THREADPOSTATTACHMENTLINK"]="<a href=\"[FPROXYPROTOCOL]://[FPROXYHOST]:[FPROXYPORT]/"+StringFunctions::UriEncode(key)+"\"><img src=\"images/attach.png\" border=\"0\" style=\"vertical-align:baseline;\"> "+SanitizeOutput(keyname)+"</a>";
 			attachmentvars["THREADPOSTATTACHMENTSIZE"]=sizestr+" bytes";
 
 			m_templatehandler.PerformReplacements(threadpostattachment,attachmentvars,thisattachment);
@@ -398,10 +418,20 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		if(identityidstr!="")
 		{
 			postvars["THREADPOSTAUTHORNAME"]="<a href=\"peerdetails.htm?identityid="+identityidstr+"\">"+FixAuthorName(fromname)+"</a>";
+			if(showsignatures==true && showidsignature=="1" && signature!="")
+			{
+				std::string lf(1,10);
+				postvars["THREADPOSTSIGNATURE"]=StringFunctions::Replace(SanitizeOutput(signature),lf,"<br />");
+			}
+			else
+			{
+				postvars["THREADPOSTSIGNATUREDIV"]="";
+			}
 		}
 		else
 		{
 			postvars["THREADPOSTAUTHORNAME"]=FixAuthorName(fromname);
+			postvars["THREADPOSTSIGNATUREDIV"]="";
 		}
 		postvars["THREADPOSTTITLE"]=SanitizeOutput(subject,skipspace);
 		if(identityidstr!="" && postlink!="")

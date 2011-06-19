@@ -2,6 +2,7 @@
 #include "../../../include/stringfunctions.h"
 #include "../../../include/http/identityexportxml.h"
 #include "../../../include/global.h"
+#include "../../../include/unicode/unicodestring.h"
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -68,7 +69,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 
 	content+="<table class=\"small90\">";
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID,tblLocalIdentity.Name,tblLocalIdentity.PublicKey,tbLLocalIdentity.PublishTrustList,tblLocalIdentity.SingleUse,tblLocalIdentity.PublishBoardList,tblIdentity.IdentityID,tblLocalIdentity.PublishFreesite,tblLocalIdentity.MinMessageDelay,tblLocalIdentity.MaxMessageDelay,tblLocalIdentity.Active,tblLocalIdentity.IntroductionPuzzleType FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey ORDER BY tblLocalIdentity.Name;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID,tblLocalIdentity.Name,tblLocalIdentity.PublicKey,tbLLocalIdentity.PublishTrustList,tblLocalIdentity.SingleUse,tblLocalIdentity.PublishBoardList,tblIdentity.IdentityID,tblLocalIdentity.PublishFreesite,tblLocalIdentity.MinMessageDelay,tblLocalIdentity.MaxMessageDelay,tblLocalIdentity.Active,tblLocalIdentity.IntroductionPuzzleType,tblLocalIdentity.Signature FROM tblLocalIdentity LEFT JOIN tblIdentity ON tblLocalIdentity.PublicKey=tblIdentity.PublicKey ORDER BY tblLocalIdentity.Name;");
 	st.Step();
 	SQLite3DB::Statement st2=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
 
@@ -92,6 +93,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		std::string identityidstr="";
 		std::string active="";
 		std::string introductionpuzzletype="";
+		std::string signature="";
 
 		st.ResultText(0,id);
 		st.ResultText(1,name);
@@ -104,6 +106,7 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 		st.ResultText(9,maxmessagedelay);
 		st.ResultText(10,active);
 		st.ResultText(11,introductionpuzzletype);
+		st.ResultText(12,signature);
 
 		st2.Bind(0,publickey);
 		st2.Step();
@@ -149,8 +152,14 @@ const std::string LocalIdentitiesPage::GenerateContent(const std::string &method
 			content+="<td>"+m_trans->Get("web.page.localidentities.no")+"</td>";
 		}
 		trustst.Reset();
-		
-		content+="</tr><tr>";
+		content+="</tr>";
+
+		content+="<tr>";
+		content+="<td colspan=\"3\" style=\"text-align:right;font-weight:bolder;\">"+m_trans->Get("web.page.localidentities.signature")+"</td>";
+		content+="<td colspan=\"4\"><textarea cols=\"50\" rows=\"5\" name=\"signature["+countstr+"]\">"+SanitizeTextAreaOutput(signature)+"</textarea></td>";
+		content+="</tr>";
+
+		content+="<tr>";
 		content+="<td colspan=\"3\" style=\"text-align:right;font-weight:bolder;\">"+m_trans->Get("web.page.localidentities.puzzletype")+"</td>";
 		content+="<td colspan=\"2\">"+CreatePuzzleTypeDropDown("puzzletype["+countstr+"]",introductionpuzzletype)+"</td>";
 		content+="</tr>";
@@ -356,6 +365,7 @@ void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,QueryVar> &que
 	std::vector<std::string> maxdelay;
 	std::vector<std::string> active;
 	std::vector<std::string> puzzletype;
+	std::vector<std::string> signature;
 
 	CreateArgArray(queryvars,"chkidentityid",ids);
 	CreateArgArray(queryvars,"singleuse",singleuse);
@@ -366,12 +376,16 @@ void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,QueryVar> &que
 	CreateArgArray(queryvars,"maxdelay",maxdelay);
 	CreateArgArray(queryvars,"active",active);
 	CreateArgArray(queryvars,"puzzletype",puzzletype);
+	CreateArgArray(queryvars,"signature",signature);
 
-	SQLite3DB::Statement update=m_db->Prepare("UPDATE tblLocalIdentity SET SingleUse=?, PublishTrustList=?, PublishBoardList=?, PublishFreesite=?, MinMessageDelay=?, MaxMessageDelay=?, Active=?, IntroductionPuzzleType=? WHERE LocalIdentityID=?;");
+	SQLite3DB::Statement update=m_db->Prepare("UPDATE tblLocalIdentity SET SingleUse=?, PublishTrustList=?, PublishBoardList=?, PublishFreesite=?, MinMessageDelay=?, MaxMessageDelay=?, Active=?, IntroductionPuzzleType=?, Signature=? WHERE LocalIdentityID=?;");
 	for(int i=0; i<ids.size(); i++)
 	{
 		if(ids[i]!="")
 		{
+			UnicodeString usig(signature[i]);
+			usig.Trim(MAX_SIGNATURE_LENGTH);
+
 			int minmessagedelay=0;
 			int maxmessagedelay=0;
 			StringFunctions::Convert(ids[i],id);
@@ -385,7 +399,8 @@ void LocalIdentitiesPage::HandleUpdate(const std::map<std::string,QueryVar> &que
 			update.Bind(5,maxmessagedelay);
 			update.Bind(6,active[i]);
 			update.Bind(7,puzzletype[i]);
-			update.Bind(8,id);
+			update.Bind(8,usig.NarrowString());
+			update.Bind(9,id);
 			update.Step();
 			update.Reset();
 		}

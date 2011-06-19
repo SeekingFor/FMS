@@ -12,20 +12,23 @@ public:
 	std::string GetXML();
 	const bool ParseXML(const std::string &xml);
 
-	const std::string GetName()						{ return m_name; }
+	const std::string GetName() const				{ return m_name; }
 	void SetName(const std::string &name)			{ m_name=name; }
 
-	const bool GetPublishTrustList()				{ return m_publishtrustlist; }
+	const bool GetPublishTrustList() const			{ return m_publishtrustlist; }
 	void SetPublishTrustList(const bool publish)	{ m_publishtrustlist=publish; }
 
-	const bool GetPublishBoardList()				{ return m_publishboardlist; }
+	const bool GetPublishBoardList() const			{ return m_publishboardlist; }
 	void SetPublishBoardList(const bool publish)	{ m_publishboardlist=publish; }
 
-	const bool GetSingleUse()						{ return m_singleuse; }
+	const bool GetSingleUse() const					{ return m_singleuse; }
 	void SetSingleUse(const bool singleuse)			{ m_singleuse=singleuse; }
 
-	const int GetFreesiteEdition()					{ return m_freesiteedition; }
+	const int GetFreesiteEdition() const			{ return m_freesiteedition; }
 	void SetFreesiteEdition(const int edition)		{ m_freesiteedition=edition; }
+
+	const std::string GetSignature() const			{ return m_signature; }
+	void SetSignature(const std::string &signature)	{ m_signature=signature; }
 
 private:
 	void Initialize();
@@ -35,6 +38,7 @@ private:
 	bool m_publishboardlist;
 	bool m_singleuse;
 	int m_freesiteedition;
+	std::string m_signature;
 
 };
 

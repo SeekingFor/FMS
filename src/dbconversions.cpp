@@ -386,7 +386,7 @@ void ConvertDB0126To0127(SQLite3DB::DB *db)
 {
 	db->Execute("ALTER TABLE tblPeerTrust ADD COLUMN MessageTrustChange INTEGER DEFAULT 0;");
 	db->Execute("ALTER TABLE tblPeerTrust ADD COLUMN TrustListTrustChange INTEGER DEFAULT 0;");
-	db->Execute("UPDATE tblDBVersion Set Major=1, Minor=27;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=27;");
 }
 
 void ConvertDB0127To0128(SQLite3DB::DB *db)
@@ -417,14 +417,23 @@ void ConvertDB0127To0128(SQLite3DB::DB *db)
 	db->Execute("INSERT INTO tblIdentity SELECT IdentityID,PublicKey,Name,SingleUse,PublishTrustList,PublishBoardList,FreesiteEdition,DateAdded,LastSeen,LocalMessageTrust,PeerMessageTrust,LocalTrustListTrust,PeerTrustListTrust,AddedMethod,Hidden,PurgeDate,FailureCount,SolvedPuzzleCount FROM tblIdentityTemp;");
 	db->Execute("DROP TABLE IF EXISTS tblIdentityTemp;");
 
-	db->Execute("UPDATE tblDBVersion Set Major=1, Minor=28;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=28;");
 }
 
 void ConvertDB0128To0129(SQLite3DB::DB *db)
 {
 	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN IntroductionPuzzleType TEXT DEFAULT 'image';");
 
-	db->Execute("UPDATE tblDBVersion Set Major=1, Minor=29;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=29;");
+}
+
+void ConvertDB0129To0130(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN Signature TEXT;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN ShowSignature BOOL CHECK(ShowSignature IN(0,1)) DEFAULT 1;");
+	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN Signature TEXT;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=30;");
 }
 
 void FixBoardNames(SQLite3DB::DB *db)

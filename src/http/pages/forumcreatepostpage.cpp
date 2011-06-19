@@ -40,6 +40,11 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 	if(queryvars.find("boardid")!=queryvars.end())
 	{
 		boardidstr=(*queryvars.find("boardid")).second.GetData();
+		int temp=0;
+		if(StringFunctions::Convert(boardidstr,temp)==true)
+		{
+			m_viewstate.SetBoardID(temp);
+		}
 	}
 	else
 	{

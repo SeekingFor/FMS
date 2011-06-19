@@ -43,15 +43,19 @@ void IdentityInserter::CheckForNeededInsert()
 		date.assign(date.year(),date.month(),date.day(),0,0,0);
 	}
 
-	SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID FROM tblLocalIdentity WHERE tblLocalIdentity.Active='true' AND PrivateKey IS NOT NULL AND PrivateKey <> '' AND InsertingIdentity='false' AND (LastInsertedIdentity<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"' OR LastInsertedIdentity IS NULL) ORDER BY LastInsertedIdentity;");
-	
-	if(rs.Empty()==false)
+	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE tblLocalIdentity.Active='true' AND PrivateKey IS NOT NULL AND PrivateKey <> '' AND InsertingIdentity='false' AND (LastInsertedIdentity<? OR LastInsertedIdentity IS NULL) ORDER BY LastInsertedIdentity;");
+	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+	st.Step();
+
+	if(st.RowReturned())
 	{
-		StartInsert(rs.GetInt(0));
+		int lid=0;
+		st.ResultInt(0,lid);
+		StartInsert(lid);
 		// if +30 minutes is the next day, we also insert the identity.xml file to that day
 		if(now.day()!=nowplus30min.day())
 		{
-			StartInsert(rs.GetInt(0),1);
+			StartInsert(lid,1);
 		}
 	}
 
@@ -202,7 +206,7 @@ void IdentityInserter::StartInsert(const long localidentityid, const int dayoffs
 
 	StringFunctions::Convert(localidentityid,idstring);
 
-	SQLite3DB::Recordset rs=m_db->Query("SELECT Name,PrivateKey,SingleUse,PublishTrustList,PublishBoardList,PublishFreesite,FreesiteEdition FROM tblLocalIdentity WHERE LocalIdentityID="+idstring+";");
+	SQLite3DB::Recordset rs=m_db->Query("SELECT Name,PrivateKey,SingleUse,PublishTrustList,PublishBoardList,PublishFreesite,FreesiteEdition,Signature FROM tblLocalIdentity WHERE LocalIdentityID="+idstring+";");
 
 	if(rs.Empty()==false)
 	{
@@ -220,6 +224,7 @@ void IdentityInserter::StartInsert(const long localidentityid, const int dayoffs
 		std::string publishboardlist="false";
 		std::string freesiteedition="";
 		int edition=-1;
+		std::string signature="";
 
 		date=Poco::Timestamp();
 		date+=Poco::Timespan(dayoffset,0,0,0,0);
@@ -244,6 +249,11 @@ void IdentityInserter::StartInsert(const long localidentityid, const int dayoffs
 		if(rs.GetField(0))
 		{
 			idxml.SetName(rs.GetField(0));
+		}
+
+		if(rs.GetField(7))
+		{
+			idxml.SetSignature(rs.GetField(7));
 		}
 
 		if(rs.GetField(1))

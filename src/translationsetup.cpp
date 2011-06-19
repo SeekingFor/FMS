@@ -78,6 +78,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.LogLevel.7","7 - Debug Messages");
 	st->SetDefault("web.option.LogLevel.8","8 - Trace Messages");
 	st->SetDefault("web.option.VacuumOnStartup.description","VACUUM the database every time FMS starts.  This will defragment the free space in the database and create a smaller database file.  Vacuuming the database can be CPU and disk intensive.");
+	st->SetDefault("web.option.ProfileDBQueries.description","Profiles all database queries and periodically writes the stats to the fms log file.");
 	st->SetDefault("web.option.MessageBase.description","A unique string shared by all clients who want to communicate with each other.  This should not be changed unless you want to create your own separate communications network.");
 	st->SetDefault("web.option.FMSVersionKey.description","The USK which contains information about the latest version of FMS.");
 	st->SetDefault("web.option.FMSVersionEdition.description","The latest found edition of the FMS version USK.");
@@ -118,6 +119,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.DefaultInsertPriorityClass.6","6 - Will Never Finish");
 	st->SetDefault("web.option.ForumDetectLinks.description","Attempt to detect links to CHKs in plain text messages.");
 	st->SetDefault("web.option.ForumShowSmilies.description","Change plain text emoticons into smiley images.");
+	st->SetDefault("web.option.ForumShowSignatures.description","Show signatures of post authors.");
 	st->SetDefault("web.option.MaxIdentityRequests.description","Maximum number of concurrent requests for new Identity xml files");
 	st->SetDefault("web.option.MaxIdentityIntroductionRequests.description","Maximum number of concurrent identities requesting IdentityIntroduction xml files.  Each identity may have multiple requests pending.");
 	st->SetDefault("web.option.MaxIntroductionPuzzleRequests.description","Maximum number of concurrent requests for new IntroductionPuzzle xml files");
@@ -173,6 +175,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.localidentities.maxmessagedelay","Max Message Delay");
 	st->SetDefault("web.page.localidentities.announced","Announced? *");
 	st->SetDefault("web.page.localidentities.puzzletype","Introduction Puzzle Type");
+	st->SetDefault("web.page.localidentities.signature","Signature - 500 character limit");
 	st->SetDefault("web.page.localidentities.puzzletype.image","Image Captcha With Letters");
 	st->SetDefault("web.page.localidentities.puzzletype.unlikeimage","Image Captcha With 4 Pictures");
 	st->SetDefault("web.page.localidentities.puzzletype.audio","Audio Captcha With Letters");

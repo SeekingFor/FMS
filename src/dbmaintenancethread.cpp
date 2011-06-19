@@ -242,6 +242,20 @@ void DBMaintenanceThread::Do6HourMaintenance()
 
 	m_db->Execute("COMMIT;");
 
+	if(m_db->IsProfiling())
+	{
+		std::string output("\nSQL\tCount\tTotalTime\n");
+		std::map<std::string,SQLite3DB::DB::ProfileData> profiledata;
+		m_db->GetProfileData(profiledata,true);
+		for(std::map<std::string,SQLite3DB::DB::ProfileData>::const_iterator i=profiledata.begin(); i!=profiledata.end(); i++)
+		{
+			std::ostringstream ostr;
+			ostr << (*i).first << "\t" << (*i).second.m_count << "\t" << (*i).second.m_time << "\n";
+			output+=ostr.str();
+		}
+		m_log->information(output);
+	}
+
 	m_log->debug("PeriodicDBMaintenance::Do6HourMaintenance");
 }
 
@@ -395,7 +409,7 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	findst.Finalize();
 
 	// If at least 2 days have passed without retrieving one of our own inserted messages, reset the date of the message insert so it will be inserted again.
-	m_db->Execute("UPDATE tblMessageInserts SET Day=NULL, InsertIndex=NULL, Inserted='false' WHERE MessageUUID IN (SELECT tblMessageInserts.MessageUUID FROM tblMessageInserts LEFT JOIN tblMessage ON tblMessageInserts.MessageUUID=tblMessage.MessageUUID WHERE Inserted='true' AND SendDate>=(SELECT date('now','-' || (SELECT CASE WHEN OptionValue<=0 THEN 30 WHEN OptionValue>30 THEN 30 ELSE OptionValue END FROM tblOption WHERE Option='DeleteMessagesOlderThan') || ' days')) AND tblMessage.MessageUUID IS NULL AND tblMessageInserts.SendDate<date('now','-2 days'));");
+	m_db->Execute("UPDATE tblMessageInserts SET Day=NULL, InsertIndex=NULL, Inserted='false' WHERE LENGTH(MessageXML)<=1000000 AND MessageUUID IN (SELECT tblMessageInserts.MessageUUID FROM tblMessageInserts LEFT JOIN tblMessage ON tblMessageInserts.MessageUUID=tblMessage.MessageUUID WHERE Inserted='true' AND SendDate>=(SELECT date('now','-' || (SELECT CASE WHEN OptionValue<=0 THEN 30 WHEN OptionValue>30 THEN 30 ELSE OptionValue END FROM tblOption WHERE Option='DeleteMessagesOlderThan') || ' days')) AND tblMessage.MessageUUID IS NULL AND tblMessageInserts.SendDate<date('now','-2 days'));");
 
 	m_db->Execute("COMMIT;");
 

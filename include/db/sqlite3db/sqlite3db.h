@@ -3,7 +3,10 @@
 
 #include <sqlite3.h>
 #include <string>
+#include <map>
 #include "../sqlite3db.h"
+
+#include <Poco/Mutex.h>
 
 #if SQLITE_VERSION_NUMBER<3006006
 #error "Your version of SQLite is too old!  3.6.6.2 or later is required."
@@ -22,6 +25,14 @@ public:
 	DB();
 	DB(const std::string &filename);
 	~DB();
+
+	struct ProfileData
+	{
+		ProfileData():m_count(0),m_time(0)	{ }
+
+		sqlite3_uint64 m_count;
+		sqlite3_uint64 m_time;
+	};
 	
 	const bool Open(const std::string &filename);
 	const bool Close();
@@ -40,11 +51,22 @@ public:
 
 	sqlite3 *GetDB() { return m_db; }
 
+	void StartProfiling();
+	const bool IsProfiling() const	{ Poco::ScopedLock<Poco::FastMutex> guard(m_profilemutex); return m_profiling; }
+	void GetProfileData(std::map<std::string,ProfileData> &profiledata, const bool cleardata=false);
+
 private:
 	void Initialize();
+
+	static void ProfileCallback(void *db, const char *sql, sqlite3_uint64 tottime);
 	
 	sqlite3 *m_db;
 	int m_lastresult;
+
+	static bool m_profiling;
+	static std::map<std::string,ProfileData> m_profiledata;
+	static Poco::FastMutex m_profilemutex;
+
 };
 
 }	// namespace

@@ -74,7 +74,7 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 
-		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, SingleUse=?, LastSeen=?, PublishTrustList=?, PublishBoardList=?, FreesiteEdition=? WHERE IdentityID=?");
+		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, SingleUse=?, LastSeen=?, PublishTrustList=?, PublishBoardList=?, FreesiteEdition=?, Signature=? WHERE IdentityID=?");
 		
 		name=xml.GetName();
 		name.Trim(MAX_IDENTITY_NAME_LENGTH);
@@ -113,7 +113,15 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 		{
 			st.Bind(5);
 		}
-		st.Bind(6,identityid);
+		if(xml.GetSignature()!="")
+		{
+			st.Bind(6,xml.GetSignature());
+		}
+		else
+		{
+			st.Bind(6);
+		}
+		st.Bind(7,identityid);
 		st.Step();
 		st.Finalize();
 
@@ -260,7 +268,7 @@ void IdentityRequester::StartRequest(const std::pair<long,long> &inputpair)
 			message.Clear();
 			message.SetName("ClientGet");
 			message["URI"]="USK"+publickey.substr(3)+m_messagebase+"|IdentityRedirect/0/";
-			message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|"+identityorderstr+"|"+message["URI"];
+			message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|"+identityorderstr+"|_|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|"+message["URI"];
 			message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 			message["ReturnType"]="direct";
 			message["MaxSize"]="10000";

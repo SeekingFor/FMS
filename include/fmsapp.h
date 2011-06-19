@@ -3,6 +3,7 @@
 
 #include "threadwrapper/threadedexecutor.h"
 #include "ithreaddatabase.h"
+#include "proglockfile.h"
 
 #include <Poco/Util/ServerApplication.h>
 
@@ -46,6 +47,7 @@ private:
 	std::string m_workingdirectory;
 
 	ThreadedExecutor m_threads;
+	ProgLockFile m_lockfile;
 
 };
 

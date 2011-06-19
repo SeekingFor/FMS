@@ -31,12 +31,20 @@ void TrustListInserter::CheckForNeededInsert()
 	{
 		date.assign(date.year(),date.month(),currentday,0,0,0);
 	}
-	SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID, PrivateKey FROM tblLocalIdentity WHERE tblLocalIdentity.Active='true' AND PrivateKey IS NOT NULL AND PrivateKey <> '' AND PublishTrustList='true' AND InsertingTrustList='false' AND (LastInsertedTrustList<='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"' OR LastInsertedTrustList IS NULL);");
 
-	if(rs.Empty()==false)
+	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID, PrivateKey FROM tblLocalIdentity WHERE tblLocalIdentity.Active='true' AND PrivateKey IS NOT NULL AND PrivateKey <> '' AND PublishTrustList='true' AND InsertingTrustList='false' AND (LastInsertedTrustList<=? OR LastInsertedTrustList IS NULL);");
+	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+	st.Step();
+
+	if(st.RowReturned())
 	{
-		StartInsert(rs.GetInt(0),rs.GetField(1));
+		int lid=0;
+		std::string pkey("");
+		st.ResultInt(0,lid);
+		st.ResultText(1,pkey);
+		StartInsert(lid,pkey);
 	}
+
 }
 
 void TrustListInserter::FCPConnected()

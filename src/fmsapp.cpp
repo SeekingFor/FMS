@@ -33,7 +33,7 @@
 	#include <tomcrypt.h>
 #endif
 
-FMSApp::FMSApp():m_displayhelp(false),m_showoptions(false),m_setoption(false),m_dontstartup(false),m_logtype("file"),m_workingdirectory("")
+FMSApp::FMSApp():m_displayhelp(false),m_showoptions(false),m_setoption(false),m_dontstartup(false),m_logtype("file"),m_workingdirectory(""),m_lockfile("fms.lck")
 {
 	// get current working dir so we can go to it later
 	char wd[1024];
@@ -209,13 +209,19 @@ void FMSApp::initializeLogger()
 	
 	if(m_logtype=="file")
 	{
-		Poco::AutoPtr<Poco::FileChannel> fc=new Poco::FileChannel("fms.log");
-		fc->setProperty("rotation","daily");	// rotate log file daily
-		fc->setProperty("times","utc");			// utc date/times for log entries
-		fc->setProperty("archive","timestamp");	// add timestamp to old logs
-		fc->setProperty("purgeCount","30");		// purge old logs after 30 logs have accumulated
-		fc->setProperty("compress","true");		// gz compress old log files
-		formatter->setChannel(fc);
+		try
+		{
+			Poco::AutoPtr<Poco::FileChannel> fc=new Poco::FileChannel("fms.log");
+			fc->setProperty("rotation","daily");	// rotate log file daily
+			fc->setProperty("times","utc");			// utc date/times for log entries
+			fc->setProperty("archive","timestamp");	// add timestamp to old logs
+			fc->setProperty("purgeCount","30");		// purge old logs after 30 logs have accumulated
+			fc->setProperty("compress","true");		// gz compress old log files
+			formatter->setChannel(fc);
+		}
+		catch(...)
+		{
+		}
 	}
 	else
 	{
@@ -231,9 +237,15 @@ void FMSApp::initializeLogger()
 		}
 	}
 	
-	setLogger(Poco::Logger::create("logfile",formatter,Poco::Message::PRIO_INFORMATION));
-	Poco::Logger::get("logfile").information("LogLevel set to "+tempval);
-	Poco::Logger::get("logfile").setLevel(initiallevel);
+	try
+	{
+		setLogger(Poco::Logger::create("logfile",formatter,Poco::Message::PRIO_INFORMATION));
+		Poco::Logger::get("logfile").information("LogLevel set to "+tempval);
+		Poco::Logger::get("logfile").setLevel(initiallevel);
+	}
+	catch(...)
+	{
+	}
 
 }
 
@@ -243,6 +255,12 @@ int FMSApp::main(const std::vector<std::string> &args)
 	// running as a daemon would reset the working directory to / before calling main
 	// so we need to set the working directory again
 	int rval=chdir(m_workingdirectory.c_str());
+
+	if(m_lockfile.TryLock()==false)
+	{
+		std::cout << "Another instance of FMS appears to be running in this directory.  If you are sure FMS is not already running here, remove the fms.lck file and start FMS again." << std::endl;
+		return FMSApp::EXIT_OK;
+	}
 
 	if(VerifyDB(m_db)==false)
 	{
@@ -275,6 +293,14 @@ int FMSApp::main(const std::vector<std::string> &args)
 		{
 			logger().information("VACUUMing database");
 			m_db->Execute("VACUUM;");
+		}
+
+		bool profile=false;
+		option.GetBool("ProfileDBQueries",profile);
+		if(profile)
+		{
+			logger().information("Profiling DB Queries");
+			m_db->StartProfiling();
 		}
 
 #ifdef FROST_SUPPORT

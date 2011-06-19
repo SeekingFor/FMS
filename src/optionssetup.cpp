@@ -65,8 +65,24 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(4,"select");
 	upd.Bind(5);
 	upd.Bind(6);
-	upd.Bind(7,"simple");
+	upd.Bind(7,"advanced");
 	upd.Bind(8,"VacuumOnStartup");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"ProfileDBQueries");
+	st.Bind(1,"false");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Program");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Profiles all database queries and periodically writes the stats to the fms log file.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"ProfileDBQueries");
 	upd.Step();
 	upd.Reset();
 
@@ -457,6 +473,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(6);
 	upd.Bind(7,"advanced");
 	upd.Bind(8,"ForumShowSmilies");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"ForumShowSignatures");
+	st.Bind(1,"true");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Forum");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Show signatures of post authors.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"ForumShowSignatures");
 	upd.Step();
 	upd.Reset();
 
