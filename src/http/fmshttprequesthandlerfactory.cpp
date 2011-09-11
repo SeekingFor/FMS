@@ -29,6 +29,7 @@
 #include "../../include/http/pages/translatepage.h"
 #include "../../include/http/pages/showinsertedmessagepage.h"
 #include "../../include/http/pages/showreceivedmessagepage.h"
+#include "../../include/http/pages/showavatarpage.h"
 
 #include <cstdio>
 #include <Poco/Path.h>
@@ -99,6 +100,7 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db):ID
 	m_pagehandlers.push_back(new VersionInfoPage(m_db,templatestr));
 	m_pagehandlers.push_back(new RecentlyAddedPage(m_db,templatestr));
 	m_pagehandlers.push_back(new ShowFilePage(m_db));
+	m_pagehandlers.push_back(new ShowAvatarPage(m_db));
 	m_pagehandlers.push_back(new TranslatePage(m_db,templatestr));
 	//m_pagehandlers.push_back(new ForumMainPage(m_db,forumtemplate));
 	//m_pagehandlers.push_back(new ForumThreadsPage(m_db,forumtemplate));

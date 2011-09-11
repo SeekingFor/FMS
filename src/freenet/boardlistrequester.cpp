@@ -72,6 +72,7 @@ const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 	long identityid;
 	long index;
 	std::string identityname="";
+	SQLite3DB::Transaction trans(m_db);
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -96,7 +97,7 @@ const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 
-		m_db->Execute("BEGIN;");
+		trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 
 		SQLite3DB::Statement brd=m_db->Prepare("SELECT BoardID,BoardName,BoardDescription FROM tblBoard WHERE BoardName=?;");
 		SQLite3DB::Statement ins=m_db->Prepare("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,SaveReceivedMessages,AddedMethod) VALUES(?,?,?,?,?);");
@@ -111,7 +112,7 @@ const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 			description.Trim(MAX_BOARD_DESCRIPTION_LENGTH);
 
 			brd.Bind(0,name.NarrowString());
-			brd.Step();
+			trans.Step(brd);
 			
 			if(brd.RowReturned())
 			{
@@ -121,8 +122,8 @@ const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 				{
 					upd.Bind(0,description.NarrowString());
 					upd.Bind(1,boardid);
-					upd.Step();
-					upd.Reset();
+					trans.Step(upd);
+					trans.Reset(upd);
 				}
 			}
 			else
@@ -139,22 +140,32 @@ const bool BoardListRequester::HandleAllData(FCPv2::Message &message)
 					ins.Bind(3,"false");
 				}
 				ins.Bind(4,"Board List of "+identityname);
-				ins.Step();
-				ins.Reset();
+				trans.Step(ins);
+				trans.Reset(ins);
 			}
-			brd.Reset();
+			trans.Reset(brd);
 		}
 
 		st=m_db->Prepare("INSERT INTO tblBoardListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
 		st.Bind(0,identityid);
 		st.Bind(1,idparts[4]);
 		st.Bind(2,index);
-		st.Step();
-		st.Finalize();
+		trans.Step(st);
+		trans.Finalize(st);
 
-		m_db->Execute("COMMIT;");
+		trans.Finalize(brd);
+		trans.Finalize(ins);
+		trans.Finalize(upd);
+		trans.Commit();
 
-		m_log->debug("BoardListRequester::HandleAllData parsed BoardList XML file : "+message["Identifier"]);
+		if(trans.IsSuccessful())
+		{
+			m_log->debug("BoardListRequester::HandleAllData parsed BoardList XML file : "+message["Identifier"]);
+		}
+		else
+		{
+			m_log->error("BoardListRequester::HandleAllData transaction failed with SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
+		}
 	}
 	else
 	{
@@ -254,7 +265,7 @@ void BoardListRequester::PopulateIDList()
 {
 	int id;
 	Poco::DateTime today;
-
+	SQLite3DB::Transaction trans(m_db);
 	SQLite3DB::Statement st;
 
 	if(m_localtrustoverrides==false)
@@ -268,17 +279,19 @@ void BoardListRequester::PopulateIDList()
 
 	m_ids.clear();
 
-	m_db->Execute("BEGIN;");
+	// only selects, deferred OK
+	trans.Begin();
 
-	st.Step();
+	trans.Step(st);
 	while(st.RowReturned())
 	{
 		st.ResultInt(0,id);
 		m_ids[id].m_requested=false;
-		st.Step();
+		trans.Step(st);
 	}
 
-	m_db->Execute("COMMIT;");
+	trans.Finalize(st);
+	trans.Commit();
 
 }
 

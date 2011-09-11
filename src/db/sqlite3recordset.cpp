@@ -90,8 +90,17 @@ void Recordset::Open(const std::string &sql, DB *db)
 	Free();
 	m_currentrow=0;
 
-	if(sqlite3_get_table(db->GetDB(),sql.c_str(),&m_rs,&m_rows,&m_cols,NULL)==SQLITE_OK)
+	if(db)
 	{
+		if(sqlite3_get_table(db->GetDB(),sql.c_str(),&m_rs,&m_rows,&m_cols,NULL)==SQLITE_OK)
+		{
+		}
+		else
+		{
+			std::string errmsg("");
+			int err=db->GetLastExtendedError(errmsg);
+			DB::HandleError(err,errmsg,"Recordset::Open");
+		}
 	}
 }
 

@@ -6,6 +6,7 @@
 #include "../../include/threadbuilder.h"
 
 #include <algorithm>
+#include <vector>
 
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
@@ -27,15 +28,15 @@ MessageRequester::MessageRequester(SQLite3DB::DB *db, FCPv2::Connection *fcp):II
 	Initialize();
 }
 
-const long MessageRequester::GetBoardInfo(const std::string &boardname, const std::string &identityname, bool &forum)
+const long MessageRequester::GetBoardInfo(SQLite3DB::Transaction &trans, const std::string &boardname, const std::string &identityname, bool &forum)
 {
 	std::string lowerboard=boardname;
 	StringFunctions::LowerCase(lowerboard,lowerboard);
 	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardID, Forum FROM tblBoard WHERE BoardName=?;");
 	st.Bind(0,lowerboard);
-	st.Step();
+	trans.Step(st);
 
-	if(st.RowReturned())
+	if(st.RowReturned() && trans.IsSuccessful())
 	{
 		int boardid;
 		std::string isforum("false");
@@ -66,10 +67,10 @@ const long MessageRequester::GetBoardInfo(const std::string &boardname, const st
 			st.Bind(2,"false");
 		}
 		st.Bind(3,"Message from "+identityname);
-		st.Step(true);
+		trans.Step(st,true);
 		forum=false;
 		return st.GetLastInsertRowID();
-	}	
+	}
 }
 
 const std::string MessageRequester::GetIdentityName(const long identityid)
@@ -112,6 +113,7 @@ const std::string MessageRequester::GetIDFromIdentifier(const std::string &ident
 const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 {
 	SQLite3DB::Statement st;
+	SQLite3DB::Transaction trans(m_db);
 	std::vector<std::string> idparts;
 	long datalength;
 	std::vector<char> data;
@@ -121,8 +123,13 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 	bool inserted=false;
 	bool validmessage=true;
 	long savetoboardcount=0;
+	std::vector<std::pair<long,long> > buildthreads;
 	IdentityPublicKeyCache pkcache(m_db);
 	ThreadBuilder tb(m_db);
+	bool constraintfailure=false;
+	SQLite3DB::Statement failst=m_db->Prepare("UPDATE tblIdentity SET FailureCount=FailureCount+1 WHERE IdentityID=?;");
+
+	m_log->trace("MessageRequester::HandleAllData started handling "+message["Identifier"]);
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -141,15 +148,15 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 	// receive the file
 	m_fcp->Receive(data,datalength);
 
-	m_db->Execute("BEGIN;");
+	trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 
 	// mark this index as received
 	st=m_db->Prepare("UPDATE tblMessageRequests SET Found='true' WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
 	st.Bind(0,identityid);
 	st.Bind(1,idparts[3]);
 	st.Bind(2,index);
-	st.Step();
-	st.Finalize();
+	trans.Step(st);
+	trans.Finalize(st);
 
 	// parse file into xml and update the database
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
@@ -174,14 +181,18 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 		{
 			m_log->error("MessageRequester::HandleAllData Message XML did not contain any boards! "+message["Identifier"]);
 			// remove this identityid from request list
-			RemoveFromRequestList(idparts[1]);			
+			RemoveFromRequestList(idparts[1]);
+			failst.Bind(0,identityid);
+			trans.Step(failst);
 			return true;
 		}
 		if(xml.GetReplyBoard()=="")
 		{
 			m_log->error("MessageRequester::HandleAllData Message XML did not contain a reply board! "+message["Identifier"]);
 			// remove this identityid from request list
-			RemoveFromRequestList(idparts[1]);			
+			RemoveFromRequestList(idparts[1]);
+			failst.Bind(0,identityid);
+			trans.Step(failst);
 			return true;
 		}
 
@@ -191,6 +202,16 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			UnicodeString boardname(xml.GetReplyBoard());
 			boardname.Trim(MAX_BOARD_NAME_LENGTH);
 			boards[boards.size()-1]=boardname.NarrowString();
+		}
+
+		if(xml.GetSubject().size()<1)
+		{
+			m_log->error("MessageRequester::HandleAllData Message XML subject was too short! "+message["Identifier"]);
+			// remove this identityid from request list
+			RemoveFromRequestList(idparts[1]);
+			failst.Bind(0,identityid);
+			trans.Step(failst);
+			return true;
 		}
 
 		// make sure domain of message id match 43 characters of public key of identity (remove - and ~) - if not, discard message
@@ -249,11 +270,15 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			st.Bind(3,xml.GetTime());
 			st.Bind(4,xml.GetSubject());
 			st.Bind(5,xml.GetMessageID());
-			st.Bind(6,GetBoardInfo(xml.GetReplyBoard(),GetIdentityName(identityid),tempbool));
+			st.Bind(6,GetBoardInfo(trans,xml.GetReplyBoard(),GetIdentityName(identityid),tempbool));
 			st.Bind(7,nntpbody);
 			st.Bind(8,index);
 			st.Bind(9,idparts[3]);
-			inserted=st.Step(true);
+			inserted=trans.Step(st,true);
+			if(trans.IsSuccessful()==false && (trans.GetLastError() & SQLITE_CONSTRAINT)==SQLITE_CONSTRAINT)
+			{
+				constraintfailure=true;
+			}
 			long messageid=st.GetLastInsertRowID();
 
 			if(inserted==true)
@@ -266,10 +291,10 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 					st.Bind(0,messageid);
 					st.Bind(1,(*j).second);
 					st.Bind(2,(*j).first);
-					st.Step();
-					st.Reset();
+					trans.Step(st);
+					trans.Reset(st);
 				}
-				st.Finalize();
+				trans.Finalize(st);
 
 				SQLite3DB::Statement latestmessagest=m_db->Prepare("UPDATE tblBoard SET LatestMessageID=(SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageBoard.BoardID=tblBoard.BoardID ORDER BY tblMessage.MessageDate DESC, tblMessage.MessageTime DESC LIMIT 0,1) WHERE tblBoard.BoardID=?;");
 				st=m_db->Prepare("INSERT INTO tblMessageBoard(MessageID,BoardID) VALUES(?,?);");
@@ -278,22 +303,22 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 					if(SaveToBoard((*i)))
 					{
 						bool forum;
-						long boardid=GetBoardInfo((*i),GetIdentityName(identityid),forum);
+						long boardid=GetBoardInfo(trans,(*i),GetIdentityName(identityid),forum);
 						st.Bind(0,messageid);
 						st.Bind(1,boardid);
-						st.Step();
-						st.Reset();
+						trans.Step(st);
+						trans.Reset(st);
 
 						if(forum)
 						{
-							tb.Build(messageid,boardid,true);
+							buildthreads.push_back(std::pair<long,long>(messageid,boardid));
 							latestmessagest.Bind(0,boardid);
-							latestmessagest.Step();
-							latestmessagest.Reset();
+							trans.Step(latestmessagest);
+							trans.Reset(latestmessagest);
 						}
 					}
 				}
-				st.Finalize();
+				trans.Finalize(st);
 
 				st=m_db->Prepare("INSERT INTO tblMessageFileAttachment(MessageID,Key,Size) VALUES(?,?,?);");
 				std::vector<MessageXML::fileattachment> fileattachments=xml.GetFileAttachments();
@@ -302,8 +327,8 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 					st.Bind(0,messageid);
 					st.Bind(1,(*i).m_key);
 					st.Bind(2,(*i).m_size);
-					st.Step();
-					st.Reset();
+					trans.Step(st);
+					trans.Reset(st);
 				}
 
 				m_log->debug("MessageRequester::HandleAllData parsed Message XML file : "+message["Identifier"]);
@@ -311,21 +336,45 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			}
 			else	// couldn't insert - was already in database
 			{
-				std::string errmsg;
-				m_db->GetLastError(errmsg);
-				m_log->debug("MessageRequester::HandleAllData could not insert message into database.  SQLite error "+errmsg);
+				m_log->debug("MessageRequester::HandleAllData could not insert message into database.  SQLite error "+trans.GetLastError());
 			}
 
-			st.Finalize();
+			trans.Finalize(st);
 
 		}	// if validmessage
 	}
 	else
 	{
 		m_log->error("MessageRequester::HandleAllData error parsing Message XML file : "+message["Identifier"]);
+		if(xml.GetLastError()!="")
+		{
+			m_log->error("MessageRequester::HandleAllData Message XML error : "+xml.GetLastError());
+		}
+		failst.Bind(0,identityid);
+		trans.Step(failst);
 	}
 
-	m_db->Execute("COMMIT;");
+	trans.Finalize(failst);
+	trans.Commit();
+
+	if(trans.IsSuccessful()==false && constraintfailure==false)
+	{
+		m_log->error("MessageRequester::HandleAllData transaction failed with SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
+	}
+
+	if(constraintfailure==true)
+	{
+		st=m_db->Prepare("UPDATE tblMessageRequests SET Found='true' WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
+		st.Bind(0,identityid);
+		st.Bind(1,idparts[3]);
+		st.Bind(2,index);
+		st.Step();
+	}
+
+	for(std::vector<std::pair<long,long> >::const_iterator i=buildthreads.begin(); i!=buildthreads.end(); i++)
+	{
+		tb.Build((*i).first,(*i).second,true);
+	}
 
 	RemoveFromRequestList(idparts[1]);
 
@@ -447,6 +496,7 @@ void MessageRequester::PopulateIDList()
 	std::string val3;
 	std::string sql;
 	long requestindex;
+	SQLite3DB::Transaction trans(m_db);
 
 	date-=Poco::Timespan(m_maxdaysbackward,0,0,0,0);
 
@@ -469,7 +519,7 @@ void MessageRequester::PopulateIDList()
 	sql+="ORDER BY tblMessageRequests.Day DESC, tblMessageRequests.Tries ASC, tblMessageRequests.RequestIndex ASC ";
 	sql+=";";
 
-	m_db->Execute("BEGIN;");
+	trans.Begin();
 
 	SQLite3DB::Statement st=m_db->Prepare(sql);
 	st.Step();
@@ -496,7 +546,8 @@ void MessageRequester::PopulateIDList()
 		st.Step();
 	}
 
-	m_db->Execute("COMMIT;");
+	trans.Finalize(st);
+	trans.Commit();
 
 }
 

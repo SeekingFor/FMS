@@ -15,6 +15,7 @@ private:
 	const std::string GetPageTitle(const std::string &method, const std::map<std::string,QueryVar> &queryvars)			{ return m_pagetitle; }
 
 	const std::string CreateForumSearchBoxExtraFields() const;
+	const std::string SanitizeSubject(const std::string &subject) const;
 
 	std::string m_pagetitle;
 };

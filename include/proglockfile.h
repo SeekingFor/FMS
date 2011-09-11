@@ -15,6 +15,7 @@ private:
 
 	std::string m_filename;
 	int m_fd;
+	bool m_unlink;
 
 };
 

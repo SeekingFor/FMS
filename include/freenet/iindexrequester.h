@@ -40,9 +40,10 @@ protected:
 
 	struct idstruct
 	{
-		idstruct():m_requested(false),m_fcpidentifier("")	{ }
+		idstruct():m_requested(false),m_fcpidentifier(""),m_flag(false)	{ }
 
 		bool m_requested;
+		bool m_flag;		// derived class can use flag for its own purposes
 		std::string m_fcpidentifier;
 	};
 
@@ -61,6 +62,7 @@ protected:
 	Poco::DateTime m_lastreceived;
 	Poco::DateTime m_lastpopulated;
 	std::string m_messagebase;
+	bool m_reverserequest;						// start from the back of the map and work forward
 	std::map<IDTYPE,idstruct> m_ids;			// map of all ids we know and whether we have requested file from them yet
 	std::string m_defaultrequestpriorityclassstr;
 
@@ -166,6 +168,7 @@ void IIndexRequester<IDTYPE>::InitializeIIndexRequester()
 {
 	m_maxrequests=-1;
 	m_fcpuniquename="";
+	m_reverserequest=false;
 	Option option(m_db);
 
 	option.Get("MessageBase",m_messagebase);
@@ -187,24 +190,50 @@ void IIndexRequester<IDTYPE>::Process()
 	// try to keep up to max requests going
 	if(m_requesting.size()<max)
 	{
-		typename std::map<IDTYPE,idstruct>::iterator i=m_ids.begin();
-
-		while(i!=m_ids.end() && (*i).second.m_requested==true)
+		if(m_reverserequest==false)
 		{
-			i++;
-		}
+			typename std::map<IDTYPE,idstruct>::iterator i=m_ids.begin();
 
-		if(i!=m_ids.end())
-		{
-			StartRequest((*i).first);
+			while(i!=m_ids.end() && (*i).second.m_requested==true)
+			{
+				i++;
+			}
+
+			if(i!=m_ids.end())
+			{
+				StartRequest((*i).first);
+			}
+			else
+			{
+				// we requested from all ids in the list, repopulate the list (only every 10 minutes)
+				if(m_lastpopulated<(now-Poco::Timespan(0,0,10,0,0)))
+				{
+					PopulateIDList();
+					m_lastpopulated=Poco::Timestamp();
+				}
+			}
 		}
 		else
 		{
-			// we requested from all ids in the list, repopulate the list (only every 10 minutes)
-			if(m_lastpopulated<(now-Poco::Timespan(0,0,10,0,0)))
+			typename std::map<IDTYPE,idstruct>::reverse_iterator i=m_ids.rbegin();
+
+			while(i!=m_ids.rend() && (*i).second.m_requested==true)
 			{
-				PopulateIDList();
-				m_lastpopulated=Poco::Timestamp();
+				i++;
+			}
+
+			if(i!=m_ids.rend())
+			{
+				StartRequest((*i).first);
+			}
+			else
+			{
+				// we requested from all ids in the list, repopulate the list (only every 10 minutes)
+				if(m_lastpopulated<(now-Poco::Timespan(0,0,10,0,0)))
+				{
+					PopulateIDList();
+					m_lastpopulated=Poco::Timestamp();
+				}
 			}
 		}
 	}

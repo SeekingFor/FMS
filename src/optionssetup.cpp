@@ -492,6 +492,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Step();
 	upd.Reset();
 
+	st.Bind(0,"ForumShowAvatars");
+	st.Bind(1,"false");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Forum");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Show system generated avatars of post authors.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"ForumShowAvatars");
+	upd.Step();
+	upd.Reset();
+
 	st.Bind(0,"MaxIdentityRequests");
 	st.Bind(1,"5");
 	st.Step();

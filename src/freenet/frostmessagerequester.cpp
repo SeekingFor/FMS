@@ -1,6 +1,7 @@
 #include "../../include/freenet/frostmessagerequester.h"
 #include "../../include/freenet/frostidentity.h"
 #include "../../include/freenet/frostmessagexml.h"
+#include "../../include/threadbuilder.h"
 
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeParser.h>
@@ -21,7 +22,11 @@ const std::string FrostMessageRequester::GetIDFromIdentifier(const std::string &
 {
 	std::vector<std::string> idparts;
 	StringFunctions::Split(identifier,"|",idparts);
-	return idparts[1]+"|"+idparts[2]+"|"+idparts[3];
+	if(idparts.size()>3)
+	{
+		return idparts[1]+"|"+idparts[2]+"|"+idparts[3];
+	}
+	return std::string("");
 }
 
 const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
@@ -33,6 +38,12 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 	FrostIdentity frostid;
 	bool validmessage=true;
 	bool inserted=false;
+	bool constraintfailure=false;
+	std::vector<std::pair<long,long> > buildthreads;
+	ThreadBuilder tb(m_db);
+	SQLite3DB::Transaction trans(m_db);
+
+	m_log->trace("FrostMessageRequester::HandleAllData started handling "+message["Identifier"]);
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -49,14 +60,14 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 	// receive the file
 	m_fcp->Receive(data,datalength);
 
-	m_db->Execute("BEGIN;");
+	trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 
 	// mark this index as received
-	SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblFrostMessageRequests(BoardID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
-	st.Bind(0,idparts[1]);
-	st.Bind(1,idparts[3]);
+	SQLite3DB::Statement st=m_db->Prepare("INSERT OR IGNORE INTO tblFrostMessageRequests(BoardID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
+	st.Bind(0,idparts[3]);
+	st.Bind(1,idparts[1]);
 	st.Bind(2,idparts[2]);
-	st.Step();
+	trans.Step(st);
 
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
@@ -95,7 +106,7 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 			validmessage=false;
 		}
 
-		if(validmessage==true)
+		if(validmessage==true && trans.IsSuccessful()==true)
 		{
 			std::string nntpbody="";
 			nntpbody=xml.GetBody();
@@ -106,25 +117,50 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 			st.Bind(2,xml.GetTime());
 			st.Bind(3,xml.GetSubject());
 			st.Bind(4,xml.GetMessageID());
-			st.Bind(5,idparts[1]);
+			st.Bind(5,idparts[3]);
 			st.Bind(6,nntpbody);
-			st.Bind(7,idparts[3]);
+			st.Bind(7,idparts[1]);
 			st.Bind(8,idparts[2]);
-			inserted=st.Step(true);
+			inserted=trans.Step(st,true);
+			// constraint failure, we'll still mark the index as retrieved later
+			if(trans.IsSuccessful()==false && (trans.GetLastError() & SQLITE_CONSTRAINT)==SQLITE_CONSTRAINT)
+			{
+				constraintfailure=true;
+			}
 			long messageid=st.GetLastInsertRowID();
 
 			if(inserted==true)
 			{
 
+				SQLite3DB::Statement latestmessagest=m_db->Prepare("UPDATE tblBoard SET LatestMessageID=(SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageBoard.BoardID=tblBoard.BoardID ORDER BY tblMessage.MessageDate DESC, tblMessage.MessageTime DESC LIMIT 0,1) WHERE tblBoard.BoardID=?;");
+				SQLite3DB::Statement forumst=m_db->Prepare("SELECT Forum FROM tblBoard WHERE BoardID=?;");
 				st=m_db->Prepare("INSERT INTO tblMessageBoard(MessageID,BoardID) VALUES(?,?);");
 				for(std::vector<std::string>::iterator i=boards.begin(); i!=boards.end(); i++)
 				{
+					long boardid=0;
+					StringFunctions::Convert(idparts[3],boardid);
 					st.Bind(0,messageid);
-					st.Bind(1,idparts[1]);
-					st.Step();
-					st.Reset();
+					st.Bind(1,boardid);
+					trans.Step(st);
+					trans.Reset(st);
+
+					forumst.Bind(0,boardid);
+					if(trans.Step(forumst))
+					{
+						std::string isforum("false");
+						forumst.ResultText(0,isforum);
+						if(isforum=="true")
+						{
+							buildthreads.push_back(std::pair<long,long>(messageid,boardid));
+							latestmessagest.Bind(0,boardid);
+							trans.Step(latestmessagest);
+							trans.Reset(latestmessagest);
+						}
+					}
+					trans.Reset(forumst);
+
 				}
-				st.Finalize();
+				trans.Finalize(st);
 
 				st=m_db->Prepare("INSERT INTO tblMessageReplyTo(MessageID,ReplyToMessageUUID,ReplyOrder) VALUES(?,?,?);");
 				for(std::map<long,std::string>::iterator j=replyto.begin(); j!=replyto.end(); j++)
@@ -132,10 +168,10 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 					st.Bind(0,messageid);
 					st.Bind(1,(*j).second);
 					st.Bind(2,(*j).first);
-					st.Step();
-					st.Reset();
+					trans.Step(st);
+					trans.Reset(st);
 				}
-				st.Finalize();
+				trans.Finalize(st);
 
 				st=m_db->Prepare("INSERT INTO tblMessageFileAttachment(MessageID,Key,Size) VALUES(?,?,?);");
 				std::vector<MessageXML::fileattachment> fileattachments=xml.GetFileAttachments();
@@ -144,8 +180,8 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 					st.Bind(0,messageid);
 					st.Bind(1,(*i).m_key);
 					st.Bind(2,(*i).m_size);
-					st.Step();
-					st.Reset();
+					trans.Step(st);
+					trans.Reset(st);
 				}
 
 				m_log->debug("FrostMessageRequester::HandleAllData parsed Message XML file : "+message["Identifier"]);
@@ -153,12 +189,10 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 			}
 			else	// couldn't insert - was already in database
 			{
-				std::string errmsg;
-				m_db->GetLastError(errmsg);
-				m_log->debug("FrostMessageRequester::HandleAllData could not insert message into database.  SQLite error "+errmsg);
+				m_log->debug("FrostMessageRequester::HandleAllData could not insert message into database.  SQLite error "+trans.GetLastErrorStr());
 			}
 
-			st.Finalize();
+			trans.Finalize(st);
 
 		}	// if validmessage
 		else
@@ -172,9 +206,30 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 		m_log->error("FrostMessageRequester::HandleAllData error parsing FrostMessage XML file : "+message["Identifier"]);
 	}
 
-	m_db->Execute("COMMIT;");
+	trans.Commit();
+
+	if(trans.IsSuccessful()==false && constraintfailure==false)
+	{
+		m_log->error("FrostMessageRequester::HandleAllData transaction failed with SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
+	}
+
+	if(constraintfailure==true)
+	{
+		st=m_db->Prepare("INSERT INTO tblFrostMessageRequests(BoardID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
+		st.Bind(0,idparts[3]);
+		st.Bind(1,idparts[1]);
+		st.Bind(2,idparts[2]);
+		st.Step();
+	}
+
+	for(std::vector<std::pair<long,long> >::const_iterator i=buildthreads.begin(); i!=buildthreads.end(); i++)
+	{
+		tb.Build((*i).first,(*i).second,true);
+	}
 
 	RemoveFromRequestList(idparts[1]+"|"+idparts[2]+"|"+idparts[3]);
+	// also delete from list so the list doesn't grow too large
+	m_ids.erase(idparts[1]+"|"+idparts[2]+"|"+idparts[3]);
 
 	return true;
 
@@ -201,6 +256,8 @@ const bool FrostMessageRequester::HandleGetFailed(FCPv2::Message &message)
 	m_log->trace("FrostMessageRequester::HandleGetFailed handled failure "+message["Code"]+" of "+message["Identifier"]);
 
 	RemoveFromRequestList(idparts[1]+"|"+idparts[2]+"|"+idparts[3]);
+	// also delete from list so the list doesn't grow too large
+	m_ids.erase(idparts[1]+"|"+idparts[2]+"|"+idparts[3]);
 
 	return true;
 
@@ -211,6 +268,7 @@ void FrostMessageRequester::Initialize()
 	m_fcpuniquename="FrostMessageRequester";
 	std::string tempval("");
 	m_maxrequests=0;
+	m_reverserequest=true;
 	Option option(m_db);
 
 	option.GetInt("FrostMaxMessageRequests",m_maxrequests);
@@ -255,79 +313,92 @@ void FrostMessageRequester::Initialize()
 
 }
 
-void FrostMessageRequester::PopulateIDList()
+void FrostMessageRequester::PopulateBoardRequestIDs(SQLite3DB::Transaction &trans, const long boardid, const Poco::DateTime &date)
 {
+	long expectedindex=0;
+	std::string boardidstr("");
+	std::string lastid("");
+	std::string day("");
 
-	Poco::DateTime pastdate;
-	long expectedindex;
-	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardID, BoardName FROM tblBoard WHERE BoardName LIKE ? || '%' AND SaveReceivedMessages='true';");
-	SQLite3DB::Statement st2=m_db->Prepare("SELECT Day, RequestIndex FROM tblFrostMessageRequests WHERE BoardID=? AND Day=? ORDER BY RequestIndex ASC;");
+	StringFunctions::Convert(boardid,boardidstr);
+	day=Poco::DateTimeFormatter::format(date,"%Y-%m-%d");
 
-	m_db->Execute("BEGIN;");
+	m_log->trace("FrostMessageRequester::PopulateBoardRequestIDs populating requests for "+day+" for board id "+boardidstr);
 
-	st.Bind(0,m_boardprefix);
-	st.Step();
+	SQLite3DB::Statement st=m_db->Prepare("SELECT RequestIndex FROM tblFrostMessageRequests WHERE BoardID=? AND Day=? ORDER BY RequestIndex ASC;");
+	st.Bind(0,boardid);
+	st.Bind(1,day);
 
-	while(st.RowReturned())
+	trans.Step(st);
+	while(st.RowReturned() && trans.IsSuccessful())
 	{
-		int boardid=-1;
-		std::string boardidstr="";
-		std::string boardname="";
+		int thisindex=-1;
 
-		st.ResultInt(0,boardid);
-		st.ResultText(1,boardname);
+		st.ResultInt(0,thisindex);
 
-		StringFunctions::Convert(boardid,boardidstr);
-
-		for(long backdays=0; backdays<=m_maxdaysbackward; backdays++)
+		// fill in indexes we haven't downloaded yet
+		if(expectedindex<thisindex)
 		{
-
-			pastdate=Poco::DateTime()-Poco::Timespan(backdays,0,0,0,0);
-			std::string day=Poco::DateTimeFormatter::format(pastdate,"%Y-%m-%d");
-
-			st2.Bind(0,boardid);
-			st2.Bind(1,day);
-			st2.Step();
-
-			expectedindex=0;
-			while(st2.RowReturned())
-			{
-				int thisindex=-1;
-				st2.ResultText(0,day);
-				st2.ResultInt(1,thisindex);
-
-				// fill in indexes we haven't downloaded yet
-				if(expectedindex<thisindex)
-				{
-					for(long i=expectedindex; i<thisindex; i++)
-					{
-						std::string istr="";
-						StringFunctions::Convert(i,istr);
-						m_ids[boardidstr+"|"+istr+"|"+day].m_requested=false;
-					}
-				}
-
-				expectedindex=thisindex+1;
-
-				st2.Step();
-
-			}
-			st2.Reset();
-
-			// fill in remaining indexes
-			for(long i=expectedindex; i<=expectedindex+m_maxindexesforward; i++)
+			for(long i=expectedindex; i<thisindex; i++)
 			{
 				std::string istr="";
-				StringFunctions::Convert(i,istr);	
-				m_ids[boardidstr+"|"+istr+"|"+day].m_requested=false;
+				StringFunctions::Convert(i,istr);
+				m_ids[day+"|"+istr+"|"+boardidstr];
+				lastid=day+"|"+istr+"|"+boardidstr;
 			}
-
 		}
 
+		expectedindex=thisindex+1;
 		st.Step();
 	}
 
-	m_db->Execute("COMMIT;");
+	// fill in remaining indexes
+	for(long i=expectedindex; i<=expectedindex+m_maxindexesforward; i++)
+	{
+		std::string istr="";
+		StringFunctions::Convert(i,istr);	
+		m_ids[day+"|"+istr+"|"+boardidstr];
+		lastid=day+"|"+istr+"|"+boardidstr;
+	}
+
+	// we'll use the flag to indicate that when we start this request, we want to populate indexes for the previous day for this board
+	// the flag is only set on the last index for a board for a given day.
+	m_ids[lastid].m_flag=true;
+
+}
+
+void FrostMessageRequester::PopulateIDList()
+{
+
+	Poco::DateTime date;
+	long expectedindex;
+	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardID, BoardName FROM tblBoard WHERE BoardName LIKE ? || '%' AND SaveReceivedMessages='true';");
+	SQLite3DB::Statement st2=m_db->Prepare("SELECT Day, RequestIndex FROM tblFrostMessageRequests WHERE BoardID=? AND Day=? ORDER BY RequestIndex ASC;");
+	SQLite3DB::Transaction trans(m_db);
+
+	// only selects, deferred OK
+	trans.Begin();
+
+	st.Bind(0,m_boardprefix);
+	trans.Step(st);
+
+	while(st.RowReturned() && trans.IsSuccessful())
+	{
+		int boardid=-1;
+		//std::string boardname="";
+		std::string lastid="";
+
+		st.ResultInt(0,boardid);
+		//st.ResultText(1,boardname);
+
+		PopulateBoardRequestIDs(trans,boardid,date);
+
+		trans.Step(st);
+	}
+
+	trans.Finalize(st);
+	trans.Finalize(st2);
+	trans.Commit();
 
 }
 
@@ -340,10 +411,10 @@ void FrostMessageRequester::StartRequest(const std::string &id)
 
 	StringFunctions::Split(id,"|",idparts);
 
-	Poco::DateTimeParser::tryParse(idparts[2],date,tz);
+	Poco::DateTimeParser::tryParse(idparts[0],date,tz);
 
 	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardName, FrostPublicKey FROM tblBoard WHERE BoardID=?;");
-	st.Bind(0,idparts[0]);
+	st.Bind(0,idparts[2]);
 	st.Step();
 
 	if(st.RowReturned())
@@ -387,5 +458,27 @@ void FrostMessageRequester::StartRequest(const std::string &id)
 	}
 
 	m_ids[id].m_requested=true;
+
+	// populate previous day indexes for this board
+	if(m_ids[id].m_flag)
+	{
+		// populate previous day indexes for this board
+		Poco::DateTime today;
+		SQLite3DB::Transaction trans(m_db);
+		date-=Poco::Timespan(1,0,0,0,0);
+		Poco::Timespan ts=today-date;
+
+		trans.Begin();
+
+		if(ts.days()<=m_maxdaysbackward)
+		{
+			long boardid=0;
+			StringFunctions::Convert(idparts[2],boardid);
+			PopulateBoardRequestIDs(trans,boardid,date);
+		}
+
+		trans.Commit();
+
+	}
 
 }

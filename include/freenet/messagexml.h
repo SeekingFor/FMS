@@ -31,6 +31,7 @@ public:
 	const std::vector<std::string> GetBoards() const				{ return m_boards; }
 	const std::map<long,std::string> GetInReplyTo() const			{ return m_inreplyto; }
 	const std::vector<fileattachment> GetFileAttachments() const	{ return m_fileattachments; }
+	const std::string GetLastError() const							{ return m_lasterror; }
 
 	void SetDate(const std::string &date)								{ m_date=date; }
 	void SetTime(const std::string &time)								{ m_time=time; }
@@ -54,6 +55,7 @@ protected:
 	std::map<long,std::string> m_inreplyto;
 	std::vector<fileattachment> m_fileattachments;
 	std::string m_body;
+	std::string m_lasterror;
 
 };
 

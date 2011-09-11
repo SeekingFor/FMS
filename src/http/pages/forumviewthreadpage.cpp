@@ -47,6 +47,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	std::string postattachments("");
 	std::string trusttable("");
 	bool showsignatures=false;
+	bool showavatars=false;
 	Option opt(m_db);
 	std::vector<std::string> skipspace;
 	SQLite3DB::Statement fileattachmentst=m_db->Prepare("SELECT Key, Size FROM tblMessageFileAttachment WHERE MessageID=?;");
@@ -54,6 +55,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	SQLite3DB::Statement truststboth=m_db->Prepare("SELECT tblIdentityTrust.LocalMessageTrust, tblIdentity.PeerMessageTrust, tblIdentityTrust.LocalTrustListTrust, tblIdentity.PeerTrustListTrust FROM tblIdentity LEFT JOIN tblIdentityTrust ON tblIdentity.IdentityID=tblIdentityTrust.IdentityID WHERE tblIdentity.IdentityID=? AND tblIdentityTrust.LocalIdentityID=?;");
 
 	opt.GetBool("ForumShowSignatures",showsignatures);
+	opt.GetBool("ForumShowAvatars",showavatars);
 
 	skipspace.push_back(" ");
 
@@ -427,11 +429,29 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 			{
 				postvars["THREADPOSTSIGNATUREDIV"]="";
 			}
+			if(showavatars==true)
+			{
+				std::vector<std::string> parts;
+				StringFunctions::SplitMultiple(postlink,"@,",parts);
+				if(parts.size()>1)
+				{
+					postvars["THREADPOSTAUTHORAVATAR"]="<img src=\"showavatar.htm?idpart="+StringFunctions::UriEncode(parts[1])+"\">";
+				}
+				else
+				{
+					postvars["THREADPOSTAUTHORAVATAR"]="";
+				}
+			}
+			else
+			{
+				postvars["THREADPOSTAUTHORAVATAR"]="";
+			}
 		}
 		else
 		{
 			postvars["THREADPOSTAUTHORNAME"]=FixAuthorName(fromname);
 			postvars["THREADPOSTSIGNATUREDIV"]="";
+			postvars["THREADPOSTAUTHORAVATAR"]="";
 		}
 		postvars["THREADPOSTTITLE"]=SanitizeOutput(subject,skipspace);
 		if(identityidstr!="" && postlink!="")

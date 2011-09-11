@@ -111,6 +111,22 @@ const std::string OptionsPage::GenerateContent(const std::string &method, const 
 					tdir.setFileName(newvalues[i]);
 					m_trans->LoadLocalizedTranslation(tdir.toString());
 				}
+
+				if(options[i]=="MessageDownloadMaxDaysBackward")
+				{
+					m_db->Execute("INSERT OR IGNORE\
+								INTO tblMessageRequests (IdentityID, Day, RequestIndex, Found)\
+								SELECT M.IdentityID, M.InsertDate, M.MessageIndex, 'true'\
+								FROM tblMessage M\
+								LEFT JOIN tblMessageRequests R\
+									ON M.IdentityID=R.IdentityID\
+									AND M.MessageIndex=R.RequestIndex\
+									AND M.InsertDate=R.Day\
+								WHERE R.IdentityID IS NULL\
+								AND M.IdentityID IS NOT NULL\
+								AND M.InsertDate >= date('now',(SELECT -MAX(OptionValue,0) FROM tblOption \
+									WHERE Option='MessageDownloadMaxDaysBackward')||' days');");
+				}
 			}
 		}
 

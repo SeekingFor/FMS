@@ -23,7 +23,7 @@ std::string MessageXML::GetXML()
 	root->appendChild(XMLCreateCDATAElement(doc,"MessageID",m_messageid));
 	root->appendChild(XMLCreateCDATAElement(doc,"ReplyBoard",m_replyboard));
 	
-	root->appendChild(XMLCreateCDATAElement(doc,"Body",m_body));
+	root->appendChild(XMLCreateCDATAElement(doc,"Body",SanitizeMultilineString(m_body)));
 
 	Poco::AutoPtr<Poco::XML::Element> brds=doc->createElement("Boards");
 
@@ -78,6 +78,7 @@ void MessageXML::Initialize()
 	m_inreplyto.clear();
 	m_body="";
 	m_fileattachments.clear();
+	m_lasterror="";
 }
 
 const bool MessageXML::ParseXML(const std::string &xml)
@@ -222,6 +223,10 @@ const bool MessageXML::ParseXML(const std::string &xml)
 
 		parsed=true;
 
+	}
+	catch(Poco::Exception &e)
+	{
+		m_lasterror="Caught exception - "+e.displayText();
 	}
 	catch(...)
 	{

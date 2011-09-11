@@ -26,16 +26,10 @@ void IdentityInserter::CheckForNeededInsert()
 	Poco::DateTime date;
 	Poco::DateTime nowplus30min;
 
-	// set date to 1 hour back
-	date-=Poco::Timespan(0,1,0,0,0);
+	// always set date to midnight of current day, so we'll only insert 1 identity file per day
+	date.assign(date.year(),date.month(),date.day(),0,0,0);
 	nowplus30min+=Poco::Timespan(0,0,30,0,0);
 
-	// Because of importance of Identity.xml, if we are now at the next day we immediately want to insert identities so change the date back to 12:00 AM so we find all identities not inserted yet today
-	if(date.day()!=now.day())
-	{
-		date=now;
-		date.assign(date.year(),date.month(),date.day(),0,0,0);
-	}
 	// +30 minutes is the next day - we want to select identities that haven't inserted yet in the new day so set date to midnight of the next day
 	if(nowplus30min.day()!=now.day())
 	{

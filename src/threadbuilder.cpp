@@ -14,13 +14,14 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 	std::string logmessage("");	// temp var to help track down exactly when corruption occurrs
 	std::string ll("");
 	Option option(m_db);
+	SQLite3DB::Transaction trans(m_db);
 
 	option.Get("LogLevel",ll);
 
 	mt.Load(messageid,boardid,bydate);
 	m_threadmessages=mt.GetNodes();
 
-	m_db->Execute("BEGIN;");
+	trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 
 	// find threadid of this mesage if it already exists in a thread
 	SQLite3DB::Statement st=m_db->Prepare("SELECT tblThread.ThreadID FROM tblThread INNER JOIN tblThreadPost ON tblThread.ThreadID=tblThreadPost.ThreadID WHERE tblThread.BoardID=? AND tblThreadPost.MessageID=?;");
@@ -37,7 +38,7 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 		logmessage+="initial bound boardid=" + temp1 + " messageid=" + temp2 + " | ";
 	}
 
-	st.Step();
+	trans.Step(st);
 	if(st.RowReturned())
 	{
 		st.ResultInt(0,threadid);
@@ -52,13 +53,13 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 	}
 	else
 	{
-		st.Reset();
+		trans.Reset(st);
 		// message doesn't exist in a thread, try to find a message in the thread that is already in a thread
 		for(std::vector<MessageThread::threadnode>::const_iterator i=m_threadmessages.begin(); i!=m_threadmessages.end() && threadid==-1; i++)
 		{
 			st.Bind(0,boardid);
 			st.Bind(1,(*i).m_messageid);
-			st.Step();
+			trans.Step(st);
 
 			if(ll=="8")
 			{
@@ -92,17 +93,17 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 				}
 			}
 
-			st.Reset();
+			trans.Reset(st);
 
 		}
-		st.Finalize();
+		trans.Finalize(st);
 
 		// thread doesn't exist - create it
 		if(threadid==-1)
 		{
 			st=m_db->Prepare("INSERT INTO tblThread(BoardID) VALUES(?);");
 			st.Bind(0,boardid);
-			st.Step(true);
+			trans.Step(st,true);
 			threadid=st.GetLastInsertRowID();
 
 			if(ll=="8")
@@ -124,7 +125,7 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 		st2.Bind(0,m_threadmessages[0].m_messageid);
 		st2.Bind(1,m_threadmessages[m_threadmessages.size()-1].m_messageid);
 		st2.Bind(2,threadid);
-		st2.Step();
+		trans.Step(st2);
 
 		if(ll=="8")
 		{
@@ -147,8 +148,8 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 			deleteotherst.Bind(0,threadid);
 			deleteotherst.Bind(1,boardid);
 			deleteotherst.Bind(2,(*i).m_messageid);
-			deleteotherst.Step();
-			deleteotherst.Reset();
+			trans.Step(deleteotherst);
+			trans.Reset(deleteotherst);
 
 			if(ll=="8")
 			{
@@ -163,8 +164,8 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 			st4.Bind(0,threadid);
 			st4.Bind(1,(*i).m_messageid);
 			st4.Bind(2,count);
-			st4.Step();
-			st4.Reset();
+			trans.Step(st4);
+			trans.Reset(st4);
 
 			if(ll=="8")
 			{
@@ -184,7 +185,7 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 	{
 		SQLite3DB::Statement st2=m_db->Prepare("DELETE FROM tblThread WHERE ThreadID=?;");
 		st2.Bind(0,threadid);
-		st2.Step();
+		trans.Step(st2);
 
 		if(ll=="8")
 		{
@@ -197,13 +198,20 @@ const bool ThreadBuilder::Build(const long messageid, const long boardid, const 
 		m_log->trace("ThreadBuilder::Build deleted thread");
 	}
 
-	st.Finalize();
+	trans.Finalize(st);
 
-	m_db->Execute("COMMIT;");
+	trans.Commit();
 
-	if(ll=="8")
+	if(trans.IsSuccessful()==false)
 	{
-		m_log->trace(logmessage);
+		m_log->error("ThreadBuilder::Build transaction failed with SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
+	}
+	else
+	{
+		if(ll=="8")
+		{
+			m_log->trace(logmessage);
+		}
 	}
 
 	return true;

@@ -21,6 +21,8 @@
 #ifndef _EasyBMP_BMP_h_
 #define _EasyBMP_BMP_h_
 
+#include <vector>
+
 bool SafeFread( char* buffer, int size, int number, FILE* fp );
 bool EasyBMPcheckDataSize( void );
 
@@ -40,17 +42,21 @@ class BMP
  ebmpBYTE* MetaData2;
  int SizeOfMetaData2;
    
- bool Read32bitRow( ebmpBYTE* Buffer, int BufferSize, int Row );   
- bool Read24bitRow( ebmpBYTE* Buffer, int BufferSize, int Row );   
- bool Read8bitRow(  ebmpBYTE* Buffer, int BufferSize, int Row );  
- bool Read4bitRow(  ebmpBYTE* Buffer, int BufferSize, int Row );  
+ bool Read32bitRow( ebmpBYTE* Buffer, int BufferSize, int Row );
+ bool Read24bitRow( ebmpBYTE* Buffer, int BufferSize, int Row );
+ bool Read8bitRow(  ebmpBYTE* Buffer, int BufferSize, int Row );
+ bool Read4bitRow(  ebmpBYTE* Buffer, int BufferSize, int Row );
  bool Read1bitRow(  ebmpBYTE* Buffer, int BufferSize, int Row );
    
- bool Write32bitRow( ebmpBYTE* Buffer, int BufferSize, int Row );   
- bool Write24bitRow( ebmpBYTE* Buffer, int BufferSize, int Row );   
- bool Write8bitRow(  ebmpBYTE* Buffer, int BufferSize, int Row );  
- bool Write4bitRow(  ebmpBYTE* Buffer, int BufferSize, int Row );  
+ bool Write32bitRow( ebmpBYTE* Buffer, int BufferSize, int Row );
+ bool Write24bitRow( ebmpBYTE* Buffer, int BufferSize, int Row );
+ bool Write8bitRow(  ebmpBYTE* Buffer, int BufferSize, int Row );
+ bool Write4bitRow(  ebmpBYTE* Buffer, int BufferSize, int Row );
  bool Write1bitRow(  ebmpBYTE* Buffer, int BufferSize, int Row );
+
+ bool WriteLittleEndian(std::vector<unsigned char> &data, ebmpBYTE value);
+ bool WriteLittleEndian(std::vector<unsigned char> &data, ebmpWORD value);
+ bool WriteLittleEndian(std::vector<unsigned char> &data, ebmpDWORD value);
  
  ebmpBYTE FindClosestColor( RGBApixel& input );
 
@@ -77,6 +83,7 @@ class BMP
  bool SetSize( int NewWidth, int NewHeight );
  bool SetBitDepth( int NewDepth );
  bool WriteToFile( const char* FileName );
+ bool WriteToVector( std::vector<unsigned char> &data );
  bool ReadFromFile( const char* FileName );
  
  RGBApixel GetColor( int ColorNumber );

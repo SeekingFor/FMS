@@ -56,6 +56,9 @@ const bool DB::Close()
 		}
 		else
 		{
+			std::string errmsg("");
+			int err=GetLastExtendedError(errmsg);
+			HandleError(err,errmsg,"DB::Close");
 			return false;
 		}
 	}
@@ -79,6 +82,9 @@ const bool DB::Execute(const std::string &sql)
 		}
 		else
 		{
+			std::string errmsg("");
+			int err=GetLastExtendedError(errmsg);
+			HandleError(err,errmsg,"DB::Execute");
 			return false;
 		}
 	}
@@ -103,6 +109,9 @@ const bool DB::ExecuteInsert(const std::string &sql, long &insertid)
 		}
 		else
 		{
+			std::string errmsg("");
+			int err=GetLastExtendedError(errmsg);
+			HandleError(err,errmsg,"DB::ExecuteInsert");
 			return false;
 		}
 	}
@@ -130,6 +139,24 @@ const int DB::GetLastError(std::string &errormessage)
 	}
 }
 
+const int DB::GetLastExtendedError(std::string &errormessage)
+{
+	if(IsOpen())
+	{
+		int errcode=sqlite3_extended_errcode(m_db);
+		const char *errmsg=sqlite3_errmsg(m_db);
+		if(errmsg)
+		{
+			errormessage=errmsg;
+		}
+		return errcode;
+	}
+	else
+	{
+		return SQLITE_OK;
+	}
+}
+
 void DB::GetProfileData(std::map<std::string,ProfileData> &profiledata, const bool cleardata)
 {
 	Poco::ScopedLock<Poco::FastMutex> guard(m_profilemutex);
@@ -137,6 +164,19 @@ void DB::GetProfileData(std::map<std::string,ProfileData> &profiledata, const bo
 	if(cleardata==true)
 	{
 		m_profiledata.clear();
+	}
+}
+
+void DB::HandleError(const int extendederrorcode, const std::string &errormessage, const std::string &extramessage)
+{
+	// which errors are really fatal?
+	if((extendederrorcode & SQLITE_NOMEM)==SQLITE_NOMEM)
+	{
+		throw Exception("SQLite3DB SQLITE_NOMEM memory allocation exception. "+errormessage+" "+extramessage);
+	}
+	else if((extendederrorcode & SQLITE_IOERR_NOMEM)==SQLITE_IOERR_NOMEM)
+	{
+		throw Exception("SQLite3DB SQLITE_IOERR_NOMEM memory allocation exception. "+errormessage+" "+extramessage);
 	}
 }
 
@@ -170,6 +210,9 @@ const bool DB::Open(const std::string &filename)
 		}
 		else
 		{
+			std::string errmsg("");
+			int err=GetLastExtendedError(errmsg);
+			HandleError(err,errmsg,"DB::Open");
 			return false;
 		}
 	}
@@ -193,10 +236,13 @@ Statement DB::Prepare(const std::string &sql)
 #endif
 		if(m_lastresult==SQLITE_OK)
 		{
-			return Statement(statement);
+			return Statement(statement,this);
 		}
 		else
 		{
+			std::string errmsg("");
+			int err=GetLastExtendedError(errmsg);
+			HandleError(err,errmsg,"DB::Prepare");
 			return Statement();
 		}
 	}
@@ -236,6 +282,9 @@ Recordset DB::Query(const std::string &sql)
 		else
 		{
 			sqlite3_free_table(rs);
+			std::string errmsg("");
+			int err=GetLastExtendedError(errmsg);
+			HandleError(err,errmsg,"DB::Query");
 			return Recordset();
 		}
 	}

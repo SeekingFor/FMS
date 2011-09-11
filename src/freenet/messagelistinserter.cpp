@@ -87,6 +87,10 @@ const bool MessageListInserter::HandlePutFailed(FCPv2::Message &message)
 
 	if(message["Fatal"]=="true" || message["Code"]=="9")
 	{
+		std::vector<std::string> idparts2;
+		StringFunctions::Split(idparts[idparts.size()-1],"-",idparts2);
+		StringFunctions::Convert(idparts2[idparts2.size()-1],index);
+
 		SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblMessageListInserts(LocalIdentityID,Day,InsertIndex,Inserted) VALUES(?,?,?,'false');");
 		st.Bind(0,localidentityid);
 		st.Bind(1,idparts[2]);
@@ -111,13 +115,17 @@ const bool MessageListInserter::HandlePutSuccessful(FCPv2::Message &message)
 	std::vector<std::string> idparts;
 	std::vector<std::string> uriparts;
 	long localidentityid;
-	long index;
+	long index=0;
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Split(message["URI"],"/",uriparts);
 
 	StringFunctions::Convert(idparts[1],localidentityid);
-	StringFunctions::Convert(uriparts[2],index);
+	//StringFunctions::Convert(uriparts[2],index);
+
+	std::vector<std::string> uriparts1;
+	StringFunctions::Split(uriparts[1],"-",uriparts1);
+	StringFunctions::Convert(uriparts1[uriparts.size()-1],index);
 
 	SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblMessageListInserts(LocalIdentityID,Day,InsertIndex,Inserted) VALUES(?,?,?,'true');");
 	st.Bind(0,localidentityid);
@@ -183,15 +191,17 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	int index;
 	std::string indexstr;
 	int messagecount=0;
+	SQLite3DB::Transaction trans(m_db);
 
 	date-=Poco::Timespan(m_daysbackward,0,0,0,0);
 	StringFunctions::Convert(localidentityid,localidentityidstr);
 
-	m_db->Execute("BEGIN;");
+	// only selects, deferred OK
+	trans.Begin();
 
 	SQLite3DB::Statement st=m_db->Prepare("SELECT PrivateKey FROM tblLocalIdentity WHERE LocalIdentityID=?;");
 	st.Bind(0,localidentityid);
-	st.Step();
+	trans.Step(st);
 	if(st.RowReturned())
 	{
 		st.ResultText(0,privatekey);
@@ -200,7 +210,7 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	st=m_db->Prepare("SELECT Day, InsertIndex, MessageXML FROM tblMessageInserts INNER JOIN tblLocalIdentity ON tblMessageInserts.LocalIdentityID=tblLocalIdentity.LocalIdentityID WHERE tblLocalIdentity.LocalIdentityID=? AND Day>=? AND tblMessageInserts.MessageUUID IS NOT NULL;");
 	st.Bind(0,localidentityid);
 	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
-	st.Step();
+	trans.Step(st);
 
 	while(st.RowReturned())
 	{
@@ -217,13 +227,13 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 
 		mlxml.AddMessage(day,index,messxml.GetBoards());
 
-		st.Step();
+		trans.Step(st);
 		messagecount++;
 	}
-	st.Finalize();
-
-	m_db->Execute("COMMIT;");
-	m_db->Execute("BEGIN;");
+	trans.Finalize(st);
+	trans.Commit();
+	// only selects, deferred OK
+	trans.Begin();
 
 	// Add any other messages from this local identity that were inserted by another client
 	st=m_db->Prepare("SELECT MessageID, InsertDate, MessageIndex \
@@ -236,7 +246,7 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	st.Bind(0,localidentityid);
 	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Bind(2,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
-	st.Step();
+	trans.Step(st);
 
 	SQLite3DB::Statement st2=m_db->Prepare("SELECT BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
 
@@ -252,25 +262,27 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		st.ResultInt(2,index);
 		
 		st2.Bind(0,messageid);
-		st2.Step();
+		trans.Step(st2);
 		while(st2.RowReturned())
 		{
 			std::string boardname="";
 			st2.ResultText(0,boardname);
 			StringFunctions::LowerCase(boardname,boardname);
 			boardlist.push_back(boardname);
-			st2.Step();
+			trans.Step(st2);
 		}
-		st2.Reset();
+		trans.Reset(st2);
 
 		mlxml.AddMessage(day,index,boardlist);
 
-		st.Step();
+		trans.Step(st);
 	}
-	st.Finalize();
+	trans.Finalize(st);
+	trans.Finalize(st2);
 
-	m_db->Execute("COMMIT;");
-	m_db->Execute("BEGIN;");
+	trans.Commit();
+	// only selects, deferred OK
+	trans.Begin();
 
 	if(messagecount<600)
 	{
@@ -278,9 +290,10 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		limitstr << (600-messagecount);
 
 		st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID, InsertDate FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL ORDER BY MessageDate DESC, MessageTime DESC LIMIT "+limitstr.str()+";");
-		st.Step();
+		st2=m_db->Prepare("SELECT BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
+		trans.Step(st);
 
-		while(st.RowReturned())
+		while(st.RowReturned() && trans.IsSuccessful())
 		{
 			std::string day="";
 			int index=0;
@@ -296,16 +309,16 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 			st.ResultText(4,insertdate);
 
 			st2.Bind(0,messageid);
-			st2.Step();
-			while(st2.RowReturned())
+			trans.Step(st2);
+			while(st2.RowReturned() && trans.IsSuccessful())
 			{
 				std::string boardname="";
 				st2.ResultText(0,boardname);
 				StringFunctions::LowerCase(boardname,boardname);
 				boardlist.push_back(boardname);
-				st2.Step();
+				trans.Step(st2);
 			}
-			st2.Reset();
+			trans.Reset(st2);
 
 			// TODO - remove insertdate empty check sometime after 0.3.32 release and get rid of using day
 			if(insertdate!="")
@@ -317,7 +330,7 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 				mlxml.AddExternalMessage(publickey,day,index,boardlist);
 			}
 
-			st.Step();
+			trans.Step(st);
 		}
 	}
 
@@ -335,14 +348,16 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	st.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
 	st.Bind(2,localidentityid);
 	st.Bind(3,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
-	st.Step();
+	trans.Step(st);
 	if(st.ResultNull(0)==false)
 	{
 		st.ResultInt(0,index);
 	}
 	StringFunctions::Convert(index,indexstr);
 
-	m_db->Execute("COMMIT;");
+	trans.Finalize(st);
+	trans.Finalize(st2);
+	trans.Commit();
 
 	xmlstr=mlxml.GetXML();
 
@@ -364,7 +379,8 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 
 		message.SetName("ClientPutComplexDir");
 		// don't insert into edition 0 because 1208 has major issues with this
-		message["URI"]="USK"+privatekey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|MessageList/"+indexstr+"/";
+		//message["URI"]="USK"+privatekey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|MessageList/"+indexstr+"/";
+		message["URI"]="SSK"+privatekey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|MessageList-"+indexstr;
 		message["Identifier"]=m_fcpuniquename+"|"+localidentityidstr+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|"+message["URI"];
 		message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 		message["DefaultName"]="MessageList.xml";

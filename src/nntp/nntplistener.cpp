@@ -3,6 +3,7 @@
 #include "../../include/option.h"
 #include "../../include/global.h"
 #include "../../include/stringfunctions.h"
+#include "../../../include/fmsapp.h"
 
 #include <Poco/Net/SocketAddress.h>
 
@@ -40,64 +41,74 @@ void NNTPListener::run()
 
 	m_log->debug("NNTPListener::run thread started.");
 
-	LoadDatabase();
-
-	StartListen();
-
-	do
+	try
 	{
-		// reset values
-		highsocket=0;
-		tv.tv_sec=1;
-		tv.tv_usec=0;
 
-		// clear fd set
-		FD_ZERO(&readfs);
+		LoadDatabase(m_log);
 
-		// put all listen sockets on the fd set
-		for(listeni=m_listensockets.begin(); listeni!=m_listensockets.end(); listeni++)
+		StartListen();
+
+		do
 		{
-			FD_SET((*listeni),&readfs);
-			if((*listeni)>highsocket)
-			{
-				highsocket=(*listeni);
-			}
-		}
+			// reset values
+			highsocket=0;
+			tv.tv_sec=1;
+			tv.tv_usec=0;
 
-		// see if any connections are waiting
-		rval=select(highsocket+1,&readfs,0,0,&tv);
+			// clear fd set
+			FD_ZERO(&readfs);
 
-		// check for new connections
-		if(rval>0)
-		{
+			// put all listen sockets on the fd set
 			for(listeni=m_listensockets.begin(); listeni!=m_listensockets.end(); listeni++)
 			{
-				if(FD_ISSET((*listeni),&readfs))
+				FD_SET((*listeni),&readfs);
+				if((*listeni)>highsocket)
 				{
-					SOCKET newsock;
-					struct sockaddr_storage addr;
-					socklen_t addrlen=sizeof(addr);
-					newsock=accept((*listeni),(struct sockaddr *)&addr,&addrlen);
-					m_log->information("NNTPListener::run NNTP client connected");
-					m_connections.Start(new NNTPConnection(newsock),"NNTPConnection");
+					highsocket=(*listeni);
 				}
 			}
+
+			// see if any connections are waiting
+			rval=select(highsocket+1,&readfs,0,0,&tv);
+
+			// check for new connections
+			if(rval>0)
+			{
+				for(listeni=m_listensockets.begin(); listeni!=m_listensockets.end(); listeni++)
+				{
+					if(FD_ISSET((*listeni),&readfs))
+					{
+						SOCKET newsock;
+						struct sockaddr_storage addr;
+						socklen_t addrlen=sizeof(addr);
+						newsock=accept((*listeni),(struct sockaddr *)&addr,&addrlen);
+						m_log->information("NNTPListener::run NNTP client connected");
+						m_connections.Start(new NNTPConnection(newsock),"NNTPConnection");
+					}
+				}
+			}
+
+		}while(!IsCancelled() && m_listensockets.size()>0);
+
+		m_connections.Cancel();
+		m_connections.Join();
+
+		for(listeni=m_listensockets.begin(); listeni!=m_listensockets.end(); listeni++)
+		{
+			#ifdef _WIN32
+			closesocket((*listeni));
+			#else
+			close((*listeni));
+			#endif
 		}
+		m_listensockets.clear();
 
-	}while(!IsCancelled() && m_listensockets.size()>0);
-
-	m_connections.Cancel();
-	m_connections.Join();
-
-	for(listeni=m_listensockets.begin(); listeni!=m_listensockets.end(); listeni++)
-	{
-		#ifdef _WIN32
-		closesocket((*listeni));
-		#else
-		close((*listeni));
-		#endif
 	}
-	m_listensockets.clear();
+	catch(SQLite3DB::Exception &e)
+	{
+		m_log->fatal("NNTPListener caught SQLite3DB::Exception "+e.what());
+		((FMSApp *)&FMSApp::instance())->Terminate();
+	}
 
 	m_log->debug("NNTPListener::run thread exiting.");
 

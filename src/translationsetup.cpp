@@ -120,6 +120,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.ForumDetectLinks.description","Attempt to detect links to CHKs in plain text messages.");
 	st->SetDefault("web.option.ForumShowSmilies.description","Change plain text emoticons into smiley images.");
 	st->SetDefault("web.option.ForumShowSignatures.description","Show signatures of post authors.");
+	st->SetDefault("web.option.ForumShowAvatars.description","Show system generated avatars of post authors.");
 	st->SetDefault("web.option.MaxIdentityRequests.description","Maximum number of concurrent requests for new Identity xml files");
 	st->SetDefault("web.option.MaxIdentityIntroductionRequests.description","Maximum number of concurrent identities requesting IdentityIntroduction xml files.  Each identity may have multiple requests pending.");
 	st->SetDefault("web.option.MaxIntroductionPuzzleRequests.description","Maximum number of concurrent requests for new IntroductionPuzzle xml files");
@@ -136,7 +137,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.MinPeerTrustListTrust.description","Specifies a peer trust list trust level that a peer must have before its trust list will be included in the weighted average.  Any peers below this number will be excluded from the results.");
 	st->SetDefault("web.option.LocalTrustOverridesPeerTrust.description","Set to true if you want your local trust levels to override the peer levels when determining which identities you will poll.");
 	st->SetDefault("web.option.DownloadTrustListWhenNull.description","Download trust lists from identities that you have not assigned trust list trust to.  Any new identities found in these trust lists will not be added to your known identities list.");
-	st->SetDefault("web.option.MessageDownloadMaxDaysBackward.description","The maximum number of days backward that messages will be downloaded from each identity");
+	st->SetDefault("web.option.MessageDownloadMaxDaysBackward.description","The maximum number of days backward that messages will be downloaded from each identity.");
 	st->SetDefault("web.option.MessageListDaysBackward.description","The number of days backward that messages you have inserted will appear in your Message Lists");
 	st->SetDefault("web.option.MaxPeerMessagesPerDay.description","The maximum number of messages you will download from each peer on a given day.");
 	st->SetDefault("web.option.MaxBoardsPerMessage.description","The maximum number of boards a received message may be sent to.  Boards over this limit will be ignored.");

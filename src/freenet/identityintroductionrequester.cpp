@@ -43,6 +43,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 	std::vector<char> data;
 	long datalength;
 	IdentityIntroductionXML xml;
+	SQLite3DB::Transaction trans(m_db);
 	const std::string UUID = GetIDFromIdentifier(message["Identifier"]);
 
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -59,31 +60,33 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 	// receive the file
 	m_fcp->Receive(data,datalength);
 
+	trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
+
 	// parse file into xml and update the database
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 		// mark puzzle found
 		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblIntroductionPuzzleInserts SET FoundSolution='true' WHERE UUID=?;");
 		st.Bind(0,UUID);
-		st.Step();
-		st.Finalize();
+		trans.Step(st);
+		trans.Finalize(st);
 
 		if(ssk.TryParse(xml.GetIdentity())==true)
 		{
 			// try to find existing identity with this SSK
 			st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
 			st.Bind(0,ssk.GetBaseKey());
-			st.Step();
+			trans.Step(st);
 			if(st.RowReturned()==false)
 			{
 				// we don't already know about this id - add it
-				st.Finalize();
+				trans.Finalize(st);
 				date=Poco::Timestamp();
 				st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod,SolvedPuzzleCount) VALUES(?,?,?,1);");
 				st.Bind(0,ssk.GetBaseKey());
 				st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 				st.Bind(2,"solved captcha");
-				st.Step();
+				trans.Step(st);
 			}
 			else
 			{
@@ -91,9 +94,9 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 				st.ResultInt(0,id);
 				st=m_db->Prepare("UPDATE tblIdentity SET SolvedPuzzleCount=SolvedPuzzleCount+1 WHERE IdentityID=?;");
 				st.Bind(0,id);
-				st.Step();
+				trans.Step(st);
 			}
-			st.Finalize();
+			trans.Finalize(st);
 
 			m_log->debug("IdentityIntroductionRequester::HandleAddData parsed a valid identity.");
 		}
@@ -109,10 +112,17 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 
 		SQLite3DB::Statement st=m_db->Prepare("UPDATE tblIntroductionPuzzleInserts SET FoundSolution='true' WHERE UUID=?;");
 		st.Bind(0,UUID);
-		st.Step();
-		st.Finalize();		
+		trans.Step(st);
+		trans.Finalize(st);	
 
 		m_log->error("IdentityIntroductionRequester::HandleAllData error parsing IdentityIntroduction XML file : "+message["Identifier"]);
+	}
+
+	trans.Commit();
+
+	if(trans.IsSuccessful()==false)
+	{
+		m_log->error("IdentityIntroductionRequester::HandleAllData transaction failed with SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
 	}
 
 	// remove UUID from request list
@@ -167,27 +177,30 @@ void IdentityIntroductionRequester::Initialize()
 void IdentityIntroductionRequester::PopulateIDList()
 {
 	Poco::DateTime date;
+	SQLite3DB::Transaction trans(m_db);
 
 	date-=Poco::Timespan(1,0,0,0,0);
 
 	m_ids.clear();
 
-	m_db->Execute("BEGIN;");
+	// only selects, deferred OK
+	trans.Begin();
 
 	// get all non-solved puzzles from yesterday and today for this identity
 	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID FROM tblIntroductionPuzzleInserts WHERE Day>=? AND FoundSolution='false';");
 	st.Bind(0, Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
-	st.Step();
+	trans.Step(st);
 
 	while(st.RowReturned())
 	{
 		std::string uuid;
 		st.ResultText(0,uuid);
 		m_ids[uuid].m_requested=false;
-		st.Step();
+		trans.Step(st);
 	}
 
-	m_db->Execute("COMMIT;");
+	trans.Finalize(st);
+	trans.Commit();
 
 }
 

@@ -148,7 +148,7 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 		}
 		newthreadpostst.Reset();
 
-		rowvars["THREADSUBJECT"]="<a href=\"forumviewthread.htm?viewstate="+m_viewstate.GetViewStateID()+"&threadid="+threadidstr+"&page="+pagestr+"&boardid="+boardidstr+"\">"+SanitizeOutput(firstmessagesubject,skipspace)+"</a>";
+		rowvars["THREADSUBJECT"]="<a href=\"forumviewthread.htm?viewstate="+m_viewstate.GetViewStateID()+"&threadid="+threadidstr+"&page="+pagestr+"&boardid="+boardidstr+"\">"+SanitizeSubject(firstmessagesubject)+"</a>";
 		rowvars["STARTEDBY"]="<a href=\"peerdetails.htm?identityid="+firstmessageidentityidstr+"\">"+FixAuthorName(firstmessagefromname)+"</a>";
 		
 		replycountst.Bind(0,threadidstr);
@@ -240,4 +240,16 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 	m_templatehandler.PerformReplacements(maincontent,vars,result);
 
 	return result;
+}
+
+const std::string ForumTemplateThreadsPage::SanitizeSubject(const std::string &subject) const
+{
+	std::vector<std::string> skipspace;
+
+	if(subject.find_first_not_of(" ")!=std::string::npos)
+	{
+		skipspace.push_back(" ");
+	}
+
+	return SanitizeOutput(subject,skipspace);
 }

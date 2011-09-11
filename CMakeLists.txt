@@ -48,6 +48,7 @@ src/translationsetup.cpp
 src/db/sqlite3db.cpp
 src/db/sqlite3recordset.cpp
 src/db/sqlite3statement.cpp
+src/db/sqlite3transaction.cpp
 src/freenet/boardlistinserter.cpp
 src/freenet/boardlistrequester.cpp
 src/freenet/boardlistxml.cpp
@@ -116,6 +117,7 @@ src/http/pages/peerdetailspage.cpp
 src/http/pages/peermaintenancepage.cpp
 src/http/pages/peertrustpage.cpp
 src/http/pages/recentlyaddedpage.cpp
+src/http/pages/showavatarpage.cpp
 src/http/pages/showcaptchapage.cpp
 src/http/pages/showfilepage.cpp
 src/http/pages/showinsertedmessagepage.cpp

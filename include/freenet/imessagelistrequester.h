@@ -32,7 +32,9 @@ private:
 	virtual void StartRequest(const IDTYPE &id)=0;
 	virtual void StartRedirectRequest(FCPv2::Message &message);
 	virtual const bool HandleAllData(FCPv2::Message &message);
+	virtual void PostHandleAllData(FCPv2::Message &message)		{}
 	virtual const bool HandleGetFailed(FCPv2::Message &message);
+	virtual void PostHandleGetFailed(FCPv2::Message &message)	{}
 
 	void GetBoardList(std::map<std::string,bool> &boards, const bool forceload=false);
 	const bool CheckDateNotFuture(const std::string &datestr) const;
@@ -165,6 +167,7 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 	std::string datestr="";
 	std::vector<std::string> dateparts;
 	IDTYPE messageid;
+	SQLite3DB::Transaction trans(IIndexRequester<IDTYPE>::m_db);
 
 	GetBoardList(boards);
 
@@ -191,10 +194,10 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 
-		IIndexRequester<IDTYPE>::m_db->Execute("BEGIN;");
+		trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 
 		SQLite3DB::Statement spk=IIndexRequester<IDTYPE>::m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
-		SQLite3DB::Statement mst=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT INTO tblMessageRequests(IdentityID,Day,RequestIndex,FromMessageList,FromIdentityID) VALUES(?,?,?,'true',?);");
+		SQLite3DB::Statement mst=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT OR IGNORE INTO tblMessageRequests(IdentityID,Day,RequestIndex,FromMessageList,FromIdentityID) VALUES(?,?,?,'true',?);");
 		SQLite3DB::Statement ust=IIndexRequester<IDTYPE>::m_db->Prepare("UPDATE tblMessageRequests SET FromIdentityID=? WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
 
 		for(long i=0; i<xml.MessageCount(); i++)
@@ -242,8 +245,8 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 				mst.Bind(1,xml.GetDate(i));
 				mst.Bind(2,xml.GetIndex(i));
 				mst.Bind(3,identityid);
-				mst.Step();
-				mst.Reset();
+				trans.Step(mst);
+				trans.Reset(mst);
 
 				// We need to update ID here, in case this index was already inserted from another
 				// identity's message list.  This doesn't reset try count - maybe we should if the from
@@ -252,8 +255,8 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 				ust.Bind(1,identityid);
 				ust.Bind(2,xml.GetDate(i));
 				ust.Bind(3,xml.GetIndex(i));
-				ust.Step();
-				ust.Reset();
+				trans.Step(ust);
+				trans.Reset(ust);
 
 				m_requestindexcache[xml.GetDate(i)][identityid].insert(xml.GetIndex(i));
 
@@ -315,7 +318,7 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 					else
 					{
 						spk.Bind(0,xml.GetExternalIdentity(i));
-						spk.Step();
+						trans.Step(spk);
 
 						if(spk.RowReturned())
 						{
@@ -323,7 +326,7 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 							identityids[xml.GetExternalIdentity(i)]=thisidentityid;
 						}
 
-						spk.Reset();
+						trans.Reset(spk);
 					}
 
 					if(thisidentityid!=0 && m_requestindexcache[xml.GetExternalDate(i)][thisidentityid].find(xml.GetExternalIndex(i))==m_requestindexcache[xml.GetExternalDate(i)][thisidentityid].end())
@@ -332,8 +335,8 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 						mst.Bind(1,xml.GetExternalDate(i));
 						mst.Bind(2,xml.GetExternalIndex(i));
 						mst.Bind(3,fromidentityid);
-						mst.Step();
-						mst.Reset();
+						trans.Step(mst);
+						trans.Reset(mst);
 
 						m_requestindexcache[xml.GetExternalDate(i)][thisidentityid].insert(xml.GetExternalIndex(i));
 					}
@@ -345,18 +348,23 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 			}
 		}
 
-		st=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
+		st=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT OR IGNORE INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
 		st.Bind(0,identityid);
 		st.Bind(1,idparts[4]);
 		st.Bind(2,index);
-		st.Step();
-		st.Finalize();
+		trans.Step(st);
+		trans.Finalize(st);
 
-		spk.Finalize();
-		mst.Finalize();
-		ust.Finalize();
+		trans.Finalize(spk);
+		trans.Finalize(mst);
+		trans.Finalize(ust);
 
-		IIndexRequester<IDTYPE>::m_db->Execute("COMMIT;");
+		trans.Commit();
+
+		if(trans.IsSuccessful()==false)
+		{
+			IIndexRequester<IDTYPE>::m_log->error(IIndexRequester<IDTYPE>::m_fcpuniquename+"::HandleAllData transaction failed with SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
+		}
 
 		IIndexRequester<IDTYPE>::m_log->debug(IIndexRequester<IDTYPE>::m_fcpuniquename+"::HandleAllData parsed MessageList XML file : "+message["Identifier"]);
 	}
@@ -382,6 +390,8 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 	{
 		m_requestindexcache.erase(m_requestindexcache.begin());
 	}
+
+	PostHandleAllData(message);
 
 	return true;
 
@@ -423,6 +433,8 @@ const bool IMessageListRequester<IDTYPE>::HandleGetFailed(FCPv2::Message &messag
 	// remove this identityid from request list
 	messageid=GetIDFromIdentifier(message["Identifier"]);
 	RemoveFromRequestList(messageid);
+
+	PostHandleGetFailed(message);
 
 	return true;
 }

@@ -665,6 +665,278 @@ bool BMP::WriteToFile( const char* FileName )
  return true;
 }
 
+bool BMP::WriteLittleEndian(std::vector<unsigned char> &data, ebmpBYTE value)
+{
+	data.push_back((value & 0xff));
+	return true;
+}
+
+bool BMP::WriteLittleEndian(std::vector<unsigned char> &data, ebmpWORD value)
+{
+	data.reserve(data.size()+2);
+	for(int i=0; i<sizeof(ebmpWORD); i++)
+	{
+		unsigned char val=((value >> (i*8)) & 0xff);
+		data.push_back(val);
+	}
+	return true;
+}
+
+bool BMP::WriteLittleEndian(std::vector<unsigned char> &data, ebmpDWORD value)
+{
+	data.reserve(data.size()+4);
+	for(int i=0; i<sizeof(ebmpDWORD); i++)
+	{
+		unsigned char val=((value >> (i*8)) & 0xff);
+		data.push_back(val);
+	}
+	return true;
+}
+
+bool BMP::WriteToVector( std::vector<unsigned char> &data )
+{
+ using namespace std;
+ if( !EasyBMPcheckDataSize() )
+ {
+  if( EasyBMPwarnings )
+  {
+   cout << "EasyBMP Error: Data types are wrong size!" << endl
+        << "               You may need to mess with EasyBMP_DataTypes.h" << endl
+	    << "               to fix these errors, and then recompile." << endl
+	    << "               All 32-bit and 64-bit machines should be" << endl
+	    << "               supported, however." << endl << endl;
+  }
+  return false; 
+ }
+  
+ // some preliminaries
+ 
+ double dBytesPerPixel = ( (double) BitDepth ) / 8.0;
+ double dBytesPerRow = dBytesPerPixel * (Width+0.0);
+ dBytesPerRow = ceil(dBytesPerRow);
+  
+ int BytePaddingPerRow = 4 - ( (int) (dBytesPerRow) )% 4;
+ if( BytePaddingPerRow == 4 )
+ { BytePaddingPerRow = 0; } 
+ 
+ double dActualBytesPerRow = dBytesPerRow + BytePaddingPerRow;
+ 
+ double dTotalPixelBytes = Height * dActualBytesPerRow;
+ 
+ double dPaletteSize = 0;
+ if( BitDepth == 1 || BitDepth == 4 || BitDepth == 8 )
+ { dPaletteSize = IntPow(2,BitDepth)*4.0; }
+
+ // leave some room for 16-bit masks 
+ if( BitDepth == 16 )
+ { dPaletteSize = 3*4; }
+ 
+ double dTotalFileSize = 14 + 40 + dPaletteSize + dTotalPixelBytes;
+ 
+ // write the file header 
+ 
+ BMFH bmfh;
+ bmfh.bfSize = (ebmpDWORD) dTotalFileSize; 
+ bmfh.bfReserved1 = 0; 
+ bmfh.bfReserved2 = 0; 
+ bmfh.bfOffBits = (ebmpDWORD) (14+40+dPaletteSize);  
+ 
+ if( IsBigEndian() )
+ { bmfh.SwitchEndianess(); }
+ 
+ WriteLittleEndian(data,static_cast<ebmpWORD>(bmfh.bfType));
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmfh.bfSize));
+ WriteLittleEndian(data,static_cast<ebmpWORD>(bmfh.bfReserved1));
+ WriteLittleEndian(data,static_cast<ebmpWORD>(bmfh.bfReserved2));
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmfh.bfOffBits));
+ 
+ // write the info header 
+ 
+ BMIH bmih;
+ bmih.biSize = 40;
+ bmih.biWidth = Width;
+ bmih.biHeight = Height;
+ bmih.biPlanes = 1;
+ bmih.biBitCount = BitDepth;
+ bmih.biCompression = 0;
+ bmih.biSizeImage = (ebmpDWORD) dTotalPixelBytes;
+ if( XPelsPerMeter )
+ { bmih.biXPelsPerMeter = XPelsPerMeter; }
+ else
+ { bmih.biXPelsPerMeter = DefaultXPelsPerMeter; }
+ if( YPelsPerMeter )
+ { bmih.biYPelsPerMeter = YPelsPerMeter; }
+ else
+ { bmih.biYPelsPerMeter = DefaultYPelsPerMeter; }
+
+ bmih.biClrUsed = 0;
+ bmih.biClrImportant = 0;
+
+ // indicates that we'll be using bit fields for 16-bit files
+ if( BitDepth == 16 )
+ { bmih.biCompression = 3; }
+ 
+ if( IsBigEndian() )
+ { bmih.SwitchEndianess(); }
+ 
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmih.biSize));
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmih.biWidth));
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmih.biHeight));
+ WriteLittleEndian(data,static_cast<ebmpWORD>(bmih.biPlanes));
+ WriteLittleEndian(data,static_cast<ebmpWORD>(bmih.biBitCount));
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmih.biCompression));
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmih.biSizeImage));
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmih.biXPelsPerMeter));
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmih.biYPelsPerMeter));
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmih.biClrUsed));
+ WriteLittleEndian(data,static_cast<ebmpDWORD>(bmih.biClrImportant));
+ 
+ // write the palette 
+ if( BitDepth == 1 || BitDepth == 4 || BitDepth == 8 )
+ {
+  int NumberOfColors = IntPow(2,BitDepth);
+  
+  // if there is no palette, create one 
+  if( !Colors )
+  {
+   if( !Colors )
+   { Colors = new RGBApixel [NumberOfColors]; }
+   CreateStandardColorTable(); 
+  }
+   
+  data.reserve(data.size()+(NumberOfColors*4));
+  int n;
+  for( n=0 ; n < NumberOfColors ; n++ )
+  { 
+	  data.push_back(Colors[n].Blue);
+	  data.push_back(Colors[n].Green);
+	  data.push_back(Colors[n].Red);
+	  data.push_back(Colors[n].Alpha);
+  }
+ }
+ 
+ // write the pixels 
+ int i,j;
+ if( BitDepth != 16 )
+ {  
+  ebmpBYTE* Buffer;
+  int BufferSize = (int) ( (Width*BitDepth)/8.0 );
+  while( 8*BufferSize < Width*BitDepth )
+  { BufferSize++; }
+  while( BufferSize % 4 )
+  { BufferSize++; }
+  
+  Buffer = new ebmpBYTE [BufferSize];
+  for( j=0 ; j < BufferSize; j++ )
+  { Buffer[j] = 0; }
+    
+  j=Height-1;
+  
+  while( j > -1 )
+  {
+   bool Success = false;
+   if( BitDepth == 32 )
+   { Success = Write32bitRow( Buffer, BufferSize, j ); }
+   if( BitDepth == 24 )
+   { Success = Write24bitRow( Buffer, BufferSize, j ); }
+   if( BitDepth == 8  )
+   { Success = Write8bitRow( Buffer, BufferSize, j ); }
+   if( BitDepth == 4  )
+   { Success = Write4bitRow( Buffer, BufferSize, j ); }
+   if( BitDepth == 1  )
+   { Success = Write1bitRow( Buffer, BufferSize, j ); }
+   if( Success )
+   {
+    //int BytesWritten = (int) fwrite( (char*) Buffer, 1, BufferSize, fp );
+	data.insert(data.end(),(unsigned char *)Buffer,(unsigned char *)Buffer+BufferSize);
+   }
+   if( !Success )
+   {
+    if( EasyBMPwarnings )
+    {
+     cout << "EasyBMP Error: Could not write proper amount of data." << endl;
+	}
+    j = -1; 
+   }
+   j--; 
+  }
+  
+  delete [] Buffer;
+ }
+ 
+ if( BitDepth == 16 )
+ {
+  // write the bit masks
+
+  ebmpWORD BlueMask = 31;    // bits 12-16
+  ebmpWORD GreenMask = 2016; // bits 6-11
+  ebmpWORD RedMask = 63488;  // bits 1-5
+  ebmpWORD ZeroWORD;
+  
+  if( IsBigEndian() )
+  { RedMask = FlipWORD( RedMask ); }
+  //fwrite( (char*) &RedMask , 2 , 1 , fp );
+  //fwrite( (char*) &ZeroWORD , 2 , 1 , fp );
+  WriteLittleEndian(data,RedMask);
+  WriteLittleEndian(data,ZeroWORD);
+
+  if( IsBigEndian() )
+  { GreenMask = FlipWORD( GreenMask ); }
+  //fwrite( (char*) &GreenMask , 2 , 1 , fp );
+  //fwrite( (char*) &ZeroWORD , 2 , 1 , fp );
+  WriteLittleEndian(data,GreenMask);
+  WriteLittleEndian(data,ZeroWORD);
+
+  if( IsBigEndian() )
+  { BlueMask = FlipWORD( BlueMask ); }
+  //fwrite( (char*) &BlueMask , 2 , 1 , fp );
+  //fwrite( (char*) &ZeroWORD , 2 , 1 , fp );
+  WriteLittleEndian(data,BlueMask);
+  WriteLittleEndian(data,ZeroWORD);
+
+  int DataBytes = Width*2;
+  int PaddingBytes = ( 4 - DataBytes % 4 ) % 4;
+  
+  // write the actual pixels
+  
+  for( j=Height-1 ; j >= 0 ; j-- )
+  {
+   // write all row pixel data
+   i=0;
+   int WriteNumber = 0;
+   while( WriteNumber < DataBytes )
+   {
+    ebmpWORD TempWORD;
+	
+	ebmpWORD RedWORD = (ebmpWORD) ((Pixels[i][j]).Red / 8);
+	ebmpWORD GreenWORD = (ebmpWORD) ((Pixels[i][j]).Green / 4);
+	ebmpWORD BlueWORD = (ebmpWORD) ((Pixels[i][j]).Blue / 8);
+	
+    TempWORD = (RedWORD<<11) + (GreenWORD<<5) + BlueWORD;
+	if( IsBigEndian() )
+	{ TempWORD = FlipWORD( TempWORD ); }
+	
+    //fwrite( (char*) &TempWORD , 2, 1, fp);
+	data.insert(data.end(),(unsigned char *)&TempWORD,(unsigned char *)&TempWORD+2);
+    WriteNumber += 2;
+	i++;
+   }
+   // write any necessary row padding
+   WriteNumber = 0;
+   while( WriteNumber < PaddingBytes )
+   {
+    ebmpBYTE TempBYTE;
+    //fwrite( (char*) &TempBYTE , 1, 1, fp);
+	WriteLittleEndian(data,TempBYTE);
+    WriteNumber++;
+   }
+  }
+  
+ }
+
+ return true;
+}
+
 bool BMP::ReadFromFile( const char* FileName )
 { 
  using namespace std;

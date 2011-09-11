@@ -1,4 +1,5 @@
 #include "../include/base64.h"
+#include "../include/stringfunctions.h"
 
 #ifdef XMEM
 	#include <xmem.h>
@@ -100,6 +101,26 @@ const bool Decode(const std::string &encoded, std::vector<unsigned char> &data)
 	}
 
 	return true;
+}
+
+const std::string FreenetBase64ToRealBase64(const std::string &base64val)
+{
+	std::string val=StringFunctions::Replace(StringFunctions::Replace(base64val,"-","/"),"~","+");
+	while(val.size()%4!=0)
+	{
+		val+="=";
+	}
+	return val;
+}
+
+const std::string RealBase64ToFreenetBase64(const std::string &base64val)
+{
+	std::string val=StringFunctions::Replace(StringFunctions::Replace(base64val,"/","-"),"+","~");
+	while(val.size()>0 && val[val.size()-1]=='=')
+	{
+		val.erase(val.size()-1);
+	}
+	return val;
 }
 
 }	// namespace

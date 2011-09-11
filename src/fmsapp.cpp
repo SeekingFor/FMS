@@ -185,7 +185,7 @@ void FMSApp::initialize(Poco::Util::Application &self)
 	}
 #endif
 
-	LoadDatabase();
+	LoadDatabase(0);
 	SetupDB(m_db);
 	SetupDefaultOptions(m_db);
 	initializeLogger();
@@ -317,6 +317,7 @@ int FMSApp::main(const std::vector<std::string> &args)
 		{
 			std::cout << "FMS has been started." << std::endl << std::endl;
 		}
+		logger().information("Startup complete");
 
 		waitForTerminationRequest();
 

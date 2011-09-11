@@ -17,7 +17,7 @@ private:
 	const bool HandleAllData(FCPv2::Message &message);
 	const bool HandleGetFailed(FCPv2::Message &message);
 
-	const long GetBoardInfo(const std::string &boardname, const std::string &identityname, bool &forum);
+	const long GetBoardInfo(SQLite3DB::Transaction &trans, const std::string &boardname, const std::string &identityname, bool &forum);
 	const bool SaveToBoard(const std::string &boardname);
 	const std::string GetIdentityName(const long identityid);
 

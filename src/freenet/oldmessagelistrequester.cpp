@@ -49,6 +49,8 @@ void OldMessageListRequester::Initialize()
 		m_log->warning("Option MaxOldMessageListRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
 
+	m_reverserequest=true;
+
 }
 
 void OldMessageListRequester::PopulateIDList()
@@ -58,6 +60,7 @@ void OldMessageListRequester::PopulateIDList()
 	m_ids.clear();
 
 	SQLite3DB::Statement st;
+	SQLite3DB::Transaction trans(m_db);
 	
 	if(m_localtrustoverrides==false)
 	{
@@ -76,15 +79,18 @@ void OldMessageListRequester::PopulateIDList()
 						AND FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount');");
 	}
 
-	m_db->Execute("BEGIN;");
+	// only selects, deferred OK
+	trans.Begin();
 
-	for(long i=1; i<m_messagedownloadmaxdaysbackward; i++)
+	// only load up 1 day back, and we'll dynamically load previous days as they are requested
+	long i=1;
+	//for(long i=1; i<=m_messagedownloadmaxdaysbackward; i++)
 	{
 		date=Poco::DateTime();
 		date-=Poco::Timespan(i,0,0,0,0);
 
 		st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
-		st.Step();
+		trans.Step(st);
 
 		while(st.RowReturned())
 		{
@@ -96,15 +102,26 @@ void OldMessageListRequester::PopulateIDList()
 
 			m_ids[Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"|"+identityid+"|"+index].m_requested=false;
 
-			st.Step();
+			trans.Step(st);
 		}
 
-		st.Reset();
+		trans.Reset(st);
 
 	}
 
-	m_db->Execute("COMMIT;");
+	trans.Finalize(st);
+	trans.Commit();
 
+}
+
+void OldMessageListRequester::PostHandleAllData(FCPv2::Message &message)
+{
+	m_ids.erase(GetIDFromIdentifier(message["Identifier"]));
+}
+
+void OldMessageListRequester::PostHandleGetFailed(FCPv2::Message &message)
+{
+	m_ids.erase(GetIDFromIdentifier(message["Identifier"]));
 }
 
 void OldMessageListRequester::StartRequest(const std::string &id)
@@ -117,6 +134,9 @@ void OldMessageListRequester::StartRequest(const std::string &id)
 	std::string indexstr("");
 	IdentityPublicKeyCache pkcache(m_db);
 	long identityid=0;
+	Poco::DateTime now;
+	Poco::DateTime date;
+	int tz=0;
 
 	StringFunctions::Split(id,"|",idparts);
 	if(idparts.size()==3)
@@ -131,6 +151,8 @@ void OldMessageListRequester::StartRequest(const std::string &id)
 		identityidstr=idparts[1];
 		indexstr=idparts[2];
 
+		Poco::DateTimeParser::tryParse(day,date,tz);
+
 		message.SetName("ClientGet");
 		message["URI"]="USK"+publickey.substr(3)+m_messagebase+"|"+StringFunctions::Replace(day,"-",".")+"|MessageList/"+indexstr+"/MessageList.xml";
 		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|_|"+day+"|"+message["URI"];
@@ -141,8 +163,26 @@ void OldMessageListRequester::StartRequest(const std::string &id)
 		m_fcp->Send(message);
 
 		StartedRequest(id,message["Identifier"]);
+
+		m_log->trace("OldMessageListRequester::StartRequest started request for "+message["Identifier"]);
 	}
 
 	m_ids[id].m_requested=true;
+
+	date-=Poco::Timespan(1,0,0,0,0);
+	if(Poco::Timespan(now-date).days()<=m_messagedownloadmaxdaysbackward)
+	{
+		SQLite3DB::Statement st=m_db->Prepare("SELECT COALESCE(MAX(RequestIndex)+1,1) FROM tblMessageListRequests WHERE IdentityID=? AND Day=?;");
+		st.Bind(0,identityidstr);
+		st.Bind(1,day);
+		st.Step();
+		if(st.RowReturned())
+		{
+			int index=-1;
+			st.ResultInt(0,index);
+			StringFunctions::Convert(index,indexstr);
+			m_ids[Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"|"+identityidstr+"|"+indexstr];
+		}
+	}
 
 }

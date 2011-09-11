@@ -43,14 +43,16 @@ void KnownIdentityRequester::PopulateIDList()
 	Poco::DateTime date;
 	int id;
 	int count=0;
+	SQLite3DB::Transaction trans(m_db);
 
 	date.assign(date.year(),date.month(),date.day(),0,0,0);
 
-	m_db->Execute("BEGIN;");
+	// only selects, deferred OK
+	trans.Begin();
 
 	// select identities we want to query (haven't seen yet today) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
 	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen IS NOT NULL AND LastSeen<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"' AND tblIdentity.FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
-	st.Step();
+	trans.Step(st);
 
 	m_ids.clear();
 
@@ -58,9 +60,10 @@ void KnownIdentityRequester::PopulateIDList()
 	{
 		st.ResultInt(0,id);
 		m_ids[std::pair<long,long>(count,id)].m_requested=false;
-		st.Step();
+		trans.Step(st);
 		count+=1;
 	}
 
-	m_db->Execute("COMMIT;");
+	trans.Finalize(st);
+	trans.Commit();
 }

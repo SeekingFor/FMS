@@ -202,9 +202,23 @@ protected:
 	{
 		std::string returntext=text;
 		// remove bogus chars from text string
-		for(char i=1; i<32; i++)
+		for(char i=0; i<32; i++)
 		{
 			returntext=StringFunctions::Replace(returntext,std::string(1,i),"");
+		}
+		return returntext;
+	}
+
+	const std::string SanitizeMultilineString(const std::string &text)
+	{
+		std::string returntext=text;
+		// only 0x09, 0x0a, and 0x0d control chars are allowed in XML 1.0
+		for(char i=0; i<32; i++)
+		{
+			if(i!=0x09 && i!=0x0a && i!=0x0d)
+			{
+				returntext=StringFunctions::Replace(returntext,std::string(1,i),"");
+			}
 		}
 		return returntext;
 	}

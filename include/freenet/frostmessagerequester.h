@@ -12,6 +12,7 @@ public:
 private:
 	void Initialize();
 	void PopulateIDList();
+	void PopulateBoardRequestIDs(SQLite3DB::Transaction &trans, const long boardid, const Poco::DateTime &date);
 	const std::string GetIDFromIdentifier(const std::string &identifier);
 	void StartRequest(const std::string &id);
 	const bool HandleAllData(FCPv2::Message &message);

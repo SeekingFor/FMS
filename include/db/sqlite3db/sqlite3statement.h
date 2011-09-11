@@ -15,16 +15,17 @@ class Statement
 {
 public:
 	Statement();
-	Statement(sqlite3_stmt *statement);
+	Statement(sqlite3_stmt *statement, DB *db);
 	Statement(const Statement &rhs);
 	virtual ~Statement();
 
-	virtual const int ParameterCount() { return m_parametercount; }
-	virtual const int ResultColumnCount() { return m_resultcolumncount; }
+	virtual const std::string GetSQL() const;
+	virtual const int ParameterCount()			{ return m_parametercount; }
+	virtual const int ResultColumnCount()		{ return m_resultcolumncount; }
 
 	virtual const bool Valid();
 
-	virtual void Finalize();
+	virtual const bool Finalize();
 
 	virtual const bool Reset();
 	virtual const bool Step(const bool saveinsertrowid=false);
@@ -53,6 +54,7 @@ public:
 
 private:
 	sqlite3_stmt *m_statement;
+	DB *m_db;
 	int m_parametercount;
 	int m_resultcolumncount;
 	bool m_rowreturned;
@@ -60,6 +62,8 @@ private:
 
 	static std::map<sqlite3_stmt *, long> m_statementcount;
 	static Poco::FastMutex m_mutex;			// protect all access to m_statementcount
+
+	void HandleError(const std::string &extramessage);
 
 };	//class
 

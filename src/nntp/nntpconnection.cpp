@@ -7,6 +7,7 @@
 #include "../../include/option.h"
 #include "../../include/nntp/extensiontrust.h"
 #include "../../include/threadwrapper/cancelablethread.h"
+#include "../../../include/fmsapp.h"
 
 #include <algorithm>
 #include <Poco/DateTime.h>
@@ -1288,74 +1289,82 @@ void NNTPConnection::run()
 	int rval;
 	std::string tempval("");
 
-	LoadDatabase();
-
-	Option option(m_db);
-	option.GetBool("NNTPAllGroups",m_allgroups);
-
-	m_status.m_authuser.SetDB(m_db);
-	option.Get("NNTPAllowPost",tempval);
-	if(tempval=="true")
+	try
 	{
-		m_status.m_allowpost=true;
-	}
+		LoadDatabase(m_log);
 
-	// seed random number generater for this thread
-	srand(time(NULL));
-	
-	if(m_status.m_allowpost==true)
-	{
-		SendBufferedLine("200 Service available, posting allowed");
-	}
-	else
-	{
-		SendBufferedLine("201 Service available, posting prohibited");
-	}
+		Option option(m_db);
+		option.GetBool("NNTPAllGroups",m_allgroups);
 
-	do
-	{
-		FD_ZERO(&readfs);
-		FD_ZERO(&writefs);
-		
-		FD_SET(m_socket,&readfs);
-		if(m_sendbuffer.size()>0)
+		m_status.m_authuser.SetDB(m_db);
+		option.Get("NNTPAllowPost",tempval);
+		if(tempval=="true")
 		{
-			FD_SET(m_socket,&writefs);
+			m_status.m_allowpost=true;
 		}
+
+		// seed random number generater for this thread
+		srand(time(NULL));
 		
-		tv.tv_sec=1;
-		tv.tv_usec=0;
-		
-		rval=select(m_socket+1,&readfs,&writefs,0,&tv);
-		
-		if(rval>0)
+		if(m_status.m_allowpost==true)
 		{
-			if(FD_ISSET(m_socket,&readfs))
+			SendBufferedLine("200 Service available, posting allowed");
+		}
+		else
+		{
+			SendBufferedLine("201 Service available, posting prohibited");
+		}
+
+		do
+		{
+			FD_ZERO(&readfs);
+			FD_ZERO(&writefs);
+			
+			FD_SET(m_socket,&readfs);
+			if(m_sendbuffer.size()>0)
 			{
-				SocketReceive();
+				FD_SET(m_socket,&writefs);
+			}
+			
+			tv.tv_sec=1;
+			tv.tv_usec=0;
+			
+			rval=select(m_socket+1,&readfs,&writefs,0,&tv);
+			
+			if(rval>0)
+			{
+				if(FD_ISSET(m_socket,&readfs))
+				{
+					SocketReceive();
+					HandleReceivedData();
+				}
+				if(m_socket!=INVALID_SOCKET && FD_ISSET(m_socket,&writefs))
+				{
+					SocketSend();
+				}
+			}
+			else if(rval==SOCKET_ERROR)
+			{
+				m_log->error("NNTPConnection::run select returned -1 : "+GetSocketErrorMessage());	
+			}
+
+			//process all remaining commands in buffer
+			std::vector<char>::size_type rbs=0;
+			while(rbs!=m_receivebuffer.size())
+			{
+				rbs=m_receivebuffer.size();
 				HandleReceivedData();
 			}
-			if(m_socket!=INVALID_SOCKET && FD_ISSET(m_socket,&writefs))
-			{
-				SocketSend();
-			}
-		}
-		else if(rval==SOCKET_ERROR)
-		{
-			m_log->error("NNTPConnection::run select returned -1 : "+GetSocketErrorMessage());	
-		}
 
-		//process all remaining commands in buffer
-		std::vector<char>::size_type rbs=0;
-		while(rbs!=m_receivebuffer.size())
-		{
-			rbs=m_receivebuffer.size();
-			HandleReceivedData();
-		}
+		}while(!Disconnected() && !IsCancelled());
 
-	}while(!Disconnected() && !IsCancelled());
-
-	Disconnect();
+		Disconnect();
+	}
+	catch(SQLite3DB::Exception &e)
+	{
+		m_log->fatal("NNTPConnection caught SQLite3DB::Exception "+e.what());
+		((FMSApp *)&FMSApp::instance())->Terminate();
+	}
 
 }
 

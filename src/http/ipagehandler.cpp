@@ -1,6 +1,7 @@
 #include "../../include/http/ipagehandler.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/http/multipartparser.h"
+#include "../../../include/fmsapp.h"
 
 #include <Poco/Net/HTMLForm.h>
 #include <Poco/UUIDGenerator.h>
@@ -202,18 +203,26 @@ void IPageHandler::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 {
 	m_log->trace("IPageHandler::handleRequest from "+request.clientAddress().toString());
 
-	std::map<std::string,QueryVar> vars;
-
-	CreateQueryVarMap(request,vars);
-
-	if(request.getVersion()==Poco::Net::HTTPRequest::HTTP_1_1)
+	try
 	{
-		response.setChunkedTransferEncoding(true);
-	}
-	response.setContentType("text/html");
+		std::map<std::string,QueryVar> vars;
 
-	std::ostream &ostr = response.send();
-	ostr << GeneratePage(request.getMethod(),vars);
+		CreateQueryVarMap(request,vars);
+
+		if(request.getVersion()==Poco::Net::HTTPRequest::HTTP_1_1)
+		{
+			response.setChunkedTransferEncoding(true);
+		}
+		response.setContentType("text/html");
+
+		std::ostream &ostr = response.send();
+		ostr << GeneratePage(request.getMethod(),vars);
+	}
+	catch(SQLite3DB::Exception &e)
+	{
+		m_log->fatal("IPageHandler caught SQLite3DB::Exception "+e.what());
+		((FMSApp *)&FMSApp::instance())->Terminate();
+	}
 
 }
 

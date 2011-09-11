@@ -18,12 +18,12 @@ namespace SQLite3DB
 Poco::FastMutex Statement::m_mutex;
 std::map<sqlite3_stmt *, long> Statement::m_statementcount;
 
-Statement::Statement():m_statement(0),m_parametercount(0),m_resultcolumncount(0),m_rowreturned(false),m_lastinsertrowid(-1)
+Statement::Statement():m_statement(0),m_parametercount(0),m_resultcolumncount(0),m_rowreturned(false),m_lastinsertrowid(-1),m_db(0)
 {
 
 }
 
-Statement::Statement(sqlite3_stmt *statement):m_statement(statement),m_rowreturned(false),m_lastinsertrowid(-1)
+Statement::Statement(sqlite3_stmt *statement, DB *db):m_statement(statement),m_rowreturned(false),m_lastinsertrowid(-1),m_db(db)
 {
 	m_parametercount=sqlite3_bind_parameter_count(m_statement);
 	m_resultcolumncount=sqlite3_column_count(m_statement);
@@ -35,7 +35,7 @@ Statement::Statement(sqlite3_stmt *statement):m_statement(statement),m_rowreturn
 	}
 }
 
-Statement::Statement(const Statement &rhs):m_statement(0),m_parametercount(0),m_resultcolumncount(0),m_rowreturned(false),m_lastinsertrowid(-1)
+Statement::Statement(const Statement &rhs):m_statement(0),m_parametercount(0),m_resultcolumncount(0),m_rowreturned(false),m_lastinsertrowid(-1),m_db(0)
 {
 	*this=rhs;
 }
@@ -55,6 +55,7 @@ const bool Statement::Bind(const int column)
 		}
 		else
 		{
+			HandleError("Statement::Bind NULL");
 			return false;
 		}
 	}
@@ -74,6 +75,7 @@ const bool Statement::Bind(const int column, const int value)
 		}
 		else
 		{
+			HandleError("Statement::Bind int");
 			return false;
 		}
 	}
@@ -93,6 +95,7 @@ const bool Statement::Bind(const int column, const double value)
 		}
 		else
 		{
+			HandleError("Statement::Bind double");
 			return false;
 		}
 	}
@@ -112,6 +115,7 @@ const bool Statement::Bind(const int column, const std::string &value)
 		}
 		else
 		{
+			HandleError("Statement::Bind std::string");
 			return false;
 		}
 	}
@@ -131,6 +135,7 @@ const bool Statement::Bind(const int column, const void *data, const int length)
 		}
 		else
 		{
+			HandleError("Statement::Bind blob");
 			return false;
 		}
 	}
@@ -140,8 +145,9 @@ const bool Statement::Bind(const int column, const void *data, const int length)
 	}
 }
 
-void Statement::Finalize()
+const bool Statement::Finalize()
 {
+	bool ok=false;
 	if(m_statement)
 	{
 		Poco::ScopedLock<Poco::FastMutex> g(m_mutex);
@@ -149,10 +155,51 @@ void Statement::Finalize()
 		if(m_statementcount[m_statement]<=0)
 		{
 			m_statementcount.erase(m_statement);
-			sqlite3_finalize(m_statement);
+			if(sqlite3_finalize(m_statement)==SQLITE_OK)
+			{
+				ok=true;
+			}
+			else
+			{
+				HandleError("Statement::Finalize");
+			}
 		}
 		m_statement=NULL;
 	}
+	return ok;
+}
+
+const std::string Statement::GetSQL() const
+{
+	if(m_statement)
+	{
+		const char *sql=sqlite3_sql(m_statement);
+		if(sql)
+		{
+			return std::string(sql);
+		}
+	}
+	return std::string("");
+}
+
+void Statement::HandleError(const std::string &extramessage)
+{
+	std::string errmsg("");
+	int err=0;
+	if(m_db)
+	{
+		err=m_db->GetLastExtendedError(errmsg);
+	}
+	else if(m_statement && sqlite3_db_handle(m_statement))
+	{
+		err=sqlite3_extended_errcode(sqlite3_db_handle(m_statement));
+		const char *msg=sqlite3_errmsg(sqlite3_db_handle(m_statement));
+		if(msg)
+		{
+			errmsg=std::string(msg);
+		}
+	}
+	DB::HandleError(err,errmsg,extramessage);
 }
 
 Statement &Statement::operator=(const Statement &rhs)
@@ -166,6 +213,7 @@ Statement &Statement::operator=(const Statement &rhs)
 		m_resultcolumncount=rhs.m_resultcolumncount;
 		m_rowreturned=rhs.m_rowreturned;
 		m_lastinsertrowid=rhs.m_lastinsertrowid;
+		m_db=rhs.m_db;
 
 		if(m_statement)
 		{
@@ -182,10 +230,12 @@ const bool Statement::Reset()
 	{
 		if(sqlite3_reset(m_statement)==SQLITE_OK)
 		{
+			m_rowreturned=false;
 			return true;
 		}
 		else
 		{
+			HandleError("Statement::Reset");
 			return false;
 		}
 	}
@@ -317,6 +367,7 @@ const bool Statement::Step(const bool saveinsertrowid)
 		}
 		else
 		{
+			HandleError("Statement::Step");
 			return false;
 		}
 	}

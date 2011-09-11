@@ -159,6 +159,7 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	int count=0;
 	bool add=false;
 	std::string dateadded="";
+	SQLite3DB::Transaction trans(m_db);
 
 	dateminus30-=Poco::Timespan(30,0,0,0,0);
 
@@ -171,14 +172,15 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	// build the xml file - we only want to add identities that we recently saw, otherwise we could be inserting a ton of identities
 	date-=Poco::Timespan(15,0,0,0,0);	// identities seen in last 15 days - the maintenance page lets us delete identities not seen in 20 days, so this gives us a window where the identity won't be deleted and then found in a trust list and readded immediately
 	
-	m_db->Execute("BEGIN;");
+	// only selects, deferred OK
+	trans.Begin();
 	
 	//SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey, LocalMessageTrust, LocalTrustListTrust, MessageTrustComment, TrustListTrustComment FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND LastSeen>=?;");
 	// we want to order by public key so we can't do identity correllation based on the sequence of identities in the list.
 	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey, tblIdentityTrust.LocalMessageTrust, tblIdentityTrust.LocalTrustListTrust, tblIdentityTrust.MessageTrustComment, tblIdentityTrust.TrustListTrustComment, tblIdentity.IdentityID, tblIdentity.DateAdded FROM tblIdentity INNER JOIN tblIdentityTrust ON tblIdentity.IdentityID=tblIdentityTrust.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND LastSeen>=? AND tblIdentityTrust.LocalIdentityID=? ORDER BY PublicKey;");
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Bind(1,localidentityid);
-	st.Step();
+	trans.Step(st);
 	while(st.RowReturned())
 	{
 		st.ResultText(0,publickey);
@@ -247,10 +249,11 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 			xml.AddTrust(publickey,messagetrust,trustlisttrust,messagetrustcomment,trustlisttrustcomment);
 		}
 
-		st.Step();
+		trans.Step(st);
 	}
 
-	m_db->Execute("COMMIT;");
+	trans.Finalize(st);
+	trans.Commit();
 
 	// get next insert index
 	st=m_db->Prepare("SELECT MAX(InsertIndex) FROM tblTrustListInserts WHERE LocalIdentityID=? AND Day=?;");

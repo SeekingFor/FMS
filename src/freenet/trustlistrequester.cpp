@@ -50,6 +50,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 	int dayinsertcount=0;
 	int previnsertcount=0;
 	bool savenewidentities=false;
+	SQLite3DB::Transaction trans(m_db);
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -139,19 +140,19 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		}
 		st.Finalize();
 
-		m_db->Execute("BEGIN;");
+		trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 
 		m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpPeerTrust(IdentityID INTEGER,TargetIdentityID INTEGER,MessageTrust INTEGER,TrustListTrust INTEGER,MessageTrustChange INTEGER,TrustListTrustChange INTEGER);");
 		st=m_db->Prepare("INSERT INTO tmpPeerTrust(IdentityID,TargetIdentityID,MessageTrust,TrustListTrust,MessageTrustChange,TrustListTrustChange) SELECT IdentityID,TargetIdentityID,MessageTrust,TrustListTrust,MessageTrustChange,TrustListTrustChange FROM tblPeerTrust WHERE IdentityID=?;");
 		st.Bind(0,identityid);
-		st.Step();
-		st.Finalize();
+		trans.Step(st);
+		trans.Finalize(st);
 
 		// drop all existing peer trust from this identity - we will rebuild it when we go through each trust in the xml file
 		st=m_db->Prepare("DELETE FROM tblPeerTrust WHERE IdentityID=?;");
 		st.Bind(0,identityid);
-		st.Step();
-		st.Finalize();
+		trans.Step(st);
+		trans.Finalize(st);
 
 		st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
 		trustst=m_db->Prepare("INSERT INTO tblPeerTrust(IdentityID,TargetIdentityID,MessageTrust,TrustListTrust,MessageTrustComment,TrustListTrustComment) VALUES(?,?,?,?,?,?);");
@@ -169,7 +170,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 			identity=xml.GetIdentity(i);
 
 			st.Bind(0,identity);
-			st.Step();
+			trans.Step(st);
 			if(st.RowReturned()==false)
 			{
 				if(savenewidentities==true)
@@ -183,9 +184,9 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 							idinsert.Bind(0,ssk.GetBaseKey());
 							idinsert.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
 							idinsert.Bind(2,"trust list of "+publisherid);
-							idinsert.Step(true);
+							trans.Step(idinsert,true);
 							id=idinsert.GetLastInsertRowID();
-							idinsert.Reset();
+							trans.Reset(idinsert);
 						}
 						insertcount++;
 						dayinsertcount++;
@@ -200,7 +201,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 			{
 				st.ResultInt(0,id);
 			}
-			st.Reset();
+			trans.Reset(st);
 
 			//insert trust for this identity
 			if(id!=-1)
@@ -231,13 +232,13 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 
 				trustst.Bind(4,messagetrustcomment.NarrowString());
 				trustst.Bind(5,trustlisttrustcomment.NarrowString());
-				trustst.Step();
-				trustst.Reset();
+				trans.Step(trustst);
+				trans.Reset(trustst);
 			}
 		}
 
-		trustst.Finalize();
-		st.Finalize();
+		trans.Finalize(trustst);
+		trans.Finalize(st);
 
 		if(insertcount>=10)
 		{
@@ -252,8 +253,8 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		st.Bind(0,identityid);
 		st.Bind(1,idparts[4]);
 		st.Bind(2,index);
-		st.Step();
-		st.Finalize();
+		trans.Step(st);
+		trans.Finalize(st);
 
 		m_db->Execute("CREATE TEMPORARY VIEW IF NOT EXISTS vwPeerTrustChange AS\
 						SELECT tblPeerTrust.IdentityID, tblPeerTrust.TargetIdentityID,\
@@ -270,11 +271,18 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		st.Bind(0,identityid);
 		st.Bind(1,identityid);
 		st.Bind(2,identityid);
-		st.Step();
+		trans.Step(st);
 
 		m_db->Execute("DROP TABLE tmpPeerTrust;");
 
-		m_db->Execute("COMMIT;");
+		trans.Finalize(st);
+		trans.Finalize(idinsert);
+		trans.Commit();
+
+		if(trans.IsSuccessful()==false)
+		{
+			m_log->error("TrustListRequester::HandleAllData transaction failed with SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
+		}
 
 		m_log->debug("TrustListRequester::HandleAllData parsed TrustList XML file : "+message["Identifier"]);
 	}
@@ -359,6 +367,7 @@ void TrustListRequester::PopulateIDList()
 	std::string sql;
 	bool getnull=false;
 	Option opt(m_db);
+	SQLite3DB::Transaction trans(m_db);
 
 	opt.GetBool("DownloadTrustListWhenNull",getnull);
 
@@ -381,16 +390,18 @@ void TrustListRequester::PopulateIDList()
 
 	m_ids.clear();
 
-	m_db->Execute("BEGIN;");
+	// only selects, deferred OK
+	trans.Begin();
 
 	while(st.RowReturned())
 	{
 		st.ResultInt(0,id);
 		m_ids[id].m_requested=false;
-		st.Step();
+		trans.Step(st);
 	}
 
-	m_db->Execute("COMMIT;");
+	trans.Finalize(st);
+	trans.Commit();
 }
 
 void TrustListRequester::StartRequest(const long &identityid)

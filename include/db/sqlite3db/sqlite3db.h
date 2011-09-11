@@ -19,6 +19,16 @@
 namespace SQLite3DB
 {
 
+class Exception
+{
+public:
+	Exception(const std::string &message):m_message(message)	{ }
+	const std::string what() const { return m_message; }
+
+private:
+	std::string m_message;
+};
+
 class DB
 {
 public:
@@ -37,8 +47,9 @@ public:
 	const bool Open(const std::string &filename);
 	const bool Close();
 	
-	const int GetLastResult() { return m_lastresult; }	// gets result of last action taken - standard sqlite3 return codes
-	const int GetLastError(std::string &errormessage);	// gets last error of this database
+	const int GetLastResult() { return m_lastresult; }			// gets result of last action taken - standard sqlite3 return codes
+	const int GetLastError(std::string &errormessage);			// gets last error of this database connection
+	const int GetLastExtendedError(std::string &errormessage);	// gets last extended error of this database connection
 	
 	const bool IsOpen() const;
 	
@@ -54,6 +65,8 @@ public:
 	void StartProfiling();
 	const bool IsProfiling() const	{ Poco::ScopedLock<Poco::FastMutex> guard(m_profilemutex); return m_profiling; }
 	void GetProfileData(std::map<std::string,ProfileData> &profiledata, const bool cleardata=false);
+
+	static void HandleError(const int extendederrorcode, const std::string &errormessage, const std::string &extramessage="");
 
 private:
 	void Initialize();

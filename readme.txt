@@ -54,17 +54,48 @@ your Freenet connection is, the longer FMS must be run to find the
 communications of other identities.  You will not have a good experience only
 running FMS a few hours a day.
 
-If you are experiencing a problem with FMS that you can't solve, and you've
-already rebooted your machine, restarted FMS, and have reproduced the problem
-with a brand new database, follow these instructions.  Set the logging option
-to trace and restart FMS.  Create a post on the fms group with a descriptive
-subject and a body that contains the operating system you are using, along with
-a description of the problem, what you have tried already, if you are using a
-precompiled binary, the startup lines from the log file as well as the portion
-that corresponds to the problem you are experiencing, and any other information
-you have that pertains to the problem.  Make sure to anonymize any IP addresses,
-host names, subnet masks, and keys from the log that you don't want people to
-know about.
+You may place custom SQL commands in a file named fmsrc.sql in the FMS working
+directory.  These commands will be executed once after the database is opened
+in each thread.  PRAGMA commands that affect how SQLite functions are 
+typically placed here.
+
+PROBLEM TROUBLESHOOTING AND REPORTING
+-------------------------------------
+Failure to follow the following reporting guidelines for each and every
+separate report will reduce the liklihood the issue will be looked into.
+
+1. If you've made any alterations at all to the source, recompile from the
+   latest released version without your alterations.
+
+2. Shut down FMS from the web interface, reboot your computer, and start FMS
+   back up.  If the problem persists, continue with the next step.
+   
+3. Remove fmsrc.sql from the FMS directory if it exists.
+
+4. Shut down FMS from the web interface, delete the fms.db3 file (make a backup
+   first if you so desire), and restart FMS.  If the problem persists, continue
+   with the next step.  If the issue goes away, your old database was probably
+   corrupt and cannot be used anymore.
+
+5. With FMS running, go the options page in the web interface and change the
+   logging level to trace.  Then restart FMS.
+
+6. If the issue persists, create a post in the fms group with a descriptive
+   subject and a body that contains:
+   a. A description of the issue
+   b. What you've already done to troubleshoot the issue
+   c. Your operating system
+   d. The type of disk and filesystem FMS is running on
+   e. If you're using a precompiled FMS binary or compile it yourself
+   f. The startup lines from the log file, up to and including the startup 
+      complete line, as well as any portions of the log file that pertain to 
+	  the issue you are experiencing.  Make sure to anonymize any IP addresses, 
+	  host names, subnet masks, keys, etc. from the log that you don't want 
+	  people to know about.
+   g. Any other information that would be helpful to know about the problem
+
+   Any vulgar language or otherwise uncivil remarks in the post will result in 
+   the post being ignored.
 
 CAPTCHAS
 --------

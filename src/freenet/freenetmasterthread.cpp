@@ -26,6 +26,7 @@
 #ifdef FROST_SUPPORT
 	#include "../../include/freenet/frostmessagerequester.h"
 #endif
+#include "../../../include/fmsapp.h"
 
 #include <Poco/UUID.h>
 #include <Poco/UUIDGenerator.h>
@@ -189,106 +190,116 @@ void FreenetMasterThread::run()
 
 	m_log->debug("FreenetMasterThread::run thread started.");
 
-	LoadDatabase();
-
-	m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpLocalIdentityRedirectInsert(LocalIdentityID INTEGER PRIMARY KEY, Redirect TEXT);");
-
-
-
-	Setup();
-
-	do
+	try
 	{
-		try
+
+		LoadDatabase(m_log);
+
+		m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpLocalIdentityRedirectInsert(LocalIdentityID INTEGER PRIMARY KEY, Redirect TEXT);");
+
+
+
+		Setup();
+
+		do
 		{
-			if(m_fcp.IsConnected()==false)
+			try
 			{
-				// wait at least 1 minute since last successful connect
-				now=Poco::Timestamp();
-				if(lastconnected<=(now-Poco::Timespan(0,0,1,0,0)))
+				if(m_fcp.IsConnected()==false)
 				{
-					if(FCPConnect()==false)
+					// wait at least 1 minute since last successful connect
+					now=Poco::Timestamp();
+					if(lastconnected<=(now-Poco::Timespan(0,0,1,0,0)))
 					{
-
-						m_log->error("FreenetMasterThread::run could not connect to node.  Waiting 60 seconds.");
-
-						for(int i=0; i<60 && !IsCancelled(); i++)
+						if(FCPConnect()==false)
 						{
-							Poco::Thread::sleep(1000);
+
+							m_log->error("FreenetMasterThread::run could not connect to node.  Waiting 60 seconds.");
+
+							for(int i=0; i<60 && !IsCancelled(); i++)
+							{
+								Poco::Thread::sleep(1000);
+							}
+						}
+						else
+						{
+							lastreceivedmessage=Poco::Timestamp();
+							lastconnected=Poco::Timestamp();
 						}
 					}
 					else
 					{
-						lastreceivedmessage=Poco::Timestamp();
-						lastconnected=Poco::Timestamp();
+						Poco::Thread::sleep(1000);
 					}
 				}
+				// fcp is connected
 				else
 				{
-					Poco::Thread::sleep(1000);
-				}
-			}
-			// fcp is connected
-			else
-			{
-				m_fcp.Update(1000);
+					m_fcp.Update(1000);
 
-				// check for message on receive buffer and handle it
-				if(m_fcp.MessageReady()==true)
-				{
-					message.Clear();
-					m_fcp.Receive(message);
-
-					if(message.GetName()!="")
+					// check for message on receive buffer and handle it
+					if(m_fcp.MessageReady()==true)
 					{
-						HandleMessage(message);
-						lastreceivedmessage=Poco::Timestamp();
+						message.Clear();
+						m_fcp.Receive(message);
+
+						if(message.GetName()!="")
+						{
+							HandleMessage(message);
+							lastreceivedmessage=Poco::Timestamp();
+						}
 					}
-				}
 
-				// let objects do their processing
-				for(std::vector<IPeriodicProcessor *>::iterator i=m_processors.begin(); i!=m_processors.end(); i++)
-				{
-					(*i)->Process();
-				}
+					// let objects do their processing
+					for(std::vector<IPeriodicProcessor *>::iterator i=m_processors.begin(); i!=m_processors.end(); i++)
+					{
+						(*i)->Process();
+					}
 
-				// if we haven't received any messages from the node within the timeout period, something is wrong
-				now=Poco::Timestamp();
-				if(lastreceivedmessage<(now-Poco::Timespan(0,0,0,m_fcptimeout,0)))
-				{
-					m_log->error("FreenetMasterThread::Run The Freenet node has not responded in within the timeout period.  Trying to reconnect.");
-					m_fcp.Disconnect();
-				}
+					// if we haven't received any messages from the node within the timeout period, something is wrong
+					now=Poco::Timestamp();
+					if(lastreceivedmessage<(now-Poco::Timespan(0,0,0,m_fcptimeout,0)))
+					{
+						m_log->error("FreenetMasterThread::Run The Freenet node has not responded in within the timeout period.  Trying to reconnect.");
+						m_fcp.Disconnect();
+					}
 
-				if(m_fcp.IsConnected()==false)
-				{
-					m_log->information("FreenetMasterThread::Run Disconnected from Freenet node.");
-				}
+					if(m_fcp.IsConnected()==false)
+					{
+						m_log->information("FreenetMasterThread::Run Disconnected from Freenet node.");
+					}
 
+				}
 			}
-		}
-		catch(Poco::Exception &e)
-		{
-			m_log->error("FreenetMasterThread::run caught Poco exception : "+e.displayText());
-		}
-		catch(std::exception &e)
-		{
-			std::string message("");
-			if(e.what())
+			catch(Poco::Exception &e)
 			{
-					message=e.what();
+				m_log->error("FreenetMasterThread::run caught Poco exception : "+e.displayText());
 			}
-			m_log->error("FreenetMasterThread::run caught std exception : "+message);
-		}
-		catch(...)
-		{
-			m_log->error("FreenetMasterThread::run caught unknown exception");
-		}
-	}while(!IsCancelled() && done==false);
+			catch(std::exception &e)
+			{
+				std::string message("");
+				if(e.what())
+				{
+						message=e.what();
+				}
+				m_log->error("FreenetMasterThread::run caught std exception : "+message);
+			}
+			catch(...)
+			{
+				m_log->error("FreenetMasterThread::run caught unknown exception");
+			}
+		}while(!IsCancelled() && done==false);
 
-	m_fcp.Disconnect();
+		m_fcp.Disconnect();
 
-	Shutdown();
+		Shutdown();
+
+	}
+	catch(SQLite3DB::Exception &e)
+	{
+		m_log->fatal("FreenetMasterThread caught SQLite3DB::Exception "+e.what());
+		((FMSApp *)&FMSApp::instance())->Terminate();
+	}
 
 	m_log->debug("FreenetMasterThread::run thread exiting.");
 

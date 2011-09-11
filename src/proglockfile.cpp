@@ -11,7 +11,7 @@
 #include <unistd.h>
 #endif
 
-ProgLockFile::ProgLockFile(const std::string &filename):m_filename(filename),m_fd(0)
+ProgLockFile::ProgLockFile(const std::string &filename):m_filename(filename),m_fd(0),m_unlink(false)
 {
 
 }
@@ -22,10 +22,16 @@ ProgLockFile::~ProgLockFile()
 	{
 #ifdef _WIN32
 		_close(m_fd);
-		_unlink(m_filename.c_str());
+		if(m_unlink)
+		{
+			_unlink(m_filename.c_str());
+		}
 #else
 		close(m_fd);
-		unlink(m_filename.c_str());
+		if(m_unlink)
+		{
+			unlink(m_filename.c_str());
+		}
 #endif
 	}
 }
@@ -48,6 +54,7 @@ const bool ProgLockFile::TryLock()
 		return false;
 	}
 
+	m_unlink=true;
 	return true;
 
 #else
@@ -69,6 +76,7 @@ const bool ProgLockFile::TryLock()
 		return false;
 	}
 
+	m_unlink=true;
 	return true;
 #endif
 }

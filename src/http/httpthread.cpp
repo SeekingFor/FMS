@@ -2,6 +2,7 @@
 #include "../../include/http/fmshttprequesthandlerfactory.h"
 #include "../../include/option.h"
 #include "../../include/stringfunctions.h"
+#include "../../../include/fmsapp.h"
 
 #include <Poco/Net/ServerSocket.h>
 #include <Poco/Net/HTTPServer.h>
@@ -22,7 +23,7 @@ void HTTPThread::run()
 {
 	m_log->debug("HTTPThread::run thread started.");
 
-	LoadDatabase();
+	LoadDatabase(m_log);
 	Option option(m_db);
 
 	m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpForumViewState(\
@@ -82,6 +83,11 @@ void HTTPThread::run()
 	catch(Poco::Exception &e)
 	{
 		m_log->fatal("HTTPThread::run caught "+e.displayText());
+	}
+	catch(SQLite3DB::Exception &e)
+	{
+		m_log->fatal("HTTPThread caught SQLite3DB::Exception "+e.what());
+		((FMSApp *)&FMSApp::instance())->Terminate();
 	}
 	catch(...)
 	{

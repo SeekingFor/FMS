@@ -134,6 +134,7 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 	std::string datestr="";
 	std::vector<std::string> dateparts;
 	int futurecount=0;
+	SQLite3DB::Transaction trans(m_db);
 
 	GetBoardList(boards);
 
@@ -160,10 +161,10 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 
-		m_db->Execute("BEGIN;");
+		trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 
 		SQLite3DB::Statement spk=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
-		SQLite3DB::Statement mst=m_db->Prepare("INSERT INTO tblMessageRequests(IdentityID,Day,RequestIndex,FromMessageList,FromIdentityID) VALUES(?,?,?,'true',?);");
+		SQLite3DB::Statement mst=m_db->Prepare("INSERT OR IGNORE INTO tblMessageRequests(IdentityID,Day,RequestIndex,FromMessageList,FromIdentityID) VALUES(?,?,?,'true',?);");
 		SQLite3DB::Statement ust=m_db->Prepare("UPDATE tblMessageRequests SET FromIdentityID=? WHERE IdentityID=? AND Day=? AND RequestIndex=?;");
 
 		for(long i=0; i<xml.MessageCount(); i++)
@@ -215,8 +216,8 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 				mst.Bind(1,xml.GetDate(i));
 				mst.Bind(2,xml.GetIndex(i));
 				mst.Bind(3,identityid);
-				mst.Step();
-				mst.Reset();
+				trans.Step(mst);
+				trans.Reset(mst);
 
 				// We need to update ID here, in case this index was already inserted from another
 				// identity's message list.  This doesn't reset try count - maybe we should if the from
@@ -225,8 +226,8 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 				ust.Bind(1,identityid);
 				ust.Bind(2,xml.GetDate(i));
 				ust.Bind(3,xml.GetIndex(i));
-				ust.Step();
-				ust.Reset();
+				trans.Step(ust);
+				trans.Reset(ust);
 
 				m_requestindexcache[xml.GetDate(i)][identityid].insert(xml.GetIndex(i));
 
@@ -299,7 +300,7 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 					else
 					{
 						spk.Bind(0,xml.GetExternalIdentity(i));
-						spk.Step();
+						trans.Step(spk);
 
 						if(spk.RowReturned())
 						{
@@ -307,7 +308,7 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 							identityids[xml.GetExternalIdentity(i)]=thisidentityid;
 						}
 
-						spk.Reset();
+						trans.Reset(spk);
 					}
 
 					if(thisidentityid!=0 && m_requestindexcache[xml.GetExternalDate(i)][thisidentityid].find(xml.GetExternalIndex(i))==m_requestindexcache[xml.GetExternalDate(i)][thisidentityid].end())
@@ -316,8 +317,8 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 						mst.Bind(1,xml.GetExternalDate(i));
 						mst.Bind(2,xml.GetExternalIndex(i));
 						mst.Bind(3,fromidentityid);
-						mst.Step();
-						mst.Reset();
+						trans.Step(mst);
+						trans.Reset(mst);
 
 						m_requestindexcache[xml.GetExternalDate(i)][thisidentityid].insert(xml.GetExternalIndex(i));
 					}
@@ -329,18 +330,23 @@ const bool MessageListRequester::HandleAllData(FCPv2::Message &message)
 			}
 		}
 
-		st=m_db->Prepare("INSERT INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
+		st=m_db->Prepare("INSERT OR IGNORE INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
 		st.Bind(0,identityid);
 		st.Bind(1,idparts[4]);
 		st.Bind(2,index);
-		st.Step();
-		st.Finalize();
+		trans.Step(st);
+		trans.Finalize(st);
 
-		spk.Finalize();
-		mst.Finalize();
-		ust.Finalize();
+		trans.Finalize(spk);
+		trans.Finalize(mst);
+		trans.Finalize(ust);
 
-		m_db->Execute("COMMIT;");
+		trans.Commit();
+
+		if(trans.IsSuccessful()==false)
+		{
+			m_log->error("MessageListRequester::HandleAllData transaction failed with SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
+		}
 
 		m_log->debug(m_fcpuniquename+"::HandleAllData parsed MessageList XML file : "+message["Identifier"]);
 	}
@@ -468,6 +474,7 @@ void MessageListRequester::PopulateIDList()
 	Poco::DateTime date;
 	Poco::DateTime yesterday=date-Poco::Timespan(1,0,0,0,0);
 	int id;
+	SQLite3DB::Transaction trans(m_db);
 
 	m_ids.clear();
 
@@ -483,18 +490,20 @@ void MessageListRequester::PopulateIDList()
 		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity INNER JOIN vwIdentityStats ON tblIdentity.IdentityID=vwIdentityStats.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (vwIdentityStats.LastMessageDate>='"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) AND FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	}
 
-	m_db->Execute("BEGIN;");
+	// only selects, deferred OK
+	trans.Begin();
 
-	st.Step();
+	trans.Step(st);
 
 	while(st.RowReturned())
 	{
 		st.ResultInt(0,id);
 		m_ids[id].m_requested=false;
-		st.Step();
+		trans.Step(st);
 	}
 
-	m_db->Execute("COMMIT;");
+	trans.Finalize(st);
+	trans.Commit();
 }
 
 void MessageListRequester::StartRedirectRequest(FCPv2::Message &message)
