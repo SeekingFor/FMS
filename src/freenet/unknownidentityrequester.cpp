@@ -44,7 +44,7 @@ void UnknownIdentityRequester::Initialize()
 	m_fcpuniquename="UnknownIdentityRequester";
 	option.GetInt("MaxIdentityRequests",m_maxrequests);
 
-	// unknown identities get 1/5 of the max requests option - known identities get 4/5 + any remaining if not evenly divisible
+	// known identities get 2/5 + any remaining if not evenly divisible, inactive identities get 2/5 and unknown identities get 1/5
 	m_maxrequests=(m_maxrequests/5);
 
 	if(m_maxrequests<1)

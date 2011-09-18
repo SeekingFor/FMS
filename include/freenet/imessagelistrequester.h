@@ -420,12 +420,15 @@ const bool IMessageListRequester<IDTYPE>::HandleGetFailed(FCPv2::Message &messag
 	// if this is a fatal error - insert index into database so we won't try to download this index again
 	if(message["Fatal"]=="true")
 	{
-		st=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
-		st.Bind(0,identityid);
-		st.Bind(1,idparts[4]);
-		st.Bind(2,index);
-		st.Step();
-		st.Finalize();
+		if(message["Code"]!="25")
+		{
+			st=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
+			st.Bind(0,identityid);
+			st.Bind(1,idparts[4]);
+			st.Bind(2,index);
+			st.Step();
+			st.Finalize();
+		}
 
 		IIndexRequester<IDTYPE>::m_log->error(IIndexRequester<IDTYPE>::m_fcpuniquename+"::HandleGetFailed fatal error code="+message["Code"]+" requesting "+message["Identifier"]);
 	}

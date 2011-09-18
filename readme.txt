@@ -83,16 +83,17 @@ separate report will reduce the liklihood the issue will be looked into.
 6. If the issue persists, create a post in the fms group with a descriptive
    subject and a body that contains:
    a. A description of the issue
-   b. What you've already done to troubleshoot the issue
-   c. Your operating system
-   d. The type of disk and filesystem FMS is running on
-   e. If you're using a precompiled FMS binary or compile it yourself
-   f. The startup lines from the log file, up to and including the startup 
+   b. The steps needed to reproduce the issue
+   c. What you've already done to troubleshoot the issue
+   d. Your operating system
+   e. The type of disk and filesystem FMS is running on
+   f. If you're using a precompiled FMS binary or compile it yourself
+   g. The startup lines from the log file, up to and including the startup 
       complete line, as well as any portions of the log file that pertain to 
 	  the issue you are experiencing.  Make sure to anonymize any IP addresses, 
 	  host names, subnet masks, keys, etc. from the log that you don't want 
 	  people to know about.
-   g. Any other information that would be helpful to know about the problem
+   h. Any other information that would be helpful to know about the problem
 
    Any vulgar language or otherwise uncivil remarks in the post will result in 
    the post being ignored.

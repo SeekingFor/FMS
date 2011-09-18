@@ -5,6 +5,7 @@
 #include "../../include/freenet/identityinserter.h"
 #include "../../include/freenet/identityredirectinserter.h"
 #include "../../include/freenet/knownidentityrequester.h"
+#include "../../include/freenet/inactiveidentityrequester.h"
 #include "../../include/freenet/unknownidentityrequester.h"
 #include "../../include/freenet/introductionpuzzleinserter.h"
 #include "../../include/freenet/identityintroductionrequester.h"
@@ -341,6 +342,7 @@ void FreenetMasterThread::Setup()
 	m_registrables.push_back(new IdentityInserter(m_db,&m_fcp));
 	m_registrables.push_back(new IdentityRedirectInserter(m_db,&m_fcp));
 	m_registrables.push_back(new KnownIdentityRequester(m_db,&m_fcp));
+	m_registrables.push_back(new InactiveIdentityRequester(m_db,&m_fcp));
 	m_registrables.push_back(new UnknownIdentityRequester(m_db,&m_fcp));
 	m_registrables.push_back(new IntroductionPuzzleInserter(m_db,&m_fcp));
 	m_registrables.push_back(new IdentityIntroductionRequester(m_db,&m_fcp));

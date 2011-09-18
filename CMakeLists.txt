@@ -66,6 +66,7 @@ src/freenet/identitypublickeycache.cpp
 src/freenet/identityredirectinserter.cpp
 src/freenet/identityrequester.cpp
 src/freenet/identityxml.cpp
+src/freenet/inactiveidentityrequester.cpp
 src/freenet/inactivemessagelistrequester.cpp
 src/freenet/introductionpuzzleinserter.cpp
 src/freenet/introductionpuzzlerequester.cpp
