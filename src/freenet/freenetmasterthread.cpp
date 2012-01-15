@@ -27,7 +27,10 @@
 #ifdef FROST_SUPPORT
 	#include "../../include/freenet/frostmessagerequester.h"
 #endif
-#include "../../../include/fmsapp.h"
+#include "../../include/freenet/wotidentityrequester.h"
+#include "../../include/freenet/sonerequester.h"
+#include "../../include/freenet/soneactiverequester.h"
+#include "../../include/fmsapp.h"
 
 #include <Poco/UUID.h>
 #include <Poco/UUIDGenerator.h>
@@ -369,6 +372,9 @@ void FreenetMasterThread::Setup()
 		m_registrables.push_back(new FrostMessageRequester(m_db,&m_fcp));
 	}
 #endif
+	m_registrables.push_back(new WOTIdentityRequester(m_db,&m_fcp));
+	m_registrables.push_back(new SoneRequester(m_db,&m_fcp));
+	m_registrables.push_back(new SoneActiveRequester(m_db,&m_fcp));
 
 	for(std::vector<IFreenetRegistrable *>::iterator i=m_registrables.begin(); i!=m_registrables.end(); i++)
 	{

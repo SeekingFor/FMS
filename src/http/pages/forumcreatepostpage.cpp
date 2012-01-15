@@ -193,7 +193,7 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 			StringFunctions::Convert(boardidstr,boardid);
 
 			body=StringFunctions::Replace(body,"\r\n","\n");
-			UnicodeFormatter::LineWrap(body,80,">",body);
+			//UnicodeFormatter::LineWrap(body,80,">",body);
 
 			if(replytomessageidstr!="")
 			{

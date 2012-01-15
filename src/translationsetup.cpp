@@ -60,6 +60,8 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.section.Trust","Trust");
 	st->SetDefault("web.option.section.Messages","Messages");
 	st->SetDefault("web.option.section.Frost Support","Frost Support");
+	st->SetDefault("web.option.section.WOT Support","WOT Support");
+	st->SetDefault("web.option.section.Sone Support","Sone Support");
 
 	st->SetDefault("web.option.Language.description","Select program language.");
 	st->SetDefault("web.option.Language.english.prop","English");
@@ -154,6 +156,10 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.FrostSaveAnonymousMessages.description","Save Frost messages posted by Anonymous authors.");
 	st->SetDefault("web.option.FrostMessageMaxDaysBackward.description","The maximum number of days backward that Frost messages will be downloaded.");
 	st->SetDefault("web.option.FrostMaxMessageRequests.description","The maximum number of concurrent requests for new Frost messages.");
+	st->SetDefault("web.option.WOTDownloadIdentities.description","Enable downloading of WOT identities.");
+	st->SetDefault("web.option.WOTMaxIdentityRequests.description","The maximum number of concurrent requests for WOT identities.");
+	st->SetDefault("web.option.SoneMaxRequests.description","The maximum number of concurrent requests for Sones.  Set to 0 to disable downloading Sones.");
+	st->SetDefault("web.option.SoneBoardName.description","The name of the board Sones will be saved in.");
 
 	st->SetDefault("web.page.execquery.title","Execute Query");
 	st->SetDefault("web.page.execquery.executequery","Execute Query");
@@ -221,6 +227,8 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.peermaintenance.recentlyadded","Recently Added Peers");
 	st->SetDefault("web.page.peermaintenance.stats","Stats");
 	st->SetDefault("web.page.peermaintenance.knownpeers","known peers");
+	st->SetDefault("web.page.peermaintenance.fmspeers","FMS peers");
+	st->SetDefault("web.page.peermaintenance.wotpeers","WOT peers");
 	st->SetDefault("web.page.peermaintenance.trustedcount","peers have sufficient message trust to download their messages");
 	st->SetDefault("web.page.peermaintenance.neverseen","never seen");
 	st->SetDefault("web.page.peermaintenance.remove","Remove");
@@ -261,7 +269,12 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.peerdetails.trustlistxml","Trust List XML");
 	st->SetDefault("web.page.peerdetails.trustlist","Trust List");
 	st->SetDefault("web.page.peerdetails.dateadded","Date Added");
-	st->SetDefault("web.page.peerdetails.lastseen","Last Seen");
+	st->SetDefault("web.page.peerdetails.fmsidentity","FMS Identity");
+	st->SetDefault("web.page.peerdetails.wotidentity","WOT Identity");
+	st->SetDefault("web.page.peerdetails.yes","Yes");
+	st->SetDefault("web.page.peerdetails.no","No");
+	st->SetDefault("web.page.peerdetails.lastseenfms","Last Seen (FMS)");
+	st->SetDefault("web.page.peerdetails.lastseenwot","Last Seen (WOT)");
 	st->SetDefault("web.page.peerdetails.addedmethod","Added Method");
 	st->SetDefault("web.page.peerdetails.hiddeninpeertrust","Hidden in Main Peer Trust Page");
 	st->SetDefault("web.page.peerdetails.hide","Hide");

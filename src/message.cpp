@@ -3,6 +3,8 @@
 #include "../include/stringfunctions.h"
 #include "../include/freenet/messagexml.h"
 #include "../include/option.h"
+#include "../include/unicode/unicodestring.h"
+#include "../include/base64.h"
 
 #include <Poco/DateTimeParser.h>
 #include <Poco/DateTimeFormatter.h>
@@ -201,6 +203,18 @@ const std::string Message::GetNNTPBody() const
 {
 	std::string nntpbody(m_body);
 
+	// find all LF that don't have a preceeding CR, and add the CR
+	std::string::size_type lfpos=nntpbody.find("\n");
+	while(lfpos!=std::string::npos)
+	{
+		if(lfpos==0 || nntpbody[lfpos-1]!='\r')
+		{
+			nntpbody.insert(lfpos,"\r");
+			lfpos++;
+		}
+		lfpos=nntpbody.find("\n",lfpos+1);
+	}
+
 	if(m_receivedfileattachments.size()>0)
 	{
 		nntpbody+="\r\nAttachments";
@@ -212,16 +226,17 @@ const std::string Message::GetNNTPBody() const
 		}
 	}
 
-	// find all LF that don't have a preceeding CR, and add the CR
-	std::string::size_type lfpos=nntpbody.find("\n");
-	while(lfpos!=std::string::npos)
+	// base64 encoding if max line is more than 997 bytes
+	// 997 instead of 998 because we might have added an extra \r above
+	if(m_bodylinemaxbytes>997)
 	{
-		if(lfpos==0 || nntpbody[lfpos-1]!='\r')
+		std::string encoded("");
+		Base64::Encode(std::vector<unsigned char>(nntpbody.begin(),nntpbody.end()),encoded);
+		nntpbody="";
+		for(std::string::size_type pos=0; pos<encoded.size(); pos+=76)
 		{
-			nntpbody.insert(lfpos,"\r");
-			lfpos++;
+			nntpbody+=encoded.substr(pos,76)+"\r\n";
 		}
-		lfpos=nntpbody.find("\n",lfpos+1);
 	}
 
 	return nntpbody;
@@ -270,6 +285,15 @@ const std::string Message::GetNNTPHeaders() const
 	rval+="Path: freenet\r\n";
 	rval+="Message-ID: "+GetNNTPArticleID()+"\r\n";
 	rval+="Content-Type: text/plain; charset=UTF-8\r\n";
+
+	if(m_bodylinemaxbytes>997)
+	{
+		rval+="Content-Transfer-Encoding: base64\r\n";
+	}
+	else
+	{
+		rval+="Content-Transfer-Encoding: 8bit\r\n";
+	}
 
 	return rval;
 }
@@ -377,15 +401,18 @@ void Message::HandleAdministrationMessage()
 					messagebody="Trust Changed for "+identityname+"\r\n";
 					messagebody+="Local Message Trust : "+messagetruststr+"\r\n";
 					messagebody+="Local Trust List Trust : "+trustlisttruststr+"\r\n";
-					SQLite3DB::Statement insert=m_db->Prepare("INSERT INTO tblMessage(FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body) VALUES('FMS',?,?,?,?,?,?);");
+					SQLite3DB::Statement insert=m_db->Prepare("INSERT INTO tblMessage(FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,BodyLineMaxBytes,MessageSource) VALUES('FMS',?,?,?,?,?,?,?,?);");
 					insert.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
 					insert.Bind(1,Poco::DateTimeFormatter::format(now,"%H:%M:%S"));
 					insert.Bind(2,identityname+" Trust Changed");
 					std::string uuidstr=uuid.toString();
 					StringFunctions::UpperCase(uuidstr,uuidstr);
+					int linemaxbytes=LineMaxBytes(messagebody);
 					insert.Bind(3,uuidstr);
 					insert.Bind(4,boardid);
 					insert.Bind(5,messagebody);
+					insert.Bind(6,linemaxbytes);
+					insert.Bind(7,SOURCE_AUTOMATED);
 					insert.Step(true);
 					lastid=insert.GetLastInsertRowID();
 
@@ -477,6 +504,7 @@ void Message::Initialize()
 	m_insertfileattachments.clear();
 	m_receivedfileattachments.clear();
 	m_changemessagetrustonreply=0;
+	m_bodylinemaxbytes=0;
 	Option option(m_db);
 
 	option.Get("ChangeMessageTrustOnReply",tempval);
@@ -496,6 +524,20 @@ void Message::Initialize()
 	tempval="51";
 	option.Get("MinLocalTrustListTrust",tempval);
 	StringFunctions::Convert(tempval,m_minlocaltrustlisttrust);
+}
+
+const long Message::LineMaxBytes(const std::string &body)
+{
+	std::vector<std::string>::size_type linemax=0;
+	std::vector<std::string> lines;
+	StringFunctions::Split(body,"\n",lines);
+
+	for(std::vector<std::string>::const_iterator i=lines.begin(); i!=lines.end(); i++)
+	{
+		linemax=(std::max)((*i).size(),linemax);
+	}
+
+	return linemax;
 }
 
 /*
@@ -593,11 +635,11 @@ const bool Message::LoadDB(const long dbmessageid, const long boardid)
 	
 	if(m_uniqueboardmessageids==true)
 	{
-		sql="SELECT tblMessage.MessageID, MessageUUID, Subject, Body, tblBoard.BoardName, MessageDate, MessageTime, FromName, tblMessageBoard.BoardMessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID INNER JOIN tblBoard ON tblMessage.ReplyBoardID=tblBoard.BoardID WHERE tblMessage.MessageID=?";
+		sql="SELECT tblMessage.MessageID, MessageUUID, Subject, Body, tblBoard.BoardName, MessageDate, MessageTime, FromName, tblMessageBoard.BoardMessageID, BodyLineMaxBytes FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID INNER JOIN tblBoard ON tblMessage.ReplyBoardID=tblBoard.BoardID WHERE tblMessage.MessageID=?";
 	}
 	else
 	{
-		sql="SELECT tblMessage.MessageID, MessageUUID, Subject, Body, tblBoard.BoardName, MessageDate, MessageTime, FromName, tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID INNER JOIN tblBoard ON tblMessage.ReplyBoardID=tblBoard.BoardID WHERE tblMessage.MessageID=?";
+		sql="SELECT tblMessage.MessageID, MessageUUID, Subject, Body, tblBoard.BoardName, MessageDate, MessageTime, FromName, tblMessage.MessageID, BodyLineMaxBytes FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID INNER JOIN tblBoard ON tblMessage.ReplyBoardID=tblBoard.BoardID WHERE tblMessage.MessageID=?";
 	}
 	if(boardid!=-1)
 	{
@@ -629,6 +671,7 @@ const bool Message::LoadDB(const long dbmessageid, const long boardid)
 		st.ResultText(7,m_fromname);
 		st.ResultInt(8,tempint);
 		m_nntpmessageid=tempint;
+		st.ResultInt(9,m_bodylinemaxbytes);
 		st.Finalize();
 
 		int tzdiff=0;

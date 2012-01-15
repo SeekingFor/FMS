@@ -35,8 +35,25 @@ void KeyFinderHTMLRenderVisitor::Visit(KeyFinderItem &item)
 {
 	if(item.GetItemType()==KeyFinderItem::TYPE_TEXT)
 	{
+		std::string output("");
 		const KeyFinderItemText *textitem=dynamic_cast<const KeyFinderItemText *>(&item);
-		m_rendered+=textitem->GetText();
+		output=textitem->GetText();
+
+		output=StringFunctions::Replace(output,"\r\n","\n");
+		output=StringFunctions::Replace(output,"&","&amp;");
+		output=StringFunctions::Replace(output,"<","&lt;");
+		output=StringFunctions::Replace(output,">","&gt;");
+		output=StringFunctions::Replace(output,"[","&#91;");
+		output=StringFunctions::Replace(output,"]","&#93;");
+
+		if(m_showsmilies==true)
+		{
+			output=m_emot->Replace(output);
+		}
+
+		output=StringFunctions::Replace(output,"\n","<br />");
+
+		m_rendered+=output;
 	}
 	else if(item.GetItemType()==KeyFinderItem::TYPE_KEY)
 	{
@@ -231,13 +248,15 @@ void KeyFinderParser::Cleanup(std::vector<KeyFinderItem *> &items)
 	items.clear();
 }
 
-std::string KeyFinderHTMLRenderer::Render(const std::string &message, const std::string &fproxyprotocol, const std::string &fproxyhost, const std::string &fproxyport)
+std::string KeyFinderHTMLRenderer::Render(const std::string &message, const std::string &fproxyprotocol, const std::string &fproxyhost, const std::string &fproxyport, const bool showsmilies, EmoticonReplacer *emot)
 {
 	KeyFinderHTMLRenderVisitor rv;
 	std::vector<KeyFinderItem *> items=m_parser.ParseMessage(message);
 	rv.SetFProxyHost(fproxyhost);
 	rv.SetFProxyPort(fproxyport);
 	rv.SetFProxyProtocol(fproxyprotocol);
+	rv.SetShowSmilies(showsmilies);
+	rv.SetEmoticonReplacer(emot);
 
 	for(std::vector<KeyFinderItem *>::const_iterator i=items.begin(); i!=items.end(); i++)
 	{

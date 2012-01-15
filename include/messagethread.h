@@ -28,6 +28,8 @@ public:
 private:
 	const threadnode GetOriginalMessageNode(const long messageid, const long boardid, const unsigned int currentdepth);
 	void AddChildren(const long messageid, const long level, const long boardid, const unsigned int currentdepth);
+	void AddChildren(const std::string &messageuuid, const long boardid);
+	const bool Added(const long messageid) const;
 
 	class datecompare
 	{

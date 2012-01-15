@@ -208,7 +208,10 @@ void IIndexRequester<IDTYPE>::Process()
 				// we requested from all ids in the list, repopulate the list (only every 10 minutes)
 				if(m_lastpopulated<(now-Poco::Timespan(0,0,10,0,0)))
 				{
-					PopulateIDList();
+					if(m_maxrequests>0)
+					{
+						PopulateIDList();
+					}
 					m_lastpopulated=Poco::Timestamp();
 				}
 			}
@@ -231,7 +234,10 @@ void IIndexRequester<IDTYPE>::Process()
 				// we requested from all ids in the list, repopulate the list (only every 10 minutes)
 				if(m_lastpopulated<(now-Poco::Timespan(0,0,10,0,0)))
 				{
-					PopulateIDList();
+					if(m_maxrequests>0)
+					{
+						PopulateIDList();
+					}
 					m_lastpopulated=Poco::Timestamp();
 				}
 			}
@@ -241,7 +247,10 @@ void IIndexRequester<IDTYPE>::Process()
 	// this will recheck for ids every minute
 	if(m_ids.size()==0 && m_tempdate<(now-Poco::Timespan(0,0,1,0,0)))
 	{
-		PopulateIDList();
+		if(m_maxrequests>0)
+		{
+			PopulateIDList();
+		}
 		m_tempdate=now;
 		m_lastreceived=now;
 	}

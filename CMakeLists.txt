@@ -80,11 +80,16 @@ src/freenet/messagerequester.cpp
 src/freenet/messagexml.cpp
 src/freenet/oldmessagelistrequester.cpp
 src/freenet/siteinserter.cpp
+src/freenet/soneactiverequester.cpp
+src/freenet/sonerequester.cpp
+src/freenet/sonexml.cpp
 src/freenet/trustlistinserter.cpp
 src/freenet/trustlistrequester.cpp
 src/freenet/trustlistxml.cpp
 src/freenet/unkeyedidcreator.cpp
 src/freenet/unknownidentityrequester.cpp
+src/freenet/wotidentityrequester.cpp
+src/freenet/wotidentityxml.cpp
 src/freenet/captcha/simplecaptcha.cpp
 src/freenet/captcha/unlikecaptcha1.cpp
 src/freenet/captcha/easybmp/EasyBMP.cpp

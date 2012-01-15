@@ -27,6 +27,9 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 	int freesiteedition=-1;
 	std::string publishtrustlist="";
 	std::string messagebase="";
+	int isfms=0;
+	int iswot=0;
+	std::string wotlastseen="";
 
 	Option option(m_db);
 
@@ -62,7 +65,7 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		del.Step();
 	}
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT Name,PublicKey,DateAdded,LastSeen,AddedMethod,Hidden,FreesiteEdition,PublishTrustList,PeerMessageTrust,PeerTrustListTrust FROM tblIdentity WHERE IdentityID=?;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT Name,PublicKey,DateAdded,LastSeen,AddedMethod,Hidden,FreesiteEdition,PublishTrustList,PeerMessageTrust,PeerTrustListTrust,IsFMS,IsWOT,WOTLastSeen FROM tblIdentity WHERE IdentityID=?;");
 	st.Bind(0,identityid);
 	st.Step();
 
@@ -82,6 +85,9 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		st.ResultText(7,publishtrustlist);
 		st.ResultText(8,messagetrust);
 		st.ResultText(9,trustlisttrust);
+		st.ResultInt(10,isfms);
+		st.ResultInt(11,iswot);
+		st.ResultText(12,wotlastseen);
 
 		usk=publickey;
 		if(freesiteedition>=0 && usk.find("SSK@")==0)
@@ -112,7 +118,16 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 			content+="<tr><td>"+m_trans->Get("web.page.peerdetails.trustlistxml")+"</td><td class=\"smaller\"><a href=\""+fproxyprotocol+"://"+fproxyhost+":"+fproxyport+"/"+SanitizeOutput(publickey)+messagebase+"|"+lastseendate+"|TrustList|0.xml\">"+m_trans->Get("web.page.peerdetails.trustlist")+"</a></td></tr>";
 		}
 		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.dateadded")+"</td><td>"+dateadded+"</td></tr>";
-		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.lastseen")+"</td><td>"+lastseen+"</td></tr>";
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.fmsidentity")+"</td><td>"+(isfms==1 ? m_trans->Get("web.page.peerdetails.yes") : m_trans->Get("web.page.peerdetails.no"))+"</td></tr>";
+		if(isfms==1)
+		{
+			content+="<tr><td>"+m_trans->Get("web.page.peerdetails.lastseenfms")+"</td><td>"+lastseen+"</td></tr>";
+		}
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.wotidentity")+"</td><td>"+(iswot==1 ? m_trans->Get("web.page.peerdetails.yes") : m_trans->Get("web.page.peerdetails.no"))+"</td></tr>";
+		if(iswot==1)
+		{
+			content+="<tr><td>"+m_trans->Get("web.page.peerdetails.lastseenwot")+"</td><td>"+wotlastseen+"</td></tr>";
+		}
 		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.addedmethod")+"</td><td class=\"smaller\">"+SanitizeOutput(addedmethod)+"</td></tr>";
 		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.hiddeninpeertrust")+"</td>";
 		content+="<td>"+hidden;

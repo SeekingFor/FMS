@@ -4,6 +4,7 @@
 #include "../../include/unicode/unicodestring.h"
 #include "../../include/global.h"
 #include "../../include/threadbuilder.h"
+#include "../../include/message.h"
 
 #include <algorithm>
 #include <vector>
@@ -261,9 +262,10 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 		{
 			std::string nntpbody="";
 			nntpbody=xml.GetBody();
+			int linemaxbytes=Message::LineMaxBytes(nntpbody);
 			bool tempbool;
 
-			st=m_db->Prepare("INSERT INTO tblMessage(IdentityID,FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,MessageIndex,InsertDate) VALUES(?,?,?,?,?,?,?,?,?,?);");
+			st=m_db->Prepare("INSERT INTO tblMessage(IdentityID,FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,MessageIndex,InsertDate,BodyLineMaxBytes,MessageSource) VALUES(?,?,?,?,?,?,?,?,?,?,?,?);");
 			st.Bind(0,identityid);
 			st.Bind(1,GetIdentityName(identityid));
 			st.Bind(2,xml.GetDate());
@@ -274,6 +276,8 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			st.Bind(7,nntpbody);
 			st.Bind(8,index);
 			st.Bind(9,idparts[3]);
+			st.Bind(10,linemaxbytes);
+			st.Bind(11,Message::SOURCE_FMS);
 			inserted=trans.Step(st,true);
 			if(trans.IsSuccessful()==false && (trans.GetLastError() & SQLITE_CONSTRAINT)==SQLITE_CONSTRAINT)
 			{

@@ -74,7 +74,7 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
 
-		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, SingleUse=?, LastSeen=?, PublishTrustList=?, PublishBoardList=?, FreesiteEdition=?, Signature=? WHERE IdentityID=?");
+		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, SingleUse=?, LastSeen=?, PublishTrustList=?, PublishBoardList=?, FreesiteEdition=?, Signature=?, IsFMS=1 WHERE IdentityID=?");
 		
 		name=xml.GetName();
 		name.Trim(MAX_IDENTITY_NAME_LENGTH);

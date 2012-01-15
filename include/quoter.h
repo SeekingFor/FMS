@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 
+#include "http/emoticonreplacer.h"
 #include "keyfinder.h"
 
 class QuoterVisitor;
@@ -44,6 +45,7 @@ public:
 
 	void SetText(const std::string &text)	{ m_text=text; }
 	const std::string &GetText() const		{ return m_text; }
+	const std::string GetSanitizedText(const bool showsmilies, EmoticonReplacer *emot) const;
 
 private:
 	std::string m_text;
@@ -89,10 +91,14 @@ public:
 	QuoterHTMLRenderVisitor():m_detectlinks(false)	{ }
 	virtual void Visit(const QuoterItem &item);
 
-	void SetDetectLinks(const bool detectlinks)		{ m_detectlinks=detectlinks; }
+	void SetDetectLinks(const bool detectlinks)				{ m_detectlinks=detectlinks; }
+	void SetShowSmilies(const bool showsmilies)				{ m_showsmilies=showsmilies; }
+	void SetEmoticonReplacer(EmoticonReplacer *emot)		{ m_emot=emot; }
 private:
 	KeyFinderHTMLRenderer m_keyrenderer;
 	bool m_detectlinks;
+	bool m_showsmilies;
+	EmoticonReplacer *m_emot;
 };
 
 class QuoterParser
@@ -110,9 +116,14 @@ public:
 	std::string Render(const std::string &message);
 
 	void SetDetectLinks(const bool detectlinks)	{ m_detectlinks=detectlinks; m_rv.SetDetectLinks(detectlinks); }
+	void SetShowSmilies(const bool showsmilies)	{ m_showsmilies=showsmilies; m_rv.SetShowSmilies(showsmilies); }
+	void SetEmoticonReplacer(EmoticonReplacer *emot)	{ m_emot=emot; m_rv.SetEmoticonReplacer(emot); }
+
 private:
 	QuoterHTMLRenderVisitor m_rv;
 	bool m_detectlinks;
+	bool m_showsmilies;
+	EmoticonReplacer *m_emot;
 };
 
 #endif	// _quoter_

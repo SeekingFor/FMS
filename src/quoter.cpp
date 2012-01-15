@@ -1,4 +1,5 @@
 #include "../include/quoter.h"
+#include "../include/stringfunctions.h"
 
 #include <sstream>
 #include <algorithm>
@@ -48,6 +49,26 @@ void QuoterItemText::Accept(QuoterVisitor &visitor)
 	visitor.Visit(*this);
 }
 
+const std::string QuoterItemText::GetSanitizedText(bool showsmilies, EmoticonReplacer *emot) const
+{
+	std::string output(m_text);
+	output=StringFunctions::Replace(output,"\r\n","\n");
+	output=StringFunctions::Replace(output,"&","&amp;");
+	output=StringFunctions::Replace(output,"<","&lt;");
+	output=StringFunctions::Replace(output,">","&gt;");
+	output=StringFunctions::Replace(output,"[","&#91;");
+	output=StringFunctions::Replace(output,"]","&#93;");
+
+	if(showsmilies==true)
+	{
+		output=emot->Replace(output);
+	}
+
+	output=StringFunctions::Replace(output,"\n","<br />");
+
+	return output;
+}
+
 QuoterItemArea::QuoterItemArea():QuoterItem(TYPE_AREA),m_items()
 {
 
@@ -84,11 +105,11 @@ void QuoterHTMLRenderVisitor::Visit(const QuoterItem &item)
 		const QuoterItemText *textitem=dynamic_cast<const QuoterItemText *>(&item);
 		if(m_detectlinks==true)
 		{
-			m_rendered+=m_keyrenderer.Render(textitem->GetText(),"[FPROXYPROTOCOL]","[FPROXYHOST]","[FPROXYPORT]");
+			m_rendered+=m_keyrenderer.Render(textitem->GetText(),"[FPROXYPROTOCOL]","[FPROXYHOST]","[FPROXYPORT]",m_showsmilies,m_emot);
 		}
 		else
 		{
-			m_rendered+=textitem->GetText();
+			m_rendered+=textitem->GetSanitizedText(m_showsmilies,m_emot);
 		}
 	}
 	else if(item.GetItemType()==QuoterItem::TYPE_AREA)

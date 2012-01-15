@@ -61,6 +61,15 @@ public:
 	const std::string GetMessageXML(const bool withfakeattachmentkeys=false) const;
 
 	static const long MaxMessageXMLSize()	{ return 1000000; }
+	static const long LineMaxBytes(const std::string &body);
+
+	enum messagesource
+	{
+		SOURCE_FMS=1,
+		SOURCE_AUTOMATED=2,
+		SOURCE_FROST=3,
+		SOURCE_SONE=4
+	};
 
 private:
 	void Initialize();
@@ -103,6 +112,7 @@ private:
 	long m_changemessagetrustonreply;
 	long m_minlocalmessagetrust;
 	long m_minlocaltrustlisttrust;
+	int m_bodylinemaxbytes;
 
 };
 

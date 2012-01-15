@@ -51,6 +51,10 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 	int previnsertcount=0;
 	bool savenewidentities=false;
 	SQLite3DB::Transaction trans(m_db);
+	Option option(m_db);
+	bool savewot=false;
+
+	option.GetBool("WOTDownloadIdentities",savewot);
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(message["DataLength"],datalength);
@@ -84,7 +88,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 	}
 
 	// get count of identities added in last 24 hours
-	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE DateAdded>=?;");
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE DateAdded>=? AND IsFMS=1;");
 	now-=Poco::Timespan(1,0,0,0,0);
 	st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
 	st.Step();
@@ -101,7 +105,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 	}
 
 	// get count of identities added more than 24 hours ago - if 0 then we will accept more than 100 identities now
-	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE DateAdded<?;");
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE DateAdded<? AND IsFMS=1;");
 	st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
 	st.Step();
 	if(st.RowReturned())
@@ -154,10 +158,11 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		trans.Step(st);
 		trans.Finalize(st);
 
-		st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey=?;");
+		st=m_db->Prepare("SELECT IdentityID, IsFMS, IsWOT FROM tblIdentity WHERE PublicKey=?;");
 		trustst=m_db->Prepare("INSERT INTO tblPeerTrust(IdentityID,TargetIdentityID,MessageTrust,TrustListTrust,MessageTrustComment,TrustListTrustComment) VALUES(?,?,?,?,?,?);");
+		SQLite3DB::Statement idupdst=m_db->Prepare("UPDATE tblIdentity SET IsFMS=?, IsWOT=? WHERE IdentityID=?;");
 		
-		SQLite3DB::Statement idinsert=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES(?,?,?);");
+		SQLite3DB::Statement idinsert=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod,IsFMS,IsWOT) VALUES(?,?,?,?,?);");
 		
 		// loop through all trust entries in xml and add to database if we don't already know them
 		FreenetSSKKey ssk;
@@ -181,12 +186,17 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 						// 24 hour limit is lifted if the database didn't contain any identities inserted more than 24 hours ago (new db) - 100 new identities per trust list allowed in this case
 						if((insertcount<100 && previnsertcount==0) || (insertcount<10 && dayinsertcount<((std::min)(((std::max)(previnsertcount/10,10)),500))))
 						{
-							idinsert.Bind(0,ssk.GetBaseKey());
-							idinsert.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
-							idinsert.Bind(2,"trust list of "+publisherid);
-							trans.Step(idinsert,true);
-							id=idinsert.GetLastInsertRowID();
-							trans.Reset(idinsert);
+							if((savewot==true && xml.GetIsWOT(i)==true) || xml.GetIsFMS(i)==true)
+							{
+								idinsert.Bind(0,ssk.GetBaseKey());
+								idinsert.Bind(1,Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
+								idinsert.Bind(2,"FMS trust list of "+publisherid);
+								idinsert.Bind(3,xml.GetIsFMS(i)==true ? 1 : 0);
+								idinsert.Bind(4,xml.GetIsWOT(i)==true ? 1 : 0);
+								trans.Step(idinsert,true);
+								id=idinsert.GetLastInsertRowID();
+								trans.Reset(idinsert);
+							}
 						}
 						insertcount++;
 						dayinsertcount++;
@@ -199,7 +209,33 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 			}
 			else
 			{
+				int oldisfms=0;
+				int oldiswot=0;
+				int isfms=0;
+				int iswot=0;
 				st.ResultInt(0,id);
+				st.ResultInt(1,oldisfms);
+				st.ResultInt(2,oldiswot);
+				isfms=oldisfms;
+				iswot=oldiswot;
+				// never change 1 to 0 in IsFMS or IsWOT based on trust list because trust list inserter could maliciously change it
+				// only change from 0 to 1
+				if((xml.GetIsFMS(i)==true && oldisfms==0) || (xml.GetIsWOT(i)==true && oldiswot==0))
+				{
+					if(xml.GetIsFMS(i)==true)
+					{
+						isfms=1;
+					}
+					if(xml.GetIsWOT(i)==true)
+					{
+						iswot=1;
+					}
+					idupdst.Bind(0,isfms);
+					idupdst.Bind(1,iswot);
+					idupdst.Bind(2,id);
+					idupdst.Step();
+					idupdst.Reset();
+				}
 			}
 			trans.Reset(st);
 

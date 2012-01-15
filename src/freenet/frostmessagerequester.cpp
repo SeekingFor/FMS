@@ -2,6 +2,7 @@
 #include "../../include/freenet/frostidentity.h"
 #include "../../include/freenet/frostmessagexml.h"
 #include "../../include/threadbuilder.h"
+#include "../../include/message.h"
 
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeParser.h>
@@ -110,8 +111,9 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 		{
 			std::string nntpbody="";
 			nntpbody=xml.GetBody();
+			int linemaxbytes=Message::LineMaxBytes(nntpbody);
 
-			st=m_db->Prepare("INSERT INTO tblMessage(FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,InsertDate,MessageIndex) VALUES(?,?,?,?,?,?,?,?,?);");
+			st=m_db->Prepare("INSERT INTO tblMessage(FromName,MessageDate,MessageTime,Subject,MessageUUID,ReplyBoardID,Body,InsertDate,MessageIndex,BodyLineMaxBytes,MessageSource) VALUES(?,?,?,?,?,?,?,?,?,?,?);");
 			st.Bind(0,xml.GetFrostAuthor());
 			st.Bind(1,xml.GetDate());
 			st.Bind(2,xml.GetTime());
@@ -121,6 +123,8 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 			st.Bind(6,nntpbody);
 			st.Bind(7,idparts[1]);
 			st.Bind(8,idparts[2]);
+			st.Bind(9,linemaxbytes);
+			st.Bind(10,Message::SOURCE_FROST);
 			inserted=trans.Step(st,true);
 			// constraint failure, we'll still mark the index as retrieved later
 			if(trans.IsSuccessful()==false && (trans.GetLastError() & SQLITE_CONSTRAINT)==SQLITE_CONSTRAINT)

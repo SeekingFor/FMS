@@ -20,6 +20,8 @@ ForumTemplateViewThreadPage::ForumTemplateViewThreadPage(SQLite3DB::DB *db, cons
 	option.GetInt("MinLocalMessageTrust",m_minlocalmessagetrust);
 	option.GetInt("MinPeerMessageTrust",m_minpeermessagetrust);
 	m_htmlrenderer.SetDetectLinks(m_detectlinks);
+	m_htmlrenderer.SetShowSmilies(m_showsmilies);
+	m_htmlrenderer.SetEmoticonReplacer(&m_emot);
 	m_pagetitle=GetBasePageTitle();
 }
 
@@ -508,29 +510,13 @@ const std::string ForumTemplateViewThreadPage::GetPageTitle(const std::string &m
 
 const std::string ForumTemplateViewThreadPage::FixBody(const std::string &body)
 {
+	/*
 	std::string output=body;
-
-	output=StringFunctions::Replace(output,"\r\n","\n");
-	output=StringFunctions::Replace(output,"&","&amp;");
-	output=StringFunctions::Replace(output,"<","&lt;");
-	output=StringFunctions::Replace(output,">","&gt;");
-	output=StringFunctions::Replace(output,"[","&#91;");
-	output=StringFunctions::Replace(output,"]","&#93;");
 
 	output=m_htmlrenderer.Render(output);
 
-	/*
-	if(m_detectlinks==true)
-	{
-		output=KeyFinderHTMLRenderer::Render(output,"[FPROXYPROTOCOL]","[FPROXYHOST]","[FPROXYPORT]");
-	}
-	*/
-	if(m_showsmilies==true)
-	{
-		output=m_emot.Replace(output);
-	}
-
-	output=StringFunctions::Replace(output,"\n","<br />");
-
 	return output;
+	*/
+
+	return m_htmlrenderer.Render(body);
 }

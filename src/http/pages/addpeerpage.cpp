@@ -22,7 +22,7 @@ const std::string AddPeerPage::GenerateContent(const std::string &method, const 
 		}
 		if(publickey!="" && publickey.find("SSK@")==0 && publickey[publickey.size()-1]=='/')
 		{
-			SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES(?,?,?);");
+			SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod,IsFMS) VALUES(?,?,?,1);");
 			st.Bind(0,publickey);
 			st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 			st.Bind(2,"manually");

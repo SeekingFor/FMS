@@ -155,6 +155,9 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	std::string localidentityidstr;
 	std::string messagetrustcomment="";
 	std::string trustlisttrustcomment="";
+	bool isfms=false;
+	bool iswot=false;
+	int tempint=0;
 	int identityid=-1;
 	int count=0;
 	bool add=false;
@@ -177,9 +180,10 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	
 	//SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey, LocalMessageTrust, LocalTrustListTrust, MessageTrustComment, TrustListTrustComment FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND LastSeen>=?;");
 	// we want to order by public key so we can't do identity correllation based on the sequence of identities in the list.
-	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey, tblIdentityTrust.LocalMessageTrust, tblIdentityTrust.LocalTrustListTrust, tblIdentityTrust.MessageTrustComment, tblIdentityTrust.TrustListTrustComment, tblIdentity.IdentityID, tblIdentity.DateAdded FROM tblIdentity INNER JOIN tblIdentityTrust ON tblIdentity.IdentityID=tblIdentityTrust.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND LastSeen>=? AND tblIdentityTrust.LocalIdentityID=? ORDER BY PublicKey;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT PublicKey, tblIdentityTrust.LocalMessageTrust, tblIdentityTrust.LocalTrustListTrust, tblIdentityTrust.MessageTrustComment, tblIdentityTrust.TrustListTrustComment, tblIdentity.IdentityID, tblIdentity.DateAdded, tblIdentity.IsFMS, tblIdentity.IsWOT FROM tblIdentity INNER JOIN tblIdentityTrust ON tblIdentity.IdentityID=tblIdentityTrust.IdentityID WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND (LastSeen>=? OR WOTLastSeen>=?) AND tblIdentityTrust.LocalIdentityID=? ORDER BY PublicKey;");
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
-	st.Bind(1,localidentityid);
+	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+	st.Bind(2,localidentityid);
 	trans.Step(st);
 	while(st.RowReturned())
 	{
@@ -206,8 +210,24 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 		st.ResultInt(5,identityid);
 		dateadded="";
 		st.ResultText(6,dateadded);
-
-		add=false;
+		st.ResultInt(7,tempint);
+		if(tempint==1)
+		{
+			isfms=true;
+		}
+		else
+		{
+			isfms=false;
+		}
+		st.ResultInt(8,tempint);
+		if(tempint==1)
+		{
+			iswot=true;
+		}
+		else
+		{
+			iswot=false;
+		}
 		
 		// Add identities to list regardless of last message sent date
 		// If we saw them recently, then they are added, no exceptions
@@ -246,7 +266,7 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 
 		if(add==true)
 		{
-			xml.AddTrust(publickey,messagetrust,trustlisttrust,messagetrustcomment,trustlisttrustcomment);
+			xml.AddTrust(publickey,messagetrust,trustlisttrust,messagetrustcomment,trustlisttrustcomment,isfms,iswot);
 		}
 
 		trans.Step(st);

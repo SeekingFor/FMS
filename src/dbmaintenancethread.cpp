@@ -3,7 +3,7 @@
 #include "../include/option.h"
 #include "../include/threadbuilder.h"
 #include "../include/dbsetup.h"
-#include "../../../include/fmsapp.h"
+#include "../include/fmsapp.h"
 
 #include <vector>
 
@@ -297,7 +297,7 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	// from another trust list
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(20,0,0,0,0);
-	m_db->Execute("DELETE FROM tblIdentity WHERE LastSeen IS NULL AND DateAdded<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	m_db->Execute("DELETE FROM tblIdentity WHERE LastSeen IS NULL AND WOTLastSeen IS NULL AND DateAdded<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 
 	// delete old identity requests - we don't need them anymore
 	date=Poco::Timestamp();
@@ -448,6 +448,10 @@ void DBMaintenanceThread::Do1DayMaintenance()
 
 	// recount messages in each board
 	m_db->Execute("UPDATE tblBoard SET MessageCount=(SELECT IFNULL(COUNT(*),0) FROM tblMessageBoard WHERE tblMessageBoard.BoardID=tblBoard.BoardID);");
+
+	// remove FMS or WOT flags from identities that were never seen in 30 days
+	m_db->Execute("UPDATE tblIdentity SET IsFMS=0 WHERE LastSeen IS NULL AND IsFMS=1 AND SolvedPuzzleCount=0 AND DateAdded<datetime('now','-30 days');");
+	m_db->Execute("UPDATE tblIdentity SET IsWOT=0 WHERE WOTLastSeen IS NULL AND IsWOT=1 AND DateAdded<datetime('now','-30 days');");
 
 	m_log->debug("PeriodicDBMaintenance::Do1DayMaintenance end");
 

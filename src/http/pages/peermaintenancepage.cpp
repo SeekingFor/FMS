@@ -27,14 +27,15 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 	{
 		if((*queryvars.find("formaction")).second=="removenotseen")
 		{
-			m_db->Execute("DELETE FROM tblIdentity WHERE LastSeen IS NULL;");
+			m_db->Execute("DELETE FROM tblIdentity WHERE LastSeen IS NULL AND WOTLastSeen IS NULL;");
 		}
 		else if((*queryvars.find("formaction")).second=="removelastseen20")
 		{
 			date=Poco::Timestamp();
 			date-=Poco::Timespan(20,0,0,0,0);
-			st=m_db->Prepare("DELETE FROM tblIdentity WHERE LastSeen<?;");
+			st=m_db->Prepare("DELETE FROM tblIdentity WHERE IFNULL(LastSeen<?,1) AND IFNULL(WOTLastSeen<?,1);");
 			st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+			st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 			st.Step();
 		}
 		else if((*queryvars.find("formaction")).second=="removeneversent")
@@ -45,8 +46,9 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 		{
 			date=Poco::Timestamp();
 			date-=Poco::Timespan(20,0,0,0,0);
-			st=m_db->Prepare("DELETE FROM tblIdentity WHERE IdentityID NOT IN (SELECT IdentityID FROM tblMessage WHERE IdentityID IS NOT NULL GROUP BY IdentityID) AND LastSeen<?;");
+			st=m_db->Prepare("DELETE FROM tblIdentity WHERE IdentityID NOT IN (SELECT IdentityID FROM tblMessage WHERE IdentityID IS NOT NULL GROUP BY IdentityID) AND IFNULL(LastSeen<?,1) AND IFNULL(WOTLastSeen<?,1);");
 			st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+			st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 			st.Step();
 		}
 		else if((*queryvars.find("formaction")).second=="removedaysago" && queryvars.find("daysago")!=queryvars.end() && (*queryvars.find("daysago")).second!="")
@@ -55,8 +57,9 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 			StringFunctions::Convert((*queryvars.find("daysago")).second.GetData(),tempint);
 			date=Poco::Timestamp();
 			date-=Poco::Timespan(tempint,0,0,0,0);
-			st=m_db->Prepare("DELETE FROM tblIdentity WHERE LastSeen<?;");
+			st=m_db->Prepare("DELETE FROM tblIdentity WHERE IFNULL(LastSeen<?,1) AND IFNULL(WOTLastSeen<?,1);");
 			st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+			st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 			st.Step();
 		}
 		else if((*queryvars.find("formaction")).second=="removenulldaysago" && queryvars.find("daysago")!=queryvars.end() && (*queryvars.find("daysago")).second!="")
@@ -65,8 +68,9 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 			StringFunctions::Convert((*queryvars.find("daysago")).second.GetData(),tempint);
 			date=Poco::Timestamp();
 			date-=Poco::Timespan(tempint,0,0,0,0);
-			st=m_db->Prepare("DELETE FROM tblIdentity WHERE LastSeen<? AND LocalMessageTrust IS NULL AND LocalTrustListTrust IS NULL;");
+			st=m_db->Prepare("DELETE FROM tblIdentity WHERE IFNULL(LastSeen<?,1) AND IFNULL(WOTLastSeen<?,1) AND LocalMessageTrust IS NULL AND LocalTrustListTrust IS NULL;");
 			st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+			st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 			st.Step();
 		}
 		else if((*queryvars.find("formaction")).second=="removeposted30daysago")
@@ -104,6 +108,22 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 	content+="</tr>";
 
 	content+="<tr>";
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE IsFMS=1;");
+	st.Step();
+	st.ResultText(0,tempval);
+	content+="<td>"+tempval+"</td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.fmspeers")+"</td>";
+	content+="</tr>";
+
+	content+="<tr>";
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE IsWOT=1;");
+	st.Step();
+	st.ResultText(0,tempval);
+	content+="<td>"+tempval+"</td>";
+	content+="<td>"+m_trans->Get("web.page.peermaintenance.wotpeers")+"</td>";
+	content+="</tr>";
+
+	content+="<tr>";
 	sql="SELECT COUNT(*) FROM tblIdentity WHERE ";
 	if(m_localtrustoverrides==true)
 	{
@@ -122,7 +142,7 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 	content+="</tr>";
 
 	content+="<tr>";
-	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE LastSeen IS NULL;");
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE LastSeen IS NULL AND WOTLastSeen IS NULL;");
 	st.Step();
 	st.ResultText(0,tempval);
 	content+="<td>"+tempval+"</td>";
@@ -138,7 +158,7 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(20,0,0,0,0);
-	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE LastSeen<?;");
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity WHERE IFNULL(LastSeen<?,1) AND IFNULL(WOTLastSeen<?,1);");
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 	st.Step();
 	st.ResultText(0,tempval);
@@ -207,8 +227,9 @@ const std::string PeerMaintenancePage::GenerateContent(const std::string &method
 
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(20,0,0,0,0);
-	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity LEFT JOIN tblMessage ON tblIdentity.IdentityID=tblMessage.IdentityID WHERE tblMessage.IdentityID IS NULL AND tblIdentity.LastSeen<?;");
+	st=m_db->Prepare("SELECT COUNT(*) FROM tblIdentity LEFT JOIN tblMessage ON tblIdentity.IdentityID=tblMessage.IdentityID WHERE tblMessage.IdentityID IS NULL AND IFNULL(tblIdentity.LastSeen<?,1) AND IFNULL(tblIdentity.WOTLastSeen<?,1);");
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+	st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 	st.Step();
 	st.ResultText(0,tempval);
 	content+="<tr>";

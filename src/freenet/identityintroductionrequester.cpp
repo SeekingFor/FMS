@@ -82,7 +82,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 				// we don't already know about this id - add it
 				trans.Finalize(st);
 				date=Poco::Timestamp();
-				st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod,SolvedPuzzleCount) VALUES(?,?,?,1);");
+				st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod,SolvedPuzzleCount,IsFMS) VALUES(?,?,?,1,1);");
 				st.Bind(0,ssk.GetBaseKey());
 				st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 				st.Bind(2,"solved captcha");
@@ -92,7 +92,7 @@ const bool IdentityIntroductionRequester::HandleAllData(FCPv2::Message &message)
 			{
 				int id=0;
 				st.ResultInt(0,id);
-				st=m_db->Prepare("UPDATE tblIdentity SET SolvedPuzzleCount=SolvedPuzzleCount+1 WHERE IdentityID=?;");
+				st=m_db->Prepare("UPDATE tblIdentity SET SolvedPuzzleCount=SolvedPuzzleCount+1, IsFMS=1 WHERE IdentityID=?;");
 				st.Bind(0,id);
 				trans.Step(st);
 			}

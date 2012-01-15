@@ -1,6 +1,8 @@
 #ifndef _keyfinder_
 #define _keyfinder_
 
+#include "../../../include/http/emoticonreplacer.h"
+
 #include <string>
 #include <vector>
 
@@ -79,16 +81,21 @@ protected:
 class KeyFinderHTMLRenderVisitor:public KeyFinderRenderVisitor
 {
 public:
+	KeyFinderHTMLRenderVisitor()	{ }
 	virtual void Visit(KeyFinderItem &item);
 
 	void SetFProxyHost(const std::string &host)				{ m_fproxyhost=host; }
 	void SetFProxyPort(const std::string &port)				{ m_fproxyport=port; }
 	void SetFProxyProtocol(const std::string &protocol)		{ m_fproxyprotocol=protocol; }
+	void SetShowSmilies(const bool showsmilies)				{ m_showsmilies=showsmilies; }
+	void SetEmoticonReplacer(EmoticonReplacer *emot)		{ m_emot=emot; }
 
 private:
 	std::string m_fproxyhost;
 	std::string m_fproxyport;
 	std::string m_fproxyprotocol;
+	bool m_showsmilies;
+	EmoticonReplacer *m_emot;
 };
 
 class KeyFinderParser
@@ -106,7 +113,7 @@ private:
 class KeyFinderHTMLRenderer
 {
 public:
-	std::string Render(const std::string &message, const std::string &fproxyprotocol, const std::string &fproxyhost, const std::string &fproxyport);
+	std::string Render(const std::string &message, const std::string &fproxyprotocol, const std::string &fproxyhost, const std::string &fproxyport, const bool showsmilies, EmoticonReplacer *emot);
 private:
 	KeyFinderParser m_parser;
 };

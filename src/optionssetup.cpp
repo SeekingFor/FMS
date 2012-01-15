@@ -1008,6 +1008,70 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 
 #endif	// FROST_SUPPORT
 
+	st.Bind(0,"WOTDownloadIdentities");
+	st.Bind(1,"false");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"WOT Support");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Enable downloading of WOT identities.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"WOTDownloadIdentities");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"WOTMaxIdentityRequests");
+	st.Bind(1,"0");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"WOT Support");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"The maximum number of concurrent requests for WOT identities.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"WOTMaxIdentityRequests");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"SoneMaxRequests");
+	st.Bind(1,"0");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Sone Support");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"The maximum number of concurrent requests for Sones.  Set to 0 to disable downloading Sones.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"SoneMaxRequests");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"SoneBoardName");
+	st.Bind(1,"sone");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Sone Support");
+	upd.Bind(1,order++);
+	upd.Bind(2);
+	upd.Bind(3,"The name of the board Sones will be saved in.");
+	upd.Bind(4,"textbox");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"SoneBoardName");
+	upd.Step();
+	upd.Reset();
+
 	db->Execute("COMMIT;");
 
 }

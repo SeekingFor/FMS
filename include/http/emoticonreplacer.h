@@ -7,7 +7,10 @@
 class EmoticonReplacer
 {
 public:
+	EmoticonReplacer();
 	EmoticonReplacer(const std::string &imagepath);
+
+	void Initialize(const std::string &imagepath);
 
 	const std::string Replace(const std::string &message) const;
 

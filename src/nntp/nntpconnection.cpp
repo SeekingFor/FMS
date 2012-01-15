@@ -7,7 +7,7 @@
 #include "../../include/option.h"
 #include "../../include/nntp/extensiontrust.h"
 #include "../../include/threadwrapper/cancelablethread.h"
-#include "../../../include/fmsapp.h"
+#include "../../include/fmsapp.h"
 
 #include <algorithm>
 #include <Poco/DateTime.h>

@@ -109,6 +109,38 @@ void UnicodeString::CheckAndReplaceInvalid()
 	}
 }
 
+void UnicodeString::Erase(const wsize_type offset, const wsize_type count)
+{
+	if(CharacterCount()>offset && offset>=0 && count>0)
+	{
+		if((m_flags & FLAG_NARROW_OK)!=FLAG_NARROW_OK)
+		{
+			Narrowen();
+		}
+		std::string::iterator beginit=m_narrowstring.begin();
+		std::string::iterator endit=m_narrowstring.end();
+		try
+		{
+			utf8::advance(beginit,offset,m_narrowstring.end());
+			endit=beginit;
+			wsize_type realcount=count;
+
+			size_t dist=utf8::distance(endit,m_narrowstring.end());
+			if(dist<realcount)
+			{
+				realcount=dist;
+			}
+
+			utf8::advance(endit,realcount,m_narrowstring.end());
+			m_narrowstring.erase(beginit,endit);
+			m_flags=FLAG_NARROW_OK;
+		}
+		catch(...)
+		{
+		}
+	}
+}
+
 const UnicodeString::wsize_type UnicodeString::Find(const UnicodeString &right, const wsize_type offset) const
 {
 	if((m_flags & FLAG_WIDE_OK)!=FLAG_WIDE_OK)
@@ -236,6 +268,43 @@ const UnicodeString::wsize_type UnicodeString::Size() const
 	{
 		return m_widestring.size();
 	}
+}
+
+const UnicodeString UnicodeString::SubStr(const wsize_type offset, const wsize_type count)
+{
+	if(CharacterCount()>offset && offset>=0 && count>0)
+	{
+		if((m_flags & FLAG_NARROW_OK)!=FLAG_NARROW_OK)
+		{
+			Narrowen();
+		}
+		std::string temp;
+		std::string::iterator beginit=m_narrowstring.begin();
+		std::string::iterator endit=m_narrowstring.end();
+		try
+		{
+			utf8::advance(beginit,offset,m_narrowstring.end());
+			endit=beginit;
+			wsize_type realcount=count;
+
+			size_t dist=utf8::distance(endit,m_narrowstring.end());
+			if(dist<realcount)
+			{
+				realcount=dist;
+			}
+
+			utf8::advance(endit,realcount,m_narrowstring.end());
+			
+			size_t bpos=beginit-m_narrowstring.begin();
+			size_t epos=endit-m_narrowstring.begin();
+
+			return m_narrowstring.substr(bpos,epos-bpos);
+		}
+		catch(...)
+		{
+		}
+	}
+	return m_narrowstring;
 }
 
 void UnicodeString::Trim(const size_t charpos)

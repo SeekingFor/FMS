@@ -7,8 +7,18 @@
 #include <algorithm>
 #include <string>
 
+EmoticonReplacer::EmoticonReplacer()
+{
+}
+
 EmoticonReplacer::EmoticonReplacer(const std::string &imagepath):m_imagepath(imagepath)
 {
+	Initialize(imagepath);
+}
+
+void EmoticonReplacer::Initialize(const std::string &imagepath)
+{
+	m_imagepath=imagepath;
 
 	m_emoticons.reserve(110);
 	m_emoticons.push_back(std::pair<std::string,std::string>(":)","1.gif"));

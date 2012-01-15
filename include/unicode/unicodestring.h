@@ -41,6 +41,8 @@ public:
 	const wsize_type Size() const;
 	const wsize_type Find(const UnicodeString &right, const wsize_type offset=0) const;
 	UnicodeString &Replace(const wsize_type offset, const wsize_type number, const UnicodeString &right);
+	void Erase(const wsize_type offset, const wsize_type count);
+	const UnicodeString SubStr(const wsize_type offset, const wsize_type count);
 
 	wvalue_type &operator[](const wsize_type elem);
 

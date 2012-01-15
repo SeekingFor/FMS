@@ -2,8 +2,8 @@
 #define _forumviewthreadpage_
 
 #include "forumpage.h"
-#include "../../../include/http/emoticonreplacer.h"
 #include "../../../include/quoter.h"
+#include "../../../include/http/emoticonreplacer.h"
 
 class ForumTemplateViewThreadPage:public ForumTemplatePage
 {
@@ -24,8 +24,8 @@ private:
 	int m_minpeermessagetrust;
 	bool m_localtrustoverrides;
 	QuoterHTMLRenderer m_htmlrenderer;
-	EmoticonReplacer m_emot;
 	std::string m_pagetitle;
+	EmoticonReplacer m_emot;
 
 };
 

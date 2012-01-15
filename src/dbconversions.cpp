@@ -2,6 +2,7 @@
 #include "../include/db/sqlite3db.h"
 #include "../include/stringfunctions.h"
 #include "../include/board.h"
+#include "../include/message.h"
 
 #include <Poco/Timestamp.h>
 #include <Poco/DateTimeFormatter.h>
@@ -434,6 +435,81 @@ void ConvertDB0129To0130(SQLite3DB::DB *db)
 	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN Signature TEXT;");
 
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=30;");
+}
+
+void ConvertDB0130To0131(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN IsFMS INTEGER CHECK(IsFMS IN(0,1)) DEFAULT 0;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN IsWOT INTEGER CHECK(IsWOT IN(0,1)) DEFAULT 0;");
+	// already existing identities are FMS type
+	db->Execute("UPDATE tblIdentity SET IsFMS=1 WHERE LastSeen IS NOT NULL;");
+
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN WOTLastSeen DATETIME;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN WOTLastIndex INTEGER;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN WOTLastRequest DATETIME;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN SoneLastRequest DATETIME;");
+
+	db->Execute("DROP TRIGGER IF EXISTS trgDeleteIdentity;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=31;");
+}
+
+void ConvertDB0131To0132(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN SoneLastSeen DATETIME;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=32;");
+}
+
+void ConvertDB0132To0133(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN SoneLastIndex DATETIME;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=33;");
+}
+
+void ConvertDB0133To0134(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblMessage ADD COLUMN BodyLineMaxBytes INTEGER;");
+
+	SQLite3DB::Statement upd=db->Prepare("UPDATE tblMessage SET BodyLineMaxBytes=? WHERE MessageID=?;");
+	SQLite3DB::Statement st=db->Prepare("SELECT MessageID, Body FROM tblMessage;");
+
+	SQLite3DB::Transaction trans(db);
+	trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
+	
+	trans.Step(st);
+	while(st.RowReturned())
+	{
+		int messageid=0;
+		int maxsize=0;
+		std::string body("");
+
+		st.ResultInt(0,messageid);
+		st.ResultText(1,body);
+
+		maxsize=Message::LineMaxBytes(body);
+
+		upd.Bind(0,maxsize);
+		upd.Bind(1,messageid);
+		trans.Step(upd);
+		trans.Reset(upd);
+
+		trans.Step(st);
+	}
+
+	trans.Finalize(st);
+	trans.Finalize(upd);
+	trans.Commit();
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=34;");
+}
+
+void ConvertDB0134To0135(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblMessage ADD COLUMN MessageSource INTEGER;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=35;");
 }
 
 void FixBoardNames(SQLite3DB::DB *db)
