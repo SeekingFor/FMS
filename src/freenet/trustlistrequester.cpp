@@ -46,8 +46,10 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 	TrustListXML xml;
 	long identityid;
 	long index;
-	int insertcount=0;
-	int dayinsertcount=0;
+	int tryinsertcount=0;
+	int actualinsertcount=0;
+	int trydayinsertcount=0;
+	int actualdayinsertcount=0;
 	int previnsertcount=0;
 	bool savenewidentities=false;
 	SQLite3DB::Transaction trans(m_db);
@@ -96,7 +98,8 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 	{
 		if(st.ResultNull(0)==false)
 		{
-			st.ResultInt(0,dayinsertcount);
+			st.ResultInt(0,trydayinsertcount);
+			actualdayinsertcount=trydayinsertcount;
 		}
 	}
 	else
@@ -184,7 +187,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 					{
 						// allow up to 10 new identities per downloaded trust list, where total inserted in the last 24 hours may not exceed 1/10 the total number of identities we know about or 500 (whichever is smaller, minimum 10)
 						// 24 hour limit is lifted if the database didn't contain any identities inserted more than 24 hours ago (new db) - 100 new identities per trust list allowed in this case
-						if((insertcount<100 && previnsertcount==0) || (insertcount<10 && dayinsertcount<((std::min)(((std::max)(previnsertcount/10,10)),500))))
+						if((actualinsertcount<100 && previnsertcount==0) || (actualinsertcount<10 && actualdayinsertcount<((std::min)(((std::max)(previnsertcount/10,10)),500))))
 						{
 							if((savewot==true && xml.GetIsWOT(i)==true) || xml.GetIsFMS(i)==true)
 							{
@@ -196,10 +199,21 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 								trans.Step(idinsert,true);
 								id=idinsert.GetLastInsertRowID();
 								trans.Reset(idinsert);
+								m_log->trace("TrustListRequester::HandleAllData saving new identity : "+identity);
+								actualinsertcount++;
+								actualdayinsertcount++;
+							}
+							else
+							{
+								//m_log->trace("TrustListRequester::HandleAllData not saving new identity : "+identity);
 							}
 						}
-						insertcount++;
-						dayinsertcount++;
+						else
+						{
+							//m_log->trace("TrustListRequester::HandleAllData too many new identities already inserted : "+identity);
+						}
+						tryinsertcount++;
+						trydayinsertcount++;
 					}
 					else
 					{
@@ -276,11 +290,11 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		trans.Finalize(trustst);
 		trans.Finalize(st);
 
-		if(insertcount>=10)
+		if(tryinsertcount>=10)
 		{
 			m_log->warning("TrustListRequester::HandleAllData TrustList contained more than 10 new identities : "+message["Identifier"]);
 		}
-		if(dayinsertcount>=((std::min)(((std::max)(previnsertcount/10,10)),500)) && previnsertcount>0)
+		if(trydayinsertcount>=((std::min)(((std::max)(previnsertcount/10,10)),500)) && previnsertcount>0)
 		{
 			m_log->warning("TrustListRequester::HandleAllData TrustList would have inserted too many new identities in the last 24 hours : "+message["Identifier"]);
 		}

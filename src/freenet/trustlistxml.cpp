@@ -228,7 +228,7 @@ const bool TrustListXML::ParseXML(const std::string &xml)
 					trustlisttrustcomment=SanitizeSingleString(txt->firstChild()->getNodeValue());
 				}
 			}
-			if(txt)
+			if(XMLGetFirstChild(trustel,"IsFMS"))
 			{
 				isfms=XMLGetBooleanElement(trustel,"IsFMS");
 			}

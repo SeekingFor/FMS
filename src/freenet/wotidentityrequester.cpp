@@ -326,21 +326,22 @@ void WOTIdentityRequester::Initialize()
 	else
 	{
 		option.GetInt("WOTMaxIdentityRequests",m_maxrequests);
-	}
 
-	if(m_maxrequests>100)
-	{
-		m_log->warning("Option WOTMaxIdentityRequests is currently set at more than 100.  This value might be incorrectly configured.");
-	}
-	if(previnsertcount==0)
-	{
-		m_maxrequests=(std::max)(m_maxrequests,10);
-	}
-	else
-	{
-		std::string previnsertcountstr;
-		StringFunctions::Convert(previnsertcount,previnsertcountstr);
-		m_log->trace("WOTIdentityRequester::Initialize previnsertcount is "+previnsertcountstr);
+		if(m_maxrequests>100)
+		{
+			m_log->warning("Option WOTMaxIdentityRequests is currently set at more than 100.  This value might be incorrectly configured.");
+		}
+		if(previnsertcount==0)
+		{
+			m_maxrequests=(std::max)(m_maxrequests,10);
+		}
+		else
+		{
+			std::string previnsertcountstr;
+			StringFunctions::Convert(previnsertcount,previnsertcountstr);
+			m_log->trace("WOTIdentityRequester::Initialize previnsertcount is "+previnsertcountstr);
+		}
+
 	}
 
 }

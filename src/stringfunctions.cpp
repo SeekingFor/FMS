@@ -1,4 +1,5 @@
 #include "../include/stringfunctions.h"
+#include <Poco/UTF8String.h>
 
 #include <algorithm>
 #include <limits>
@@ -10,10 +11,16 @@
 namespace StringFunctions
 {
 
+int utf8safetolower(int ch)
+{
+	return (ch>64 && ch<91) ? ch+32 : ch;
+}
+
 void LowerCase(const std::string &str, std::string &output)
 {
-	output=str;
-	std::transform(str.begin(),str.end(),output.begin(),tolower);
+	//output=str;
+	//std::transform(str.begin(),str.end(),output.begin(),utf8safetolower);
+	output=Poco::UTF8::toLower(str);
 }
 
 #ifdef _DEBUG
@@ -251,10 +258,16 @@ std::string TrimWhitespace(const std::string &str)
 	return returnstring;
 }
 
+int utf8safetoupper(int ch)
+{
+	return (ch>96 && ch<123) ? ch-32 : ch;
+}
+
 void UpperCase(const std::string &str, std::string &output)
 {
-	output=str;
-	std::transform(str.begin(),str.end(),output.begin(),toupper);
+	//output=str;
+	//std::transform(str.begin(),str.end(),output.begin(),utf8safetoupper);
+	output=Poco::UTF8::toUpper(str);
 }
 
 std::string UriDecode(const std::string & sSrc)

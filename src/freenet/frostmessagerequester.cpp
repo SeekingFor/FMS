@@ -250,8 +250,8 @@ const bool FrostMessageRequester::HandleGetFailed(FCPv2::Message &message)
 		{
 			// insert index so we won't try it again
 			SQLite3DB::Statement st=m_db->Prepare("INSERT INTO tblFrostMessageRequests(BoardID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
-			st.Bind(0,idparts[1]);
-			st.Bind(1,idparts[3]);
+			st.Bind(0,idparts[3]);
+			st.Bind(1,idparts[1]);
 			st.Bind(2,idparts[2]);
 			st.Step();
 		}

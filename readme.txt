@@ -1,6 +1,6 @@
 COMPILING
 ---------
-Compiling FMS requires CMake, Poco ( version >=1.2.9 ) and iconv if you want to
+Compiling FMS requires CMake, Poco ( version >=1.3.6 ) and iconv if you want to
 do charset conversion.  Other required libraries are bundled with FMS.
 
 To compile, run these commands from the source directory:
@@ -42,7 +42,7 @@ RUNNING
 -------
 You may run FMS in console mode by running the binary directly.  You can view
 available command line options by typing /help on Windows and --help on other
-platforms.  If you are running *nix and would like to run as a daemon, use the 
+platforms.  If you are running *nix and would like to run as a daemon, use the
 --daemon argument.  On Windows, /registerService will install FMS as a service,
 and /unregisterService will uninstall the service.  Use the /displayName=name
 argument when installing the service to set the service name to whatever you

@@ -507,6 +507,13 @@ void SetupDB(SQLite3DB::DB *db)
 					UPDATE tblBoard SET MessageCount=MessageCount-1 WHERE BoardID=old.BoardID;\
 				END;");
 
+	db->Execute("CREATE TRIGGER trgUpdateMessageBoard AFTER UPDATE OF BoardID ON tblMessageBoard\
+				FOR EACH ROW BEGIN\
+					UPDATE tblBoard SET MessageCount=MessageCount-1 WHERE BoardID=old.BoardID;\
+					UPDATE tblMessageBoard SET BoardMessageID=(SELECT NextMessageID FROM tblBoard WHERE BoardID=new.BoardID) WHERE MessageID=new.MessageID AND BoardID=new.BoardID;\
+					UPDATE tblBoard SET NextMessageID=NextMessageID+1, MessageCount=MessageCount+1 WHERE BoardID=new.BoardID;\
+				END;");
+
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageFileAttachment(\
 				MessageID			INTEGER NOT NULL,\
 				Key					TEXT,\

@@ -9,7 +9,9 @@
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/Timespan.h>
-
+#ifndef POCO_VERSION	// Used to be in Foundation.h, as of 1.4 it's in Version.h, but not included by default
+#include <Poco/Version.h>
+#endif
 #include <cstring>
 #include <algorithm>
 
@@ -142,7 +144,11 @@ void IPageHandler::CreateQueryVarMap(Poco::Net::HTTPServerRequest &request, std:
 
 	// handle HTMLForm and multiparts
 	MultiPartParser mpp;
-	Poco::Net::HTMLForm form(request,request.stream(),mpp);
+	Poco::Net::HTMLForm form;
+#if POCO_VERSION>=0x01040300
+	form.setFieldLimit(1000);
+#endif
+	form.load(request,request.stream(),mpp);
 	for(Poco::Net::HTMLForm::ConstIterator i=form.begin(); i!=form.end(); i++)
 	{
 		vars[(*i).first]=QueryVar((*i).first,(*i).second);

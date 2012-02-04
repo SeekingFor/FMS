@@ -132,6 +132,7 @@ const bool AudioCaptcha1::Generate()
 	espeak_ERROR err=EE_OK;
 	unsigned int id=0;
 	Poco::Path espeakpath("espeak-data");
+	std::string savelocale("");
 
 	try
 	{
@@ -144,6 +145,11 @@ const bool AudioCaptcha1::Generate()
 	catch(...)
 	{
 		return false;
+	}
+
+	if(setlocale(LC_ALL,0))
+	{
+		savelocale=std::string(setlocale(LC_ALL,0));
 	}
 
 #ifdef _WIN32
@@ -159,6 +165,10 @@ const bool AudioCaptcha1::Generate()
 	err=espeak_SetVoiceByName("english-us");
 	if(err!=EE_OK)
 	{
+		if(savelocale!="")
+		{
+			setlocale(LC_ALL,savelocale.c_str());
+		}
 		return false;
 	}
 	espeak_SetSynthCallback(AudioStream::Callback);
@@ -181,6 +191,10 @@ const bool AudioCaptcha1::Generate()
 		espeak_Synth(charstr.c_str(),1,0,POS_CHARACTER,0,0,&id,&puzzle);
 		if(err!=EE_OK)
 		{
+			if(savelocale!="")
+			{
+				setlocale(LC_ALL,savelocale.c_str());
+			}
 			return false;
 		}
 
@@ -200,6 +214,10 @@ const bool AudioCaptcha1::Generate()
 		espeak_Synth(speak.c_str(),speak.size(),0,POS_CHARACTER,0,0,&id,&background);
 		if(err!=EE_OK)
 		{
+			if(savelocale!="")
+			{
+				setlocale(LC_ALL,savelocale.c_str());
+			}
 			return false;
 		}
 	}
@@ -215,6 +233,11 @@ const bool AudioCaptcha1::Generate()
 
 	result.SetSampleRate(puzzle.GetSampleRate());
 	CreateWave(result);
+
+	if(savelocale!="")
+	{
+		setlocale(LC_ALL,savelocale.c_str());
+	}
 
 	return true;
 

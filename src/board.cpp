@@ -75,7 +75,7 @@ std::string Board::FixBoardName(const std::string &boardname)
 		}
 	}
 	newboardname=uboardname.NarrowString();
-	// remove and leading __
+	// remove any leading __
 	while(newboardname.size()>0 && newboardname[0]=='_')
 	{
 		newboardname.erase(0,1);

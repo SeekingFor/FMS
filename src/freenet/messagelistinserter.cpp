@@ -289,8 +289,10 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		std::ostringstream limitstr;
 		limitstr << (600-messagecount);
 
-		st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID, InsertDate FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL ORDER BY MessageDate DESC, MessageTime DESC LIMIT "+limitstr.str()+";");
+		st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID, InsertDate FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL AND MessageDate<=? ORDER BY MessageDate DESC, MessageTime DESC LIMIT "+limitstr.str()+";");
 		st2=m_db->Prepare("SELECT BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
+		
+		st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
 		trans.Step(st);
 
 		while(st.RowReturned() && trans.IsSuccessful())
@@ -360,6 +362,12 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 	trans.Commit();
 
 	xmlstr=mlxml.GetXML();
+
+	if(xmlstr.find("</MessageList>")==std::string::npos)
+	{
+		m_log->fatal("MessageListInserter::StartInsert closing xml tag not found.");
+		return false;
+	}
 
 	// only insert if the last message this identity inserted is different than this message
 	if(m_lastinsertedxml[localidentityid]!=xmlstr)

@@ -5,12 +5,14 @@
 #include "../../include/global.h"
 #include "../../include/threadbuilder.h"
 #include "../../include/message.h"
+#include "../../include/board.h"
 
 #include <algorithm>
 #include <vector>
 
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
+#include <Poco/DateTimeParser.h>
 #include <Poco/Timespan.h>
 
 #ifdef XMEM
@@ -119,6 +121,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 	long datalength;
 	std::vector<char> data;
 	MessageXML xml;
+	std::string replyboard("");
 	long identityid;
 	long index;
 	bool inserted=false;
@@ -128,6 +131,9 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 	IdentityPublicKeyCache pkcache(m_db);
 	ThreadBuilder tb(m_db);
 	bool constraintfailure=false;
+	Poco::DateTime messagetime;
+	Poco::DateTime daysago;
+	int tzdiff=0;
 	SQLite3DB::Statement failst=m_db->Prepare("UPDATE tblIdentity SET FailureCount=FailureCount+1 WHERE IdentityID=?;");
 
 	m_log->trace("MessageRequester::HandleAllData started handling "+message["Identifier"]);
@@ -173,9 +179,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 		// make sure all board names are no longer than max length
 		for(std::vector<std::string>::iterator i=boards.begin(); i!=boards.end(); i++)
 		{
-			UnicodeString boardname((*i));
-			boardname.Trim(MAX_BOARD_NAME_LENGTH);
-			(*i)=boardname.NarrowString();
+			(*i)=Board::FixBoardName((*i));
 		}
 
 		if(boards.size()<=0)
@@ -197,12 +201,28 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			return true;
 		}
 
-		// make sure the reply board is on the board list we are saving - if not, replace the last element of boards with the reply board
-		if(xml.GetReplyBoard()!="" && std::find(boards.begin(),boards.end(),xml.GetReplyBoard())==boards.end() && boards.size()>0)
+		if(Poco::DateTimeParser::tryParse(xml.GetDate()+" "+xml.GetTime(),messagetime,tzdiff)==false)
 		{
-			UnicodeString boardname(xml.GetReplyBoard());
-			boardname.Trim(MAX_BOARD_NAME_LENGTH);
-			boards[boards.size()-1]=boardname.NarrowString();
+			m_log->error("MessageRequester::HandleAllData Message date and time not in recognizable format! "+message["Identifier"]);
+			RemoveFromRequestList(idparts[1]);
+			failst.Bind(0,identityid);
+			trans.Step(failst);
+			return true;
+		}
+
+		daysago+=Poco::Timespan(-m_maxdaysbackward,0,0,0,0);
+		if(messagetime<daysago)
+		{
+			m_log->debug("MessageRequester::HandleAllData Message was too far in the past to save "+message["Identifier"]);
+			RemoveFromRequestList(idparts[1]);
+			return true;
+		}
+
+		// make sure the reply board is on the board list we are saving - if not, replace the last element of boards with the reply board
+		replyboard=Board::FixBoardName(xml.GetReplyBoard());
+		if(replyboard!="" && std::find(boards.begin(),boards.end(),replyboard)==boards.end() && boards.size()>0)
+		{
+			boards[boards.size()-1]=replyboard;
 		}
 
 		if(xml.GetSubject().size()<1)
@@ -272,7 +292,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			st.Bind(3,xml.GetTime());
 			st.Bind(4,xml.GetSubject());
 			st.Bind(5,xml.GetMessageID());
-			st.Bind(6,GetBoardInfo(trans,xml.GetReplyBoard(),GetIdentityName(identityid),tempbool));
+			st.Bind(6,GetBoardInfo(trans,replyboard,GetIdentityName(identityid),tempbool));
 			st.Bind(7,nntpbody);
 			st.Bind(8,index);
 			st.Bind(9,idparts[3]);
