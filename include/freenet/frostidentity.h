@@ -3,8 +3,7 @@
 
 #include <string>
 #include <vector>
-#include <tommath.h>
-#include <tomcrypt.h>
+#include <polarssl/rsa.h>
 
 class FrostIdentity
 {
@@ -20,7 +19,7 @@ public:
 private:
 
 	std::string m_publickey;
-	rsa_key m_rsa;
+	rsa_context m_rsa;
 
 };
 

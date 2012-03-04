@@ -1,5 +1,6 @@
 #include "../../include/freenet/introductionpuzzleinserter.h"
 #include "../../include/freenet/introductionpuzzlexml.h"
+#include "../../include/global.h"
 #include "../../include/stringfunctions.h"
 #include "../../include/option.h"
 #include "../../include/freenet/captcha/simplecaptcha.h"
@@ -94,7 +95,7 @@ void IntroductionPuzzleInserter::GenerateCaptcha(std::string &encodeddata, std::
 #endif
 	if(cap==0 && requestedcaptchatype=="unlikeimage")
 	{
-		cap=new UnlikeCaptcha1("unlikeimages");
+		cap=new UnlikeCaptcha1(global::basepath+"unlikeimages");
 		if(cap->Generate()==false)
 		{
 			delete cap;

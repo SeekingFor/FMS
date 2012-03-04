@@ -106,7 +106,7 @@ const std::string OptionsPage::GenerateContent(const std::string &method, const 
 				if(options[i]=="Language")
 				{
 					Poco::Path tdir;
-					tdir.pushDirectory("translations");
+					tdir.pushDirectory(global::basepath+"translations");
 					tdir=tdir.makeAbsolute();
 					tdir.setFileName(newvalues[i]);
 					m_trans->LoadLocalizedTranslation(tdir.toString());

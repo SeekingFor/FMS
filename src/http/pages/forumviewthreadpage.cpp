@@ -424,8 +424,9 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 			postvars["THREADPOSTAUTHORNAME"]="<a href=\"peerdetails.htm?identityid="+identityidstr+"\">"+FixAuthorName(fromname)+"</a>";
 			if(showsignatures==true && showidsignature=="1" && signature!="")
 			{
+				std::vector<std::string> skipspace(1," ");
 				std::string lf(1,10);
-				postvars["THREADPOSTSIGNATURE"]=StringFunctions::Replace(SanitizeOutput(signature),lf,"<br />");
+				postvars["THREADPOSTSIGNATURE"]=StringFunctions::Replace(SanitizeOutput(signature,skipspace),lf,"<br />");
 			}
 			else
 			{

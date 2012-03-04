@@ -82,7 +82,8 @@ const bool WOTIdentityRequester::HandleAllData(FCPv2::Message &message)
 		bool savenewidentities=false;
 
 		// see if we will save new identities found on the trust list, and get name and public key
-		SQLite3DB::Statement st=m_db->Prepare("SELECT IFNULL(LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust'),0), Name, PublicKey FROM tblIdentity WHERE IdentityID=?;");
+		// allow adding new ids if trust is higher than min trust, or trust is null
+		SQLite3DB::Statement st=m_db->Prepare("SELECT IFNULL(LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust'),1), Name, PublicKey FROM tblIdentity WHERE IdentityID=?;");
 		st.Bind(0,identityid);
 		trans.Step(st);
 		if(st.RowReturned())
@@ -355,7 +356,7 @@ void WOTIdentityRequester::PopulateIDList()
 
 	int count=0;
 	std::string countstr("");
-	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey NOT IN (SELECT PublicKey FROM tblLocalIdentity) AND (WOTLastRequest IS NULL OR WOTLastRequest<datetime('now','-2 hours')) AND IsWOT=1;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey NOT IN (SELECT PublicKey FROM tblLocalIdentity) AND (WOTLastRequest IS NULL OR WOTLastRequest<datetime('now','-24 hours')) AND IsWOT=1;");
 	st.Step();
 
 	m_ids.clear();

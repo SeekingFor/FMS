@@ -22,6 +22,12 @@ be captured, as well as the setup of prepared statements.  Each step through a
 prepared statement is also logged, but the details are not, so there should be
 no sensitive information in this log file.
 
+If you would like to build the FMS Freenet plugin add a -D BUILD_PLUGIN=ON to
+the CMake command line.  This will build the binary for the plugin in the 
+plugin/bin directory.  Place binaries from other platforms you want included in
+the jar inside the plugin/bin directory.  You can then run ant in the plugin 
+directory to build the jar.
+
 UPGRADING
 ---------
 *ALWAYS* make a copy of your current FMS installation before continuing.  First

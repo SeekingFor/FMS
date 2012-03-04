@@ -51,6 +51,8 @@ void HTTPThread::run()
 	option.GetInt("HTTPListenPort",m_listenport);
 	option.Get("HTTPBindAddress",bindaddress);
 
+	global::httplistenport=m_listenport;
+
 	try
 	{
 		

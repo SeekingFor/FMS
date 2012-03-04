@@ -1,7 +1,7 @@
 #ifndef _keyfinder_
 #define _keyfinder_
 
-#include "../../../include/http/emoticonreplacer.h"
+#include "http/emoticonreplacer.h"
 
 #include <string>
 #include <vector>

@@ -18,3 +18,10 @@ std::string CreateShortIdentityName(const std::string &name, const std::string &
 
 	return result;
 }
+
+namespace global
+{
+	std::string basepath("");
+	bool volatile shutdown=false;
+	long volatile httplistenport=8080;
+}

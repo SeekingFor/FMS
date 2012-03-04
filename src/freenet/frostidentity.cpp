@@ -2,11 +2,15 @@
 #include "../../include/stringfunctions.h"
 #include "../../include/base64.h"
 
+#include <polarssl/bignum.h>
+#include <polarssl/sha1.h>
+#include <polarssl/md.h>
+
 #include <cstring>
 
 FrostIdentity::FrostIdentity()
 {
-	std::memset(&m_rsa,0,sizeof(m_rsa));
+	rsa_init(&m_rsa,RSA_PKCS_V21,POLARSSL_MD_SHA1);
 }
 
 FrostIdentity::~FrostIdentity()
@@ -21,7 +25,7 @@ const bool FrostIdentity::FromPublicKey(const std::string &publickey)
 	std::vector<unsigned char> ndata;
 
 	rsa_free(&m_rsa);
-	std::memset(&m_rsa,0,sizeof(m_rsa));
+	rsa_init(&m_rsa,RSA_PKCS_V21,POLARSSL_MD_SHA1);
 
 	StringFunctions::Split(publickey,":",keyparts);
 
@@ -30,18 +34,10 @@ const bool FrostIdentity::FromPublicKey(const std::string &publickey)
 		Base64::Decode(keyparts[0],edata);
 		Base64::Decode(keyparts[1],ndata);
 
-		m_rsa.type=PK_PUBLIC;
-#ifdef LTC_SOURCE
-		mp_init(&m_rsa.N);
-		mp_init(&m_rsa.e);
-		mp_read_unsigned_bin(m_rsa.N,&ndata[0],ndata.size());
-		mp_read_unsigned_bin(m_rsa.e,&edata[0],edata.size());
-#else
-		ltm_desc.init(&m_rsa.N);
-		ltm_desc.init(&m_rsa.e);
-		ltm_desc.unsigned_read(m_rsa.N,&ndata[0],ndata.size());
-		ltm_desc.unsigned_read(m_rsa.e,&edata[0],edata.size());	
-#endif
+		mpi_init(&m_rsa.N);
+		mpi_init(&m_rsa.E);
+		mpi_read_binary(&m_rsa.N,&ndata[0],ndata.size());
+		mpi_read_binary(&m_rsa.E,&edata[0],edata.size());
 
 		m_publickey=publickey;
 
@@ -56,7 +52,7 @@ const bool FrostIdentity::FromPublicKey(const std::string &publickey)
 const bool FrostIdentity::VerifyAuthor(const std::string &author)
 {
 	std::vector<std::string> authorparts;
-	std::vector<unsigned char> authorhash(100,0);
+	std::vector<unsigned char> authorhash(20,0);
 	unsigned long authorhashlen=authorhash.size();
 	std::string authorhashstr="";
 	std::vector<unsigned char> publickeydata(m_publickey.begin(),m_publickey.end());
@@ -65,8 +61,7 @@ const bool FrostIdentity::VerifyAuthor(const std::string &author)
 
 	if(m_publickey!="" && authorparts.size()==2)
 	{
-		hash_memory(find_hash("sha1"),&publickeydata[0],publickeydata.size(),&authorhash[0],&authorhashlen);
-		authorhash.resize(authorhashlen);
+		sha1(&publickeydata[0],publickeydata.size(),&authorhash[0]);
 
 		Base64::Encode(authorhash,authorhashstr);
 
@@ -88,20 +83,20 @@ const bool FrostIdentity::VerifySignature(const std::vector<unsigned char> &data
 	if(data.size()>0 && signature!="")
 	{
 		std::vector<unsigned char> sigdata;
-		std::vector<unsigned char> hashdata(100,0);
+		std::vector<unsigned char> hashdata(20,0);
 		unsigned long hashlen=hashdata.size();
-		int status,rval;
+		int rval;
 
-		rval=status=0;
+		rval=0;
 
 		if(Base64::Decode(signature,sigdata)==true)
 		{
-			hash_memory(find_hash("sha1"),&data[0],data.size(),&hashdata[0],&hashlen);
-			hashdata.resize(hashlen);
+			sha1(&data[0],data.size(),&hashdata[0]);
 
-			rval=rsa_verify_hash_ex(&sigdata[0],sigdata.size(),&hashdata[0],hashdata.size(),LTC_PKCS_1_PSS,find_hash("sha1"),16,&status,&m_rsa);
+			m_rsa.len=sigdata.size();
+			rval=rsa_pkcs1_verify(&m_rsa,RSA_PUBLIC,SIG_RSA_SHA1,hashdata.size(),&hashdata[0],&sigdata[0]);
 
-			return (rval==0 && status==1) ? true : false;
+			return (rval==0) ? true : false;
 		}
 		else
 		{

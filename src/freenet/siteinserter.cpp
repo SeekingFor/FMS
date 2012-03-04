@@ -164,11 +164,11 @@ void SiteInserter::GeneratePages(const long localidentityid, std::string &uskkey
 		key+=m_messagebase+"/"+editionstr+"/";
 		uskkey=key;
 
-		filename=name+"-template.htm";
+		filename=global::basepath+name+"-template.htm";
 		FILE *infile=fopen(filename.c_str(),"rb");
 		if(!infile)
 		{
-			infile=fopen("site-template.htm","rb");
+			infile=fopen(std::string(global::basepath+"site-template.htm").c_str(),"rb");
 		}
 		if(infile)
 		{
@@ -203,7 +203,7 @@ void SiteInserter::GeneratePages(const long localidentityid, std::string &uskkey
 		}
 
 		// get extra files that the user wants to add to the Freesite
-		filename=name+"-files.txt";
+		filename=global::basepath+name+"-files.txt";
 		infile=fopen(filename.c_str(),"rb");
 		if(infile)
 		{
@@ -227,7 +227,7 @@ void SiteInserter::GeneratePages(const long localidentityid, std::string &uskkey
 				if((*i)!="" && (*i).find("index.htm")==std::string::npos && (*i).find("trustlist.htm")==std::string::npos && (*i).find("files.htm")==std::string::npos)
 				{
 					filename=(*i);
-					infile=fopen(filename.c_str(),"rb");
+					infile=fopen(std::string(global::basepath+filename).c_str(),"rb");
 					if(infile)
 					{
 						fseek(infile,0,SEEK_END);

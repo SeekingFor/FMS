@@ -28,12 +28,7 @@
 	#include <unistd.h>
 #endif
 
-#ifdef FROST_SUPPORT
-	#include <tommath.h>
-	#include <tomcrypt.h>
-#endif
-
-FMSApp::FMSApp():m_displayhelp(false),m_showoptions(false),m_setoption(false),m_dontstartup(false),m_logtype("file"),m_workingdirectory(""),m_lockfile("fms.lck")
+FMSApp::FMSApp():m_displayhelp(false),m_showoptions(false),m_setoption(false),m_dontstartup(false),m_logtype("file"),m_workingdirectory(""),m_lockfile(global::basepath+"fms.lck")
 {
 	// get current working dir so we can go to it later
 	char wd[1024];
@@ -174,7 +169,7 @@ void FMSApp::initialize(Poco::Util::Application &self)
 #ifdef QUERY_LOG
 	{
 		Poco::AutoPtr<Poco::FormattingChannel> formatter=new Poco::FormattingChannel(new Poco::PatternFormatter("%Y-%m-%d %H:%M:%S | %t"));
-		Poco::AutoPtr<Poco::FileChannel> fc=new Poco::FileChannel("query.log");
+		Poco::AutoPtr<Poco::FileChannel> fc=new Poco::FileChannel(global::basepath+"query.log");
 		fc->setProperty("rotation","daily");
 		fc->setProperty("times","utc");
 		fc->setProperty("archive","timestamp");
@@ -211,7 +206,7 @@ void FMSApp::initializeLogger()
 	{
 		try
 		{
-			Poco::AutoPtr<Poco::FileChannel> fc=new Poco::FileChannel("fms.log");
+			Poco::AutoPtr<Poco::FileChannel> fc=new Poco::FileChannel(global::basepath+"fms.log");
 			fc->setProperty("rotation","daily");	// rotate log file daily
 			fc->setProperty("times","utc");			// utc date/times for log entries
 			fc->setProperty("archive","timestamp");	// add timestamp to old logs
@@ -303,11 +298,6 @@ int FMSApp::main(const std::vector<std::string> &args)
 			m_db->StartProfiling();
 		}
 
-#ifdef FROST_SUPPORT
-		ltc_mp=ltm_desc;
-		register_hash(&sha1_desc);
-#endif
-
 		option.Get("Language",tempval);
 		SetupTranslation(tempval);
 
@@ -319,7 +309,14 @@ int FMSApp::main(const std::vector<std::string> &args)
 		}
 		logger().information("Startup complete");
 
+#ifndef JNI_SUPPORT
 		waitForTerminationRequest();
+#else
+		do
+		{
+			Poco::Thread::sleep(1000);
+		}while(global::shutdown==false);
+#endif
 
 		if(isInteractive()==true)
 		{

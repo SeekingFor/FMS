@@ -442,7 +442,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.receivedmessages.prevpage","<-- Previous Page");
 	st->SetDefault("web.page.receivedmessages.from","from");
 
-	tdir.pushDirectory("translations");
+	tdir.pushDirectory(global::basepath+"translations");
 	tdir=tdir.makeAbsolute();
 	Poco::File transfile(tdir);
 	transfile.createDirectories();

@@ -39,10 +39,11 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db):ID
 	Option option(m_db);
 
 	Poco::Path path;
+	path.append(global::basepath);
 
 	// set template
 	std::string templatestr="<html><head></head><body><a href=\"home.htm\">Home</a><br><h1>Could not open template.htm!  Place in "+path.absolute().toString(Poco::Path::PATH_NATIVE)+" and restart!</h1><br>[CONTENT]</body></html>";
-	FILE *infile=fopen("template.htm","rb");
+	FILE *infile=fopen(std::string(global::basepath+"template.htm").c_str(),"rb");
 	if(infile)
 	{
 		fseek(infile,0,SEEK_END);
@@ -77,7 +78,7 @@ FMSHTTPRequestHandlerFactory::FMSHTTPRequestHandlerFactory(SQLite3DB::DB *db):ID
 	}
 */
 
-	if(m_forumtemplatehandler.LoadTemplate("forum-template.htm")==false)
+	if(m_forumtemplatehandler.LoadTemplate(global::basepath+"forum-template.htm")==false)
 	{
 		m_log->error("HTTPThread::HTTPThread could not open forum-template-new.htm");
 	}
@@ -139,6 +140,19 @@ FMSHTTPRequestHandlerFactory::~FMSHTTPRequestHandlerFactory()
 
 }
 
+class FMSRequestHandler403:public Poco::Net::HTTPRequestHandler
+{
+public:
+	FMSRequestHandler403()	{}
+	~FMSRequestHandler403()	{}
+	void handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net::HTTPServerResponse &response)
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_FORBIDDEN);
+		response.setReason("IP address not allowed access");
+		response.send();
+	}
+};
+
 Poco::Net::HTTPRequestHandler *FMSHTTPRequestHandlerFactory::createRequestHandler(const Poco::Net::HTTPServerRequest &request)
 {
 	if(m_acl.IsAllowed(request.clientAddress().host()))
@@ -155,6 +169,7 @@ Poco::Net::HTTPRequestHandler *FMSHTTPRequestHandlerFactory::createRequestHandle
 	else
 	{
 		m_log->debug("FMSHTTPRequestHandlerFactory::createRequestHandler host denied access "+request.clientAddress().host().toString());
+		return new FMSRequestHandler403();
 	}
 	return 0;
 }

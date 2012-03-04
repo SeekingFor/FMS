@@ -8,7 +8,9 @@
 #include <string>
 
 #ifndef SOCKET
+#ifndef _WIN32
 	typedef unsigned int SOCKET;
+#endif
 #endif
 
 #ifndef INVALID_SOCKET

@@ -1,5 +1,6 @@
 #ifdef ALTERNATE_CAPTCHA
 
+#include "../../../include/global.h"
 #include "../../../include/freenet/captcha/alternatecaptchafonts.h"
 
 #include <Poco/Path.h>
@@ -25,7 +26,7 @@ void AlternateCaptchaFonts::LoadFonts()
 	try
 	{
 		FreeImage::Bitmap bmp;
-		Poco::Path path("fonts");
+		Poco::Path path(global::basepath+"fonts");
 		Poco::DirectoryIterator di(path);
 		Poco::DirectoryIterator end;
 

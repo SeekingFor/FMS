@@ -9,10 +9,11 @@
 
 #define VERSION_MAJOR		"0"
 #define VERSION_MINOR		"3"
-#define VERSION_RELEASE		"65"
+#define VERSION_RELEASE		"66"
 #define FMS_VERSION			VERSION_MAJOR"."VERSION_MINOR"."VERSION_RELEASE
-#define FMS_FREESITE_USK	"USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/131/"
-#define FMS_VERSION_EDITION	"70"
+#define FMS_VERSION_LONG	3066
+#define FMS_FREESITE_USK	"USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/132/"
+#define FMS_VERSION_EDITION	"71"
 
 #define MAX_IDENTITY_NAME_LENGTH			40
 #define MAX_IDENTITY_NAME_LENGTH_STR		"40"
@@ -28,5 +29,12 @@ typedef Poco::ScopedLock<Poco::FastMutex> Guard;
 extern Poco::SingletonHolder<StringTranslation> Translation;
 
 std::string CreateShortIdentityName(const std::string &name, const std::string &publickey);
+
+namespace global
+{
+	extern std::string basepath;
+	extern bool volatile shutdown;
+	extern long volatile httplistenport;
+}
 
 #endif	// _global_

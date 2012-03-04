@@ -16,6 +16,7 @@ OPTION(AUDIO_CAPTCHA "Include audio captcha.  This requires the espeak library."
 OPTION(QUERY_LOG "Log all database queries made by FMS." OFF)
 OPTION(FROST_SUPPORT "Compile with support for downloading Frost messages." ON)
 OPTION(POCO_STATIC "Statically link to the Poco libraries.  You can specify the base path to the static libraries using POCO_BASE_DIR, and the exact path to the libraries using POCO_LIB_DIR." OFF)
+OPTION(BUILD_PLUGIN "Build Freenet plugin." OFF)
 
 SET(FMS_SRC
 src/base64.cpp
@@ -153,7 +154,7 @@ IF(DO_CHARSET_CONVERSION)
 ENDIF(DO_CHARSET_CONVERSION)
 
 IF(ALTERNATE_CAPTCHA)
-	SET(FMS_SRC ${FMS_SRC} 
+	SET(FMS_SRC ${FMS_SRC}
 	src/freenet/captcha/alternatecaptcha1.cpp
 	src/freenet/captcha/alternatecaptcha2.cpp
 	src/freenet/captcha/alternatecaptchafonts.cpp
@@ -177,14 +178,18 @@ IF(FROST_SUPPORT)
 	src/freenet/frostmessagexml.cpp)
 ENDIF(FROST_SUPPORT)
 
-ADD_SUBDIRECTORY(resources)
+IF(WIN32)
+	SET(FMS_PLATFORM_SRC ${FMS_PLATFORM_SRC}
+	resources/win.rc)
+ENDIF(WIN32)
 
 # Get a relative list of include files.
 FILE(GLOB_RECURSE FMS_INC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/*.h)
 
 # Create source groups for all sources and includes, in their original directory structure.
 FOREACH(SRC ${FMS_SRC} ${FMS_INC})
-	STRING(REGEX REPLACE ${CMAKE_CURRENT_SOURCE_DIR} "Files" REL_DIR "${SRC}")
+	STRING(REPLACE "+" "\\+" FIXED_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+	STRING(REGEX REPLACE ${FIXED_SOURCE_DIR} "Files" REL_DIR "${SRC}")
 	STRING(REGEX REPLACE "[\\\\/][^\\\\/]*$" "" REL_DIR "${REL_DIR}")
 	STRING(REGEX REPLACE "^[\\\\/]" "" REL_DIR "${REL_DIR}")
 	IF(REL_DIR)
@@ -227,6 +232,7 @@ ENDIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 IF(WIN32)
 	TARGET_LINK_LIBRARIES(fms ws2_32)
 	TARGET_LINK_LIBRARIES(fms iphlpapi)
+	ADD_DEFINITIONS(-D_WIN32_WINNT=0x0500)
 ENDIF(WIN32)
 
 # add -lxnet and -lsocket on solaris
@@ -254,9 +260,13 @@ FIND_LIBRARY(PTHREADS_LIBRARY NAMES pthread pthreads pthreadvc2)
 FIND_LIBRARY(ICONV_LIBRARY NAMES iconv iconv_s libiconv libiconv_s)
 IF(ALTERNATE_CAPTCHA)
 	FIND_FILE(FREEIMAGE_LIBRARY NAMES libfreeimage.a PATHS /usr/lib/)
+	FIND_PATH(FREEIMAGE_INCLUDE_PATH FreeImage.h)
 	IF(NOT FREEIMAGE_LIBRARY)
 		FIND_LIBRARY(FREEIMAGE_LIBRARY NAMES FreeImage libFreeImage libfreeimage freeimage)
 	ENDIF(NOT FREEIMAGE_LIBRARY)
+	IF(FREEIMAGE_INCLUDE_PATH)
+		INCLUDE_DIRECTORIES(${FREEIMAGE_INCLUDE_PATH})
+	ENDIF(FREEIMAGE_INCLUDE_PATH)
 ENDIF(ALTERNATE_CAPTCHA)
 
 IF(POCO_FOUNDATION_LIBRARY)
@@ -264,7 +274,7 @@ IF(POCO_FOUNDATION_LIBRARY)
 	IF(WIN32 OR POCO_STATIC)
 		ADD_DEFINITIONS(-DPOCO_STATIC)
 	ENDIF(WIN32 OR POCO_STATIC)
-	
+
 	# We don't need to explicitly link under MSVC, POCO uses #pragmas to specify linked libraries.
 	IF(POCO_UTIL_LIBRARY)
 		IF(NOT MSVC)
@@ -310,7 +320,7 @@ ELSE(SQLITE3_LIBRARY)
 		MESSAGE(STATUS "Could not find system SQLite3 library.  Will compile from included source.")
 	ENDIF(NOT USE_BUNDLED_SQLITE)
 	ADD_DEFINITIONS(-DSQLITE_ENABLE_STAT2)
-	ADD_LIBRARY(sqlite3 libs/sqlite3/sqlite3.c)
+	ADD_SUBDIRECTORY(libs/sqlite3)
 	TARGET_LINK_LIBRARIES(fms sqlite3)
 	INCLUDE_DIRECTORIES(libs/sqlite3)
 ENDIF(SQLITE3_LIBRARY)
@@ -343,23 +353,12 @@ IF(AUDIO_CAPTCHA)
 ENDIF(AUDIO_CAPTCHA)
 
 IF(FROST_SUPPORT)
-	FIND_LIBRARY(TOMMATH_LIBRARY NAMES tommath libtommath)
-	
-	IF(TOMMATH_LIBRARY)
-		TARGET_LINK_LIBRARIES(fms ${TOMMATH_LIBRARY})
-	ELSE(TOMMATH_LIBRARY)
-		ADD_SUBDIRECTORY(libs/libtommath)
-		TARGET_LINK_LIBRARIES(fms tommath)
-		INCLUDE_DIRECTORIES(libs/libtommath)
-	ENDIF(TOMMATH_LIBRARY)
-	
-	# Force use of bundled tomcrypt, as the system library may have been compiled without the features we need
-	ADD_SUBDIRECTORY(libs/libtomcrypt)
-	TARGET_LINK_LIBRARIES(fms tomcrypt)
-	INCLUDE_DIRECTORIES(libs/libtomcrypt/headers)
-	
+	ADD_SUBDIRECTORY(libs/polarssl)
+	TARGET_LINK_LIBRARIES(fms polarssl)
+	INCLUDE_DIRECTORIES(libs/polarssl/include)
+
 	ADD_DEFINITIONS(-DFROST_SUPPORT)
-	
+
 ENDIF(FROST_SUPPORT)
 
 # FreeBSD won't find Poco include files without this
@@ -375,3 +374,7 @@ ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 IF(QUERY_LOG)
 	ADD_DEFINITIONS(-DQUERY_LOG)
 ENDIF(QUERY_LOG)
+
+IF(BUILD_PLUGIN)
+	ADD_SUBDIRECTORY(plugin)
+ENDIF(BUILD_PLUGIN)

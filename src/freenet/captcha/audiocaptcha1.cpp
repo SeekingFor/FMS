@@ -1,4 +1,5 @@
 #include "../../../include/freenet/captcha/audiocaptcha1.h"
+#include "../../../include/global.h"
 
 #ifdef AUDIO_CAPTCHA
 
@@ -131,7 +132,7 @@ const bool AudioCaptcha1::Generate()
 	AudioStream puzzle;
 	espeak_ERROR err=EE_OK;
 	unsigned int id=0;
-	Poco::Path espeakpath("espeak-data");
+	Poco::Path espeakpath(global::basepath+"espeak-data");
 	std::string savelocale("");
 
 	try

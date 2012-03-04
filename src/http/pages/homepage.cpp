@@ -27,6 +27,7 @@ const std::string HomePage::GenerateContent(const std::string &method, const std
 	{
 		m_log->trace("HomePage::GeneratePage requested shutdown");
 		((FMSApp *)&FMSApp::instance())->Terminate();
+		global::shutdown=true;
 	}
 
 	std::string content="<h2>"+m_trans->Get("web.page.home.title")+"</h2>";

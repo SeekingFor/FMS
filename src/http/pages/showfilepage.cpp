@@ -51,7 +51,7 @@ void ShowFilePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 	{
 		try
 		{
-			response.sendFile((*queryvars.find("file")).second.GetData(),m_filewhitelist[(*queryvars.find("file")).second.GetData()]);
+			response.sendFile(global::basepath+(*queryvars.find("file")).second.GetData(),m_filewhitelist[(*queryvars.find("file")).second.GetData()]);
 		}
 		catch(Poco::FileNotFoundException &fnf)
 		{
@@ -70,7 +70,7 @@ void ShowFilePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 	{
 		try
 		{
-			response.sendFile(request.getURI().substr(1),m_filewhitelist[request.getURI().substr(1)]);
+			response.sendFile(global::basepath+request.getURI().substr(1),m_filewhitelist[request.getURI().substr(1)]);
 		}
 		catch(Poco::FileNotFoundException &fnf)
 		{
@@ -89,7 +89,7 @@ void ShowFilePage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Ne
 	{
 		try
 		{
-			response.sendFile(request.getURI(),m_filewhitelist[request.getURI()]);
+			response.sendFile(global::basepath+request.getURI(),m_filewhitelist[request.getURI()]);
 		}
 		catch(Poco::FileNotFoundException &fnf)
 		{
