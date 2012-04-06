@@ -56,7 +56,7 @@ public class FMSPlugin implements FredPlugin, FredPluginThreadless, FredPluginHT
         pagemaker.removeNavigationCategory("FMS");
         pagemaker.addNavigationCategory("/plugins/plugins.FMS.FMSPlugin","FMS","Freenet Message System",this);
         pagemaker.addNavigationLink("FMS", "/plugins/plugins.FMS.FMSPlugin" , "Freenet Message System", "Freenet Message System", true, null, this);
-        pagemaker.addNavigationLink("FMS","/USK@xedmmitRTj9-PXJxoPbD7RY1gf9pKi0OcsRmjNPPIU4,AzFWTYV~9-I~eXis14tIkJ4XkF17gIgZrB294LjFXjc,AQACAAE/fmsguide/3/","The Unofficial Guide to FMS","The Unofficial Guide to FMS",true,null,this);
+        pagemaker.addNavigationLink("FMS","/USK@xedmmitRTj9-PXJxoPbD7RY1gf9pKi0OcsRmjNPPIU4,AzFWTYV~9-I~eXis14tIkJ4XkF17gIgZrB294LjFXjc,AQACAAE/fmsguide/4/","The Unofficial Guide to FMS","The Unofficial Guide to FMS",true,null,this);
 	}
 
 	@Override

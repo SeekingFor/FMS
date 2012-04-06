@@ -19,6 +19,14 @@ std::string CreateShortIdentityName(const std::string &name, const std::string &
 	return result;
 }
 
+void UpdateMissingAuthorID(SQLite3DB::DB *db, const int identityid, const std::string &name, const std::string &publickey)
+{
+	SQLite3DB::Statement st=db->Prepare("UPDATE tblMessage SET IdentityID=? WHERE IdentityID IS NULL AND FromName=?;");
+	st.Bind(0,identityid);
+	st.Bind(1,name+publickey.substr(3,44));
+	st.Step();
+}
+
 namespace global
 {
 	std::string basepath("");

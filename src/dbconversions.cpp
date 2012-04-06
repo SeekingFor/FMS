@@ -512,6 +512,33 @@ void ConvertDB0134To0135(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=35;");
 }
 
+void ConvertDB0135To0136(SQLite3DB::DB *db)
+{
+	db->Execute("DROP TRIGGER IF EXISTS trgDeleteIdentity;");
+	db->Execute("DROP TRIGGER IF EXISTS trgDeleteMessage;");
+	db->Execute("DROP TRIGGER IF EXISTS trgInsertMessage;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN MessageCount INTEGER DEFAULT 0;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN FirstMessageDate DATETIME;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN LastMessageDate DATETIME;");
+
+	SQLite3DB::Statement updatest=db->Prepare("UPDATE tblIdentity SET MessageCount=(SELECT COUNT(*) FROM tblMessage WHERE IdentityID=tblIdentity.IdentityID), FirstMessageDate=(SELECT MIN(MessageDate) FROM tblMessage WHERE IdentityID=tblIdentity.IdentityID), LastMessageDate=(SELECT MAX(MessageDate) FROM tblMessage WHERE IdentityID=tblIdentity.IdentityID) WHERE IdentityID=?;");
+	SQLite3DB::Statement st=db->Prepare("SELECT IdentityID FROM tblIdentity;");
+	st.Step();
+	while(st.RowReturned())
+	{
+		int identityid=0;
+		st.ResultInt(0,identityid);
+		updatest.Bind(0,identityid);
+		updatest.Step();
+		updatest.Reset();
+		st.Step();
+	}
+
+	db->Execute("DROP VIEW IF EXISTS vwIdentityStats;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=36;");
+}
+
 void FixBoardNames(SQLite3DB::DB *db)
 {
 

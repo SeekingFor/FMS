@@ -331,50 +331,10 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	// delete trust lists from identities we aren't trusting anymore
 	// m_db->Execute("DELETE FROM tblPeerTrust WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity WHERE (LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust')) AND (PeerTrustListTrust IS NULL OR PeerTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerTrustListTrust')));");
 
-	// remove identityid from messages where the identity has been deleted
-	m_db->Execute("UPDATE tblMessage SET IdentityID=NULL WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity);");
-
 	trans.Commit();
 	if(trans.IsSuccessful()==false)
 	{
 		m_log->error("DBMaintenanceThread::Do1DayMaintenance transaction failed with SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
-	}
-
-	// try to re-attach messages from identities that were previously deleted, but have been since re-added
-	trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
-	// first get the names from messages that have a NULL IdentityID
-	SQLite3DB::Statement st=m_db->Prepare("SELECT FromName FROM tblMessage WHERE IdentityID IS NULL GROUP BY FromName;");
-	//SQLite3DB::Statement findst=m_db->Prepare("SELECT IdentityID,PublicKey FROM tblIdentity WHERE Name=?;");
-	SQLite3DB::Statement findst=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE Name || SUBSTR(tblIdentity.PublicKey,4,44)=?;");
-	trans.Step(st);
-	while(st.RowReturned())
-	{
-		std::string name="";
-		int identityid=0;
-
-		st.ResultText(0,name);
-
-		// find identity with this name
-		findst.Bind(0,name);
-		trans.Step(findst);
-		if(findst.RowReturned())
-		{
-			// we have the identity - so update the messages table with the identityid
-			findst.ResultInt(0,identityid);
-
-			SQLite3DB::Statement st3=m_db->Prepare("UPDATE tblMessage SET IdentityID=? WHERE FromName=? AND IdentityID IS NULL;");
-			st3.Bind(0,identityid);
-			st3.Bind(1,name);
-			trans.Step(st3);
-		}
-		trans.Reset(findst);
-
-		trans.Step(st);
-	}
-	trans.Commit();
-	if(trans.IsSuccessful()==false)
-	{
-		m_log->error("DBMaintenanceThread::Do1DayMaintenance transaction 2 failed with SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
 	}
 
 	trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
@@ -382,7 +342,7 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	// delete single use identities that are older than 7 days
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(7,0,0,0,0);
-	st=m_db->Prepare("DELETE FROM tblIdentity WHERE SingleUse='true' AND DateAdded<?;");
+	SQLite3DB::Statement st=m_db->Prepare("DELETE FROM tblIdentity WHERE SingleUse='true' AND DateAdded<?;");
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 	trans.Step(st);
 
@@ -435,7 +395,6 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	trans.Step(st);
 
 	trans.Finalize(st);
-	trans.Finalize(findst);
 
 	// If at least 2 days have passed without retrieving one of our own inserted messages, reset the date of the message insert so it will be inserted again.
 	m_db->Execute("UPDATE tblMessageInserts SET Day=NULL, InsertIndex=NULL, Inserted='false' WHERE LENGTH(MessageXML)<=1000000 AND MessageUUID IN (SELECT tblMessageInserts.MessageUUID FROM tblMessageInserts LEFT JOIN tblMessage ON tblMessageInserts.MessageUUID=tblMessage.MessageUUID WHERE Inserted='true' AND SendDate>=(SELECT date('now','-' || (SELECT CASE WHEN OptionValue<=0 THEN 30 WHEN OptionValue>30 THEN 30 ELSE OptionValue END FROM tblOption WHERE Option='DeleteMessagesOlderThan') || ' days')) AND tblMessage.MessageUUID IS NULL AND tblMessageInserts.SendDate<date('now','-2 days'));");

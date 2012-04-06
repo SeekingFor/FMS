@@ -2,6 +2,7 @@
 #define _identitypublickeycache_
 
 #include "../idatabase.h"
+#include <Poco/LRUCache.h>
 
 #include <map>
 
@@ -17,7 +18,6 @@ public:
 	const bool PublicKey(const long identityid, std::string &publickey);
 
 private:
-	void TrimCache();
 
 	struct minrequest
 	{
@@ -28,9 +28,8 @@ private:
 		}
 	};
 
-	static long m_cachesize;
-	static std::map<long,std::string> m_cache;
-	static std::map<long,long> m_requestcount;
+	static Poco::LRUCache<long,std::string> m_cache;
+
 };
 
 #endif	// _identitypublickeycache_

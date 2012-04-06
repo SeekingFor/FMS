@@ -2,6 +2,7 @@
 #include "../../include/freenet/wotidentityxml.h"
 #include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/option.h"
+#include "../../include/unicode/unicodestring.h"
 
 #include <Poco/DateTime.h>
 #include <Poco/Timestamp.h>
@@ -78,12 +79,25 @@ const bool WOTIdentityRequester::HandleAllData(FCPv2::Message &message)
 
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
+		UnicodeString name;
 		std::string puzzlecount("");
 		bool savenewidentities=false;
 
+		std::string prevname("");
+		std::string publickey("");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT Name, PublicKey FROM tblIdentity WHERE IdentityID=?;");
+		st.Bind(0,identityid);
+		st.Step();
+		if(st.RowReturned())
+		{
+			st.ResultText(0,prevname);
+			st.ResultText(1,publickey);
+		}
+		st.Finalize();
+
 		// see if we will save new identities found on the trust list, and get name and public key
 		// allow adding new ids if trust is higher than min trust, or trust is null
-		SQLite3DB::Statement st=m_db->Prepare("SELECT IFNULL(LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust'),1), Name, PublicKey FROM tblIdentity WHERE IdentityID=?;");
+		st=m_db->Prepare("SELECT IFNULL(LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust'),1), Name, PublicKey FROM tblIdentity WHERE IdentityID=?;");
 		st.Bind(0,identityid);
 		trans.Step(st);
 		if(st.RowReturned())
@@ -167,13 +181,21 @@ const bool WOTIdentityRequester::HandleAllData(FCPv2::Message &message)
 			trans.Reset(cst);
 		}
 
+		name=xml.GetName();
+		name.Trim(MAX_IDENTITY_NAME_LENGTH);
+
 		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, WOTLastSeen=datetime('now'), WOTLastIndex=?, WOTLastRequest=datetime('now') WHERE IdentityID=?;");
-		st.Bind(0,xml.GetName());
+		st.Bind(0,name.NarrowString());
 		st.Bind(1,indexstr);
 		st.Bind(2,idstr);
 		if(trans.Step(st)==false)
 		{
 			m_log->debug(m_fcpuniquename+"::HandleAllData couldn't update record "+idstr+" "+message["Identifier"]);
+		}
+
+		if(name.NarrowString()!=prevname)
+		{
+			UpdateMissingAuthorID(m_db,identityid,name.NarrowString(),publickey);
 		}
 
 		if(savenewidentities==true)

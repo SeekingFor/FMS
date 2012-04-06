@@ -231,13 +231,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=35;
 		}
+		if(major==1 && minor==35)
+		{
+			ConvertDB0135To0136(db);
+			major=1;
+			minor=36;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,35);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,36);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=35;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=36;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -337,6 +343,9 @@ void SetupDB(SQLite3DB::DB *db)
 				FreesiteEdition			INTEGER,\
 				DateAdded				DATETIME,\
 				LastSeen				DATETIME,\
+				MessageCount			INTEGER DEFAULT 0,\
+				FirstMessageDate		DATETIME,\
+				LastMessageDate			DATETIME,\
 				LocalMessageTrust		INTEGER CHECK(LocalMessageTrust BETWEEN 0 AND 100) DEFAULT NULL,\
 				PeerMessageTrust		INTEGER CHECK(PeerMessageTrust BETWEEN 0 AND 100) DEFAULT NULL,\
 				LocalTrustListTrust		INTEGER CHECK(LocalTrustListTrust BETWEEN 0 AND 100) DEFAULT NULL,\
@@ -476,6 +485,7 @@ void SetupDB(SQLite3DB::DB *db)
 				);");
 
 	db->Execute("CREATE INDEX IF NOT EXISTS idxMessage_IdentityID ON tblMessage (IdentityID);");
+	db->Execute("CREATE INDEX IF NOT EXISTS idxMessage_DateTime ON tblMessage (MessageDate,MessageTime);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageReplyTo(\
 				MessageID			INTEGER,\
@@ -676,11 +686,6 @@ void SetupDB(SQLite3DB::DB *db)
 				AND ( PeerTrustListTrust IS NULL OR PeerTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerTrustListTrust') ) \
 				GROUP BY TargetIdentityID;");
 
-	db->Execute("CREATE VIEW IF NOT EXISTS vwIdentityStats AS \
-				SELECT tblIdentity.IdentityID, COUNT(tblMessage.MessageID) AS MessageCount, MIN(tblMessage.MessageDate) AS FirstMessageDate, MAX(tblMessage.MessageDate) AS LastMessageDate \
-				FROM tblIdentity LEFT JOIN tblMessage ON tblIdentity.IdentityID=tblMessage.IdentityID \
-				GROUP BY tblIdentity.IdentityID;");
-
 	/*
 		These peer trust calculations are too CPU intensive to be triggers - they were called every time a new trust list was processed
 		All trust levels will now be recalculated every hour in the PeriodicDBMaintenance class
@@ -721,12 +726,25 @@ void SetupDB(SQLite3DB::DB *db)
 				END;");
 */
 
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgInsertMessage AFTER INSERT ON tblMessage \
+				FOR EACH ROW \
+				BEGIN \
+					UPDATE tblIdentity SET MessageCount=MessageCount+1, LastMessageDate=CASE WHEN LastMessageDate ISNULL OR new.MessageDate>LastMessageDate THEN new.MessageDate ELSE LastMessageDate END, FirstMessageDate=CASE WHEN FirstMessageDate ISNULL OR new.MessageDate<FirstMessageDate THEN new.MessageDate ELSE FirstMessageDate END WHERE IdentityID=new.IdentityID;\
+				END;");
+
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgUpdateMessage_IdentityID AFTER UPDATE OF IdentityID ON tblMessage \
+				FOR EACH ROW BEGIN \
+					UPDATE tblIdentity SET MessageCount=MessageCount-1, LastMessageDate=(SELECT MAX(MessageDate) FROM tblMessage WHERE tblMessage.IdentityID=old.IdentityID), FirstMessageDate=(SELECT MIN(MessageDate) FROM tblMessage WHERE tblMessage.IdentityID=old.IdentityID) WHERE IdentityID=old.IdentityID;\
+					UPDATE tblIdentity SET MessageCount=MessageCount+1, LastMessageDate=CASE WHEN LastMessageDate ISNULL OR new.MessageDate>LastMessageDate THEN new.MessageDate ELSE LastMessageDate END, FirstMessageDate=CASE WHEN FirstMessageDate ISNULL OR new.MessageDate<FirstMessageDate THEN new.MessageDate ELSE FirstMessageDate END WHERE IdentityID=new.IdentityID;\
+				END;");
+
 	db->Execute("CREATE TRIGGER IF NOT EXISTS trgDeleteMessage AFTER DELETE ON tblMessage \
 				FOR EACH ROW \
 				BEGIN \
 					DELETE FROM tblMessageBoard WHERE tblMessageBoard.MessageID=old.MessageID;\
 					DELETE FROM tblMessageReplyTo WHERE tblMessageReplyTo.MessageID=old.MessageID;\
 					DELETE FROM tblMessageFileAttachment WHERE tblMessageFileAttachment.MessageID=old.MessageID;\
+					UPDATE tblIdentity SET MessageCount=MessageCount-1, LastMessageDate=(SELECT MAX(MessageDate) FROM tblMessage WHERE tblMessage.IdentityID=old.IdentityID), FirstMessageDate=(SELECT MIN(MessageDate) FROM tblMessage WHERE tblMessage.IdentityID=old.IdentityID) WHERE IdentityID=old.IdentityID;\
 				END;");
 
 	db->Execute("CREATE TRIGGER IF NOT EXISTS trgDeleteIdentity AFTER DELETE ON tblIdentity \
@@ -741,6 +759,7 @@ void SetupDB(SQLite3DB::DB *db)
 					DELETE FROM tblIdentityTrust WHERE IdentityID=old.IdentityID;\
 					DELETE FROM tblWOTIdentityProperty WHERE IdentityID=old.IdentityID;\
 					DELETE FROM tblWOTIdentityContext WHERE IdentityID=old.IdentityID;\
+					UPDATE tblMessage SET IdentityID=NULL WHERE IdentityID=old.IdentityID;\
 				END;");
 
 	db->Execute("DROP TRIGGER IF EXISTS trgDeleteLocalIdentity;");

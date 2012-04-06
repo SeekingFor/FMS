@@ -73,6 +73,17 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 	// parse file into xml and update the database
 	if(data.size()>0 && xml.ParseXML(std::string(data.begin(),data.end()))==true)
 	{
+		std::string prevname("");
+		std::string publickey("");
+		st=m_db->Prepare("SELECT Name, PublicKey FROM tblIdentity WHERE IdentityID=?;");
+		st.Bind(0,identityid);
+		st.Step();
+		if(st.RowReturned())
+		{
+			st.ResultText(0,prevname);
+			st.ResultText(1,publickey);
+		}
+		st.Finalize();
 
 		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, SingleUse=?, LastSeen=?, PublishTrustList=?, PublishBoardList=?, FreesiteEdition=?, Signature=?, IsFMS=1 WHERE IdentityID=?");
 		
@@ -124,6 +135,11 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 		st.Bind(7,identityid);
 		st.Step();
 		st.Finalize();
+
+		if(name.NarrowString()!=prevname)
+		{
+			UpdateMissingAuthorID(m_db,identityid,name.NarrowString(),publickey);
+		}
 
 		st=m_db->Prepare("INSERT INTO tblIdentityRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
 		st.Bind(0,identityid);

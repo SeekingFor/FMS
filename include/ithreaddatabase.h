@@ -27,6 +27,7 @@ public:
 		}
 		m_db=new SQLite3DB::DB(global::basepath+"fms.db3");
 		m_db->SetBusyTimeout(40000);		// set timeout to 40 seconds
+		m_db->Execute("PRAGMA page_size=4096;");
 		m_db->Execute("PRAGMA temp_store=2;");	// store temporary tables in memory
 		m_db->Execute("PRAGMA synchronous = FULL;");
 

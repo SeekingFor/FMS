@@ -6,6 +6,9 @@
 
 #include <Poco/Thread.h>
 #include <Poco/Mutex.h>
+#ifndef POCO_VERSION	// Used to be in Foundation.h, as of 1.4 it's in Version.h, but not included by default
+#include <Poco/Version.h>
+#endif
 
 /*
 	Poco::Thread does not have a virtual destructor, so we can't inherit safely.
