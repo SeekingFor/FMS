@@ -3,6 +3,8 @@
 
 #include "iindexrequester.h"
 #include "messagelistxml.h"
+#include "../unicode/unicodestring.h"
+#include "../global.h"
 
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/DateTimeParser.h>
@@ -167,6 +169,7 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 	std::string datestr="";
 	std::vector<std::string> dateparts;
 	IDTYPE messageid;
+	int futurecount=0;
 	SQLite3DB::Transaction trans(IIndexRequester<IDTYPE>::m_db);
 
 	GetBoardList(boards);
@@ -210,6 +213,10 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 			std::vector<std::string> messageboards=xml.GetBoards(i);
 			for(std::vector<std::string>::iterator j=messageboards.begin(); j!=messageboards.end(); j++)
 			{
+				UnicodeString boardname((*j));
+				boardname.Trim(MAX_BOARD_NAME_LENGTH);
+				(*j)=boardname.NarrowString();
+
 				if(boards.find((*j))!=boards.end())
 				{
 					if(boards[(*j)]==true)
@@ -231,7 +238,8 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 			if(CheckDateNotFuture(xml.GetDate(i))==false)
 			{
 				addmessage=false;
-				IIndexRequester<IDTYPE>::m_log->error(IIndexRequester<IDTYPE>::m_fcpuniquename+"::HandleAllData date for message is in future! "+xml.GetDate(i));
+				IIndexRequester<IDTYPE>::m_log->trace(IIndexRequester<IDTYPE>::m_fcpuniquename+"::HandleAllData date for message is in future! "+xml.GetDate(i));
+				futurecount++;
 			}
 
 			if(addmessage==true && CheckDateWithinMaxDays(xml.GetDate(i))==false)
@@ -267,6 +275,13 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 			}
 		}
 
+		if(futurecount>0)
+		{
+			std::string futurecountstr("0");
+			StringFunctions::Convert(futurecount,futurecountstr);
+			IIndexRequester<IDTYPE>::m_log->error(IIndexRequester<IDTYPE>::m_fcpuniquename+"::HandleAllData ignored "+futurecountstr+" entries for future messages!");
+		}
+
 		// insert external message indexes
 		for(long i=0; i<xml.ExternalMessageCount(); i++)
 		{
@@ -279,6 +294,10 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 				std::vector<std::string> messageboards=xml.GetExternalBoards(i);
 				for(std::vector<std::string>::iterator j=messageboards.begin(); j!=messageboards.end(); j++)
 				{
+					UnicodeString boardname((*j));
+					boardname.Trim(MAX_BOARD_NAME_LENGTH);
+					(*j)=boardname.NarrowString();
+
 					if(boards.find((*j))!=boards.end())
 					{
 						if(boards[(*j)]==true)
@@ -348,7 +367,7 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 			}
 		}
 
-		st=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT OR IGNORE INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
+		st=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT OR REPLACE INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'true');");
 		st.Bind(0,identityid);
 		st.Bind(1,idparts[4]);
 		st.Bind(2,index);
@@ -371,12 +390,16 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 	else
 	{
 		// bad data - mark index
-		st=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
+		trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
+
+		st=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT OR REPLACE INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
 		st.Bind(0,identityid);
 		st.Bind(1,idparts[4]);
 		st.Bind(2,index);
-		st.Step();
-		st.Finalize();
+		trans.Step(st);
+		trans.Finalize(st);
+
+		trans.Commit();
 
 		IIndexRequester<IDTYPE>::m_log->error(IIndexRequester<IDTYPE>::m_fcpuniquename+"::HandleAllData error parsing MessageList XML file : "+message["Identifier"]);
 	}
@@ -410,8 +433,11 @@ const bool IMessageListRequester<IDTYPE>::HandleGetFailed(FCPv2::Message &messag
 	StringFunctions::Convert(idparts[1],identityid);
 	StringFunctions::Convert(idparts[2],index);	
 
-	// code 27 - permanent redirect
-	if(message["Code"]=="27")
+	// remove this identityid from request list
+	messageid=GetIDFromIdentifier(message["Identifier"]);
+	RemoveFromRequestList(messageid);
+
+	if(message["RedirectURI"]!="")
 	{
 		StartRedirectRequest(message);
 		return true;
@@ -422,20 +448,22 @@ const bool IMessageListRequester<IDTYPE>::HandleGetFailed(FCPv2::Message &messag
 	{
 		if(message["Code"]!="25")
 		{
-			st=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
+			SQLite3DB::Transaction trans(IIndexRequester<IDTYPE>::m_db);
+
+			trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
+
+			st=IIndexRequester<IDTYPE>::m_db->Prepare("INSERT OR REPLACE INTO tblMessageListRequests(IdentityID,Day,RequestIndex,Found) VALUES(?,?,?,'false');");
 			st.Bind(0,identityid);
 			st.Bind(1,idparts[4]);
 			st.Bind(2,index);
-			st.Step();
-			st.Finalize();
+			trans.Step(st);
+			trans.Finalize(st);
+
+			trans.Commit();
 		}
 
 		IIndexRequester<IDTYPE>::m_log->error(IIndexRequester<IDTYPE>::m_fcpuniquename+"::HandleGetFailed fatal error code="+message["Code"]+" requesting "+message["Identifier"]);
 	}
-
-	// remove this identityid from request list
-	messageid=GetIDFromIdentifier(message["Identifier"]);
-	RemoveFromRequestList(messageid);
 
 	PostHandleGetFailed(message);
 
@@ -488,16 +516,22 @@ void IMessageListRequester<IDTYPE>::StartRedirectRequest(FCPv2::Message &message
 	std::string datestr="";
 	FCPv2::Message newmessage;
 
-	// get the new edition #
-	StringFunctions::Split(message["RedirectURI"],"/",parts);
-	//edition # is 2nd to last part
-	if(parts.size()>2)
+	std::vector<std::string> uriparts;
+	StringFunctions::Split(message["RedirectURI"],"/", uriparts);
+
+	// 0       1    2        3+
+	// USK@foo/site/edition[/path]
+	if (uriparts.size() > 2 && uriparts[0].compare(0, 4, "USK@") == 0)
 	{
-		indexstr=parts[parts.size()-2];
+		indexstr=uriparts[2];
+	}
+	else
+	{
+		IIndexRequester<IDTYPE>::m_log->debug(IIndexRequester<IDTYPE>::m_fcpuniquename+"::StartRedirectRequest unknown format of RedirectURI: "+message["RedirectURI"]);
+		return;
 	}
 
 	// get identityid
-	parts.clear();
 	StringFunctions::Split(message["Identifier"],"|",parts);
 	if(parts.size()>1)
 	{
@@ -511,12 +545,15 @@ void IMessageListRequester<IDTYPE>::StartRedirectRequest(FCPv2::Message &message
 	newmessage.SetName("ClientGet");
 	newmessage["URI"]=StringFunctions::UriDecode(message["RedirectURI"]);
 	newmessage["Identifier"]=IIndexRequester<IDTYPE>::m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|_|"+datestr+"|"+newmessage["URI"];
+	newmessage["IgnoreUSKDatehints"]="true"; // per-day key, DATEHINTs useless
 	newmessage["ReturnType"]="direct";
 	newmessage["MaxSize"]="1000000";
 
 	IIndexRequester<IDTYPE>::m_fcp->Send(newmessage);
+	StartedRequest(GetIDFromIdentifier(newmessage["Identifier"]),
+				   newmessage["Identifier"]);
 
-	IIndexRequester<IDTYPE>::m_log->debug(IIndexRequester<IDTYPE>::m_fcpuniquename+"::StartRedirectRequest started redirect request of "+message["Identifier"]+" to "+newmessage["URI"]);
+	IIndexRequester<IDTYPE>::m_log->debug(IIndexRequester<IDTYPE>::m_fcpuniquename+"::StartRedirectRequest started redirect request of "+message["Identifier"]+" to "+newmessage["Identifier"]);
 
 }
 

@@ -73,7 +73,7 @@ void IIndexInserter<IDTYPE>::FCPConnected()
 	{
 		m_log->fatal(m_fcpuniquename+"::FCPConnected fcpuniquename not initialized correctly!");
 	}
-	if(m_fcpuniquename.find("|")!=std::string::npos)
+	if(m_fcpuniquename.find('|')!=std::string::npos)
 	{
 		m_log->fatal(m_fcpuniquename+"::FCPConnected fcpuniquename : "+m_fcpuniquename+" contains | character!  This is not a valid character!");
 	}

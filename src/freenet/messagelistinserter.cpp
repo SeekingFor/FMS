@@ -286,13 +286,11 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 
 	if(messagecount<600)
 	{
-		std::ostringstream limitstr;
-		limitstr << (600-messagecount);
-
-		st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID, InsertDate FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL AND MessageDate<=? ORDER BY MessageDate DESC, MessageTime DESC LIMIT "+limitstr.str()+";");
+		st=m_db->Prepare("SELECT MessageDate, MessageIndex, PublicKey, MessageID, InsertDate FROM tblMessage INNER JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE MessageIndex IS NOT NULL AND MessageDate<=? ORDER BY MessageDate DESC, MessageTime DESC LIMIT ?");
 		st2=m_db->Prepare("SELECT BoardName FROM tblBoard INNER JOIN tblMessageBoard ON tblBoard.BoardID=tblMessageBoard.BoardID WHERE tblMessageBoard.MessageID=?;");
 		
 		st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
+		st.Bind(1, 600-messagecount);
 		trans.Step(st);
 
 		while(st.RowReturned() && trans.IsSuccessful())
@@ -388,6 +386,7 @@ const bool MessageListInserter::StartInsert(const long &localidentityid)
 		message.SetName("ClientPutComplexDir");
 		// don't insert into edition 0 because 1208 has major issues with this
 		//message["URI"]="USK"+privatekey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|MessageList/"+indexstr+"/";
+		//message["IgnoreUSKDatehints"]="true"; // per-day key, DATEHINTs useless
 		message["URI"]="SSK"+privatekey.substr(3)+m_messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y.%m.%d")+"|MessageList-"+indexstr;
 		message["Identifier"]=m_fcpuniquename+"|"+localidentityidstr+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|"+message["URI"];
 		message["PriorityClass"]=m_defaultinsertpriorityclassstr;

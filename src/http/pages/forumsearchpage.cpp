@@ -322,7 +322,9 @@ const std::string ForumSearchPage::GenerateContent(const std::string &method, co
 		}
 		else	// date
 		{
-			sqlstring+="ORDER BY tblMessage.MessageDate || tblMessage.MessageTime ";
+			sqlstring+="ORDER BY tblMessage.MessageDate ";
+			sqlstring+=(sf.m_sortorder=="ASC")?"ASC":"DESC"; // FIXME copypaste
+			sqlstring+=", tblMessage.MessageTime ";
 		}
 
 		if(sf.m_sortorder=="ASC")

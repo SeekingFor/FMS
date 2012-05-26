@@ -170,11 +170,11 @@ void DB::GetProfileData(std::map<std::string,ProfileData> &profiledata, const bo
 void DB::HandleError(const int extendederrorcode, const std::string &errormessage, const std::string &extramessage)
 {
 	// which errors are really fatal?
-	if((extendederrorcode & SQLITE_NOMEM)==SQLITE_NOMEM)
+	if((extendederrorcode & ResultCodeMask)==SQLITE_NOMEM)
 	{
 		throw Exception("SQLite3DB SQLITE_NOMEM memory allocation exception. "+errormessage+" "+extramessage);
 	}
-	else if((extendederrorcode & SQLITE_IOERR_NOMEM)==SQLITE_IOERR_NOMEM)
+	else if(extendederrorcode==SQLITE_IOERR_NOMEM)
 	{
 		throw Exception("SQLite3DB SQLITE_IOERR_NOMEM memory allocation exception. "+errormessage+" "+extramessage);
 	}

@@ -135,9 +135,9 @@ const bool MessageXML::ParseXML(const std::string &xml)
 			{
 				m_replyboard=SanitizeSingleString(txt->firstChild()->getNodeValue());
 				// strip off everything after , in board name
-				if(m_replyboard.find(",")!=std::string::npos)
+				if(m_replyboard.find(',')!=std::string::npos)
 				{
-					m_replyboard.erase(m_replyboard.find(","));
+					m_replyboard.erase(m_replyboard.find(','));
 				}
 				m_replyboard=Board::FixBoardName(m_replyboard);
 			}
@@ -160,9 +160,9 @@ const bool MessageXML::ParseXML(const std::string &xml)
 				{
 					std::string boardname=SanitizeSingleString(board->firstChild()->getNodeValue());
 					// strip off everything after , in board name
-					if(boardname.find(",")!=std::string::npos)
+					if(boardname.find(',')!=std::string::npos)
 					{
-						boardname.erase(boardname.find(","));
+						boardname.erase(boardname.find(','));
 					}
 					boardname=Board::FixBoardName(boardname);
 					m_boards.push_back(boardname);

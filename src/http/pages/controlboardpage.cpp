@@ -1,5 +1,6 @@
 #include "../../../include/http/pages/controlboardpage.h"
 #include "../../../include/stringfunctions.h"
+#include "../../../include/board.h"
 
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
@@ -48,8 +49,10 @@ const std::string ControlBoardPage::GenerateContent(const std::string &method, c
 		if((*queryvars.find("formaction")).second=="addboard" && queryvars.find("boardname")!=queryvars.end() && (*queryvars.find("boardname")).second!="" && ValidateFormPassword(queryvars))
 		{
 			Poco::DateTime date;
+			std::string boardname=(*queryvars.find("boardname")).second.GetData();
+			boardname=Board::FixBoardName(boardname);
 			st=m_db->Prepare("INSERT INTO tblBoard(BoardName,DateAdded) VALUES(?,?);");
-			st.Bind(0,(*queryvars.find("boardname")).second.GetData());
+			st.Bind(0,boardname);
 			st.Bind(1,Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
 			if(st.Step(true))
 			{

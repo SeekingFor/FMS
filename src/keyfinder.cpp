@@ -215,7 +215,7 @@ std::vector<KeyFinderItem *> KeyFinderParser::ParseMessage(const std::string &me
 			(*mi).length-=protocolmatch.length;
 		}
 
-		std::string::size_type slashpos=wholekey.find("/");
+		std::string::size_type slashpos=wholekey.find('/');
 		if(slashpos!=std::string::npos)
 		{
 			keypart=workmessage.substr((*mi).offset,slashpos+1);

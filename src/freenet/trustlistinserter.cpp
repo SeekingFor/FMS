@@ -68,6 +68,10 @@ const bool TrustListInserter::HandleMessage(FCPv2::Message &message)
 
 		StringFunctions::Split(message["Identifier"],"|",idparts);
 
+		int localidentityid, insertindex;
+		StringFunctions::Convert(idparts[1], localidentityid);
+		StringFunctions::Convert(idparts[2], insertindex);
+
 		// no action for URIGenerated
 		if(message.GetName()=="URIGenerated")
 		{
@@ -85,8 +89,15 @@ const bool TrustListInserter::HandleMessage(FCPv2::Message &message)
 			// non USK
 			if(idparts[0]=="TrustListInserter")
 			{
-				m_db->Execute("UPDATE tblLocalIdentity SET InsertingTrustList='false', LastInsertedTrustList='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
-				m_db->Execute("INSERT INTO tblTrustListInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
+				SQLite3DB::Statement upd=m_db->Prepare("UPDATE tblLocalIdentity SET InsertingTrustList='false', LastInsertedTrustList=? WHERE LocalIdentityID=?");
+				upd.Bind(0, Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
+				upd.Bind(1, localidentityid);
+				upd.Step();
+				SQLite3DB::Statement ins=m_db->Prepare("INSERT INTO tblTrustListInserts(LocalIdentityID,Day,InsertIndex) VALUES(?, ?, ?)");
+				ins.Bind(0, localidentityid);
+				ins.Bind(1, idparts[4]);
+				ins.Bind(2, insertindex);
+				ins.Step();
 				m_log->debug("TrustListInserter::HandleMessage inserted TrustList xml");
 			}
 			return true;
@@ -97,13 +108,19 @@ const bool TrustListInserter::HandleMessage(FCPv2::Message &message)
 			// non USK
 			if(idparts[0]=="TrustListInserter")
 			{
-				m_db->Execute("UPDATE tblLocalIdentity SET InsertingTrustList='false' WHERE LocalIdentityID="+idparts[1]+";");
+				SQLite3DB::Statement upd=m_db->Prepare("UPDATE tblLocalIdentity SET InsertingTrustList='false' WHERE LocalIdentityID=?");
+				upd.Bind(0,localidentityid);
+				upd.Step();
 				m_log->debug("TrustListInserter::HandleMessage failure inserting TrustList xml.  Code="+message["Code"]+" Description="+message["CodeDescription"]);
 			
 				// if code 9 (collision), then insert index into inserted table
 				if(message["Code"]=="9")
 				{
-					m_db->Execute("INSERT INTO tblTrustListInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
+					SQLite3DB::Statement ins=m_db->Prepare("INSERT INTO tblTrustListInserts(LocalIdentityID,Day,InsertIndex) VALUES(?, ?, ?)");
+					ins.Bind(0, localidentityid);
+					ins.Bind(1, idparts[4]);
+					ins.Bind(2, insertindex);
+					ins.Step();
 				}
 			}
 			return true;
@@ -167,7 +184,7 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	dateminus30-=Poco::Timespan(30,0,0,0,0);
 
 	// insert all identities not in trust list already
-	m_db->Execute("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity WHERE LocalIdentityID || '_' || IdentityID NOT IN (SELECT LocalIdentityID || '_' || IdentityID FROM tblIdentityTrust);");
+	m_db->Execute("INSERT OR IGNORE INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity;");
 
 	// select statement for last message date for an identity
 	SQLite3DB::Statement countst=m_db->Prepare("SELECT COUNT(*) FROM tblMessage WHERE IdentityID=? AND MessageDate>=?;");
@@ -317,6 +334,8 @@ void TrustListInserter::StartInsert(const long localidentityid, const std::strin
 	m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 	*/
 
-	m_db->Execute("UPDATE tblLocalIdentity SET InsertingTrustList='true' WHERE LocalIdentityID="+localidentityidstr+";");
+	st=m_db->Prepare("UPDATE tblLocalIdentity SET InsertingTrustList='true' WHERE LocalIdentityID=?");
+	st.Bind(0, localidentityid);
+	st.Step();
 
 }

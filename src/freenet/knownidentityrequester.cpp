@@ -54,7 +54,9 @@ void KnownIdentityRequester::PopulateIDList()
 	trans.Begin();
 
 	// select identities we want to query (haven't seen yet today) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
-	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen IS NOT NULL AND LastSeen<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"' AND LastSeen>='"+Poco::DateTimeFormatter::format(weekago,"%Y-%m-%d %H:%M:%S")+"' AND tblIdentity.FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LastSeen DESC, LocalMessageTrust+LocalTrustListTrust DESC;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen IS NOT NULL AND LastSeen<? AND LastSeen>=? AND tblIdentity.FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LastSeen DESC, LocalMessageTrust+LocalTrustListTrust DESC;");
+	st.Bind(0, Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S"));
+	st.Bind(1, Poco::DateTimeFormatter::format(weekago,"%Y-%m-%d %H:%M:%S"));
 	trans.Step(st);
 
 	m_ids.clear();

@@ -38,7 +38,7 @@ void ShowCaptchaPage::handleRequest(Poco::Net::HTTPServerRequest &request, Poco:
 			Base64::Decode(b64data,data);
 
 			// mime type should be short and have a / in it - otherwise skip
-			if(mime.size()<50 && mime.find("/")!=std::string::npos)
+			if(mime.size()<50 && mime.find('/')!=std::string::npos)
 			{
 				std::string fname(uuid);
 				if(mime=="image/bmp")

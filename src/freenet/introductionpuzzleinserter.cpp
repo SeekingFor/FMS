@@ -38,9 +38,13 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 	if(m_inserting.size()==0)
 	{
 		// select all local ids that aren't single use and that aren't currently inserting a puzzle and are publishing a trust list
-		SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID FROM tblLocalIdentity WHERE tblLocalIdentity.Active='true' AND PublishTrustList='true' AND SingleUse='false' AND PrivateKey IS NOT NULL AND PrivateKey <> '' ORDER BY LastInsertedPuzzle;");
-		
-		while(!rs.AtEnd())
+		SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE tblLocalIdentity.Active='true' AND PublishTrustList='true' AND SingleUse='false' AND PrivateKey IS NOT NULL AND PrivateKey <> '' ORDER BY LastInsertedPuzzle;");
+		st.Step();
+
+		// FIXME Convert to nested SELECT
+		SQLite3DB::Statement st2=m_db->Prepare("SELECT UUID FROM tblIntroductionPuzzleInserts WHERE Day=? AND FoundSolution='false' AND LocalIdentityID=?;");
+
+		while(st.RowReturned())
 		{
 			int localidentityid=0;
 			std::string localidentityidstr="";
@@ -50,30 +54,33 @@ void IntroductionPuzzleInserter::CheckForNeededInsert()
 			Poco::DateTime lastinsert=now;
 			lastinsert-=Poco::Timespan(0,0,minutesbetweeninserts,0,0);
 
-			if(rs.GetField(0))
-			{
-				localidentityidstr=rs.GetField(0);
-			}
+			st.ResultInt(0, localidentityid);
+			StringFunctions::Convert(localidentityid, localidentityidstr);
 
 			// if this identity has any non-solved puzzles for today, we don't need to insert a new puzzle
-			SQLite3DB::Recordset rs2=m_db->Query("SELECT UUID FROM tblIntroductionPuzzleInserts WHERE Day='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"' AND FoundSolution='false' AND LocalIdentityID="+localidentityidstr+";");
+			st2.Bind(0, Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
+			st2.Bind(1, localidentityid);
+			st2.Step();
 
 			// identity doesn't have any non-solved puzzles for today - start a new insert
-			if(rs2.Empty()==true)
+			if(!st2.RowReturned())
 			{
 				// make sure we are on the next day or the appropriate amount of time has elapsed since the last insert
-				if(m_lastinserted.find(rs.GetInt(0))==m_lastinserted.end() || m_lastinserted[rs.GetInt(0)]<=lastinsert || m_lastinserted[rs.GetInt(0)].day()!=now.day())
+				std::map<int,Poco::DateTime>::iterator i;
+				if((i=m_lastinserted.find(localidentityid))==m_lastinserted.end() || (*i).second<=lastinsert || (*i).second.day()!=now.day())
 				{
-					StartInsert(rs.GetInt(0));
-					m_lastinserted[rs.GetInt(0)]=now;
+					StartInsert(localidentityid);
+					m_lastinserted[localidentityid]=now;
 				}
 				else
 				{
 					m_log->trace("IntroductionPuzzleInserter::CheckForNeededInsert waiting to insert puzzle for "+localidentityidstr);
 				}
+			} else {
+				st2.Reset();
 			}
 
-			rs.Next();
+			st.Step();
 		}
 	}
 }
@@ -160,9 +167,11 @@ const bool IntroductionPuzzleInserter::HandlePutFailed(FCPv2::Message &message)
 	SQLite3DB::Statement st;
 	std::vector<std::string> idparts;
 	long localidentityid;
+	long insertindex;
 
 	StringFunctions::Split(message["Identifier"],"|",idparts);
 	StringFunctions::Convert(idparts[1],localidentityid);
+	StringFunctions::Convert(idparts[2],insertindex);
 
 	// non USK
 	if(idparts[0]==m_fcpuniquename)
@@ -170,7 +179,11 @@ const bool IntroductionPuzzleInserter::HandlePutFailed(FCPv2::Message &message)
 		// if fatal error or collision - mark index
 		if(message["Fatal"]=="true" || message["Code"]=="9")
 		{
-			m_db->Execute("UPDATE tblIntroductionPuzzleInserts SET Day='"+idparts[5]+"', InsertIndex="+idparts[2]+", FoundSolution='true' WHERE UUID='"+idparts[3]+"';");
+			SQLite3DB::Statement st=m_db->Prepare("UPDATE tblIntroductionPuzzleInserts SET Day=?, InsertIndex=?, FoundSolution='true' WHERE UUID=?");
+			st.Bind(0, idparts[5]);
+			st.Bind(1, insertindex);
+			st.Bind(2, idparts[3]);
+			st.Step();
 		}
 
 		RemoveFromInsertList(localidentityid);
@@ -228,7 +241,7 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 {
 	Poco::DateTime now;
 	std::string idstring="";
-	long index=0;
+	int index=0;
 	std::string indexstr="";
 	Poco::UUIDGenerator uuidgen;
 	Poco::UUID uuid;
@@ -247,37 +260,38 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 	std::string requestedtype="";
 
 	StringFunctions::Convert(localidentityid,idstring);
-	SQLite3DB::Recordset rs=m_db->Query("SELECT MAX(InsertIndex) FROM tblIntroductionPuzzleInserts WHERE Day='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"' AND LocalIdentityID="+idstring+";");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT MAX(InsertIndex)+1 FROM tblIntroductionPuzzleInserts WHERE Day=? AND LocalIdentityID=?");
+	st.Bind(0,Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
+	st.Bind(1,localidentityid);
+	st.Step();
 
-	if(rs.Empty() || rs.GetField(0)==NULL)
+	if(st.RowReturned())
 	{
-		index=0;
+		st.ResultInt(0, index); // NULL converted to 0
+		st.Reset();
 	}
 	else
 	{
-		index=rs.GetInt(0)+1;
+		index=0;
 	}
 	StringFunctions::Convert(index,indexstr);
 
 	if(index<m_maxpuzzleinserts)
 	{
-		SQLite3DB::Recordset rs2=m_db->Query("SELECT PrivateKey,PublicKey,IntroductionPuzzleType FROM tblLocalIdentity WHERE LocalIdentityID="+idstring+";");
-		if(rs2.Empty()==false && rs2.GetField(0)!=NULL)
+		SQLite3DB::Statement st2=m_db->Prepare("SELECT PrivateKey,PublicKey,IntroductionPuzzleType FROM tblLocalIdentity WHERE LocalIdentityID=?");
+		st2.Bind(0, localidentityid);
+		st2.Step();
+		if(st2.RowReturned())
 		{
-			privatekey=rs2.GetField(0);
-			if(rs2.GetField(1))
-			{
-				publickey=rs2.GetField(1);
-			}
+			st2.ResultText(0, privatekey);
+			st2.ResultText(1, publickey);
 			if(publickey.size()>=50)
 			{
 				// remove - and ~
 				keypart=StringFunctions::Replace(StringFunctions::Replace(publickey.substr(4,43),"-",""),"~","");
 			}
-		}
-		if(rs2.GetField(2)!=NULL)
-		{
-			requestedtype=rs2.GetField(2);
+			st2.ResultText(2, requestedtype);
+			st2.Reset();
 		}
 
 		Option option(m_db);
@@ -312,6 +326,7 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		message.SetName("ClientPut");
 		message["URI"]=privatekey+messagebase+"|"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"|IntroductionPuzzle|"+indexstr+".xml";
 		message["Identifier"]=m_fcpuniquename+"|"+idstring+"|"+indexstr+"|"+xml.GetUUID()+"|"+message["URI"];
+		message["IgnoreUSKDatehints"]="true"; // per-day key, DATEHINTs useless
 		message["PriorityClass"]=m_defaultinsertpriorityclassstr;
 		message["UploadFrom"]="direct";
 		message["DataLength"]=xmldatasizestr;
@@ -333,7 +348,14 @@ const bool IntroductionPuzzleInserter::StartInsert(const long &localidentityid)
 		m_fcp->Send(std::vector<char>(xmldata.begin(),xmldata.end()));
 		*/
 
-		m_db->Execute("INSERT INTO tblIntroductionPuzzleInserts(UUID,Type,MimeType,LocalIdentityID,PuzzleData,PuzzleSolution) VALUES('"+xml.GetUUID()+"','"+captchatype+"','"+mimetype+"',"+idstring+",'"+encodedpuzzle+"','"+solutionstring+"');");
+		SQLite3DB::Statement ins=m_db->Prepare("INSERT INTO tblIntroductionPuzzleInserts(UUID,Type,MimeType,LocalIdentityID,PuzzleData,PuzzleSolution) VALUES(?, ?, ?, ?, ?, ?)");
+		ins.Bind(0, xml.GetUUID());
+		ins.Bind(1, captchatype);
+		ins.Bind(2, mimetype);
+		ins.Bind(3, localidentityid);
+		ins.Bind(4, encodedpuzzle);
+		ins.Bind(5, solutionstring);
+		ins.Step();
 
 		m_inserting.push_back(localidentityid);
 

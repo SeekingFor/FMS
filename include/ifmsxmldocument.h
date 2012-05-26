@@ -44,7 +44,7 @@ protected:
 		Poco doesn't like CDATA with whitespace outside the tags
 		This will remove the whitespace from around CDATA tags
 	*/
-	virtual const std::string FixCDATA(const std::string &xmlstr)
+	static const std::string FixCDATA(const std::string &xmlstr)
 	{
 		std::string rstring=xmlstr;
 		std::string::size_type beg1=std::string::npos;
@@ -54,7 +54,7 @@ protected:
 
 		while(end1!=std::string::npos)
 		{
-			beg1=rstring.rfind(">",end1);
+			beg1=rstring.rfind('>',end1);
 			if(beg1!=end1-1)
 			{
 				rstring.erase(beg1+1,end1-(beg1+1));
@@ -63,7 +63,7 @@ protected:
 			beg2=rstring.find("]]>",end1);
 			if(beg2!=std::string::npos)
 			{
-				end2=rstring.find("<",beg2);
+				end2=rstring.find('<',beg2);
 				if(end2!=std::string::npos)
 				{
 					rstring.erase(beg2+3,end2-(beg2+3));
@@ -77,7 +77,7 @@ protected:
 	/**
 		\brief Creates and returns an element with a boolean value
 	*/
-	virtual Poco::AutoPtr<Poco::XML::Element> XMLCreateBooleanElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const bool value)
+	static Poco::AutoPtr<Poco::XML::Element> XMLCreateBooleanElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const bool value)
 	{
 		if(doc)
 		{
@@ -95,7 +95,7 @@ protected:
 	/**
 		\brief Creates and returns an element with a CDATA value
 	*/
-	virtual Poco::AutoPtr<Poco::XML::Element> XMLCreateCDATAElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const std::string &data)
+	static Poco::AutoPtr<Poco::XML::Element> XMLCreateCDATAElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const std::string &data)
 	{
 		if(doc)
 		{
@@ -116,7 +116,7 @@ protected:
 	/**
 		\brief Creates and returns a text element
 	*/
-	virtual Poco::AutoPtr<Poco::XML::Element> XMLCreateTextElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const std::string &data)
+	static Poco::AutoPtr<Poco::XML::Element> XMLCreateTextElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const std::string &data)
 	{
 		if(doc)
 		{
@@ -131,7 +131,7 @@ protected:
 		}
 	}
 
-	virtual Poco::AutoPtr<Poco::XML::Element> XMLCreateTextElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const long data)
+	static Poco::AutoPtr<Poco::XML::Element> XMLCreateTextElement(Poco::AutoPtr<Poco::XML::Document> doc, const std::string &name, const long data)
 	{
 		if(doc)
 		{
@@ -145,7 +145,7 @@ protected:
 		}
 	}
 
-	virtual const bool XMLGetBooleanElement(Poco::XML::Element *parent, const std::string &name)
+	static const bool XMLGetBooleanElement(Poco::XML::Element *parent, const std::string &name)
 	{
 		Poco::XML::Element *el=XMLGetFirstChild(parent,name);
 		if(el && el->firstChild())
@@ -162,7 +162,7 @@ protected:
 		return false;
 	}
 
-	virtual Poco::XML::Element *XMLGetFirstChild(Poco::XML::Node *parent, const std::string &name)
+	static Poco::XML::Element *XMLGetFirstChild(Poco::XML::Node *parent, const std::string &name)
 	{
 		if(parent)
 		{
@@ -180,7 +180,7 @@ protected:
 		}
 	}
 
-	virtual Poco::XML::Element *XMLGetNextSibling(Poco::XML::Node *node, const std::string &name)
+	static Poco::XML::Element *XMLGetNextSibling(Poco::XML::Node *node, const std::string &name)
 	{
 		if(node)
 		{
@@ -198,17 +198,39 @@ protected:
 		}
 	}
 
+	static
 	const std::string SanitizeSingleString(const std::string &text)
 	{
-		std::string returntext=text;
-		// remove bogus chars from text string
-		for(char i=0; i<32; i++)
+		std::string::const_iterator i;
+
+		for(i = text.begin(); i < text.end(); i++)
 		{
-			returntext=StringFunctions::Replace(returntext,std::string(1,i),"");
+		    if (*i >= 0 && *i < 32)
+		    {
+			break;
+		    }
+		}
+		if(i==text.end()) // no bugus chars - return original string
+		{
+			return text;
+		}
+
+		std::string returntext;
+		returntext.reserve(text.size()-1);
+
+		returntext.append(text.begin(), i);
+		for(++i; i < text.end(); ++i)
+		{
+			// skip bogus chars from text string
+			if(!(*i >= 0 && *i < 32))
+			{
+				returntext += *i;
+			}
 		}
 		return returntext;
 	}
 
+	static
 	const std::string SanitizeMultilineString(const std::string &text)
 	{
 		std::string returntext=text;

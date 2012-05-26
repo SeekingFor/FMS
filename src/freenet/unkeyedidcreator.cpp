@@ -31,23 +31,24 @@ void UnkeyedIDCreator::FCPDisconnected()
 
 void UnkeyedIDCreator::CheckForUnkeyedID()
 {
-	SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID FROM tblLocalIdentity WHERE PublicKey IS NULL OR PrivateKey IS NULL OR PublicKey='' OR PrivateKey='';");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE PublicKey IS NULL OR PrivateKey IS NULL OR PublicKey='' OR PrivateKey='';");
+	st.Step();
 
-	if(rs.Empty()==false)
+	if(st.RowReturned())
 	{
-		std::string idstring;
-		StringFunctions::Convert(rs.GetInt(0),idstring);
+		int id;
+		st.ResultInt(0, id);
 
-		std::ostringstream idstr;
-		long id=rs.GetInt(0);
-		idstr << id;
+		std::string idstring;
+		StringFunctions::Convert(id,idstring);
 
 		FCPv2::Message message;
 		message.SetName("GenerateSSK");
-		message["Identifier"]="UnkeyedIDRequest|"+idstr.str();
+		message["Identifier"]="UnkeyedIDRequest|"+idstring;
 		m_fcp->Send(message);
 
 		m_waiting=true;
+		st.Reset();
 
 	}
 

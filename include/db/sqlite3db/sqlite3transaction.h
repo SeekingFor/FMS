@@ -38,6 +38,7 @@ public:
 	const bool Step(Statement &st, const bool saveinsertrowid=false);
 	const bool Reset(Statement &st);
 	const bool Finalize(Statement &st);
+	const bool Execute(const std::string &sql);
 	
 	const int GetTransactionLevel() const	{ return m_transactionlevel; }
 

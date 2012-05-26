@@ -173,7 +173,7 @@ const std::string PeerTrustPage::GenerateContent(const std::string &method, cons
 		CreateArgArray(queryvars,"oldtrustlisttrustcomment",oldtltc);
 		CreateArgArray(queryvars,"trustlisttrustcomment",tltc);
 
-		SQLite3DB::Statement ins=m_db->Prepare("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) VALUES(?,?);");
+		SQLite3DB::Statement ins=m_db->Prepare("INSERT OR IGNORE INTO tblIdentityTrust(LocalIdentityID,IdentityID) VALUES(?,?);");
 		SQLite3DB::Statement update=m_db->Prepare("UPDATE tblIdentityTrust SET LocalMessageTrust=?, LocalTrustListTrust=?, MessageTrustComment=?, TrustListTrustComment=? WHERE LocalIdentityID=? AND IdentityID=?;");
 
 		for(int i=0; i<identityids.size(); i++)

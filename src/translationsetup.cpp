@@ -79,6 +79,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.LogLevel.6","6 - Informational Messages");
 	st->SetDefault("web.option.LogLevel.7","7 - Debug Messages");
 	st->SetDefault("web.option.LogLevel.8","8 - Trace Messages");
+	st->SetDefault("web.option.BackupDatabase.description","Backup the database automatically once a day.");
 	st->SetDefault("web.option.VacuumOnStartup.description","VACUUM the database every time FMS starts.  This will defragment the free space in the database and create a smaller database file.  Vacuuming the database can be CPU and disk intensive.");
 	st->SetDefault("web.option.ProfileDBQueries.description","Profiles all database queries and periodically writes the stats to the fms log file.");
 	st->SetDefault("web.option.MessageBase.description","A unique string shared by all clients who want to communicate with each other.  This should not be changed unless you want to create your own separate communications network.");

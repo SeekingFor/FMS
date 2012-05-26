@@ -23,7 +23,7 @@ FreenetKSKKey::FreenetKSKKey(const std::string &key)
 
 const bool FreenetKSKKey::TryParse(const std::string &key)
 {
-	Poco::RegularExpression regex("^KSK@.+",0);
+	Poco::RegularExpression regex("^(freenet:)?KSK@.+",0);
 	if(regex.match(key)==false)
 	{
 		m_fullkey="";
@@ -55,13 +55,13 @@ FreenetUSKKey::FreenetUSKKey(const std::string &key):m_edition(0)
 const std::string FreenetUSKKey::GetBaseKey() const
 {
 	std::string basekey="";
-	Poco::RegularExpression regex("^(USK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/).+/-{0,1}[0-9]+/.*",0);
+	Poco::RegularExpression regex("^(freenet:)?(USK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/).+/-{0,1}[0-9]+(/.*)?",0);
 	std::vector<std::string> matches;
 	regex.split(m_fullkey,matches);
 
-	if(matches.size()>1)
+	if(matches.size()>2)
 	{
-		basekey=matches[1];
+		basekey=matches[2];
 	}
 	
 	return basekey;
@@ -70,13 +70,13 @@ const std::string FreenetUSKKey::GetBaseKey() const
 const std::string FreenetUSKKey::GetDataPath() const
 {
 	std::string datapath="";
-	Poco::RegularExpression regex("^USK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/.+/-{0,1}[0-9]+/(.*)",0);
+	Poco::RegularExpression regex("^(freenet:)?USK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/.+/-{0,1}[0-9]+/(.*)",0);
 	std::vector<std::string> matches;
 	regex.split(m_fullkey,matches);
 
-	if(matches.size()>1)
+	if(matches.size()>2)
 	{
-		datapath=matches[1];
+		datapath=matches[2];
 	}
 
 	return datapath;
@@ -85,13 +85,13 @@ const std::string FreenetUSKKey::GetDataPath() const
 const std::string FreenetUSKKey::GetSiteName() const
 {
 	std::string sitename="";
-	Poco::RegularExpression regex("^USK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/(.+)/-{0,1}[0-9]+/.*",0);
+	Poco::RegularExpression regex("^(freenet:)?USK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/(.+)/-{0,1}[0-9]+(/.*)?",0);
 	std::vector<std::string> matches;
 	regex.split(m_fullkey,matches);
 
-	if(matches.size()>1)
+	if(matches.size()>2)
 	{
-		sitename=matches[1];
+		sitename=matches[2];
 	}
 
 	return sitename;
@@ -99,20 +99,20 @@ const std::string FreenetUSKKey::GetSiteName() const
 
 const bool FreenetUSKKey::TryParse(const std::string &key)
 {
-	// USKs are USK@asdfasdf,asdfasdf,asdf/site/edition#/whatever
-	Poco::RegularExpression regex("^USK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/.+/-{0,1}[0-9]+/.*",0);
+	// USKs are USK@asdfasdf,asdfasdf,asdf/site/edition#/whatever - /whatever is optional
+	Poco::RegularExpression regex("^(freenet:)?USK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/.+/-{0,1}[0-9]+(/.*)?",0);
 	if(regex.match(key)==false)
 	{
 		m_edition=0;
 		return false;
 	}
 
-	Poco::RegularExpression regex2("^USK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/.+/(-{0,1}[0-9]+)/.*",0);
+	Poco::RegularExpression regex2("^(freenet:)?USK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/.+/(-{0,1}[0-9]+)(/.*)?",0);
 	std::vector<std::string> matches;
 	regex2.split(key,matches);
-	if(matches.size()>1)
+	if(matches.size()>2)
 	{
-		std::istringstream istr(matches[1]);
+		std::istringstream istr(matches[2]);
 		if(!(istr >> m_edition))
 		{
 			m_edition=0;
@@ -146,13 +146,13 @@ FreenetSSKKey::FreenetSSKKey(const std::string &key)
 const std::string FreenetSSKKey::GetBaseKey() const
 {
 	std::string basekey="";
-	Poco::RegularExpression regex("^(SSK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/).*",0);
+	Poco::RegularExpression regex("^(freenet:)?(SSK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/).*",0);
 	std::vector<std::string> matches;
 	regex.split(m_fullkey,matches);
 
-	if(matches.size()>1)
+	if(matches.size()>2)
 	{
-		basekey=matches[1];
+		basekey=matches[2];
 	}
 	
 	return basekey;
@@ -161,13 +161,13 @@ const std::string FreenetSSKKey::GetBaseKey() const
 const std::string FreenetSSKKey::GetDataPath() const
 {
 	std::string datapath="";
-	Poco::RegularExpression regex("^SSK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/.+-{0,1}[0-9]+/(.*)",0);
+	Poco::RegularExpression regex("^(freenet:)?SSK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/.+-{0,1}[0-9]+/(.*)",0);
 	std::vector<std::string> matches;
 	regex.split(m_fullkey,matches);
 
-	if(matches.size()>1)
+	if(matches.size()>2)
 	{
-		datapath=matches[1];
+		datapath=matches[2];
 	}
 
 	return datapath;
@@ -183,7 +183,7 @@ FreenetSSKKey &FreenetSSKKey::operator=(const FreenetUSKKey &rhs)
 
 const bool FreenetSSKKey::TryParse(const std::string &key)
 {
-	Poco::RegularExpression regex("^SSK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/.*");
+	Poco::RegularExpression regex("^(freenet:)?SSK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+(/.*)?");
 	if(regex.match(key)==false)
 	{
 		m_fullkey="";
@@ -215,7 +215,7 @@ FreenetCHKKey::FreenetCHKKey(const std::string &key)
 const bool FreenetCHKKey::TryParse(const std::string &key)
 {
 	// CHKs can technically just be the key without any filename
-	Poco::RegularExpression regex("CHK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/{0,1}.*");
+	Poco::RegularExpression regex("^(freenet:)?CHK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/{0,1}.*");
 	if(regex.match(key)==false)
 	{
 		m_fullkey="";
@@ -230,13 +230,13 @@ const bool FreenetCHKKey::TryParse(const std::string &key)
 const std::string FreenetCHKKey::GetBaseKey() const
 {
 	std::string basekey="";
-	Poco::RegularExpression regex("^(CHK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/{0,1}).*",0);
+	Poco::RegularExpression regex("^(freenet:)?(CHK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/{0,1}).*",0);
 	std::vector<std::string> matches;
 	regex.split(m_fullkey,matches);
 
-	if(matches.size()>1)
+	if(matches.size()>2)
 	{
-		basekey=matches[1];
+		basekey=matches[2];
 	}
 	
 	return basekey;
@@ -245,13 +245,13 @@ const std::string FreenetCHKKey::GetBaseKey() const
 const std::string FreenetCHKKey::GetDataPath() const
 {
 	std::string datapath="";
-	Poco::RegularExpression regex("^CHK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/{0,1}(.*)",0);
+	Poco::RegularExpression regex("^(freenet:)?CHK@[A-Za-z0-9~-]+,[A-Za-z0-9~-]+,[A-Za-z0-9~-]+/{0,1}(.*)",0);
 	std::vector<std::string> matches;
 	regex.split(m_fullkey,matches);
 
-	if(matches.size()>1)
+	if(matches.size()>2)
 	{
-		datapath=matches[1];
+		datapath=matches[2];
 	}
 
 	return datapath;

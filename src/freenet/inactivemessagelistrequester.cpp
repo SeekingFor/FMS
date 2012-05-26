@@ -84,12 +84,14 @@ void InactiveMessageListRequester::PopulateIDList()
 	// select identities we want to query (we've seen them today) - sort by their trust level (descending) with secondary sort on how long ago we saw them (ascending)
 	if(m_localtrustoverrides==false)
 	{
-		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (LastMessageDate IS NULL OR LastMessageDate<'"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust IS NULL OR LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust')) AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>=? AND (LastMessageDate IS NULL OR LastMessageDate<?) AND (LocalMessageTrust IS NULL OR LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust')) AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	}
 	else
 	{
-		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND (LastMessageDate IS NULL OR LastMessageDate<'"+Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d")+"') AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
+		st=m_db->Prepare("SELECT tblIdentity.IdentityID FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey <> '' AND LastSeen>=? AND (LastMessageDate IS NULL OR LastMessageDate<?) AND (LocalMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalMessageTrust') OR (LocalMessageTrust IS NULL AND (PeerMessageTrust IS NULL OR PeerMessageTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerMessageTrust')))) ORDER BY LocalMessageTrust+LocalTrustListTrust DESC, LastSeen;");
 	}
+	st.Bind(0, Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+	st.Bind(1, Poco::DateTimeFormatter::format(yesterday,"%Y-%m-%d"));
 
 	trans.Step(st);
 

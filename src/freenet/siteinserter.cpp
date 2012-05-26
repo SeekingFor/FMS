@@ -242,9 +242,9 @@ void SiteInserter::GeneratePages(const long localidentityid, std::string &uskkey
 						filecontent.append(data.begin(),data.end());
 
 						// strip off path from filename
-						while(filename.find_first_of("/")!=std::string::npos)
+						while(filename.find_first_of('/')!=std::string::npos)
 						{
-							filename.erase(0,filename.find_first_of("/")+1);
+							filename.erase(0,filename.find_first_of('/')+1);
 						}
 
 						if(filecontent.size()>0)

@@ -200,7 +200,7 @@ void DBMaintenanceThread::Do1HourMaintenance()
 		trans.Finalize(upd);
 
 		// insert all identities not in trust list already
-		m_db->Execute("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity WHERE LocalIdentityID || '_' || IdentityID NOT IN (SELECT LocalIdentityID || '_' || IdentityID FROM tblIdentityTrust);");
+		trans.Execute("INSERT OR IGNORE INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity;");
 
 		trans.Commit();
 
@@ -280,56 +280,60 @@ void DBMaintenanceThread::Do6HourMaintenance()
 void DBMaintenanceThread::Do1DayMaintenance()
 {
 	Poco::DateTime date;
+	Option option(m_db);
+	bool backup=false;
 	SQLite3DB::Transaction trans(m_db);
 
 	m_log->debug("PeriodicDBMaintenance::Do1DayMaintenance start");
+
+	option.GetBool("BackupDatabase",backup);
 
 	trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 
 	// delete all puzzles 2 or more days old
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(2,0,0,0,0);
-	m_db->Execute("DELETE FROM tblIntroductionPuzzleInserts WHERE Day<='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
-	m_db->Execute("DELETE FROM tblIntroductionPuzzleRequests WHERE Day<='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblIntroductionPuzzleInserts WHERE Day<='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblIntroductionPuzzleRequests WHERE Day<='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 
 	// delete all identities we've never seen and were added more than 20 days ago
 	// number of days needs be to greater than the number of days backwards in the trust list inserter, otherwise we'd delete them and add them again
 	// from another trust list
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(20,0,0,0,0);
-	m_db->Execute("DELETE FROM tblIdentity WHERE LastSeen IS NULL AND WOTLastSeen IS NULL AND DateAdded<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblIdentity WHERE LastSeen IS NULL AND WOTLastSeen IS NULL AND DateAdded<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 
 	// delete old identity requests - we don't need them anymore
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(2,0,0,0,0);
-	m_db->Execute("DELETE FROM tblIdentityRequests WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblIdentityRequests WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 
 	// delete old board list inserts/requests - we don't need them anymore
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(2,0,0,0,0);
-	m_db->Execute("DELETE FROM tblBoardListInserts WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
-	m_db->Execute("DELETE FROM tblBoardListRequests WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblBoardListInserts WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblBoardListRequests WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 
 	// delete old local identity inserts - we don't need them anymore
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(2,0,0,0,0);
-	m_db->Execute("DELETE FROM tblLocalIdentityInserts WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblLocalIdentityInserts WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 
 	// delete old message list inserts/requests - we don't need them anymore
 	// only delete those older than the max # of days backward we are downloading messages
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(m_messagedownloadmaxdaysbackward,0,0,0,0);
-	m_db->Execute("DELETE FROM tblMessageListInserts WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
-	m_db->Execute("DELETE FROM tblMessageListRequests WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblMessageListInserts WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblMessageListRequests WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 
 	// delete old trust list inserts/requests - we don't need them anymore
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(2,0,0,0,0);
-	m_db->Execute("DELETE FROM tblTrustListInserts WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
-	m_db->Execute("DELETE FROM tblTrustListRequests WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblTrustListInserts WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
+	trans.Execute("DELETE FROM tblTrustListRequests WHERE Day<'"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
 
 	// delete trust lists from identities we aren't trusting anymore
-	// m_db->Execute("DELETE FROM tblPeerTrust WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity WHERE (LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust')) AND (PeerTrustListTrust IS NULL OR PeerTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerTrustListTrust')));");
+	// trans.Execute("DELETE FROM tblPeerTrust WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity WHERE (LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust')) AND (PeerTrustListTrust IS NULL OR PeerTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinPeerTrustListTrust')));");
 
 	trans.Commit();
 	if(trans.IsSuccessful()==false)
@@ -371,22 +375,24 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	trans.Step(st);
 
+#ifdef FROST_SUPPORT
 	// delete old frost message requests
 	date=Poco::Timestamp();
 	date-=Poco::Timespan(m_frostmaxdaysbackward,0,0,0,0);
 	st=m_db->Prepare("DELETE FROM tblFrostMessageRequests WHERE Day<?;");
 	st.Bind(0,Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	trans.Step(st);
+#endif
 
 	// delete tblIdentityTrust for local identities and identities that have been deleted
-	m_db->Execute("DELETE FROM tblIdentityTrust WHERE LocalIdentityID NOT IN (SELECT LocalIdentityID FROM tblLocalIdentity);");
-	m_db->Execute("DELETE FROM tblIdentityTrust WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity);");
+	trans.Execute("DELETE FROM tblIdentityTrust WHERE LocalIdentityID NOT IN (SELECT LocalIdentityID FROM tblLocalIdentity);");
+	trans.Execute("DELETE FROM tblIdentityTrust WHERE IdentityID NOT IN (SELECT IdentityID FROM tblIdentity);");
 
 	// cap failure count
-	m_db->Execute("UPDATE tblIdentity SET FailureCount=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') WHERE FailureCount>(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount');");
+	trans.Execute("UPDATE tblIdentity SET FailureCount=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') WHERE FailureCount>(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount');");
 	// reduce failure count for each identity
-	m_db->Execute("UPDATE tblIdentity SET FailureCount=0 WHERE FailureCount<(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
-	m_db->Execute("UPDATE tblIdentity SET FailureCount=FailureCount-(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction') WHERE FailureCount>=(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
+	trans.Execute("UPDATE tblIdentity SET FailureCount=0 WHERE FailureCount<(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
+	trans.Execute("UPDATE tblIdentity SET FailureCount=FailureCount-(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction') WHERE FailureCount>=(SELECT OptionValue FROM tblOption WHERE Option='FailureCountReduction');");
 
 	// delete null entries from tblMessageInserts
 	date=Poco::Timestamp();
@@ -397,7 +403,7 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	trans.Finalize(st);
 
 	// If at least 2 days have passed without retrieving one of our own inserted messages, reset the date of the message insert so it will be inserted again.
-	m_db->Execute("UPDATE tblMessageInserts SET Day=NULL, InsertIndex=NULL, Inserted='false' WHERE LENGTH(MessageXML)<=1000000 AND MessageUUID IN (SELECT tblMessageInserts.MessageUUID FROM tblMessageInserts LEFT JOIN tblMessage ON tblMessageInserts.MessageUUID=tblMessage.MessageUUID WHERE Inserted='true' AND SendDate>=(SELECT date('now','-' || (SELECT CASE WHEN OptionValue<=0 THEN 30 WHEN OptionValue>30 THEN 30 ELSE OptionValue END FROM tblOption WHERE Option='DeleteMessagesOlderThan') || ' days')) AND tblMessage.MessageUUID IS NULL AND tblMessageInserts.SendDate<date('now','-2 days'));");
+	trans.Execute("UPDATE tblMessageInserts SET Day=NULL, InsertIndex=NULL, Inserted='false' WHERE LENGTH(MessageXML)<=1000000 AND MessageUUID IN (SELECT tblMessageInserts.MessageUUID FROM tblMessageInserts LEFT JOIN tblMessage ON tblMessageInserts.MessageUUID=tblMessage.MessageUUID WHERE Inserted='true' AND SendDate>=(SELECT date('now','-' || (SELECT CASE WHEN OptionValue<=0 THEN 30 WHEN OptionValue>30 THEN 30 ELSE OptionValue END FROM tblOption WHERE Option='DeleteMessagesOlderThan') || ' days')) AND tblMessage.MessageUUID IS NULL AND tblMessageInserts.SendDate<date('now','-2 days'));");
 
 	trans.Commit();
 	if(trans.IsSuccessful()==false)
@@ -411,6 +417,85 @@ void DBMaintenanceThread::Do1DayMaintenance()
 	// remove FMS or WOT flags from identities that were never seen in 30 days
 	m_db->Execute("UPDATE tblIdentity SET IsFMS=0 WHERE LastSeen IS NULL AND IsFMS=1 AND SolvedPuzzleCount=0 AND DateAdded<datetime('now','-30 days');");
 	m_db->Execute("UPDATE tblIdentity SET IsWOT=0 WHERE WOTLastSeen IS NULL AND IsWOT=1 AND DateAdded<datetime('now','-30 days');");
+
+	if(backup==true)
+	{
+		std::string oldbackupname(global::basepath+"fms-old-backup.db3");
+		std::string backupname(global::basepath+"fms-backup.db3");
+		/*
+		 1. Remove any existing copy of database backup
+		 2. Rename existing database backup
+		 3. Open up backup database and perform backup
+		 4. Verify backup database
+		 5. If backup was successful and database verified, remove copy of database backup
+		 6. If backup wasn't successful or database not verified, remove backup and rename backup copy
+		*/
+		m_log->information("PeriodicDBMaintenance::Do1DayMaintenance backing up database");
+
+#ifdef _WIN32
+		_unlink(oldbackupname.c_str());
+#else
+		unlink(oldbackupname.c_str());
+#endif
+		rename(backupname.c_str(),oldbackupname.c_str());
+		bool backupok=true;
+
+		// keep backupdb scoped
+		{
+			SQLite3DB::DB backupdb(backupname);
+			backupdb.SetBusyTimeout(40000);
+			backupdb.Execute("PRAGMA temp_store=2;");
+			backupdb.Execute("PRAGMA sychronous=OFF;");
+
+			// keep dbbackup scoped
+			{
+				SQLite3DB::DBBackup dbbackup(m_db,&backupdb);
+				bool done=false;
+				do
+				{
+					int pages=dbbackup.Step(10);
+					if(pages==0)
+					{
+						done=true;
+					}
+					else if(pages<0)
+					{
+						done=true;
+						backupok=false;
+					}
+				}while(done==false);
+			}
+
+			if(backupok==true)
+			{
+				if(VerifyDB(&backupdb)==true)
+				{
+#ifdef _WIN32
+					_unlink(oldbackupname.c_str());
+#else
+					unlink(oldbackupname.c_str());
+#endif
+					m_log->information("PeriodicDBMaintenance::Do1DayMaintenance backup database created successfully");
+				}
+				else
+				{
+					backupok=false;
+					m_log->error("PeriodicDBMaintenance::Do1DayMaintenance backup database failed integrity test");
+				}
+			}
+		}
+		
+		if(backupok==false)
+		{
+#ifdef _WIN32
+			_unlink(backupname.c_str());
+#else
+			unlink(backupname.c_str());
+#endif
+			rename(oldbackupname.c_str(),backupname.c_str());
+			m_log->error("PeriodicDBMaintenance::Do1DayMaintenance could not backup database");
+		}
+	}
 
 	m_log->debug("PeriodicDBMaintenance::Do1DayMaintenance end");
 

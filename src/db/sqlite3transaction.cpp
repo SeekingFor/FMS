@@ -176,4 +176,22 @@ const bool Transaction::Step(Statement &st, const bool saveinsertrowid)
 	return false;
 }
 
+const bool Transaction::Execute(const std::string &sql)
+{
+	if(m_db && m_error==false)
+	{
+		if(m_db->Execute(sql))
+		{
+			return true;
+		}
+		else
+		{
+			m_lasterr=m_db->GetLastExtendedError(m_errorstr);
+			m_errorsql="EXECUTE:"+sql;
+		}
+	}
+	m_error=true;
+	return false;
+}
+
 }	// namespace

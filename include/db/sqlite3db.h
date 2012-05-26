@@ -11,6 +11,7 @@ class Statement;
 }	// namespace
 
 #include "sqlite3db/sqlite3db.h"
+#include "sqlite3db/sqlite3dbbackup.h"
 #include "sqlite3db/sqlite3recordset.h"
 #include "sqlite3db/sqlite3statement.h"
 #include "sqlite3db/sqlite3transaction.h"

@@ -23,6 +23,7 @@ const std::string CreateIdentityPage::GenerateContent(const std::string &method,
 		if(queryvars.find("name")!=queryvars.end())
 		{
 			name=(*queryvars.find("name")).second.GetData();
+			name=StringFunctions::RemoveControlChars(name);
 		}
 
 		st.Bind(0,name);
@@ -30,7 +31,7 @@ const std::string CreateIdentityPage::GenerateContent(const std::string &method,
 		st.Step();
 
 		// insert all identities not in trust list already
-		m_db->Execute("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity WHERE LocalIdentityID || '_' || IdentityID NOT IN (SELECT LocalIdentityID || '_' || IdentityID FROM tblIdentityTrust);");
+		m_db->Execute("INSERT OR IGNORE INTO tblIdentityTrust(LocalIdentityID,IdentityID) SELECT LocalIdentityID,IdentityID FROM tblLocalIdentity,tblIdentity;");
 
 		content+="<h2>"+m_trans->Get("web.page.createidentity.createdidentity")+"</h2>";
 		content+=m_trans->Get("web.page.createidentity.aftercreateinstructions");

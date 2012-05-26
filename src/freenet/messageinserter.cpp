@@ -214,7 +214,7 @@ const bool MessageInserter::StartInsert(const std::string &messageuuid)
 		// recreate messageuuid in xml - UUID of message will not match entry in MessageInserts table until we successfully insert it
 		// see HandlePutSuccessful
 		// if we don't already have an @sskpart - add it
-		if(xmlfile.GetMessageID().find("@")==std::string::npos)
+		if(xmlfile.GetMessageID().find('@')==std::string::npos)
 		{
 			// remove - and ~ from publickey part
 			std::string publickeypart=StringFunctions::Replace(StringFunctions::Replace(publickey.substr(4,43),"-",""),"~","");

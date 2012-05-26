@@ -47,6 +47,7 @@ src/threadbuilder.cpp
 src/translationpropertyfile.cpp
 src/translationsetup.cpp
 src/db/sqlite3db.cpp
+src/db/sqlite3dbbackup.cpp
 src/db/sqlite3recordset.cpp
 src/db/sqlite3statement.cpp
 src/db/sqlite3transaction.cpp

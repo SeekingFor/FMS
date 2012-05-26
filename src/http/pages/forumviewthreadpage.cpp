@@ -399,7 +399,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 			}
 
 			keyname=key;
-			slashpos=keyname.find("/");
+			slashpos=keyname.find('/');
 			if(slashpos!=std::string::npos && slashpos<keyname.size())
 			{
 				keyname=keyname.substr(slashpos+1);

@@ -149,7 +149,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 
 		trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 
-		m_db->Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpPeerTrust(IdentityID INTEGER,TargetIdentityID INTEGER,MessageTrust INTEGER,TrustListTrust INTEGER,MessageTrustChange INTEGER,TrustListTrustChange INTEGER);");
+		trans.Execute("CREATE TEMPORARY TABLE IF NOT EXISTS tmpPeerTrust(IdentityID INTEGER,TargetIdentityID INTEGER,MessageTrust INTEGER,TrustListTrust INTEGER,MessageTrustChange INTEGER,TrustListTrustChange INTEGER);");
 		st=m_db->Prepare("INSERT INTO tmpPeerTrust(IdentityID,TargetIdentityID,MessageTrust,TrustListTrust,MessageTrustChange,TrustListTrustChange) SELECT IdentityID,TargetIdentityID,MessageTrust,TrustListTrust,MessageTrustChange,TrustListTrustChange FROM tblPeerTrust WHERE IdentityID=?;");
 		st.Bind(0,identityid);
 		trans.Step(st);
@@ -306,7 +306,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		trans.Step(st);
 		trans.Finalize(st);
 
-		m_db->Execute("CREATE TEMPORARY VIEW IF NOT EXISTS vwPeerTrustChange AS\
+		trans.Execute("CREATE TEMPORARY VIEW IF NOT EXISTS vwPeerTrustChange AS\
 						SELECT tblPeerTrust.IdentityID, tblPeerTrust.TargetIdentityID,\
 						CASE WHEN IFNULL(tblPeerTrust.MessageTrust,0)=IFNULL(tmpPeerTrust.MessageTrust,0) THEN IFNULL(tmpPeerTrust.MessageTrustChange,0)\
 						ELSE IFNULL(tblPeerTrust.MessageTrust,0)-IFNULL(tmpPeerTrust.MessageTrust,0)\
@@ -323,7 +323,7 @@ const bool TrustListRequester::HandleAllData(FCPv2::Message &message)
 		st.Bind(2,identityid);
 		trans.Step(st);
 
-		m_db->Execute("DROP TABLE tmpPeerTrust;");
+		trans.Execute("DROP TABLE tmpPeerTrust;");
 
 		trans.Finalize(st);
 		trans.Finalize(idinsert);

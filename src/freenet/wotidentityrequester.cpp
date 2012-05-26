@@ -1,6 +1,7 @@
 #include "../../include/freenet/wotidentityrequester.h"
 #include "../../include/freenet/wotidentityxml.h"
 #include "../../include/freenet/identitypublickeycache.h"
+#include "../../include/freenet/freenetkeys.h"
 #include "../../include/option.h"
 #include "../../include/unicode/unicodestring.h"
 
@@ -49,6 +50,8 @@ const bool WOTIdentityRequester::HandleAllData(FCPv2::Message &message)
 	int dayinsertcount=0;
 	int previnsertcount=0;
 	std::string publisherid("");
+	FreenetUSKKey usk;
+	FreenetSSKKey ssk;
 
 	trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 
@@ -185,7 +188,7 @@ const bool WOTIdentityRequester::HandleAllData(FCPv2::Message &message)
 		name.Trim(MAX_IDENTITY_NAME_LENGTH);
 
 		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, WOTLastSeen=datetime('now'), WOTLastIndex=?, WOTLastRequest=datetime('now') WHERE IdentityID=?;");
-		st.Bind(0,name.NarrowString());
+		st.Bind(0,StringFunctions::RemoveControlChars(name.NarrowString()));
 		st.Bind(1,indexstr);
 		st.Bind(2,idstr);
 		if(trans.Step(st)==false)
@@ -205,12 +208,11 @@ const bool WOTIdentityRequester::HandleAllData(FCPv2::Message &message)
 			st=m_db->Prepare("INSERT INTO tblIdentity(PublicKey,DateAdded,IsWOT,AddedMethod) VALUES(?,datetime('now'),1,?);");
 			for(std::vector<WOTIdentityXML::trust>::const_iterator i=xml.GetTrustList().begin(); i!=xml.GetTrustList().end(); i++)
 			{
-				std::vector<std::string> idparts;
-				StringFunctions::Split((*i).m_identity,"/",idparts);
-				if(idparts.size()>2 && idparts[0].size()>4)
+				if(usk.TryParse((*i).m_identity)==true)
 				{
-					std::string publickey="SSK"+idparts[0].substr(3)+"/";
-					findst.Bind(0,publickey);
+					ssk=usk;
+
+					findst.Bind(0,ssk.GetBaseKey());
 					trans.Step(findst);
 					if(findst.RowReturned()==false)
 					{
@@ -218,7 +220,7 @@ const bool WOTIdentityRequester::HandleAllData(FCPv2::Message &message)
 						// 24 hour limit is lifted if the database didn't contain any identities inserted more than 24 hours ago (new db) - 100 new identities per trust list allowed in this case
 						if((insertcount<100 && previnsertcount==0) || (insertcount<10 && dayinsertcount<((std::min)(((std::max)(previnsertcount/10,10)),500))))
 						{
-							st.Bind(0,publickey);
+							st.Bind(0,ssk.GetBaseKey());
 							st.Bind(1,"WOT trust list of "+publisherid);
 							trans.Step(st);
 							trans.Reset(st);
@@ -242,6 +244,10 @@ const bool WOTIdentityRequester::HandleAllData(FCPv2::Message &message)
 						}
 					}
 					trans.Reset(findst);
+				}
+				else
+				{
+					m_log->error(m_fcpuniquename+"::HandleAllData invalid USK "+(*i).m_identity+" in "+message["Identifier"]);
 				}
 			}
 		}
@@ -280,10 +286,12 @@ const bool WOTIdentityRequester::HandleGetFailed(FCPv2::Message &message)
 		std::vector<std::string> uriparts;
 		StringFunctions::Split(message["RedirectURI"],"/",uriparts);
 
-		if(uriparts.size()>1)
+		// 0       1    2        3+
+		// USK@foo/site/edition[/path]
+		if(uriparts.size()>2 && uriparts[0].compare(0, 4, "USK@") == 0)
 		{
 			int newedition=0;
-			if(StringFunctions::Convert(uriparts[uriparts.size()-1],newedition)==true)
+			if(StringFunctions::Convert(uriparts[2],newedition)==true)
 			{
 				if(newedition>0)
 				{

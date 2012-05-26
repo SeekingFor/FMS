@@ -155,6 +155,7 @@ void OldMessageListRequester::StartRequest(const std::string &id)
 
 		message.SetName("ClientGet");
 		message["URI"]="USK"+publickey.substr(3)+m_messagebase+"|"+StringFunctions::Replace(day,"-",".")+"|MessageList/"+indexstr+"/MessageList.xml";
+		message["IgnoreUSKDatehints"]="true"; // per-day key, DATEHINTs useless
 		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|_|"+day+"|"+message["URI"];
 		message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 		message["ReturnType"]="direct";

@@ -23,6 +23,38 @@ void LowerCase(const std::string &str, std::string &output)
 	output=Poco::UTF8::toLower(str);
 }
 
+std::string RemoveControlChars(const std::string &input)
+{
+	// check for control characters (< 32) and remove them
+	std::string::const_iterator i;
+	for(i=input.begin(); i<input.end(); i++)
+	{
+		if((*i)>=0 && (*i)<32)
+		{
+			break;
+		}
+	}
+
+	if(i==input.end())
+	{
+		return input;
+	}
+
+	std::string returntext("");
+	returntext.reserve(input.size()-1);
+
+	returntext.append(input.begin(),i);
+	for(++i; i<input.end(); ++i)
+	{
+		if(!((*i)>=0 && (*i)<32))
+		{
+			returntext+=(*i);
+		}
+	}
+
+	return returntext;
+}
+
 #ifdef _DEBUG
 /* This function is actually faster doing replaces in debug mode */
 std::string Replace(const std::string &input, const std::string &find, const std::string &replace)
@@ -38,6 +70,40 @@ std::string Replace(const std::string &input, const std::string &find, const std
 
 	return returnstr;
 
+}
+#elif 1
+// square wheels are no good for production;
+// a bit slower than DEBUG variant on short strings, faster on long;
+// (allquest's is slower A LOT due to mixed in profiling junk)
+std::string Replace(const std::string &s, const std::string &f, const std::string &r)
+{
+	if ( s.empty() || f.empty() || f == r)
+	{
+		return s;
+	}
+
+	std::string::size_type pos = s.find( f );
+	if (pos == std::string::npos)
+	{
+		return s;
+	}
+
+	std::string build_it;
+	build_it.reserve(s.size());
+
+	std::string::size_type i = 0;
+	for (;pos!=std::string::npos; i=pos+f.size(), pos=s.find(f,i))
+	{
+		build_it.append(s, i, pos - i);
+		build_it.append(r);
+	}
+
+	if ( i != s.size() )
+	{
+		build_it.append(s, i, s.size() - i);
+	}
+
+	return build_it;
 }
 #else
 /* http://www.allquests.com/question/2561981/c-std-string-find-and-replace-all.html */
@@ -244,18 +310,27 @@ void SplitMultiple(const std::string &str, const std::string &delim, std::vector
 
 std::string TrimWhitespace(const std::string &str)
 {
-	std::string returnstring=str;
-
-	while(returnstring.size()>0 && returnstring.find_first_of(" \t\r\n")==0)
+	if (str.empty())
 	{
-		returnstring.erase(0,1);
-	}
-	while(returnstring.size()>0 && returnstring.find_last_of(" \t\r\n")==returnstring.size()-1)
-	{
-		returnstring.erase(returnstring.size()-1,1);
+		return str;
 	}
 
-	return returnstring;
+	std::string::size_type left = str.find_first_not_of(" \t\r\n");
+	if (left == std::string::npos)
+	{
+		return std::string();
+	}
+
+	std::string::size_type right = str.find_last_not_of(" \t\r\n");
+	// assert(right != std::string::npos);
+	if (left == 0 && right == str.size()-1)
+	{
+		return str;
+	}
+	else
+	{
+		return std::string(str, left, right-left+1);
+	}
 }
 
 int utf8safetoupper(int ch)
@@ -306,8 +381,8 @@ static const char HEX2DEC[256] =
    // last decodable '%'
    const unsigned char * const SRC_LAST_DEC = SRC_END - 2;
 
-   char * const pStart = new char[SRC_LEN];
-   char * pEnd = pStart;
+   std::string result;
+   result.reserve(SRC_LEN);
 
    while (pSrc < SRC_LAST_DEC)
    {
@@ -317,22 +392,22 @@ static const char HEX2DEC[256] =
          if (-1 != (dec1 = HEX2DEC[*(pSrc + 1)])
             && -1 != (dec2 = HEX2DEC[*(pSrc + 2)]))
          {
-            *pEnd++ = (dec1 << 4) + dec2;
+	    result += (char)((dec1 << 4) + dec2);
             pSrc += 3;
             continue;
          }
       }
 
-      *pEnd++ = *pSrc++;
+      result += *pSrc++;
    }
 
    // the last 2- chars
    while (pSrc < SRC_END)
-      *pEnd++ = *pSrc++;
+   {
+      result += *pSrc++;
+   }
 
-   std::string sResult(pStart, pEnd);
-   delete [] pStart;
-   return sResult;
+   return result;
 }
 
 std::string UriEncode(const std::string & sSrc)
@@ -362,30 +437,38 @@ static const char SAFE[256] =
     /* E */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     /* F */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0
 };
-	
-   const char DEC2HEX[16 + 1] = "0123456789ABCDEF";
-   const unsigned char * pSrc = (const unsigned char *)sSrc.c_str();
-   const int SRC_LEN = sSrc.length();
-   unsigned char * const pStart = new unsigned char[SRC_LEN * 3];
-   unsigned char * pEnd = pStart;
-   const unsigned char * const SRC_END = pSrc + SRC_LEN;
 
-   for (; pSrc < SRC_END; ++pSrc)
+   static const char DEC2HEX[16 + 1] = "0123456789ABCDEF";
+   size_t len = 0;
+
+   for (std::string::const_iterator i = sSrc.begin(); i < sSrc.end(); ++i)
    {
-      if (SAFE[*pSrc])
-         *pEnd++ = *pSrc;
+      len += SAFE[static_cast<unsigned char>(*i)] ? 1 : 3;
+   }
+   if (len == sSrc.size())
+   {
+      return sSrc;
+   }
+
+   std::string result;
+   result.reserve(len);
+
+   for (std::string::const_iterator i = sSrc.begin(); i < sSrc.end(); ++i)
+   {
+      if (SAFE[static_cast<unsigned char>(*i)])
+      {
+         result += *i;
+      }
       else
       {
          // escape this char
-         *pEnd++ = '%';
-         *pEnd++ = DEC2HEX[*pSrc >> 4];
-         *pEnd++ = DEC2HEX[*pSrc & 0x0F];
+	 result += '%';
+         result += DEC2HEX[static_cast<unsigned char>(*i) >> 4];
+         result += DEC2HEX[static_cast<unsigned char>(*i) & 0x0F];
       }
    }
 
-   std::string sResult((char *)pStart, (char *)pEnd);
-   delete [] pStart;
-   return sResult;
+   return result;
 }
 
 }	// namespace

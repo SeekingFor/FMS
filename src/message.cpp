@@ -189,7 +189,7 @@ const std::string Message::GetMessageXML(const bool withfakeattachmentkeys) cons
 const std::string Message::GetNNTPArticleID() const
 {
 	// old message - before 0.1.12 - doesn't have @domain so add @freenetproject.org
-	if(m_messageuuid.find("@")==std::string::npos)
+	if(m_messageuuid.find('@')==std::string::npos)
 	{
 		return "<"+m_messageuuid+"@freenetproject.org>";
 	}
@@ -204,7 +204,7 @@ const std::string Message::GetNNTPBody() const
 	std::string nntpbody(m_body);
 
 	// find all LF that don't have a preceeding CR, and add the CR
-	std::string::size_type lfpos=nntpbody.find("\n");
+	std::string::size_type lfpos=nntpbody.find('\n');
 	while(lfpos!=std::string::npos)
 	{
 		if(lfpos==0 || nntpbody[lfpos-1]!='\r')
@@ -212,7 +212,7 @@ const std::string Message::GetNNTPBody() const
 			nntpbody.insert(lfpos,"\r");
 			lfpos++;
 		}
-		lfpos=nntpbody.find("\n",lfpos+1);
+		lfpos=nntpbody.find('\n',lfpos+1);
 	}
 
 	if(m_receivedfileattachments.size()>0)
@@ -258,8 +258,8 @@ const std::string Message::GetNNTPHeaders() const
 	}
 	rval+="\r\n";
 	rval+="Subject: "+m_subject+"\r\n";
-	// format time as  : Wdy, DD Mon YY HH:MM:SS TIMEZONE
-	rval+="Date: "+Poco::DateTimeFormatter::format(m_datetime,"%w, %d %b %y %H:%M:%S -0000")+"\r\n";
+	// format time as  : Wdy, DD Mon YYYY HH:MM:SS TIMEZONE
+	rval+="Date: "+Poco::DateTimeFormatter::format(m_datetime,"%w, %d %b %Y %H:%M:%S -0000")+"\r\n";
 	if(m_inreplyto.size()>0)
 	{
 		rval+="References: ";
@@ -270,7 +270,7 @@ const std::string Message::GetNNTPHeaders() const
 				rval+=" ";
 			}
 			// old message - before 0.1.12 - doesn't have @domain so add @freenetproject.org
-			if((*j).second.find("@")==std::string::npos)
+			if((*j).second.find('@')==std::string::npos)
 			{
 				rval+="<"+(*j).second+"@freenetproject.org>";
 			}
@@ -363,7 +363,7 @@ void Message::HandleAdministrationMessage()
 					origtrustlisttrust>100 ? origtrustlisttrust=100 : false;
 
 					// make sure we have a record in tblIdentityTrust
-					SQLite3DB::Statement ins=m_db->Prepare("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) VALUES(?,?);");
+					SQLite3DB::Statement ins=m_db->Prepare("INSERT OR IGNORE INTO tblIdentityTrust(LocalIdentityID,IdentityID) VALUES(?,?);");
 					ins.Bind(0,localidentityid);
 					ins.Bind(1,identityid);
 					ins.Step();
@@ -440,7 +440,7 @@ void Message::HandleChangeTrust()
 		if(localidentityid!=-1)
 		{
 			// make sure we have a record in tblIdentityTrust
-			SQLite3DB::Statement ins=m_db->Prepare("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) VALUES(?,?);");
+			SQLite3DB::Statement ins=m_db->Prepare("INSERT OR IGNORE INTO tblIdentityTrust(LocalIdentityID,IdentityID) VALUES(?,?);");
 
 			SQLite3DB::Statement st=m_db->Prepare("SELECT tblIdentity.IdentityID,tblIdentityTrust.LocalMessageTrust FROM tblIdentity INNER JOIN tblMessage ON tblIdentity.IdentityID=tblMessage.IdentityID LEFT JOIN (SELECT IdentityID,LocalMessageTrust FROM tblIdentityTrust WHERE LocalIdentityID=?) AS 'tblIdentityTrust' ON tblIdentity.IdentityID=tblIdentityTrust.IdentityID WHERE tblMessage.MessageUUID=?;");
 			st.Bind(0,localidentityid);
@@ -916,20 +916,20 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 		m_fromname=StringFunctions::Replace(m_fromname,"\r\n","");
 		m_fromname=StringFunctions::Replace(m_fromname,"\t","");
 		// strip off everything between () and <> and any whitespace
-		std::string::size_type startpos=m_fromname.find("(");
+		std::string::size_type startpos=m_fromname.find('(');
 		std::string::size_type endpos;
 		if(startpos!=std::string::npos)
 		{
-			endpos=m_fromname.find(")",startpos);
+			endpos=m_fromname.find(')',startpos);
 			if(endpos!=std::string::npos)
 			{
 				m_fromname.erase(startpos,(endpos-startpos)+1);
 			}
 		}
-		startpos=m_fromname.find("<");
+		startpos=m_fromname.find('<');
 		if(startpos!=std::string::npos)
 		{
-			endpos=m_fromname.find(">",startpos);
+			endpos=m_fromname.find('>',startpos);
 			if(endpos!=std::string::npos)
 			{
 				m_fromname.erase(startpos,(endpos-startpos)+1);
@@ -1039,15 +1039,15 @@ const bool Message::ParseNNTPMessage(const std::string &nntpmessage)
 				(*i)=StringFunctions::TrimWhitespace((*i));
 				/*
 				// erase @ and everything after
-				if((*i).find("@")!=std::string::npos)
+				if((*i).find('@')!=std::string::npos)
 				{
-					(*i).erase((*i).find("@"));
+					(*i).erase((*i).find('@'));
 				}
 				*/
 				// only erase after @ if message is old type with @freenetproject.org
 				if((*i).find("@freenetproject.org")!=std::string::npos)
 				{
-					(*i).erase((*i).find("@"));
+					(*i).erase((*i).find('@'));
 				}
 				if((*i)!="")
 				{

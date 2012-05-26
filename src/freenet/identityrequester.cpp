@@ -90,7 +90,7 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 		name=xml.GetName();
 		name.Trim(MAX_IDENTITY_NAME_LENGTH);
 
-		st.Bind(0,name.NarrowString());
+		st.Bind(0,StringFunctions::RemoveControlChars(name.NarrowString()));
 		if(xml.GetSingleUse()==true)
 		{
 			st.Bind(1,"true");

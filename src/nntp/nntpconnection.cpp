@@ -872,16 +872,16 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 	else
 	{
 		// Message-ID
-		if(command.m_arguments.size()>0 && command.m_arguments[0].find("<")==0 && command.m_arguments[0].find(">")>0)
+		if(command.m_arguments.size()>0 && command.m_arguments[0].find('<')==0 && command.m_arguments[0].find('>')>0)
 		{
 			messageuuid=command.m_arguments[0];
 			messageuuid=StringFunctions::Replace(messageuuid,"<","");
 			messageuuid=StringFunctions::Replace(messageuuid,">","");
 			/*
 			// get rid of @ and everything after
-			if(messageuuid.find("@")!=std::string::npos)
+			if(messageuuid.find('@')!=std::string::npos)
 			{
-				messageuuid.erase(messageuuid.find("@"));
+				messageuuid.erase(messageuuid.find('@'));
 			}
 			*/
 		}
@@ -889,7 +889,7 @@ const bool NNTPConnection::HandleOverCommand(const NNTPCommand &command)
 		else
 		{
 			// range
-			if(command.m_arguments[0].find("-")!=std::string::npos)
+			if(command.m_arguments[0].find('-')!=std::string::npos)
 			{
 				std::vector<std::string> rangeparts;
 				StringFunctions::Split(command.m_arguments[0],"-",rangeparts);
@@ -1439,7 +1439,7 @@ void NNTPConnection::SendArticleParts(const NNTPConnection::NNTPCommand &command
 
 	if(command.m_arguments.size()==1 && command.m_arguments[0].size()>0)
 	{
-		if(command.m_arguments[0].find("<")==std::string::npos)
+		if(command.m_arguments[0].find('<')==std::string::npos)
 		{
 			StringFunctions::Convert(command.m_arguments[0],messageid);
 			message.LoadNNTP(messageid,m_status.m_boardid);

@@ -55,7 +55,7 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="announce" && ValidateFormPassword(queryvars))
 	{
 		SQLite3DB::Statement insert=m_db->Prepare("INSERT INTO tblIdentityIntroductionInserts(LocalIdentityID,Day,UUID,Solution) VALUES(?,?,?,?);");
-		SQLite3DB::Statement inserttrustst=m_db->Prepare("INSERT INTO tblIdentityTrust(LocalIdentityID,IdentityID) VALUES(?,?);");
+		SQLite3DB::Statement inserttrustst=m_db->Prepare("INSERT OR IGNORE INTO tblIdentityTrust(LocalIdentityID,IdentityID) VALUES(?,?);");
 		SQLite3DB::Statement addtrustst=m_db->Prepare("UPDATE tblIdentityTrust SET LocalTrustListTrust=? WHERE LocalIdentityID=? AND IdentityID=? AND LocalTrustListTrust IS NULL;");
 		int localidentityid=0;
 		std::vector<std::string> uuids;
@@ -148,7 +148,8 @@ const std::string AnnounceIdentityPage::GenerateContent(const std::string &metho
 	content+="<tr>";
 
 	date-=Poco::Timespan(1,0,0,0,0);
-	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID,Day,tblIdentity.IdentityID,RequestIndex,tblIdentity.Name,tblIdentity.PublicKey,tblIntroductionPuzzleRequests.Type FROM tblIntroductionPuzzleRequests INNER JOIN tblIdentity ON tblIntroductionPuzzleRequests.IdentityID=tblIdentity.IdentityID WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts WHERE UUID IS NOT NULL) AND UUID NOT IN (SELECT UUID FROM tblIntroductionPuzzleInserts WHERE UUID IS NOT NULL) AND Day>='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"' AND Found='true' ORDER BY tblIdentity.IdentityID, Day DESC, RequestIndex DESC;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT UUID,Day,tblIdentity.IdentityID,RequestIndex,tblIdentity.Name,tblIdentity.PublicKey,tblIntroductionPuzzleRequests.Type FROM tblIntroductionPuzzleRequests INNER JOIN tblIdentity ON tblIntroductionPuzzleRequests.IdentityID=tblIdentity.IdentityID WHERE UUID NOT IN (SELECT UUID FROM tblIdentityIntroductionInserts WHERE UUID IS NOT NULL) AND UUID NOT IN (SELECT UUID FROM tblIntroductionPuzzleInserts WHERE UUID IS NOT NULL) AND Day>=? AND Found='true' ORDER BY tblIdentity.IdentityID, Day DESC, RequestIndex DESC;");
+	st.Bind(0, Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
 	st.Step();
 
 	if(st.RowReturned()==false)

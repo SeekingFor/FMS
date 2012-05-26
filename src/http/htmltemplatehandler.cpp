@@ -72,11 +72,11 @@ const int HTMLTemplateHandler::PerformReplacements(const std::string &text, cons
 	int replaced=0;
 	std::string worktext(text);
 
-	std::string::size_type startpos=worktext.find("[");
+	std::string::size_type startpos=worktext.find('[');
 	while(startpos!=std::string::npos)
 	{
 		bool didreplace=false;
-		std::string::size_type endpos=worktext.find("]",startpos);
+		std::string::size_type endpos=worktext.find(']',startpos);
 		if(endpos!=std::string::npos)
 		{
 			std::string section=worktext.substr(startpos+1,endpos-(startpos+1));
@@ -104,11 +104,11 @@ const int HTMLTemplateHandler::PerformReplacements(const std::string &text, cons
 
 		if(didreplace==true)
 		{
-			startpos=worktext.find("[",startpos);
+			startpos=worktext.find('[',startpos);
 		}
 		else
 		{
-			startpos=worktext.find("[",startpos+1);
+			startpos=worktext.find('[',startpos+1);
 		}
 	}
 
@@ -123,7 +123,7 @@ void HTMLTemplateHandler::PerformTranslations(const std::string &text, const Str
 	std::string::size_type startpos=worktext.find("{translation.");
 	while(startpos!=std::string::npos)
 	{
-		std::string::size_type endpos=worktext.find("}",startpos);
+		std::string::size_type endpos=worktext.find('}',startpos);
 		if(endpos!=std::string::npos)
 		{
 			std::string transname(worktext.substr(startpos+13,endpos-(startpos+13)));

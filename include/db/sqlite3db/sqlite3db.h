@@ -19,6 +19,10 @@
 namespace SQLite3DB
 {
 
+enum {
+	ResultCodeMask = 0xff // mask extended error code
+};
+
 class Exception
 {
 public:

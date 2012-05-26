@@ -17,18 +17,17 @@ void IdentityRedirectInserter::CheckForNeededInsert()
 
 	m_log->trace("IdentityRedirectInserter::CheckForNeededInsert");
 
-	SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID, Redirect FROM tmpLocalIdentityRedirectInsert ORDER BY RANDOM() LIMIT 0,1;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID, Redirect FROM tmpLocalIdentityRedirectInsert ORDER BY RANDOM() LIMIT 0,1;");
+	st.Step();
 	
-	if(rs.Empty()==false)
+	if(st.RowReturned())
 	{
 		int localidentityid=0;
 		std::string redirect("");
 		
-		localidentityid=rs.GetInt(0);
-		if(rs.GetField(1))
-		{
-			redirect=rs.GetField(1);
-		}
+		st.ResultInt(0, localidentityid);
+		st.ResultText(1, redirect);
+		st.Reset();
 
 		StartInsert(localidentityid,redirect);
 	}
@@ -39,7 +38,7 @@ void IdentityRedirectInserter::CheckForNeededInsert()
 		std::string error("");
 
 		err=m_db->GetLastError(error);
-		if(err!=SQLITE_OK)
+		if(err!=SQLITE_OK && err!=SQLITE_DONE)
 		{
 			m_log->trace("IdentityRedirectInserter::CheckForNeededInsert db error "+error);
 		}
@@ -135,9 +134,11 @@ void IdentityRedirectInserter::StartInsert(const long localidentityid, const std
 
 	StringFunctions::Convert(localidentityid,idstring);
 
-	SQLite3DB::Recordset rs=m_db->Query("SELECT PrivateKey FROM tblLocalIdentity WHERE LocalIdentityID="+idstring+";");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT PrivateKey FROM tblLocalIdentity WHERE LocalIdentityID=?");
+	st.Bind(0, localidentityid);
+	st.Step();
 
-	if(rs.Empty()==false)
+	if(st.RowReturned())
 	{
 		std::string privatekey("");
 		std::string messagebase("");
@@ -145,10 +146,7 @@ void IdentityRedirectInserter::StartInsert(const long localidentityid, const std
 
 		option.Get("MessageBase",messagebase);
 
-		if(rs.GetField(0))
-		{
-			privatekey=rs.GetField(0);
-		}
+		st.ResultText(0, privatekey);
 
 		FCPv2::Message mess("ClientPut");
 		mess["URI"]="USK"+privatekey.substr(3)+messagebase+"|IdentityRedirect/0/";

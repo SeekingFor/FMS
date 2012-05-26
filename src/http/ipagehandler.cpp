@@ -49,14 +49,14 @@ void IPageHandler::CreateArgArray(const std::map<std::string,QueryVar> &vars, co
 {
 	for(std::map<std::string,QueryVar>::const_iterator i=vars.begin(); i!=vars.end(); i++)
 	{
-		if((*i).first.find(basename)==0 && (*i).first.find("[")!=std::string::npos && (*i).first.find("]")!=std::string::npos)
+		if((*i).first.find(basename)==0 && (*i).first.find('[')!=std::string::npos && (*i).first.find(']')!=std::string::npos)
 		{
 			int index=0;
 			std::string indexstr;
 			std::string::size_type startpos;
 			std::string::size_type endpos;
-			startpos=(*i).first.find("[");
-			endpos=(*i).first.find("]");
+			startpos=(*i).first.find('[');
+			endpos=(*i).first.find(']');
 
 			indexstr=(*i).first.substr(startpos+1,(endpos-startpos)-1);
 			StringFunctions::Convert(indexstr,index);

@@ -103,7 +103,7 @@ const std::string ForumTemplateThreadsPage::GenerateContent(const std::string &m
 	sql="SELECT tblThread.ThreadID, tblThread.LastMessageID, tblLastMessage.FromName, tblLastMessage.MessageDate || ' ' || tblLastMessage.MessageTime, tblFirstMessage.Subject, tblFirstMessage.FromName, tblFirstMessage.IdentityID, tblLastMessage.IdentityID";
 	sql+=" FROM tblThread INNER JOIN tblMessage AS tblLastMessage ON tblThread.LastMessageID=tblLastMessage.MessageID INNER JOIN tblMessage AS tblFirstMessage ON tblThread.FirstMessageID=tblFirstMessage.MessageID";
 	sql+=" WHERE tblThread.BoardID=?";
-	sql+=" ORDER BY tblLastMessage.MessageDate || tblLastMessage.MessageTime DESC";
+	sql+=" ORDER BY tblLastMessage.MessageDate DESC, tblLastMessage.MessageTime DESC";
 	sql+=" LIMIT "+startrowstr+","+rowsperpagestr+";";
 
 	m_templatehandler.GetSection("FORUMTHREADROWODD",threadrowodd);

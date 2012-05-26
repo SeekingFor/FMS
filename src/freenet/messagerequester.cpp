@@ -299,7 +299,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			st.Bind(10,linemaxbytes);
 			st.Bind(11,Message::SOURCE_FMS);
 			inserted=trans.Step(st,true);
-			if(trans.IsSuccessful()==false && (trans.GetLastError() & SQLITE_CONSTRAINT)==SQLITE_CONSTRAINT)
+			if(trans.IsSuccessful()==false && (trans.GetLastError() & SQLite3DB::ResultCodeMask)==SQLITE_CONSTRAINT)
 			{
 				constraintfailure=true;
 			}
@@ -360,7 +360,7 @@ const bool MessageRequester::HandleAllData(FCPv2::Message &message)
 			}
 			else	// couldn't insert - was already in database
 			{
-				m_log->debug("MessageRequester::HandleAllData could not insert message into database.  SQLite error "+trans.GetLastError());
+				m_log->debug("MessageRequester::HandleAllData could not insert message into database.  SQLite error:"+trans.GetLastErrorStr()+" SQL="+trans.GetErrorSQL());
 			}
 
 			trans.Finalize(st);

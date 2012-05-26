@@ -539,6 +539,88 @@ void ConvertDB0135To0136(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=36;");
 }
 
+void ConvertDB0136To0137(SQLite3DB::DB *db)
+{
+	db->Execute("DROP INDEX IF EXISTS idxMessage_IdentityID;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=37;");
+}
+
+void ConvertDB0137To0138(SQLite3DB::DB *db)
+{
+	SQLite3DB::Statement st=db->Prepare("SELECT IdentityID, Name FROM tblIdentity;");
+	SQLite3DB::Statement fix=db->Prepare("UPDATE tblIdentity SET Name=? WHERE IdentityID=?;");
+	st.Step();
+	while(st.RowReturned())
+	{
+		std::string oldname("");
+		int identityid=0;
+
+		st.ResultText(1,oldname);
+		std::string newname=StringFunctions::RemoveControlChars(oldname);
+		if(newname!=oldname)
+		{
+			st.ResultInt(0,identityid);
+			fix.Bind(0,newname);
+			fix.Bind(1,identityid);
+			fix.Step();
+			fix.Reset();
+		}
+
+		st.Step();
+	}
+
+	// do the same for local identity names
+	st=db->Prepare("SELECT LocalIdentityID, Name FROM tblLocalIdentity;");
+	fix=db->Prepare("UPDATE tblLocalIdentity SET Name=? WHERE LocalIdentityID=?;");
+	st.Step();
+	while(st.RowReturned())
+	{
+		std::string oldname("");
+		int localidentityid=0;
+
+		st.ResultText(1,oldname);
+		std::string newname=StringFunctions::RemoveControlChars(oldname);
+		if(newname!=oldname)
+		{
+			st.ResultInt(0,localidentityid);
+			fix.Bind(0,newname);
+			fix.Bind(1,localidentityid);
+			fix.Step();
+			fix.Reset();
+		}
+
+		st.Step();
+	}
+
+	// do same for author in Message table
+	st=db->Prepare("SELECT MessageID, FromName FROM tblMessage;");
+	fix=db->Prepare("UPDATE tblMessage SET FromName=? WHERE MessageID=?;");
+	st.Step();
+	while(st.RowReturned())
+	{
+		std::string oldname("");
+		int messageid=0;
+
+		st.ResultText(1,oldname);
+		std::string newname=StringFunctions::RemoveControlChars(oldname);
+		if(newname!=oldname)
+		{
+			st.ResultInt(0,messageid);
+			fix.Bind(0,newname);
+			fix.Bind(1,messageid);
+			fix.Step();
+			fix.Reset();
+		}
+
+		st.Step();
+	}
+
+	db->Execute("DELETE FROM tblMessageListRequests WHERE rowid IN (SELECT rowid FROM tblMessageListRequests mlr WHERE rowid NOT IN (SELECT rowid FROM tblMessageListRequests WHERE IdentityID=mlr.IdentityID AND Day=mlr.Day AND Found=mlr.Found ORDER BY RequestIndex DESC LIMIT 0,1));");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=38;");
+}
+
 void FixBoardNames(SQLite3DB::DB *db)
 {
 

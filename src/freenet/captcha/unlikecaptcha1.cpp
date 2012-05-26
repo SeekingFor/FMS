@@ -21,7 +21,7 @@ UnlikeCaptcha1::UnlikeCaptcha1(const std::string &imagedir):m_imagedir(imagedir)
 
 		while(di!=end)
 		{
-			if(di.name().find("bmp")!=std::string::npos && di.name().find("_")!=std::string::npos)
+			if(di.name().find("bmp")!=std::string::npos && di.name().find('_')!=std::string::npos)
 			{
 				std::vector<std::string> fileparts;
 				StringFunctions::Split(di.name(),"_",fileparts);

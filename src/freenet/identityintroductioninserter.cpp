@@ -22,13 +22,19 @@ IdentityIntroductionInserter::IdentityIntroductionInserter(SQLite3DB::DB *db, FC
 
 void IdentityIntroductionInserter::CheckForNewInserts()
 {
-	SQLite3DB::Recordset rs=m_db->Query("SELECT LocalIdentityID, Day, UUID, Solution FROM tblIdentityIntroductionInserts WHERE Inserted='false';");
-	if(!rs.Empty())
+	SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID, Day, UUID, Solution FROM tblIdentityIntroductionInserts WHERE Inserted='false' AND LocalIdentityID IS NOT NULL AND Day IS NOT NULL AND UUID IS NOT NULL;");
+	st.Step();
+	if(st.RowReturned())
 	{
-		if(rs.GetField(0) && rs.GetField(1) && rs.GetField(2))
-		{
-			StartInsert(rs.GetInt(0),rs.GetField(1),rs.GetField(2),rs.GetField(3));
-		}
+		int localidentityid;
+		std::string day, uuid, solution;
+		st.ResultInt(0, localidentityid);
+		st.ResultText(1, day);
+		st.ResultText(2, uuid);
+		st.ResultText(3, solution);
+		st.Reset();
+
+		StartInsert(localidentityid,day,uuid,solution);
 	}
 }
 
@@ -49,6 +55,8 @@ const bool IdentityIntroductionInserter::HandleMessage(FCPv2::Message &message)
 	{
 		std::vector<std::string> idparts;
 		StringFunctions::Split(message["Identifier"],"|",idparts);
+		int localidentityid;
+		StringFunctions::Convert(idparts[1],localidentityid);
 		
 		// no action for URIGenerated
 		if(message.GetName()=="URIGenerated")
@@ -63,7 +71,9 @@ const bool IdentityIntroductionInserter::HandleMessage(FCPv2::Message &message)
 			{
 				m_db->Execute("DELETE FROM tblIdentityIntroductionInserts WHERE UUID='"+idparts[3]+"';");
 				// update the puzzle from the request table (set to not found) because we don't need it anymore and don't want to user tyring to solve it again
-				m_db->Execute("UPDATE tblIntroductionPuzzleRequests SET Found='false' WHERE UUID='"+idparts[3]+"';");
+				SQLite3DB::Statement st=m_db->Prepare("UPDATE tblIntroductionPuzzleRequests SET Found='false' WHERE UUID=?");
+				st.Bind(0, idparts[3]);
+				st.Step();
 				m_log->warning("IdentityIntroductionInserter::HandleMessage received fatal error trying to insert IdentityIntroduction "+idparts[3]);
 			}
 			m_inserting=false;
@@ -72,7 +82,9 @@ const bool IdentityIntroductionInserter::HandleMessage(FCPv2::Message &message)
 
 		if(message.GetName()=="PutSuccessful")
 		{
-			m_db->Execute("UPDATE tblIdentityIntroductionInserts SET Inserted='true' WHERE UUID='"+idparts[3]+"';");
+			SQLite3DB::Statement st=m_db->Prepare("UPDATE tblIdentityIntroductionInserts SET Inserted='true' WHERE UUID=?;");
+			st.Bind(0, idparts[3]);
+			st.Step();
 			m_inserting=false;
 			m_log->information("IdentityIntroductionInserter::HandleMessage successfully inserted IdentityIntroduction "+idparts[3]);
 			return true;

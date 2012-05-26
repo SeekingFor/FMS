@@ -306,7 +306,7 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 					{
 						body="> "+body;
 					}
-					std::string::size_type pos=body.find("\n");
+					std::string::size_type pos=body.find('\n');
 					while(pos!=std::string::npos)
 					{
 						if(pos+1<body.size() && body[pos+1]=='>')
@@ -317,7 +317,7 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 						{
 							body.insert(pos+1,"> ");
 						}
-						pos=body.find("\n",pos+2);
+						pos=body.find('\n',pos+2);
 					}
 					body+="\n";
 				}

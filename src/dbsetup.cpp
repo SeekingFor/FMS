@@ -237,13 +237,25 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=36;
 		}
+		if(major==1 && minor==36)
+		{
+			ConvertDB0136To0137(db);
+			major=1;
+			minor=37;
+		}
+		if(major==1 && minor==37)
+		{
+			ConvertDB0137To0138(db);
+			major=1;
+			minor=38;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,36);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,38);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=36;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=38;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -462,10 +474,10 @@ void SetupDB(SQLite3DB::DB *db)
 				FrostPrivateKey			TEXT\
 				);");
 
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('fms','Freenet Message System','2007-12-01 12:00:00','Seed Board','true');");
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('freenet','Discussion about Freenet','2007-12-01 12:00:00','Seed Board','true');");
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('public','Public discussion','2007-12-01 12:00:00','Seed Board','true');");
-	db->Execute("INSERT INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('test','Test board','2007-12-01 12:00:00','Seed Board','true');");
+	db->Execute("INSERT OR IGNORE INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('fms','Freenet Message System','2007-12-01 12:00:00','Seed Board','true');");
+	db->Execute("INSERT OR IGNORE INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('freenet','Discussion about Freenet','2007-12-01 12:00:00','Seed Board','true');");
+	db->Execute("INSERT OR IGNORE INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('public','Public discussion','2007-12-01 12:00:00','Seed Board','true');");
+	db->Execute("INSERT OR IGNORE INTO tblBoard(BoardName,BoardDescription,DateAdded,AddedMethod,Forum) VALUES('test','Test board','2007-12-01 12:00:00','Seed Board','true');");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessage(\
 				MessageID			INTEGER PRIMARY KEY AUTOINCREMENT,\
@@ -484,8 +496,8 @@ void SetupDB(SQLite3DB::DB *db)
 				MessageSource		INTEGER\
 				);");
 
-	db->Execute("CREATE INDEX IF NOT EXISTS idxMessage_IdentityID ON tblMessage (IdentityID);");
 	db->Execute("CREATE INDEX IF NOT EXISTS idxMessage_DateTime ON tblMessage (MessageDate,MessageTime);");
+	db->Execute("CREATE INDEX IF NOT EXISTS idxMessage_IdentityDate ON tblMessage (IdentityID,MessageDate);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblMessageReplyTo(\
 				MessageID			INTEGER,\
@@ -503,7 +515,6 @@ void SetupDB(SQLite3DB::DB *db)
 				);");
 
 	db->Execute("CREATE INDEX IF NOT EXISTS idxMessageBoard_MessageID ON tblMessageBoard (MessageID);");
-	//db->Execute("CREATE INDEX IF NOT EXISTS idxMessageBoard_BoardID ON tblMessageBoard (BoardID);");
 	db->Execute("CREATE INDEX IF NOT EXISTS idxMessageBoard_BoardMessageID ON tblMessageBoard (BoardID,BoardMessageID);");
 
 	db->Execute("CREATE TRIGGER IF NOT EXISTS trgInsertMessageBoard AFTER INSERT ON tblMessageBoard\
@@ -517,7 +528,7 @@ void SetupDB(SQLite3DB::DB *db)
 					UPDATE tblBoard SET MessageCount=MessageCount-1 WHERE BoardID=old.BoardID;\
 				END;");
 
-	db->Execute("CREATE TRIGGER trgUpdateMessageBoard AFTER UPDATE OF BoardID ON tblMessageBoard\
+	db->Execute("CREATE TRIGGER IF NOT EXISTS trgUpdateMessageBoard AFTER UPDATE OF BoardID ON tblMessageBoard\
 				FOR EACH ROW BEGIN\
 					UPDATE tblBoard SET MessageCount=MessageCount-1 WHERE BoardID=old.BoardID;\
 					UPDATE tblMessageBoard SET BoardMessageID=(SELECT NextMessageID FROM tblBoard WHERE BoardID=new.BoardID) WHERE MessageID=new.MessageID AND BoardID=new.BoardID;\
@@ -538,6 +549,9 @@ void SetupDB(SQLite3DB::DB *db)
 				RequestIndex		INTEGER,\
 				Found				BOOL CHECK(Found IN('true','false')) DEFAULT 'false'\
 				);");
+
+
+	db->Execute("CREATE UNIQUE INDEX IF NOT EXISTS idxMessageListRequests_Day_IdentityID_Found ON tblMessageListRequests(Day, IdentityID, Found);");
 
 	/*
 		Key is for anonymous messages (future)
@@ -791,41 +805,41 @@ void SetupDB(SQLite3DB::DB *db)
 
 	date=Poco::Timestamp();
 	// insert SomeDude's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@NuBL7aaJ6Cn4fB7GXFb9Zfi8w1FhPyW3oKgU9TweZMw,iXez4j3qCpd596TxXiJgZyTq9o-CElEuJxm~jNNZAuA,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
+	db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@NuBL7aaJ6Cn4fB7GXFb9Zfi8w1FhPyW3oKgU9TweZMw,iXez4j3qCpd596TxXiJgZyTq9o-CElEuJxm~jNNZAuA,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
 	// insert Shadow Panther's public key - haven't seen in a while - disabling for now
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@~mimyB1kmH4f7Cgsd2wM2Qv2NxrZHRMM6IY8~7EWRVQ,fxTKkR0TYhgMYb-vEGAv55sMOxCGD2xhE4ZxWHxdPz4,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	//db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@~mimyB1kmH4f7Cgsd2wM2Qv2NxrZHRMM6IY8~7EWRVQ,fxTKkR0TYhgMYb-vEGAv55sMOxCGD2xhE4ZxWHxdPz4,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert garfield's public key -haven't seen in a while - disabling for now
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@T8l1IEGU4-PoASFzgc2GYhIgRzUvZsKdoQWeuLHuTmM,QLxAPfkGis8l5NafNpSCdbxzXhBlu9WL8svcqJw9Mpo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	//db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@T8l1IEGU4-PoASFzgc2GYhIgRzUvZsKdoQWeuLHuTmM,QLxAPfkGis8l5NafNpSCdbxzXhBlu9WL8svcqJw9Mpo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert alek's public key - haven't seen in a while - disabling for now
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@lTjeI6V0lQsktXqaqJ6Iwk4TdsHduQI54rdUpHfhGbg,0oTYfrxxx8OmdU1~60gqpf3781qzEicM4Sz97mJsBM4,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	//db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@lTjeI6V0lQsktXqaqJ6Iwk4TdsHduQI54rdUpHfhGbg,0oTYfrxxx8OmdU1~60gqpf3781qzEicM4Sz97mJsBM4,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert Luke771's public key - haven't seen in a while - disabling for now
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@mdXK~ZVlfTZhF1SLBrvZ--i0vOsOpa~w9wv~~psQ-04,gXonsXKc7aexKSO8Gt8Fwre4Qgmmbt2WueO7VzxNKkk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	//db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@mdXK~ZVlfTZhF1SLBrvZ--i0vOsOpa~w9wv~~psQ-04,gXonsXKc7aexKSO8Gt8Fwre4Qgmmbt2WueO7VzxNKkk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert falafel's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@IxVqeqM0LyYdTmYAf5z49SJZUxr7NtQkOqVYG0hvITw,RM2wnMn5zAufCMt5upkkgq25B1elfBAxc7htapIWg1c,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
+	db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@IxVqeqM0LyYdTmYAf5z49SJZUxr7NtQkOqVYG0hvITw,RM2wnMn5zAufCMt5upkkgq25B1elfBAxc7htapIWg1c,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
 	// insert cptn_insano's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@bloE1LJ~qzSYUkU2nt7sB9kq060D4HTQC66pk5Q8NpA,DOOASUnp0kj6tOdhZJ-h5Tk7Ka50FSrUgsH7tCG1usU,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
+	db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@bloE1LJ~qzSYUkU2nt7sB9kq060D4HTQC66pk5Q8NpA,DOOASUnp0kj6tOdhZJ-h5Tk7Ka50FSrUgsH7tCG1usU,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
 	// insert Flink's public key - haven't seen in a while - disabling for now
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@q2TtkNBOuuniyJ56~8NSopCs3ttwe5KlB31ugZtWmXA,6~PzIupS8YK7L6oFNpXGKJmHT2kBMDfwTg73nHdNur8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
+	//db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,AddedMethod) VALUES('SSK@q2TtkNBOuuniyJ56~8NSopCs3ttwe5KlB31ugZtWmXA,6~PzIupS8YK7L6oFNpXGKJmHT2kBMDfwTg73nHdNur8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"','Seed Identity');");
 	// insert Kane's public key - haven't seen in a while - disabling for now
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@Ofm~yZivDJ5Z2fSzZbMiLEUUQaIc0KHRdZMBTaPLO6I,WLm4s4hNbOOurJ6ijfOq4odz7-dN7uTUvYxJRwWnlMI,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	//db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@Ofm~yZivDJ5Z2fSzZbMiLEUUQaIc0KHRdZMBTaPLO6I,WLm4s4hNbOOurJ6ijfOq4odz7-dN7uTUvYxJRwWnlMI,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// inserts boardstat's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@aYWBb6zo2AM13XCNhsmmRKMANEx6PG~C15CWjdZziKA,X1pAG4EIqR1gAiyGFVZ1iiw-uTlh460~rFACJ7ZHQXk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
+	db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@aYWBb6zo2AM13XCNhsmmRKMANEx6PG~C15CWjdZziKA,X1pAG4EIqR1gAiyGFVZ1iiw-uTlh460~rFACJ7ZHQXk,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
 	// insert void's public key - haven't seen in a while - disabling 2011-04-30
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@Io8dkKWKkDfLVZ8n218hLRQV2K~20EIUk2hgWkneHEs,yy5MbLSpcYOMyX6mim0vofV7Sxdtsv-8uVOeFDf7ML0,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	//db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@Io8dkKWKkDfLVZ8n218hLRQV2K~20EIUk2hgWkneHEs,yy5MbLSpcYOMyX6mim0vofV7Sxdtsv-8uVOeFDf7ML0,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert herb's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@5FeJUDg2ZdEqo-u4yoYWc1zF4tgPwOWlqcAJVGCoRv8,ptJ1y0YBkdU9S5DeYC8AsLH0SrmTE9S3w2HKZvl5QKo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
+	db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@5FeJUDg2ZdEqo-u4yoYWc1zF4tgPwOWlqcAJVGCoRv8,ptJ1y0YBkdU9S5DeYC8AsLH0SrmTE9S3w2HKZvl5QKo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
 	// insert Tommy[D]'s public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@EefdujDZxdWxl0qusX0cJofGmJBvd3dF4Ty61PZy8Y8,4-LkBILohhpX7znBPXZWEUoK2qQZs-CLbUFO3-yKJIo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
+	db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@EefdujDZxdWxl0qusX0cJofGmJBvd3dF4Ty61PZy8Y8,4-LkBILohhpX7znBPXZWEUoK2qQZs-CLbUFO3-yKJIo,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
 	// insert DoorsOnFire's public key
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@F1x03zWQR4dAqJT8FueZnmWhVE9RuPg1Z4oeItkQ1qw,8DCU7gsHn61lSvYPyjaqsg4oMzBSEP1JhBVMMX-J8sM,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	//db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@F1x03zWQR4dAqJT8FueZnmWhVE9RuPg1Z4oeItkQ1qw,8DCU7gsHn61lSvYPyjaqsg4oMzBSEP1JhBVMMX-J8sM,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 	// insert interrupt's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@04RAn8gPQ~Cd7zGHkzui-Vz0jW-YNNLwfUnj5zI8i3I,H1CQ1U8cbs~y0o8qFYKUmpfySti80avdR~q3ADDb448,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
+	db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@04RAn8gPQ~Cd7zGHkzui-Vz0jW-YNNLwfUnj5zI8i3I,H1CQ1U8cbs~y0o8qFYKUmpfySti80avdR~q3ADDb448,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
 	// insert The Seeker's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@cI~w2hrvvyUa1E6PhJ9j5cCoG1xmxSooi7Nez4V2Gd4,A3ArC3rrJBHgAJV~LlwY9kgxM8kUR2pVYXbhGFtid78,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
+	db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@cI~w2hrvvyUa1E6PhJ9j5cCoG1xmxSooi7Nez4V2Gd4,A3ArC3rrJBHgAJV~LlwY9kgxM8kUR2pVYXbhGFtid78,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
 	// insert benjamin's public key
-	db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@y7xEHiGMGlivnCq-a8SpYU0YO-XRNI3LcJHB8tCeaXI,lRZOVc0pEHTEPqZUJqc5qRv6JDxHZzqc~ybEC~I2y~A,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
+	db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod,IsFMS) VALUES('SSK@y7xEHiGMGlivnCq-a8SpYU0YO-XRNI3LcJHB8tCeaXI,lRZOVc0pEHTEPqZUJqc5qRv6JDxHZzqc~ybEC~I2y~A,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity',1);");
 	// insert Oncle Jack's public key - haven't seen in a while - disabling 2011-04-30
-	//db->Execute("INSERT INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@L9ytg5-Yixmw~q5NKHzy6FeOaXSLCqIw3L4Fgl1dcZA,plYsHAfOJVqim1E~~6Tup98RVNvJ5dKJqPTzKcXlZv8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
+	//db->Execute("INSERT OR IGNORE INTO tblIdentity(PublicKey,DateAdded,LocalTrustListTrust,AddedMethod) VALUES('SSK@L9ytg5-Yixmw~q5NKHzy6FeOaXSLCqIw3L4Fgl1dcZA,plYsHAfOJVqim1E~~6Tup98RVNvJ5dKJqPTzKcXlZv8,AQACAAE/','"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d %H:%M:%S")+"',50,'Seed Identity');");
 
 	// TODO remove sometime after 0.1.17
 	FixBoardNames(db);

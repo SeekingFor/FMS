@@ -223,7 +223,7 @@ void IntroductionPuzzleRequester::PopulateIDList()
 {
 	Poco::DateTime now;
 	int id;
-	std::string limitnum="30";
+	long limitnum=30;
 	SQLite3DB::Transaction trans(m_db);
 
 	// only selects, deferred OK
@@ -234,12 +234,14 @@ void IntroductionPuzzleRequester::PopulateIDList()
 	trans.Step(st);
 	if(!st.RowReturned())
 	{
-		limitnum="5";
+		limitnum=5;
 	}
 	trans.Finalize(st);
 
 	// select identities that aren't single use, are publishing a trust list, and have been seen today ( order by trust DESC and limit to limitnum )
-	st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublishTrustList='true' AND PublicKey IS NOT NULL AND PublicKey <> '' AND SingleUse='false' AND (LocalTrustListTrust IS NULL OR LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust')) AND LastSeen>='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d")+"' AND FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LocalMessageTrust DESC LIMIT 0,"+limitnum+";");
+	st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublishTrustList='true' AND PublicKey IS NOT NULL AND PublicKey <> '' AND SingleUse='false' AND (LocalTrustListTrust IS NULL OR LocalTrustListTrust>=(SELECT OptionValue FROM tblOption WHERE Option='MinLocalTrustListTrust')) AND LastSeen>=? AND FailureCount<=(SELECT OptionValue FROM tblOption WHERE Option='MaxFailureCount') ORDER BY LocalMessageTrust DESC LIMIT 0,?");
+	st.Bind(0, Poco::DateTimeFormatter::format(now,"%Y-%m-%d"));
+	st.Bind(1, limitnum);
 	trans.Step(st);
 
 	m_ids.clear();

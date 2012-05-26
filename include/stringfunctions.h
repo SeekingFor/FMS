@@ -49,6 +49,8 @@ inline const bool Convert(const T &input, std::string &output)
 	return true;	
 }
 
+std::string RemoveControlChars(const std::string &input);
+
 /**
 	\brief Replaces occurences of a string with another string
 

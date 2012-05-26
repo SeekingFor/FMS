@@ -14,7 +14,7 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	db->Execute("BEGIN;");
 
 	std::ostringstream tempstr;	// must set tempstr to "" between db inserts
-	SQLite3DB::Statement st=db->Prepare("INSERT INTO tblOption(Option,OptionValue) VALUES(?,?);");
+	SQLite3DB::Statement st=db->Prepare("INSERT OR IGNORE INTO tblOption(Option,OptionValue) VALUES(?,?);");
 	SQLite3DB::Statement upd=db->Prepare("UPDATE tblOption SET Section=?, SortOrder=?, ValidValues=?, OptionDescription=?, DisplayType=?, DisplayParam1=?, DisplayParam2=?, Mode=? WHERE Option=?;");
 	int order=0;
 
@@ -51,6 +51,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Bind(6);
 	upd.Bind(7,"simple");
 	upd.Bind(8,"LogLevel");
+	upd.Step();
+	upd.Reset();
+
+	st.Bind(0,"BackupDatabase");
+	st.Bind(1,"false");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Program");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Backup the database automatically once a day.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"simple");
+	upd.Bind(8,"BackupDatabase");
 	upd.Step();
 	upd.Reset();
 

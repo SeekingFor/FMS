@@ -30,7 +30,7 @@ QuoterItemText::QuoterItemText(const std::string &text, const int level):QuoterI
 		if(pos+2<m_text.size())
 		{
 			nextpos=m_text.find("\n ",pos+1);
-			notpos=m_text.find_first_not_of(" ",pos+1);
+			notpos=m_text.find_first_not_of(' ',pos+1);
 			if(notpos!=std::string::npos && notpos<nextpos)
 			{
 				while(pos+1<m_text.size() && m_text[pos+1]==' ')
@@ -154,7 +154,7 @@ QuoterItem *QuoterParser::ParseArea(const std::string &block, const int level)
 
 	while(currentpos<block.size())
 	{
-		endlinepos=block.find("\n",currentpos);
+		endlinepos=block.find('\n',currentpos);
 		if(endlinepos==std::string::npos)
 		{
 			endlinepos=block.size();

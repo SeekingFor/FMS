@@ -31,7 +31,7 @@ std::string SoneRequester::CleanupSubject(const std::string &text)
 	while(pos!=std::string::npos)
 	{
 		// find next space after sone:// - must be done before finding @ space
-		std::string::size_type pos2=returnstring.find(" ",pos);
+		std::string::size_type pos2=returnstring.find(' ',pos);
 
 		if(pos>0 && returnstring[pos-1]=='@')
 		{
@@ -313,10 +313,12 @@ const bool SoneRequester::HandleGetFailed(FCPv2::Message &message)
 		std::vector<std::string> uriparts;
 		StringFunctions::Split(message["RedirectURI"],"/",uriparts);
 
-		if(uriparts.size()>1)
+		// 0       1    2        3+
+		// USK@foo/site/edition[/path]
+		if(uriparts.size()>2 && uriparts[0].compare(0, 4, "USK@") == 0)
 		{
 			int newedition=0;
-			if(StringFunctions::Convert(uriparts[uriparts.size()-2],newedition)==true)
+			if(StringFunctions::Convert(uriparts[2],newedition)==true)
 			{
 				SQLite3DB::Statement st=m_db->Prepare("UPDATE tblWOTIdentityProperty SET Value=? WHERE IdentityID=? AND Property='Sone.LatestEdition';");
 				st.Bind(0,newedition);

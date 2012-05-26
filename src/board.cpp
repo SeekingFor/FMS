@@ -80,7 +80,7 @@ std::string Board::FixBoardName(const std::string &boardname)
 	{
 		newboardname.erase(0,1);
 	}
-	return newboardname;
+	return StringFunctions::RemoveControlChars(newboardname);
 }
 
 const bool Board::Load(const long boardid)

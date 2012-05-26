@@ -24,7 +24,7 @@ void MessageThread::AddChildren(const long messageid, const long level, const lo
 	int replyorder=0;
 	if(currentdepth<1000)
 	{
-		SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessageReplyTo.MessageID, tblMessage1.Subject, tblMessage1.FromName, tblMessage1.MessageDate || ' ' || tblMessage1.MessageTime FROM tblMessage INNER JOIN tblMessageReplyTo ON tblMessage.MessageUUID=tblMessageReplyTo.ReplyToMessageUUID INNER JOIN tblMessage AS 'tblMessage1' ON tblMessageReplyTo.MessageID=tblMessage1.MessageID INNER JOIN tblMessageBoard ON tblMessage1.MessageID=tblMessageBoard.MessageID WHERE tblMessage.MessageID=? AND tblMessage1.MessageID!=? AND tblMessageBoard.BoardID=? AND tblMessageReplyTo.ReplyOrder=? ORDER BY tblMessage1.MessageDate || ' ' || tblMessage1.MessageTime;");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessageReplyTo.MessageID, tblMessage1.Subject, tblMessage1.FromName, tblMessage1.MessageDate || ' ' || tblMessage1.MessageTime FROM tblMessage INNER JOIN tblMessageReplyTo ON tblMessage.MessageUUID=tblMessageReplyTo.ReplyToMessageUUID INNER JOIN tblMessage AS 'tblMessage1' ON tblMessageReplyTo.MessageID=tblMessage1.MessageID INNER JOIN tblMessageBoard ON tblMessage1.MessageID=tblMessageBoard.MessageID WHERE tblMessage.MessageID=? AND tblMessage1.MessageID!=? AND tblMessageBoard.BoardID=? AND tblMessageReplyTo.ReplyOrder=? ORDER BY tblMessage1.MessageDate, tblMessage1.MessageTime;");
 		for(replyorder=0; replyorder<5; replyorder++)
 		{
 			st.Bind(0,messageid);

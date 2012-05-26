@@ -127,7 +127,7 @@ const bool FrostMessageRequester::HandleAllData(FCPv2::Message &message)
 			st.Bind(10,Message::SOURCE_FROST);
 			inserted=trans.Step(st,true);
 			// constraint failure, we'll still mark the index as retrieved later
-			if(trans.IsSuccessful()==false && (trans.GetLastError() & SQLITE_CONSTRAINT)==SQLITE_CONSTRAINT)
+			if(trans.IsSuccessful()==false && (trans.GetLastError() & SQLite3DB::ResultCodeMask)==SQLITE_CONSTRAINT)
 			{
 				constraintfailure=true;
 			}
@@ -377,7 +377,6 @@ void FrostMessageRequester::PopulateIDList()
 	Poco::DateTime date;
 	long expectedindex;
 	SQLite3DB::Statement st=m_db->Prepare("SELECT BoardID, BoardName FROM tblBoard WHERE BoardName LIKE ? || '%' AND SaveReceivedMessages='true';");
-	SQLite3DB::Statement st2=m_db->Prepare("SELECT Day, RequestIndex FROM tblFrostMessageRequests WHERE BoardID=? AND Day=? ORDER BY RequestIndex ASC;");
 	SQLite3DB::Transaction trans(m_db);
 
 	// only selects, deferred OK
@@ -401,7 +400,6 @@ void FrostMessageRequester::PopulateIDList()
 	}
 
 	trans.Finalize(st);
-	trans.Finalize(st2);
 	trans.Commit();
 
 }
@@ -433,7 +431,7 @@ void FrostMessageRequester::StartRequest(const std::string &id)
 			boardname.erase(0,m_boardprefix.size());
 		}
 		st.ResultText(1,publickey);
-		if(!(publickey.find("SSK@")==0 && publickey.rfind("/")==(publickey.size()-1)))
+		if(!(publickey.find("SSK@")==0 && publickey.rfind('/')==(publickey.size()-1)))
 		{
 			publickey="";
 		}

@@ -76,6 +76,9 @@ const bool IdentityInserter::HandleMessage(FCPv2::Message &message)
 
 		StringFunctions::Split(message["Identifier"],"|",idparts);
 		m_lastreceivedmessage=now;
+		int localidentityid, insertindex;
+		StringFunctions::Convert(idparts[1], localidentityid);
+		StringFunctions::Convert(idparts[2], insertindex);
 
 		// no action for URIGenerated
 		if(message.GetName()=="URIGenerated")
@@ -100,23 +103,36 @@ const bool IdentityInserter::HandleMessage(FCPv2::Message &message)
 				Poco::DateTime lastdate;
 				int tzdiff=0;
 				Poco::DateTimeParser::tryParse("%Y-%m-%d",idparts[4],lastdate,tzdiff);
+				SQLite3DB::Statement st;
 				if(lastdate.day()==now.day())
 				{
-					m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S")+"' WHERE LocalIdentityID="+idparts[1]+";");
+					st=m_db->Prepare("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity=? WHERE LocalIdentityID=?;");
+					st.Bind(0, Poco::DateTimeFormatter::format(now,"%Y-%m-%d %H:%M:%S"));
+					st.Bind(1, localidentityid);
+					st.Step();
 				}
 				// we inserted to a future date - set date to midnight of that day
 				else if(lastdate.year()>now.year() || (lastdate.year()==now.year() && lastdate.month()>now.month()) || (lastdate.year()==now.year() && lastdate.month()==now.month() && lastdate.day()>now.day()))
 				{
-					m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity='"+Poco::DateTimeFormatter::format(lastdate,"%Y-%m-%d")+" 00:00:00' WHERE LocalIdentityID="+idparts[1]+";");
+					st=m_db->Prepare("UPDATE tblLocalIdentity SET InsertingIdentity='false', LastInsertedIdentity=? WHERE LocalIdentityID=?");
+					st.Bind(0, Poco::DateTimeFormatter::format(lastdate,"%Y-%m-%d 00:00:00"));
+					st.Bind(1, localidentityid);
+					st.Step();
 				}
 				else
 				{
-					m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID="+idparts[1]+";");
+					st=m_db->Prepare("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID=?");
+					st.Bind(0, localidentityid);
+					st.Step();
 				}
-				m_db->Execute("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
+				st=m_db->Prepare("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES(?, ?, ?)");
+				st.Bind(0, localidentityid);
+				st.Bind(1, idparts[4]);
+				st.Bind(2, insertindex);
+				st.Step();
 				
-				SQLite3DB::Statement st=m_db->Prepare("INSERT OR REPLACE INTO tmpLocalIdentityRedirectInsert(LocalIdentityID,Redirect) VALUES(?,?);");
-				st.Bind(0,idparts[1]);
+				st=m_db->Prepare("INSERT OR REPLACE INTO tmpLocalIdentityRedirectInsert(LocalIdentityID,Redirect) VALUES(?,?);");
+				st.Bind(0,localidentityid);
 				st.Bind(1,StringFunctions::UriDecode(message["URI"]));
 				st.Step();
 				
@@ -134,13 +150,19 @@ const bool IdentityInserter::HandleMessage(FCPv2::Message &message)
 			// do check to make sure this is the non-editioned SSK - we ignore failure/success for editioned SSK for now
 			if(message["Identifier"].find(".xml")!=std::string::npos)
 			{
-				m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID="+idparts[1]+";");
+				SQLite3DB::Statement st=m_db->Prepare("UPDATE tblLocalIdentity SET InsertingIdentity='false' WHERE LocalIdentityID=?");
+				st.Bind(0, localidentityid);
+				st.Step();
 				m_log->debug("IdentityInserter::HandleMessage failure inserting Identity xml.  Code="+message["Code"]+" Description="+message["CodeDescription"]);
 				
 				// if code 9 (collision), then insert index into inserted table
 				if(message["Code"]=="9")
 				{
-					m_db->Execute("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES("+idparts[1]+",'"+idparts[4]+"',"+idparts[2]+");");
+					st=m_db->Prepare("INSERT INTO tblLocalIdentityInserts(LocalIdentityID,Day,InsertIndex) VALUES(?, ?, ?)");
+					st.Bind(0, localidentityid);
+					st.Bind(1, idparts[4]);
+					st.Bind(2, insertindex);
+					st.Step();
 				}
 			}
 			else
@@ -200,9 +222,11 @@ void IdentityInserter::StartInsert(const long localidentityid, const int dayoffs
 
 	StringFunctions::Convert(localidentityid,idstring);
 
-	SQLite3DB::Recordset rs=m_db->Query("SELECT Name,PrivateKey,SingleUse,PublishTrustList,PublishBoardList,PublishFreesite,FreesiteEdition,Signature FROM tblLocalIdentity WHERE LocalIdentityID="+idstring+";");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT Name,PrivateKey,SingleUse,PublishTrustList,PublishBoardList,PublishFreesite,FreesiteEdition,Signature FROM tblLocalIdentity WHERE LocalIdentityID=?");
+	st.Bind(0, localidentityid);
+	st.Step();
 
-	if(rs.Empty()==false)
+	if(st.RowReturned())
 	{
 		IdentityXML idxml;
 		FCPv2::Message mess;
@@ -211,74 +235,63 @@ void IdentityInserter::StartInsert(const long localidentityid, const int dayoffs
 		std::string data;
 		std::string datasizestr;
 		std::string privatekey;
-		long index=0;
+		int index=0;
 		std::string indexstr;
 		std::string singleuse="false";
 		std::string publishtrustlist="false";
 		std::string publishboardlist="false";
-		std::string freesiteedition="";
+		std::string publishfreesite="false";
 		int edition=-1;
+		std::string name="";
 		std::string signature="";
 
 		date=Poco::Timestamp();
 		date+=Poco::Timespan(dayoffset,0,0,0,0);
 
-		SQLite3DB::Recordset rs2=m_db->Query("SELECT MAX(InsertIndex) FROM tblLocalIdentityInserts WHERE LocalIdentityID="+idstring+" AND Day='"+Poco::DateTimeFormatter::format(date,"%Y-%m-%d")+"';");
-		if(rs2.Empty()==false)
+		// FIXME convert to nested SELECT
+		SQLite3DB::Statement st2=m_db->Prepare("SELECT MAX(InsertIndex)+1 FROM tblLocalIdentityInserts WHERE LocalIdentityID=? AND Day=?;");
+		st2.Bind(0, localidentityid);
+		st2.Bind(1, Poco::DateTimeFormatter::format(date,"%Y-%m-%d"));
+		st2.Step();
+		if(st2.RowReturned())
 		{
-			if(rs2.GetField(0)==NULL)
-			{
-				index=0;
-			}
-			else
-			{
-				index=rs2.GetInt(0)+1;
-			}
+			st2.ResultInt(0, index); // NULL converted to 0
+			st2.Reset();
 		}
 		StringFunctions::Convert(index,indexstr);
 
 		Option option(m_db);
 		option.Get("MessageBase",messagebase);
 
-		if(rs.GetField(0))
+		st.ResultText(0, name);
+		if(!name.empty())
 		{
-			idxml.SetName(rs.GetField(0));
+			idxml.SetName(name);
 		}
 
-		if(rs.GetField(7))
+		st.ResultText(7, signature);
+		if(!signature.empty())
 		{
-			idxml.SetSignature(rs.GetField(7));
+			idxml.SetSignature(signature);
 		}
 
-		if(rs.GetField(1))
-		{
-			privatekey=rs.GetField(1);
-		}
+		st.ResultText(1, privatekey);
 
-		if(rs.GetField(2))
-		{
-			singleuse=rs.GetField(2);
-		}
+		st.ResultText(2, singleuse);
 		singleuse=="true" ? idxml.SetSingleUse(true) : idxml.SetSingleUse(false);
 
-		if(rs.GetField(3))
-		{
-			publishtrustlist=rs.GetField(3);
-		}
+		st.ResultText(3, publishtrustlist);
 		publishtrustlist=="true" ? idxml.SetPublishTrustList(true) : idxml.SetPublishTrustList(false);
 
-		if(rs.GetField(4))
-		{
-			publishboardlist=rs.GetField(4);
-		}
+		st.ResultText(4, publishboardlist);
 		publishboardlist=="true" ? idxml.SetPublishBoardList(true) : idxml.SetPublishBoardList(false);
 
-		if(rs.GetField(5) && rs.GetField(6))
+		st.ResultText(5, publishfreesite);
+		if(publishfreesite=="true" && !st.ResultNull(6))
 		{
-			if(std::string(rs.GetField(5))=="true")
+			st.ResultInt(6, edition);
+			if (edition >= 0)
 			{
-				freesiteedition=rs.GetField(6);
-				StringFunctions::Convert(freesiteedition,edition);
 				idxml.SetFreesiteEdition(edition);
 			}
 		}
@@ -308,7 +321,9 @@ void IdentityInserter::StartInsert(const long localidentityid, const int dayoffs
 		m_fcp->Send(std::vector<char>(data.begin(),data.end()));
 		*/
 
-		m_db->Execute("UPDATE tblLocalIdentity SET InsertingIdentity='true' WHERE LocalIdentityID="+idstring+";");
+		SQLite3DB::Statement upd=m_db->Prepare("UPDATE tblLocalIdentity SET InsertingIdentity='true' WHERE LocalIdentityID=?;");
+		upd.Bind(0, localidentityid);
+		upd.Step();
 
 	}
 }

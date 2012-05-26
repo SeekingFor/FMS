@@ -32,7 +32,7 @@ const bool IPAddressACL::Add(const std::string &aclentry)
 	}
 
 	// look for /mask at end of string then strip off and convert to mask
-	if((strpos=entrystr.find("/"))!=std::string::npos)
+	if((strpos=entrystr.find('/'))!=std::string::npos)
 	{
 		if(strpos!=entrystr.size()-1)
 		{
