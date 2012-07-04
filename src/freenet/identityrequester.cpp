@@ -1,4 +1,5 @@
 #include "../../include/freenet/identityrequester.h"
+#include "../../include/freenet/freenetkeys.h"
 #include "../../include/freenet/identityxml.h"
 #include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/stringfunctions.h"
@@ -85,7 +86,7 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 		}
 		st.Finalize();
 
-		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, SingleUse=?, LastSeen=?, PublishTrustList=?, PublishBoardList=?, FreesiteEdition=?, Signature=?, IsFMS=1 WHERE IdentityID=?");
+		st=m_db->Prepare("UPDATE tblIdentity SET Name=?, SingleUse=?, LastSeen=?, PublishTrustList=?, PublishBoardList=?, FreesiteEdition=?, Signature=?, IsFMS=1, FMSAvatar=? WHERE IdentityID=?");
 		
 		name=xml.GetName();
 		name.Trim(MAX_IDENTITY_NAME_LENGTH);
@@ -132,7 +133,49 @@ const bool IdentityRequester::HandleAllData(FCPv2::Message &message)
 		{
 			st.Bind(6);
 		}
-		st.Bind(7,identityid);
+		if(xml.GetAvatar()!="")
+		{
+			bool goodavatar=false;
+			std::string avatar=xml.GetAvatar();
+			if(avatar.find("KSK@")==0)
+			{
+				FreenetKSKKey key;
+				if(key.TryParse(avatar)==true)
+				{
+					goodavatar=true;
+				}
+			}
+			else if(avatar.find("SSK@")==0)
+			{
+				FreenetSSKKey key;
+				if(key.TryParse(avatar)==true)
+				{
+					goodavatar=true;
+				}
+			}
+			else if(avatar.find("CHK@")==0)
+			{
+				FreenetCHKKey key;
+				if(key.TryParse(avatar)==true)
+				{
+					goodavatar=true;
+				}
+			}
+			if(goodavatar=true)
+			{
+				st.Bind(7,avatar);
+			}
+			else
+			{
+				m_log->error(m_fcpuniquename+"::HandleAllData bad avatar URI in Identity XML file : "+message["Identifier"]);
+				st.Bind(7);
+			}
+		}
+		else
+		{
+			st.Bind(7);
+		}
+		st.Bind(8,identityid);
 		st.Step();
 		st.Finalize();
 

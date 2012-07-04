@@ -11,6 +11,7 @@
 #else
 	#include <netdb.h>
 	#include <netinet/in.h>
+	#include <unistd.h>
 #endif
 
 namespace FCPv2

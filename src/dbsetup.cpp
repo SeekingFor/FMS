@@ -249,13 +249,19 @@ void SetupDB(SQLite3DB::DB *db)
 			major=1;
 			minor=38;
 		}
+		if(major==1 && minor==38)
+		{
+			ConvertDB0138To0139(db);
+			major=1;
+			minor=39;
+		}
 	}
 	else
 	{
-		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,38);");
+		db->Execute("INSERT INTO tblDBVersion(Major,Minor) VALUES(1,39);");
 	}
 
-	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=38;");
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=39;");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblFMSVersion(\
 				Major				INTEGER,\
@@ -286,6 +292,7 @@ void SetupDB(SQLite3DB::DB *db)
 				LocalIdentityID			INTEGER PRIMARY KEY,\
 				Name					TEXT,\
 				Signature				TEXT,\
+				FMSAvatar				TEXT,\
 				PublicKey				TEXT UNIQUE,\
 				PrivateKey				TEXT UNIQUE,\
 				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
@@ -349,6 +356,8 @@ void SetupDB(SQLite3DB::DB *db)
 				Name					TEXT,\
 				Signature				TEXT,\
 				ShowSignature			BOOL CHECK(ShowSignature IN (0,1)) DEFAULT 1,\
+				FMSAvatar				TEXT,\
+				ShowAvatar				BOOL CHECK(ShowAvatar IN (0,1)) DEFAULT 1,\
 				SingleUse				BOOL CHECK(SingleUse IN('true','false')) DEFAULT 'false',\
 				PublishTrustList		BOOL CHECK(PublishTrustList IN('true','false')) DEFAULT 'false',\
 				PublishBoardList		BOOL CHECK(PublishBoardList IN('true','false')) DEFAULT 'false',\
@@ -374,7 +383,8 @@ void SetupDB(SQLite3DB::DB *db)
 				WOTLastRequest			DATETIME,\
 				SoneLastSeen			DATETIME,\
 				SoneLastIndex			INTEGER,\
-				SoneLastRequest			DATETIME\
+				SoneLastRequest			DATETIME,\
+				SoneAvatar				TEXT\
 				);");
 
 	db->Execute("CREATE TABLE IF NOT EXISTS tblIdentityRequests(\

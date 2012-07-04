@@ -222,7 +222,7 @@ void IdentityInserter::StartInsert(const long localidentityid, const int dayoffs
 
 	StringFunctions::Convert(localidentityid,idstring);
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT Name,PrivateKey,SingleUse,PublishTrustList,PublishBoardList,PublishFreesite,FreesiteEdition,Signature FROM tblLocalIdentity WHERE LocalIdentityID=?");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT Name,PrivateKey,SingleUse,PublishTrustList,PublishBoardList,PublishFreesite,FreesiteEdition,Signature,FMSAvatar FROM tblLocalIdentity WHERE LocalIdentityID=?");
 	st.Bind(0, localidentityid);
 	st.Step();
 
@@ -244,6 +244,7 @@ void IdentityInserter::StartInsert(const long localidentityid, const int dayoffs
 		int edition=-1;
 		std::string name="";
 		std::string signature="";
+		std::string avatar="";
 
 		date=Poco::Timestamp();
 		date+=Poco::Timespan(dayoffset,0,0,0,0);
@@ -273,6 +274,12 @@ void IdentityInserter::StartInsert(const long localidentityid, const int dayoffs
 		if(!signature.empty())
 		{
 			idxml.SetSignature(signature);
+		}
+
+		st.ResultText(8,avatar);
+		if(!avatar.empty())
+		{
+			idxml.SetAvatar(avatar);
 		}
 
 		st.ResultText(1, privatekey);

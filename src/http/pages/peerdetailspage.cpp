@@ -29,6 +29,8 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 	std::string messagebase="";
 	int isfms=0;
 	int iswot=0;
+	bool showsignature=false;
+	bool showavatar=false;
 	std::string wotlastseen="";
 
 	Option option(m_db);
@@ -65,7 +67,35 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		del.Step();
 	}
 
-	SQLite3DB::Statement st=m_db->Prepare("SELECT Name,PublicKey,DateAdded,LastSeen,AddedMethod,Hidden,FreesiteEdition,PublishTrustList,PeerMessageTrust,PeerTrustListTrust,IsFMS,IsWOT,WOTLastSeen FROM tblIdentity WHERE IdentityID=?;");
+	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="hidesignature" && ValidateFormPassword(queryvars))
+	{
+		SQLite3DB::Statement del=m_db->Prepare("UPDATE tblIdentity SET ShowSignature=0 WHERE IdentityID=?;");
+		del.Bind(0,identityid);
+		del.Step();
+	}
+	
+	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="showsignature" && ValidateFormPassword(queryvars))
+	{
+		SQLite3DB::Statement del=m_db->Prepare("UPDATE tblIdentity SET ShowSignature=1 WHERE IdentityID=?;");
+		del.Bind(0,identityid);
+		del.Step();
+	}
+
+	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="hideavatar" && ValidateFormPassword(queryvars))
+	{
+		SQLite3DB::Statement del=m_db->Prepare("UPDATE tblIdentity SET ShowAvatar=0 WHERE IdentityID=?;");
+		del.Bind(0,identityid);
+		del.Step();
+	}
+	
+	if(identityid!=0 && queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="showavatar" && ValidateFormPassword(queryvars))
+	{
+		SQLite3DB::Statement del=m_db->Prepare("UPDATE tblIdentity SET ShowAvatar=1 WHERE IdentityID=?;");
+		del.Bind(0,identityid);
+		del.Step();
+	}
+
+	SQLite3DB::Statement st=m_db->Prepare("SELECT Name,PublicKey,DateAdded,LastSeen,AddedMethod,Hidden,FreesiteEdition,PublishTrustList,PeerMessageTrust,PeerTrustListTrust,IsFMS,IsWOT,WOTLastSeen,ShowSignature,ShowAvatar FROM tblIdentity WHERE IdentityID=?;");
 	st.Bind(0,identityid);
 	st.Step();
 
@@ -88,6 +118,8 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 		st.ResultInt(10,isfms);
 		st.ResultInt(11,iswot);
 		st.ResultText(12,wotlastseen);
+		st.ResultBool(13,showsignature);
+		st.ResultBool(14,showavatar);
 
 		usk=publickey;
 		if(freesiteedition>=0 && usk.find("SSK@")==0)
@@ -129,6 +161,8 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 			content+="<tr><td>"+m_trans->Get("web.page.peerdetails.lastseenwot")+"</td><td>"+wotlastseen+"</td></tr>";
 		}
 		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.addedmethod")+"</td><td class=\"smaller\">"+SanitizeOutput(addedmethod)+"</td></tr>";
+		
+		// list show/hide
 		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.hiddeninpeertrust")+"</td>";
 		content+="<td>"+hidden;
 		content+="&nbsp;<form name=\"frmhidden\" method=\"POST\">";
@@ -144,7 +178,45 @@ const std::string PeerDetailsPage::GenerateContent(const std::string &method, co
 			content+="<input type=\"hidden\" name=\"formaction\" value=\"show\">";
 			content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peerdetails.show")+"\">";
 		}
-		content+="</form>";
+		content+="</form></td></tr>";
+
+		// signature show/hide
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.showforumsignature")+"</td><td>";
+		content+="<form name=\"frmsignature\" method=\"POST\">";
+		content+=CreateFormPassword();
+		content+="<input type=\"hidden\" name=\"identityid\" value=\""+identityidstr+"\">";
+		if(showsignature==true)
+		{
+			content+=m_trans->Get("web.page.peerdetails.yes")+"&nbsp;";
+			content+="<input type=\"hidden\" name=\"formaction\" value=\"hidesignature\">";
+			content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peerdetails.hide")+"\">";
+		}
+		else
+		{
+			content+=m_trans->Get("web.page.peerdetails.no")+"&nbsp;";
+			content+="<input type=\"hidden\" name=\"formaction\" value=\"showsignature\">";
+			content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peerdetails.show")+"\">";
+		}
+		content+="</form></td></tr>";
+
+		// avatar show/hide
+		content+="<tr><td>"+m_trans->Get("web.page.peerdetails.showforumavatar")+"</td><td>";
+		content+="<form name=\"frmavatar\" method=\"POST\">";
+		content+=CreateFormPassword();
+		content+="<input type=\"hidden\" name=\"identityid\" value=\""+identityidstr+"\">";
+		if(showavatar==true)
+		{
+			content+=m_trans->Get("web.page.peerdetails.yes")+"&nbsp;";
+			content+="<input type=\"hidden\" name=\"formaction\" value=\"hideavatar\">";
+			content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peerdetails.hide")+"\">";
+		}
+		else
+		{
+			content+=m_trans->Get("web.page.peerdetails.no")+"&nbsp;";
+			content+="<input type=\"hidden\" name=\"formaction\" value=\"showavatar\">";
+			content+="<input type=\"submit\" value=\""+m_trans->Get("web.page.peerdetails.show")+"\">";
+		}
+		content+="</form></td></tr>";
 
 		// Last received msg list
 		st=m_db->Prepare("SELECT mlr.Day, mlr.RequestIndex FROM tblIdentity i, tblMessageListRequests mlr WHERE i.IdentityID=? AND i.IdentityID=mlr.IdentityID AND mlr.Found='true' ORDER by Day DESC, RequestIndex DESC LIMIT 1;");

@@ -10,6 +10,10 @@
 #include "../../include/fmsapp.h"
 
 #include <algorithm>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
 #include <Poco/DateTime.h>
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/Timestamp.h>

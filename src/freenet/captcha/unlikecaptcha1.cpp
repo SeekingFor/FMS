@@ -5,6 +5,9 @@
 
 #include <vector>
 #include <set>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #include <Poco/Path.h>
 #include <Poco/DirectoryIterator.h>

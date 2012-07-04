@@ -101,7 +101,7 @@ table.trust						{
 									border-width:1px;
 								}
 
-tr.forumthreadsheader td		{
+tr.forumthreadsheader td, tr.forummainheader td		{
 									padding:5px;
 									text-align:right;
 									padding-right:20px;

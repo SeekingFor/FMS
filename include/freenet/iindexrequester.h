@@ -107,7 +107,10 @@ void IIndexRequester<IDTYPE>::FCPConnected()
 
 	m_lastreceived=Poco::Timestamp();
 	m_requesting.clear();
-	PopulateIDList();
+	if(m_maxrequests>0)
+	{
+		PopulateIDList();
+	}
 	m_lastpopulated=Poco::Timestamp();
 }
 

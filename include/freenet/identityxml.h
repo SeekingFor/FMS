@@ -30,6 +30,9 @@ public:
 	const std::string GetSignature() const			{ return m_signature; }
 	void SetSignature(const std::string &signature)	{ m_signature=signature; }
 
+	const std::string GetAvatar() const				{ return m_avatar; }
+	void SetAvatar(const std::string &avatar)		{ m_avatar=avatar; }
+
 private:
 	void Initialize();
 
@@ -39,6 +42,7 @@ private:
 	bool m_singleuse;
 	int m_freesiteedition;
 	std::string m_signature;
+	std::string m_avatar;
 
 };
 

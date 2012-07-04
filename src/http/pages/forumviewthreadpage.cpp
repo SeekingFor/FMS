@@ -33,6 +33,9 @@ const std::string ForumTemplateViewThreadPage::FixUUIDAnchor(const std::string &
 const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string &method, const std::map<std::string,QueryVar> &queryvars)
 {
 	int postcount=0;
+	std::string fproxyprotocol("");
+	std::string fproxyhost("");
+	std::string fproxyport("");
 	std::string maincontent("");
 	std::string result("");
 	std::map<std::string,std::string> vars;
@@ -58,6 +61,9 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 
 	opt.GetBool("ForumShowSignatures",showsignatures);
 	opt.GetBool("ForumShowAvatars",showavatars);
+	opt.Get("FProxyProtocol",fproxyprotocol);
+	opt.Get("FProxyHost",fproxyhost);
+	opt.Get("FProxyPort",fproxyport);
 
 	skipspace.push_back(" ");
 
@@ -256,7 +262,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	ignoredsig.push_back("THREADPOSTSIGNATUREDIV");	// don't replace this div when we get the section, we'll replace it later
 	m_templatehandler.GetSection("THREADPOSTROWODD",threadpostrowodd,ignoredsig);
 	m_templatehandler.GetSection("THREADPOSTROWEVEN",threadpostroweven,ignoredsig);
-	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblMessage.Body, tblIdentity.PublicKey || (SELECT OptionValue FROM tblOption WHERE Option='MessageBase') || '|' || tblMessage.InsertDate || '|Message-' || tblMessage.MessageIndex, tblMessage.MessageUUID, tblIdentity.Signature, tblIdentity.ShowSignature FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID LEFT JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE tblThreadPost.ThreadID=? ORDER BY tblThreadPost.PostOrder;");
+	SQLite3DB::Statement st=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblMessage.Body, tblIdentity.PublicKey || (SELECT OptionValue FROM tblOption WHERE Option='MessageBase') || '|' || tblMessage.InsertDate || '|Message-' || tblMessage.MessageIndex, tblMessage.MessageUUID, tblIdentity.Signature, tblIdentity.ShowSignature, tblIdentity.ShowAvatar, tblIdentity.FMSAvatar, tblIdentity.SoneAvatar FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID LEFT JOIN tblIdentity ON tblMessage.IdentityID=tblIdentity.IdentityID WHERE tblThreadPost.ThreadID=? ORDER BY tblThreadPost.PostOrder;");
 	st.Bind(0,threadidstr);
 	st.Step();
 	while(st.RowReturned())
@@ -275,6 +281,9 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		std::string signature="";
 		std::string showidsignature="0";
 		bool allowreply=true;
+		bool showidavatar=false;
+		std::string fmsavatar("");
+		std::string soneavatar("");
 		
 		st.ResultInt(0,messageid);
 		st.ResultText(0,messageidstr);
@@ -287,6 +296,9 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		st.ResultText(7,messageuuid);
 		st.ResultText(8,signature);
 		st.ResultText(9,showidsignature);
+		st.ResultBool(10,showidavatar);
+		st.ResultText(11,fmsavatar);
+		st.ResultText(12,soneavatar);
 
 		if(postcount==0)
 		{
@@ -432,13 +444,26 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 			{
 				postvars["THREADPOSTSIGNATUREDIV"]="";
 			}
-			if(showavatars==true)
-			{
+			if(showavatars==true && showidavatar==true)
+			{	/*
 				std::vector<std::string> parts;
 				StringFunctions::SplitMultiple(postlink,"@,",parts);
 				if(parts.size()>1)
 				{
 					postvars["THREADPOSTAUTHORAVATAR"]="<img src=\"showavatar.htm?idpart="+StringFunctions::UriEncode(parts[1])+"\">";
+				}
+				else
+				{
+					postvars["THREADPOSTAUTHORAVATAR"]="";
+				}
+				*/
+				if(fmsavatar!="")
+				{
+					postvars["THREADPOSTAUTHORAVATAR"]="<img src=\""+fproxyprotocol+"://"+fproxyhost+":"+fproxyport+"/"+StringFunctions::UriEncode(fmsavatar)+"\" style=\"max-width:150px;max-height:150px;\">";
+				}
+				else if(soneavatar!="")
+				{
+					postvars["THREADPOSTAUTHORAVATAR"]="<img src=\""+fproxyprotocol+"://"+fproxyhost+":"+fproxyport+"/"+StringFunctions::UriEncode(soneavatar)+"\" style=\"max-width:150px;max-height:150px;\">";
 				}
 				else
 				{

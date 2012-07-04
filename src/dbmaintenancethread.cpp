@@ -6,6 +6,9 @@
 #include "../include/fmsapp.h"
 
 #include <vector>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #include <Poco/Timestamp.h>
 #include <Poco/Timespan.h>

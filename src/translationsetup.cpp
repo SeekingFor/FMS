@@ -120,10 +120,11 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.option.DefaultInsertPriorityClass.4","4 - Low");
 	st->SetDefault("web.option.DefaultInsertPriorityClass.5","5 - Very Low");
 	st->SetDefault("web.option.DefaultInsertPriorityClass.6","6 - Will Never Finish");
+	st->SetDefault("web.option.ForumAutoLogin.description","Automatically log in identity when there's only 1 active.");
 	st->SetDefault("web.option.ForumDetectLinks.description","Attempt to detect links to CHKs in plain text messages.");
 	st->SetDefault("web.option.ForumShowSmilies.description","Change plain text emoticons into smiley images.");
 	st->SetDefault("web.option.ForumShowSignatures.description","Show signatures of post authors.");
-	st->SetDefault("web.option.ForumShowAvatars.description","Show system generated avatars of post authors.");
+	st->SetDefault("web.option.ForumShowAvatars.description","Show avatars of post authors.  Individual avatars can still be disabled per identity if necessary.");
 	st->SetDefault("web.option.MaxIdentityRequests.description","Maximum number of concurrent requests for new Identity xml files");
 	st->SetDefault("web.option.MaxIdentityIntroductionRequests.description","Maximum number of concurrent identities requesting IdentityIntroduction xml files.  Each identity may have multiple requests pending.");
 	st->SetDefault("web.option.MaxIntroductionPuzzleRequests.description","Maximum number of concurrent requests for new IntroductionPuzzle xml files");
@@ -184,6 +185,7 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.localidentities.announced","Announced? *");
 	st->SetDefault("web.page.localidentities.puzzletype","Introduction Puzzle Type");
 	st->SetDefault("web.page.localidentities.signature","Signature - 500 character limit");
+	st->SetDefault("web.page.localidentity.avatar","Avatar - freenet URI");
 	st->SetDefault("web.page.localidentities.puzzletype.image","Image Captcha With Letters");
 	st->SetDefault("web.page.localidentities.puzzletype.unlikeimage","Image Captcha With 4 Pictures");
 	st->SetDefault("web.page.localidentities.puzzletype.audio","Audio Captcha With Letters");
@@ -196,6 +198,15 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.localidentities.singleusedescription","Single Use Identities will automatically be deleted 7 days after creation.");
 	st->SetDefault("web.page.localidentities.delaydescription","Messages that each identity sends may be delayed by a random number of minutes between min and max.  Set both to 0 to send messages as soon as possible.");
 	st->SetDefault("web.page.localidentities.active.description","Active identities will automatically let other clients know about their existence, allow posting messages, and share trust lists and message lists if so configured.  Identities that are not active will not insert any identity related file into Freenet, and cannot be used to post messages until they are set to active again.");
+	st->SetDefault("web.page.localidentities.forceinsert","Insert now");
+	st->SetDefault("web.page.localidentities.inserting","Currently inserting");
+	st->SetDefault("web.page.localidentities.imminentinserting","Imminent insertion");
+	st->SetDefault("web.page.localidentities.neverinserted","Not inserted yet");
+	st->SetDefault("web.page.localidentities.lastinsertedidentity","Identity last inserted");
+	st->SetDefault("web.page.localidentities.lastinsertedtrustlist","Trustlist last inserted");
+	st->SetDefault("web.page.localidentities.lastinsertedboardlist","Boardlist last inserted");
+	st->SetDefault("web.page.localidentities.lastinsertedmessagelist","Messagelist last inserted");
+	st->SetDefault("web.page.localidentities.lastinsertedfreesite","Freesite last inserted");
 
 	st->SetDefault("web.page.announceidentity.title","Announce Identity");
 	st->SetDefault("web.page.announceidentity.selectidentity","Select Identity :");
@@ -295,6 +306,8 @@ void SetupTranslation(const std::string &languagefile)
 	st->SetDefault("web.page.peerdetails.localtrustofidentity","Local Trust of this identity");
 	st->SetDefault("web.page.peerdetails.localtrustlistof","Local Trust List of");
 	st->SetDefault("web.page.peerdetails.lastchange","Last Change");
+	st->SetDefault("web.page.peerdetails.showforumsignature","Show Forum Signature");
+	st->SetDefault("web.page.peerdetails.showforumavatar","Show Forum Avatar");
 
 	st->SetDefault("web.page.boards.title","Boards");
 	st->SetDefault("web.page.boards.search","Search");

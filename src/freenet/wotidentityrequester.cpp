@@ -379,32 +379,35 @@ void WOTIdentityRequester::Initialize()
 
 void WOTIdentityRequester::PopulateIDList()
 {
-	SQLite3DB::Transaction trans(m_db);
-
-	// only selects, deferred OK
-	trans.Begin();
-
-	int count=0;
-	std::string countstr("");
-	SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey NOT IN (SELECT PublicKey FROM tblLocalIdentity) AND (WOTLastRequest IS NULL OR WOTLastRequest<datetime('now','-24 hours')) AND IsWOT=1;");
-	st.Step();
-
-	m_ids.clear();
-
-	while(st.RowReturned())
+	if(m_maxrequests>0)
 	{
-		int id=0;
-		st.ResultInt(0,id);
-		m_ids[std::pair<long,long>(count,id)].m_requested=false;
+		SQLite3DB::Transaction trans(m_db);
+
+		// only selects, deferred OK
+		trans.Begin();
+
+		int count=0;
+		std::string countstr("");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey NOT IN (SELECT PublicKey FROM tblLocalIdentity) AND (WOTLastRequest IS NULL OR WOTLastRequest<datetime('now','-24 hours')) AND IsWOT=1;");
 		st.Step();
-		count++;
+
+		m_ids.clear();
+
+		while(st.RowReturned())
+		{
+			int id=0;
+			st.ResultInt(0,id);
+			m_ids[std::pair<long,long>(count,id)].m_requested=false;
+			st.Step();
+			count++;
+		}
+
+		trans.Finalize(st);
+		trans.Commit();
+
+		StringFunctions::Convert(count,countstr);
+		m_log->trace("WOTIdentityRequester::PopulateIDList populated "+countstr+" ids");
 	}
-
-	trans.Finalize(st);
-	trans.Commit();
-
-	StringFunctions::Convert(count,countstr);
-	m_log->trace("WOTIdentityRequester::PopulateIDList populated "+countstr+" ids");
 
 }
 

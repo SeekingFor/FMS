@@ -275,6 +275,28 @@ const bool Statement::ResultBlob(const int column, void *data, int &length)
 	}
 }
 
+const bool Statement::ResultBool(const int column, bool &result)
+{
+	if(ResultNull(column)==false)
+	{
+		std::string res("");
+		if(ResultText(column,res))
+		{
+			if(res=="1" || res=="true" || res=="TRUE")
+			{
+				result=true;
+				return true;
+			}
+			else if(res=="0" || res=="false" || res=="FALSE")
+			{
+				result=false;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 const bool Statement::ResultDouble(const int column, double &result)
 {
 	if(Valid() && column>=0 && column<m_resultcolumncount)

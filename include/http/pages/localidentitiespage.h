@@ -22,6 +22,9 @@ private:
 	void HandleDelete(const std::map<std::string,QueryVar> &queryvars);
 	void HandleImport(const std::map<std::string,QueryVar> &queryvars);
 	const std::string HandleExport();
+	void ForceInsertion(std::string field, std::string idstr);
+	std::string GenerateInsertionTR(std::string label, std::string inserting, std::string date, std::string formaction, std::string id);
+	std::string GenerateComposedInsertionTR(std::string label, std::string tableName, std::string date, std::string formaction, std::string id);
 
 };
 

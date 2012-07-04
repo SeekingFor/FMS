@@ -23,11 +23,13 @@ public:
 	const bool ParseXML(const std::string &xml);
 
 	const std::vector<message> &GetSones()	{ return m_messages; }
+	const std::string GetAvatar()			{ return m_avatar; }
 
 private:
 	void Initialize();
 
 	std::vector<message> m_messages;
+	std::string m_avatar;
 
 };
 

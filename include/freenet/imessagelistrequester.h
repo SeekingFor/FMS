@@ -406,7 +406,7 @@ const bool IMessageListRequester<IDTYPE>::HandleAllData(FCPv2::Message &message)
 
 	// remove this identityid from request list
 	messageid=GetIDFromIdentifier(message["Identifier"]);
-	RemoveFromRequestList(messageid);
+	this->RemoveFromRequestList(messageid);
 
 	// keep 2 days of request indexes in the cache
 	while(m_requestindexcache.size()>2)
@@ -435,7 +435,7 @@ const bool IMessageListRequester<IDTYPE>::HandleGetFailed(FCPv2::Message &messag
 
 	// remove this identityid from request list
 	messageid=GetIDFromIdentifier(message["Identifier"]);
-	RemoveFromRequestList(messageid);
+	this->RemoveFromRequestList(messageid);
 
 	if(message["RedirectURI"]!="")
 	{
@@ -550,7 +550,7 @@ void IMessageListRequester<IDTYPE>::StartRedirectRequest(FCPv2::Message &message
 	newmessage["MaxSize"]="1000000";
 
 	IIndexRequester<IDTYPE>::m_fcp->Send(newmessage);
-	StartedRequest(GetIDFromIdentifier(newmessage["Identifier"]),
+	this->StartedRequest(GetIDFromIdentifier(newmessage["Identifier"]),
 				   newmessage["Identifier"]);
 
 	IIndexRequester<IDTYPE>::m_log->debug(IIndexRequester<IDTYPE>::m_fcpuniquename+"::StartRedirectRequest started redirect request of "+message["Identifier"]+" to "+newmessage["Identifier"]);

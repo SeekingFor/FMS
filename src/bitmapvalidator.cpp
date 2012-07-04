@@ -5,6 +5,9 @@
 
 #include <sstream>
 #include <cstdlib>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 BitmapValidator::BitmapValidator():m_maxwidth(-1),m_maxheight(-1)
 {

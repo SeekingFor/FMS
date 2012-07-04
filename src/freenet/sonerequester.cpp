@@ -1,4 +1,5 @@
 #include "../../include/freenet/sonerequester.h"
+#include "../../include/freenet/freenetkeys.h"
 #include "../../include/freenet/sonexml.h"
 #include "../../include/freenet/identitypublickeycache.h"
 #include "../../include/unicode/unicodestring.h"
@@ -177,6 +178,7 @@ const bool SoneRequester::HandleAllData(FCPv2::Message &message)
 			SQLite3DB::Statement insertmrst=m_db->Prepare("INSERT INTO tblMessageReplyTo(MessageID,ReplyToMessageUUID,ReplyOrder) VALUES(?,?,?);");
 			SQLite3DB::Statement insertbst=m_db->Prepare("INSERT INTO tblMessageBoard(MessageID,BoardID) VALUES(?,?);");
 			SQLite3DB::Statement latestmessagest=m_db->Prepare("UPDATE tblBoard SET LatestMessageID=(SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID WHERE tblMessageBoard.BoardID=tblBoard.BoardID ORDER BY tblMessage.MessageDate DESC, tblMessage.MessageTime DESC LIMIT 0,1) WHERE tblBoard.BoardID=?;");
+			SQLite3DB::Statement updav=m_db->Prepare("UPDATE tblIdentity SET SoneAvatar=? WHERE IdentityID=?;");
 
 			std::string fromname=GetIdentityName(identityid);
 
@@ -254,6 +256,51 @@ const bool SoneRequester::HandleAllData(FCPv2::Message &message)
 				}
 
 			}
+
+			if(xml.GetAvatar()!="")
+			{
+				bool goodavatar=false;
+				std::string avatar=xml.GetAvatar();
+				if(avatar.find("KSK@")==0)
+				{
+					FreenetKSKKey key;
+					if(key.TryParse(avatar)==true)
+					{
+						goodavatar=true;
+					}
+				}
+				else if(avatar.find("SSK@")==0)
+				{
+					FreenetSSKKey key;
+					if(key.TryParse(avatar)==true)
+					{
+						goodavatar=true;
+					}
+				}
+				else if(avatar.find("CHK@")==0)
+				{
+					FreenetCHKKey key;
+					if(key.TryParse(avatar)==true)
+					{
+						goodavatar=true;
+					}
+				}
+				if(goodavatar=true)
+				{
+					updav.Bind(0,avatar);
+				}
+				else
+				{
+					m_log->error(m_fcpuniquename+"::HandleAllData bad avatar URI in Sone XML file : "+message["Identifier"]);
+					updav.Bind(0);
+				}
+			}
+			else
+			{
+				updav.Bind(0);
+			}
+			updav.Bind(1,identityid);
+			trans.Step(updav);
 
 		}
 		else

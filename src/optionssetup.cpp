@@ -460,6 +460,22 @@ void SetupDefaultOptions(SQLite3DB::DB *db)
 	upd.Step();
 	upd.Reset();
 
+	st.Bind(0,"ForumAutoLogin");
+	st.Bind(1,"false");
+	st.Step();
+	st.Reset();
+	upd.Bind(0,"Forum");
+	upd.Bind(1,order++);
+	upd.Bind(2,"true|true|false|false");
+	upd.Bind(3,"Automatically log in identity when there's only 1 active.");
+	upd.Bind(4,"select");
+	upd.Bind(5);
+	upd.Bind(6);
+	upd.Bind(7,"advanced");
+	upd.Bind(8,"ForumAutoLogin");
+	upd.Step();
+	upd.Reset();
+
 	st.Bind(0,"ForumDetectLinks");
 	st.Bind(1,"true");
 	st.Step();

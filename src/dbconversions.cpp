@@ -621,6 +621,16 @@ void ConvertDB0137To0138(SQLite3DB::DB *db)
 	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=38;");
 }
 
+void ConvertDB0138To0139(SQLite3DB::DB *db)
+{
+	db->Execute("ALTER TABLE tblLocalIdentity ADD COLUMN FMSAvatar TEXT;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN FMSAvatar TEXT;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN ShowAvatar BOOL CHECK(ShowAvatar IN (0,1)) DEFAULT 1;");
+	db->Execute("ALTER TABLE tblIdentity ADD COLUMN SoneAvatar TEXT;");
+
+	db->Execute("UPDATE tblDBVersion SET Major=1, Minor=39;");
+}
+
 void FixBoardNames(SQLite3DB::DB *db)
 {
 

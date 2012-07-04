@@ -54,7 +54,7 @@ private:
 class ForumTemplatePage:public IPageHandler
 {
 public:
-	ForumTemplatePage(SQLite3DB::DB *db, const HTMLTemplateHandler &templatehandler, const std::string &pagename):IPageHandler(db,"",pagename),m_templatehandler(templatehandler),m_viewstate(db)	{}
+	ForumTemplatePage(SQLite3DB::DB *db, const HTMLTemplateHandler &templatehandler, const std::string &pagename):IPageHandler(db,"",pagename),m_templatehandler(templatehandler),m_viewstate(db),m_autologin(false)	{}
 
 protected:
 	const std::string GetBasePageTitle()
@@ -85,6 +85,15 @@ private:
 		else
 		{
 			m_viewstate.CreateViewState();
+		}
+		
+		if(! m_autologin)
+		{
+			if(int id = AutoLogin())
+			{
+				m_autologin = true;
+				m_viewstate.SetLocalIdentityID(id);
+			}
 		}
 
 		if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="login" && queryvars.find("localidentityid")!=queryvars.end() && (*queryvars.find("localidentityid")).second!="" && ValidateFormPassword(queryvars))
@@ -134,7 +143,10 @@ private:
 			sections["FORUMLOGINHEADER"]+=CreateFormPassword();
 			sections["FORUMLOGINHEADER"]+="<input type=\"hidden\" name=\"viewstate\" value=\""+m_viewstate.GetViewStateID()+"\">";
 			sections["FORUMLOGINHEADER"]+=SanitizeOutput(name);
-			sections["FORUMLOGINHEADER"]+="<input type=\"submit\" class=\"logoutbutton\" value=\""+m_trans->Get("web.page.forum.signout")+"\">";
+			if(! m_autologin)
+			{
+				sections["FORUMLOGINHEADER"]+="<input type=\"submit\" class=\"logoutbutton\" value=\""+m_trans->Get("web.page.forum.signout")+"\">";
+			}
 			sections["FORUMLOGINHEADER"]+="</form>";			
 		}
 
@@ -202,6 +214,35 @@ protected:
 		return SanitizeOutput(tempsubject.NarrowString());
 	}
 
+	const int AutoLogin()
+	{
+		int count=0;
+		int id=0;
+		Option opt(m_db);
+		bool autologin=false;
+
+		opt.GetBool("ForumAutoLogin",autologin);
+		
+		if(autologin)
+		{
+			SQLite3DB::Statement st=m_db->Prepare("SELECT LocalIdentityID FROM tblLocalIdentity WHERE PublicKey IS NOT NULL AND PrivateKey IS NOT NULL AND Active='true' ORDER BY Name COLLATE NOCASE;");
+			st.Step();
+			while(st.RowReturned())
+			{
+				count++;
+				st.ResultInt(0,id);
+				st.Step();
+			}
+			
+			if(! count || count-1)
+			{
+				return 0;
+			}
+		}
+		
+		return id;
+	}
+
 	const std::string CreateLocalIdentityDropDown(const std::string &name, const std::string &selectedid)
 	{
 		std::string result("<select name=\""+name+"\">");
@@ -250,6 +291,7 @@ protected:
 
 	const HTMLTemplateHandler &m_templatehandler;
 	ForumViewState m_viewstate;
+	bool m_autologin;
 };
 
 #endif	// _forumpage_

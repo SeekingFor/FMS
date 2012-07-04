@@ -49,6 +49,7 @@ public:
 	virtual const bool ResultDouble(const int column, double &result);
 	virtual const bool ResultText(const int column, std::string &result);
 	virtual const bool ResultBlob(const int column, void *data, int &length);
+	virtual const bool ResultBool(const int column, bool &result);
 	
 	Statement &operator=(const Statement &rhs);
 

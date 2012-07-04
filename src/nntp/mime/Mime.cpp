@@ -15,6 +15,9 @@
 #include <cstring>
 #include <cstdio>
 #include <sstream>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #ifndef _WIN32
 	#define stricmp strcasecmp

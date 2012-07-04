@@ -27,6 +27,13 @@ const std::string ForumTemplateMainPage::GenerateContent(const std::string &meth
 	CreateBreadcrumbLinks(breadcrumblinks,result);
 	vars["LOCATIONBREADCRUMBS"]=result;
 
+	vars["MARKGLOBALALLREADLINK"]="<a href=\""+m_pagename+"?viewstate="+m_viewstate.GetViewStateID()+"&formaction=markglobalallread&"+CreateLinkFormPassword()+"\"><img src=\"images/mail_generic.png\" border=\"0\" style=\"vertical-align:bottom;\">"+m_trans->Get("web.page.forumthreads.markallread")+"</a>";
+
+	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="markglobalallread" && ValidateFormPassword(queryvars))
+	{
+		m_db->Execute("UPDATE tblMessage SET Read=1 WHERE tblMessage.Read=0;");
+	}
+
 	SQLite3DB::Statement newst=m_db->Prepare("SELECT tblMessage.MessageID FROM tblMessage INNER JOIN tblMessageBoard ON tblMessage.MessageID=tblMessageBoard.MessageID INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblMessageBoard.BoardID=? AND tblThread.BoardID=? AND tblMessage.Read=0 LIMIT 0,1;");
 	//SQLite3DB::Statement lastmessagest=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblThread.ThreadID FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID WHERE tblThread.BoardID=? ORDER BY tblMessage.MessageDate DESC, tblMessage.MessageTime DESC LIMIT 0,1;");
 	SQLite3DB::Statement lastmessagest=m_db->Prepare("SELECT tblMessage.MessageID, tblMessage.IdentityID, tblMessage.FromName, tblMessage.Subject, tblMessage.MessageDate || ' ' || tblMessage.MessageTime, tblThread.ThreadID FROM tblMessage INNER JOIN tblThreadPost ON tblMessage.MessageID=tblThreadPost.MessageID INNER JOIN tblThread ON tblThreadPost.ThreadID=tblThread.ThreadID INNER JOIN tblBoard ON (tblThread.BoardID=tblBoard.BoardID AND tblBoard.LatestMessageID=tblMessage.MessageID) WHERE tblBoard.BoardID=?;");

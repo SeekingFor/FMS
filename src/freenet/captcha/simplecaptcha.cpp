@@ -6,6 +6,9 @@
 #include <Poco/TemporaryFile.h>
 
 #include <cstdlib>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #ifdef XMEM
 	#include <xmem.h>
