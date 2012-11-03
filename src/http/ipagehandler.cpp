@@ -162,7 +162,11 @@ void IPageHandler::CreateQueryVarMap(Poco::Net::HTTPServerRequest &request, std:
 		Poco::Net::HTMLForm form1(request,request.stream(),mpp);
 		for(Poco::Net::HTMLForm::ConstIterator i=form1.begin(); i!=form1.end(); i++)
 		{
-			vars[(*i).first]=QueryVar((*i).first,(*i).second);
+			// don't overwrite query vars that came directly from a post
+			if(vars.find((*i).first)==vars.end())
+			{
+				vars[(*i).first]=QueryVar((*i).first,(*i).second);
+			}
 		}
 		request.setMethod("POST");
 	}

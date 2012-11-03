@@ -65,6 +65,7 @@ void SetupTranslation(const std::string &languagefile)
 
 	st->SetDefault("web.option.Language.description","Select program language.");
 	st->SetDefault("web.option.Language.english.prop","English");
+	st->SetDefault("web.option.Language.german.prop","German (Deutsch)");
 	st->SetDefault("web.option.Language.spanish.prop","Spanish");
 	st->SetDefault("web.option.Language.russian.prop","Russian");
 	st->SetDefault("web.option.Language.french.prop","French (Français)");

@@ -88,17 +88,27 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="send" && ValidateFormPassword(queryvars))
 	{
-		int action=0;
+		// the send action
+
+		int action=0; // 0=post  1=just attach and re-display the form
 
 		LoadFileAttachments(m_viewstate.GetViewStateID(),fileattachments);
 
-		if(queryvars.find("attachbutton")!=queryvars.end())
+		bool attachment_data_is_presnet = (queryvars.find("uploadfile")!=queryvars.end() && (*queryvars.find("uploadfile")).second!="");
+		bool attach_button_clicked = (queryvars.find("attachbutton")!=queryvars.end());
+
+		if(attach_button_clicked) // we will not actually post (send) because the action was to Attach (attach button was pressed)
+		{
+			action=1;
+		}
+
+		if(attachment_data_is_presnet) // attachment file input was filled-in (and user submited by either Send or Attach button)
 		{
 			action=1;
 			fileattachment attach;
 			bool validattachment=false;
 
-			if(queryvars.find("uploadfile")!=queryvars.end() && (*queryvars.find("uploadfile")).second!="")
+			if (attachment_data_is_presnet)
 			{
 				attach.m_data=(*queryvars.find("uploadfile")).second.GetData();
 				attach.m_datasize=attach.m_data.size();
@@ -112,14 +122,20 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 				attach.m_freenetkey=(*queryvars.find("freenetkey")).second.GetData();
 				validattachment=true;
 			}
+			else 
+			{
+				// TODO report that there is a problem?
+			}
 
 			if(validattachment==true)
 			{
+				// will save attachment into temporary table (preparing the message to be posted)
 				SQLite3DB::Statement filest=m_db->Prepare("INSERT INTO tmpFileAttachment(DateUploaded,ForumViewStateID,FileName,Data,DataLength,ContentType,FreenetKey) VALUES(strftime('%Y-%m-%d %H:%M:%S','now'),?,?,?,?,?,?);");
 
 				filest.Bind(0,m_viewstate.GetViewStateID());
 				if(attach.m_filename!="")
 				{
+					// attaching valid file
 					filest.Bind(1,attach.m_filename);
 					std::vector<char> attachdata(attach.m_data.begin(),attach.m_data.end());
 					filest.Bind(2,&attachdata[0],attachdata.size());
@@ -129,6 +145,7 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 				}
 				else
 				{
+					// attaching freenetkey
 					filest.Bind(1);
 					filest.Bind(2);
 					filest.Bind(3);
@@ -137,9 +154,13 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 				}
 				filest.Step(true);
 
-				attach.m_id=filest.GetLastInsertRowID();
+				attach.m_id=filest.GetLastInsertRowID(); // this is the ID of new attachment
 
 				fileattachments.push_back(attach);
+			}
+			else 
+			{
+				// TODO report that there is a problem?
 			}
 
 		}
@@ -182,6 +203,7 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 
 		if(error=="" && action==0)
 		{
+			// will now send the post (send - as far as the frontend is concerned: write the post into queue)
 			Message mess(m_db);
 			
 			long localidentityid=-1;
@@ -276,6 +298,7 @@ const std::string ForumTemplateCreatePostPage::GenerateContent(const std::string
 	}
 	else
 	{
+		// not posting(/attaching) yet, just showing the new post(/reply) form here
 
 		ClearFileAttachments(m_viewstate.GetViewStateID());
 

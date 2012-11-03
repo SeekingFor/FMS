@@ -17,6 +17,8 @@ private:
 	const bool HandleAllData(FCPv2::Message &message);
 	const bool HandleGetFailed(FCPv2::Message &message);
 
+	long m_maxsize;
+
 };
 
 #endif	// _trustlistrequester_

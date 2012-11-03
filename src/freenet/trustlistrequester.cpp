@@ -408,6 +408,7 @@ void TrustListRequester::Initialize()
 		m_log->warning("Option MaxTrustListRequests is currently set at "+tempval+".  This value might be incorrectly configured.");
 	}
 	m_tempdate=Poco::Timestamp();
+	m_maxsize=1000000;
 }
 
 void TrustListRequester::PopulateIDList()
@@ -450,6 +451,22 @@ void TrustListRequester::PopulateIDList()
 		trans.Step(st);
 	}
 
+	// calculate maximum request size based on number of identities that would appear in our own trust list
+	// max size will be 250 bytes per identity in list + 10000 bytes for header/footer info, this is more than we need to allow some growth
+	// minimum max size will always be 1000000 bytes
+	st=m_db->Prepare("SELECT IFNULL(COUNT(*),0) FROM tblIdentity WHERE PublicKey IS NOT NULL AND PublicKey<>'' AND (LastSeen>=datetime('now','-15 days') OR WOTLastSeen>=datetime('now','-15 days'));");
+	st.Step();
+	if(st.RowReturned())
+	{
+		int count=0;
+		st.ResultInt(0,count);
+		m_maxsize=(std::max)((count*250)+10000,1000000);
+	}
+	else
+	{
+		m_maxsize=1000000;
+	}
+
 	trans.Finalize(st);
 	trans.Commit();
 }
@@ -462,7 +479,10 @@ void TrustListRequester::StartRequest(const long &identityid)
 	int index;
 	std::string indexstr;
 	std::string identityidstr;
+	std::string maxsizestr("1000000");
 	IdentityPublicKeyCache pkcache(m_db);
+
+	StringFunctions::Convert(m_maxsize,maxsizestr);
 
 	if(pkcache.PublicKey(identityid,publickey))
 	{
@@ -491,7 +511,7 @@ void TrustListRequester::StartRequest(const long &identityid)
 		message["Identifier"]=m_fcpuniquename+"|"+identityidstr+"|"+indexstr+"|"+message["URI"];
 		message["PriorityClass"]=m_defaultrequestpriorityclassstr;
 		message["ReturnType"]="direct";
-		message["MaxSize"]="1000000";			// 1 MB
+		message["MaxSize"]=maxsizestr;			// dynamic max size based on number of identities that would appear in our own trust list
 
 		m_fcp->Send(message);
 

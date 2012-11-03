@@ -388,7 +388,7 @@ void WOTIdentityRequester::PopulateIDList()
 
 		int count=0;
 		std::string countstr("");
-		SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE PublicKey NOT IN (SELECT PublicKey FROM tblLocalIdentity) AND (WOTLastRequest IS NULL OR WOTLastRequest<datetime('now','-24 hours')) AND IsWOT=1;");
+		SQLite3DB::Statement st=m_db->Prepare("SELECT IdentityID FROM tblIdentity WHERE (WOTLastRequest IS NULL OR WOTLastRequest<datetime('now','-24 hours')) AND IsWOT=1;");
 		st.Step();
 
 		m_ids.clear();

@@ -53,6 +53,7 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 	std::string trusttable("");
 	bool showsignatures=false;
 	bool showavatars=false;
+	SQLite3DB::Transaction trans(m_db);
 	Option opt(m_db);
 	std::vector<std::string> skipspace;
 	SQLite3DB::Statement fileattachmentst=m_db->Prepare("SELECT Key, Size FROM tblMessageFileAttachment WHERE MessageID=?;");
@@ -145,17 +146,23 @@ const std::string ForumTemplateViewThreadPage::GenerateContent(const std::string
 		firstunreadst.ResultText(0,firstunreadidstr);
 	}
 
+	trans.Begin(SQLite3DB::Transaction::TRANS_IMMEDIATE);
 	if(queryvars.find("formaction")!=queryvars.end() && (*queryvars.find("formaction")).second=="markunread")
 	{
 		SQLite3DB::Statement updateread=m_db->Prepare("UPDATE tblMessage SET Read=0 WHERE tblMessage.MessageID IN (SELECT MessageID FROM tblThreadPost WHERE ThreadID=?);");
 		updateread.Bind(0,threadidstr);
-		updateread.Step();
+		trans.Step(updateread);
 	}
 	else
 	{
 		SQLite3DB::Statement updateread=m_db->Prepare("UPDATE tblMessage SET Read=1 WHERE tblMessage.MessageID IN (SELECT MessageID FROM tblThreadPost WHERE ThreadID=?);");
 		updateread.Bind(0,threadidstr);
-		updateread.Step();
+		trans.Step(updateread);
+	}
+	trans.Commit();
+	if(trans.IsSuccessful()==false)
+	{
+		m_log->error("ForumTemplateViewThreadPage::GenerateContent transaction failed SQL="+trans.GetErrorSQL()+" Error="+trans.GetLastErrorStr());
 	}
 
 	// add/remove trust

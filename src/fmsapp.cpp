@@ -28,6 +28,10 @@
 	#include <unistd.h>
 #endif
 
+#ifdef FROST_SUPPORT
+	#include <polarssl/version.h>
+#endif
+
 FMSApp::FMSApp():m_displayhelp(false),m_showoptions(false),m_setoption(false),m_dontstartup(false),m_logtype("file"),m_workingdirectory(""),m_lockfile(global::basepath+"fms.lck")
 {
 	// get current working dir so we can go to it later
@@ -279,7 +283,11 @@ int FMSApp::main(const std::vector<std::string> &args)
 	else
 	{
 		logger().information("FMS startup v"FMS_VERSION);
-		logger().information("Using SQLite "SQLITE_VERSION);
+		logger().information("Linked with SQLite "SQLITE_VERSION);
+#ifdef FROST_SUPPORT
+		logger().information("Compiled with Frost support");
+		logger().information("Linked with PolarSSL "POLARSSL_VERSION_STRING);
+#endif
 
 		std::string tempval("");
 		Option option(m_db);
